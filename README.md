@@ -1,2 +1,3 @@
-# release-please-action
-automated releases based on conventional commits
+# Release Please Action
+
+Automate releases based on Conventional Commit Messages.

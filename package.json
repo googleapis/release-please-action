@@ -1,0 +1,37 @@
+{
+  "name": "release-please-action",
+  "private": true,
+  "version": "0.1.0",
+  "description": "automated releases based on conventional commits",
+  "main": "index.js",
+  "scripts": {
+    "test": "standard",
+    "fix": "standard --fix",
+    "build": "ncc build index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bcoe/release-please-action.git"
+  },
+  "keywords": [
+    "release-please",
+    "action"
+  ],
+  "author": "Ben Coe <bencoe@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/bcoe/release-please-action/issues"
+  },
+  "homepage": "https://github.com/bcoe/release-please-action#readme",
+  "dependencies": {
+    "@actions/core": "^1.2.4",
+    "release-please": "^4.2.2"
+  },
+  "devDependencies": {
+    "@zeit/ncc": "^0.22.1",
+    "standard": "^14.3.3"
+  },
+  "standard": {
+    "ignore": "dist/"
+  }
+}

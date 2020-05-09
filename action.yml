@@ -1,0 +1,13 @@
+name: 'release-please'
+description: 'automated releases based on conventional commits'
+author: 'Ben Coe <bencoe@google.com>'
+inputs:
+  token:
+    description: 'token for creating and grooming release PRs (probably secrets.GITHUB_TOKEN)'
+    required: true
+  release-type:
+    description: 'what type of release is this, e.g., nodejs, java'
+    required: true
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
