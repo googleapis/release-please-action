@@ -5,9 +5,9 @@ on:
 name: coverage
 jobs:
   update-pr:
-    runs-on: ubuntu-latest@a624c4cd0239c469f864c4e46e8aaba9587b9198
+    runs-on: ubuntu-latest
     steps:
-      - uses: bcoe/release-please-action
+      - uses: bcoe/release-please-action@a624c4cd0239c469f864c4e46e8aaba9587b9198
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           release-type: node
