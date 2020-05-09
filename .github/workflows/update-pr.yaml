@@ -7,7 +7,7 @@ jobs:
   update-pr:
     runs-on: ubuntu-latest
     steps:
-      - uses: bcoe/release-please-action@master
+      - uses: bcoe/release-please-action
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           release-type: node
