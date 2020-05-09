@@ -7,7 +7,7 @@ jobs:
   update-pr:
     runs-on: ubuntu-latest
     steps:
-      - uses: bcoe/release-please-action@96b1c364024d5ca826ab71195d626dd72192ac5a
+      - uses: bcoe/release-please-action@e72afe059a2eae50d319b3a4cee2a31479886fe8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
