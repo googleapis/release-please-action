@@ -4,7 +4,7 @@ on:
       - master
 name: coverage
 jobs:
-  coveralls:
+  update-pr:
     runs-on: ubuntu-latest
     steps:
       - uses: bcoe/release-please-action@master
