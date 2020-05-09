@@ -9,5 +9,5 @@ jobs:
     steps:
       - uses: bcoe/release-please-action@a624c4cd0239c469f864c4e46e8aaba9587b9198
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
