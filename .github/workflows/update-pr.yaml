@@ -5,7 +5,7 @@ on:
 name: coverage
 jobs:
   update-pr:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest@a624c4cd0239c469f864c4e46e8aaba9587b9198
     steps:
       - uses: bcoe/release-please-action
         with:
