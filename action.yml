@@ -3,10 +3,13 @@ description: 'automated releases based on conventional commits'
 author: 'Ben Coe <bencoe@google.com>'
 inputs:
   token:
-    description: 'token for creating and grooming release PRs (probably secrets.GITHUB_TOKEN)'
+    description: 'GitHub token for creating and grooming release PRs, e.g., secrets.GITHUB_TOKEN'
+    required: true
+  package-name:
+    description: 'name of the distributions releases are being created for, e.g., "name" in package.json, or "setup.py"'
     required: true
   release-type:
-    description: 'what type of release is this, e.g., nodejs, java'
+    description: 'what type of release is this, one of (ruby, python, node, terraform-module)'
     required: true
 runs:
   using: 'node12'
