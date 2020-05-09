@@ -4,8 +4,6 @@ const { ReleasePRFactory } = require('release-please/build/src/release-pr-factor
 
 const RELEASE_LABEL = 'autorelease: pending'
 
-const action = core.getInput('action')
-
 async function main () {
   const token = core.getInput('token')
   const releaseType = core.getInput('release-type')
@@ -18,12 +16,12 @@ async function main () {
     repoUrl: process.env.GITHUB_REPOSITORY,
     packageName
   })
-  await gr.createRelease();
+  await gr.createRelease()
 
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
   const release = ReleasePRFactory.build(releaseType, {
-    packageName: name || 'unknown',
+    packageName: packageName,
     apiUrl: 'https://api.github.com',
     repoUrl: process.env.GITHUB_REPOSITORY,
     token: token,
