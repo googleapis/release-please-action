@@ -19,7 +19,7 @@ Automate releases based on Conventional Commit Messages.
       push:
         branches:
           - master
-    name: coverage
+    name: release-please
     jobs:
       release-please:
         runs-on: ubuntu-latest
