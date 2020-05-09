@@ -23,7 +23,7 @@ ready to tag a release, simply merge the release PR.
 
 Release Please assumes you are using [Conventional Commit messages](https://www.conventionalcommits.org/).
 
-The most important prefixes you should havein mind are:
+The most important prefixes you should have in mind are:
 
 * `fix:` which represents bug fixes, and correlates to a [SemVer](https://semver.org/) 
   patch.
@@ -47,7 +47,7 @@ The most important prefixes you should havein mind are:
       release-please:
         runs-on: ubuntu-latest
         steps:
-          - uses: bcoe/release-please-action@9291b92aca4939d0cc2781f26504c638ce1ba534
+          - uses: bcoe/release-please-action@v1.0.1
             with:
               token: ${{ secrets.GITHUB_TOKEN }}
               release-type: node
