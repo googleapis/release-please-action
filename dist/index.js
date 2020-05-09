@@ -3670,26 +3670,18 @@ async function main () {
   const releaseType = core.getInput('release-type')
   const name = core.getInput('name')
 
-  switch (action) {
-    case 'update-pr': {
-      const release = ReleasePRFactory.build(releaseType, {
-        packageName: name || 'unknown',
-        apiUrl: 'https://api.github.com',
-        repoUrl: process.env.GITHUB_REPOSITORY,
-        token: token,
-        label: RELEASE_LABEL
-      })
-      await release.run()
-      break
-    }
-    default:
-      core.setFailed(`unknown action, ${action}, should be "update-pr", or "create-release".`)
-      break
-  }
+  const release = ReleasePRFactory.build(releaseType, {
+    packageName: name || 'unknown',
+    apiUrl: 'https://api.github.com',
+    repoUrl: process.env.GITHUB_REPOSITORY,
+    token: token,
+    label: RELEASE_LABEL
+  })
+  await release.run()
 }
 
 main().catch(err => {
-  core.setFailed(`release-please failed to ${action} (${err.message})`)
+  core.setFailed(`release-please failed: ${err.message}`)
 })
 
 
