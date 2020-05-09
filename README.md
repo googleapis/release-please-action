@@ -4,36 +4,7 @@
 
 Automate releases with Conventional Commit Messages.
 
-## How release please works
-
-Release Please automates CHANGELOG generation, the creation of GitHub releases,
-and version bumps for your projects. Release Please does so by parsing your
-git history, looking for [Conventional Commit messages](https://www.conventionalcommits.org/),
-and creating release PRs.
-
-### What's a Release PR?
-
-Rather than continuously releasing what's landed to your default branch,
-release-please maintains Release PRs:
-
-<img width="400" src="/screen.png">
-
-These Release PRs are kept up-to-date as additional work is merged. When you're
-ready to tag a release, simply merge the release PR.
-
-### How should I write my commits?
-
-Release Please assumes you are using [Conventional Commit messages](https://www.conventionalcommits.org/).
-
-The most important prefixes you should have in mind are:
-
-* `fix:` which represents bug fixes, and correlates to a [SemVer](https://semver.org/) 
-  patch.
-* `feat:` which represents a new feature, and correlates to a SemVer minor.
-* `feat!:`,  or `fix!:`, `refactor!:`, etc., which represent a breaking change
-  (indicated by the `!`) and will result in a SemVer major.
-
-## Configuring this action
+## Setting up this action
 
 1. If you haven't already done so, create a `.github/workflows` folder in your
   repository (_this is where your actions will live_).
@@ -68,6 +39,35 @@ The most important prefixes you should have in mind are:
 | token           | A GitHub secret token, you will most likely want to use the special `secrets.GITHUB_TOKEN` |
 | release-type    | What type of project is this a release for? Currently we support `node`, `ruby`, `python`, `terraform-module`, new types of releases can be [added here](https://github.com/googleapis/release-please/tree/master/src/releasers) |
 | package-name    | A name for the artifact releases are being created for (this might be the `name` field in a `setup.py` or `package.json`) |
+
+## How release please works
+
+Release Please automates CHANGELOG generation, the creation of GitHub releases,
+and version bumps for your projects. Release Please does so by parsing your
+git history, looking for [Conventional Commit messages](https://www.conventionalcommits.org/),
+and creating release PRs.
+
+### What's a Release PR?
+
+Rather than continuously releasing what's landed to your default branch,
+release-please maintains Release PRs:
+
+<img width="400" src="/screen.png">
+
+These Release PRs are kept up-to-date as additional work is merged. When you're
+ready to tag a release, simply merge the release PR.
+
+### How should I write my commits?
+
+Release Please assumes you are using [Conventional Commit messages](https://www.conventionalcommits.org/).
+
+The most important prefixes you should have in mind are:
+
+* `fix:` which represents bug fixes, and correlates to a [SemVer](https://semver.org/) 
+  patch.
+* `feat:` which represents a new feature, and correlates to a SemVer minor.
+* `feat!:`,  or `fix!:`, `refactor!:`, etc., which represent a breaking change
+  (indicated by the `!`) and will result in a SemVer major.
 
 ## License
 
