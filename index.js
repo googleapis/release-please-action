@@ -14,7 +14,8 @@ async function main () {
   const gr = new GitHubRelease({
     label: RELEASE_LABEL,
     repoUrl: process.env.GITHUB_REPOSITORY,
-    packageName
+    packageName,
+    token
   })
   await gr.createRelease()
 
