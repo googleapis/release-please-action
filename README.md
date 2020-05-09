@@ -63,7 +63,7 @@ The most important prefixes you should have in mind are:
 
 | Variable        | Description                                      |
 | --------------- | ------------------------------------------------ |
-| token           | A GitHub secret token, you will most likely want to use the special secrets.GITHUB_TOKEN |
+| token           | A GitHub secret token, you will most likely want to use the special `secrets.GITHUB_TOKEN` |
 | release-type    | What type of project is this a release for? Currently we support `node`, `ruby`, `python`, `terraform-module`, new types of releases can be [added here](https://github.com/googleapis/release-please/tree/master/src/releasers) |
 | package-name    | A name for the artifact releases are being created for (this might be the `name` field in a `setup.py` or `package.json`) |
 
