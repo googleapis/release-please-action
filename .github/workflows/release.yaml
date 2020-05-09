@@ -1,0 +1,13 @@
+on:
+  push:
+    branches:
+      - master
+name: coverage
+jobs:
+  coveralls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: bcoe/release-please-action@master
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          release-type: node
