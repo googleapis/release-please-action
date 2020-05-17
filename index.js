@@ -8,6 +8,7 @@ async function main () {
   const token = core.getInput('token')
   const releaseType = core.getInput('release-type')
   const packageName = core.getInput('package-name')
+  const bumpMinorPreMajor = Boolean(core.getInput('bump-minor-pre-major'))
 
   // First we check for any merged release PRs (PRs merged with the label
   // "autorelease: pending"):
@@ -26,7 +27,8 @@ async function main () {
     apiUrl: 'https://api.github.com',
     repoUrl: process.env.GITHUB_REPOSITORY,
     token: token,
-    label: RELEASE_LABEL
+    label: RELEASE_LABEL,
+    bumpMinorPreMajor: bumpMinorPreMajor
   })
   await release.run()
 }

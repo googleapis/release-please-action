@@ -11,6 +11,9 @@ inputs:
   release-type:
     description: 'what type of release is this, one of (ruby, python, node, terraform-module)'
     required: true
+  bump-minor-pre-major:
+    description: 'should breaking changes before 1.0.0 produce minor bumps'
+    required: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
