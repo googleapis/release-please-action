@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://www.github.com/bcoe/release-please-action/compare/v1.0.1...v1.1.0) (2020-05-18)
+
+
+### Features
+
+* Add `bump-minor-pre-major` option ([#9](https://www.github.com/bcoe/release-please-action/issues/9)) ([788c495](https://www.github.com/bcoe/release-please-action/commit/788c495e2607702ce5ab41e9e246161d07fe8854))
+
 ### [1.0.1](https://www.github.com/bcoe/release-please-action/compare/v1.0.0...v1.0.1) (2020-05-09)
 
 
