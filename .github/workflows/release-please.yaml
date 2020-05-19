@@ -12,3 +12,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
           package-name: release-please-action
+      - uses: JasonEtco/build-and-tag-action@v1
+        with:
+          setup: 'npm ci && npm run build'
+          tag_name: ${{ steps.releaser.outputs.tag_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

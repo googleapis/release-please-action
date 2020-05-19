@@ -18,7 +18,10 @@ async function main () {
     packageName,
     token
   })
-  await gr.createRelease()
+  const release = await gr.createRelease()
+  if (release) {
+    core.setOutput('tag_name', release.tag_name)
+  }
 
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
