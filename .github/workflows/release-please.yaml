@@ -7,7 +7,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: bcoe/release-please-action@v1.0.1
+      - uses: bcoe/release-please-action@4b2d58dd6ad492d08cdc59102b86aff80176141c
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
