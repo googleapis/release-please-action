@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.2.2](https://www.github.com/bcoe/release-please-action/compare/v1.2.1...v1.2.2) (2020-05-20)
+
+
+### Bug Fixes
+
+* name in steps should be name ([#17](https://www.github.com/bcoe/release-please-action/issues/17)) ([7e515eb](https://www.github.com/bcoe/release-please-action/commit/7e515ebd488e95f21f30fa1db2335eb309a0fc4b))
+
 ### [1.2.1](https://www.github.com/bcoe/release-please-action/compare/v1.2.0...v1.2.1) (2020-05-20)
 
 
