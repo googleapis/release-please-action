@@ -18,14 +18,14 @@ async function main () {
     packageName,
     token
   })
-  const release = await gr.createRelease()
-  if (release) {
-    core.setOutput('tag_name', release.tag_name)
+  const created = await gr.createRelease()
+  if (created) {
+    core.setOutput('tag_name', created.tag_name)
   }
 
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
-  const release = ReleasePRFactory.build(releaseType, {
+  const release = ReleasePRFactory.staticBuild(releaseType, {
     packageName: packageName,
     apiUrl: 'https://api.github.com',
     repoUrl: process.env.GITHUB_REPOSITORY,
