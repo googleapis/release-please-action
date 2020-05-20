@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://www.github.com/bcoe/release-please-action/compare/v1.1.0...v1.2.0) (2020-05-20)
+
+
+### Features
+
+* use build-and-tag-action for creating dist ([#12](https://www.github.com/bcoe/release-please-action/issues/12)) ([8352160](https://www.github.com/bcoe/release-please-action/commit/83521609fe05585dab4e2aa1dbaaf8c4f85ce3c2))
+
+
+### Bug Fixes
+
+* staticBuild should be buildStatic ([#14](https://www.github.com/bcoe/release-please-action/issues/14)) ([4fe16cd](https://www.github.com/bcoe/release-please-action/commit/4fe16cde13dddf21297d5e85f1b95973322c283e))
+
 ## [1.1.0](https://www.github.com/bcoe/release-please-action/compare/v1.0.1...v1.1.0) (2020-05-18)
 
 
