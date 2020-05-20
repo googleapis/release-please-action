@@ -21,6 +21,8 @@ async function main () {
   const created = await gr.createRelease()
   if (created) {
     core.setOutput('tag_name', created.tag_name)
+  } else {
+    core.setOutput('tag_name', false)
   }
 
   // Next we check for PRs merged since the last release, and groom the
