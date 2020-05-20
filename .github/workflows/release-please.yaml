@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: bcoe/release-please-action@283986c3dd7c27ac3302d947bd055eb82b68cd2a
-        name: release
+        id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
