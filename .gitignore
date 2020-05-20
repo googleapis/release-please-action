@@ -1,5 +1,2 @@
 node_modules
 .DS_Store
-
-# JavaScript is auto generated on release:
-dist/index.js
