@@ -20,8 +20,10 @@ async function main () {
   })
   const created = await gr.createRelease()
   if (created) {
+    core.info(`created GitHub release ${created.tag_name}`)
     core.setOutput('tag_name', created.tag_name)
   } else {
+    core.info('no GitHub releases created')
     core.setOutput('tag_name', false)
   }
 
