@@ -22,9 +22,6 @@ async function main () {
   if (created) {
     core.info(`created GitHub release ${created.tag_name}`)
     core.setOutput('tag_name', created.tag_name)
-  } else {
-    core.info('no GitHub releases created')
-    core.setOutput('tag_name', false)
   }
 
   // Next we check for PRs merged since the last release, and groom the

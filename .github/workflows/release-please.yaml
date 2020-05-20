@@ -7,7 +7,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: bcoe/release-please-action@283986c3dd7c27ac3302d947bd055eb82b68cd2a
+      - uses: bcoe/release-please-action@v1.2.2
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -21,3 +21,4 @@ jobs:
           tag_name: ${{ steps.release.outputs.tag_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: steps.release.outputs.tag_name
