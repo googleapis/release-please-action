@@ -5,6 +5,15 @@
 
 ### Bug Fixes
 
+* **build:** only run build-and-tag-action if tag_name is set ([2618be4](https://www.github.com/bcoe/release-please-action/commit/2618be43e7fa68dee5840c03a7380aaa27c369b0))
+* **build:** rollback build-and-tag-action until we can figure out how to handle alternate branches ([817c3e7](https://www.github.com/bcoe/release-please-action/commit/817c3e72f48b11043a75f3fccea0332af149833b))
+* name in steps should be name ([#17](https://www.github.com/bcoe/release-please-action/issues/17)) ([7e515eb](https://www.github.com/bcoe/release-please-action/commit/7e515ebd488e95f21f30fa1db2335eb309a0fc4b))
+
+### [1.2.2](https://www.github.com/bcoe/release-please-action/compare/v1.2.1...v1.2.2) (2020-05-20)
+
+
+### Bug Fixes
+
 * name in steps should be id ([#17](https://www.github.com/bcoe/release-please-action/issues/17)) ([7e515eb](https://www.github.com/bcoe/release-please-action/commit/7e515ebd488e95f21f30fa1db2335eb309a0fc4b))
 
 ### [1.2.1](https://www.github.com/bcoe/release-please-action/compare/v1.2.0...v1.2.1) (2020-05-20)
