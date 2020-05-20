@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.2.1](https://www.github.com/bcoe/release-please-action/compare/v1.2.0...v1.2.1) (2020-05-20)
+
+
+### Bug Fixes
+
+* tag_name was not fetched from correct step ([#15](https://www.github.com/bcoe/release-please-action/issues/15)) ([9f5401a](https://www.github.com/bcoe/release-please-action/commit/9f5401ae9ac0ed00aecf5801b263827ff4007bfd))
+
 ## [1.2.0](https://www.github.com/bcoe/release-please-action/compare/v1.1.0...v1.2.0) (2020-05-20)
 
 
