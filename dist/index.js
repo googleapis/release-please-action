@@ -3595,7 +3595,7 @@ async function main () {
 
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
-  const release = ReleasePRFactory.staticBuild(releaseType, {
+  const release = ReleasePRFactory.buildStatic(releaseType, {
     packageName: packageName,
     apiUrl: 'https://api.github.com',
     repoUrl: process.env.GITHUB_REPOSITORY,
