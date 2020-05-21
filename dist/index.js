@@ -440,15 +440,12 @@ module.exports._enoent = enoent;
 /* 22 */,
 /* 23 */,
 /* 24 */,
-/* 25 */,
-/* 26 */,
-/* 27 */,
-/* 28 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
+/* 25 */
+/***/ (function(__unusedmodule, exports) {
 
 "use strict";
 
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -462,66 +459,27 @@ module.exports._enoent = enoent;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
-const release_pr_1 = __webpack_require__(93);
-const conventional_commits_1 = __webpack_require__(514);
-const checkpoint_1 = __webpack_require__(923);
-const indent_commit_1 = __webpack_require__(262);
-// Generic
-const changelog_1 = __webpack_require__(261);
-// Ruby
-const version_rb_1 = __webpack_require__(749);
-class Ruby extends release_pr_1.ReleasePR {
+exports.VersionTxt = void 0;
+class VersionTxt {
     constructor(options) {
-        super(options);
-        this.versionFile = options.versionFile;
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+        this.skipCi = options.skipCi;
     }
-    async _run() {
-        const latestTag = await this.gh.latestTag();
-        const commits = await this.commits(latestTag ? latestTag.sha : undefined);
-        const cc = new conventional_commits_1.ConventionalCommits({
-            commits: postProcessCommits(commits),
-            githubRepoUrl: this.repoUrl,
-            bumpMinorPreMajor: this.bumpMinorPreMajor,
-        });
-        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
-        const changelogEntry = await cc.generateChangelogEntry({
-            version: candidate.version,
-            currentTag: `v${candidate.version}`,
-            previousTag: candidate.previousTag,
-        });
-        // don't create a release candidate until user facing changes
-        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
-        // one line is a good indicator that there were no interesting commits.
-        if (this.changelogEmpty(changelogEntry)) {
-            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return;
-        }
-        const updates = [];
-        updates.push(new changelog_1.Changelog({
-            path: 'CHANGELOG.md',
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        updates.push(new version_rb_1.VersionRB({
-            path: this.versionFile,
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        await this.openPR(commits[0].sha, `${changelogEntry}\n---\n`, updates, candidate.version);
+    updateContent() {
+        return this.version + '\n';
     }
 }
-exports.Ruby = Ruby;
-function postProcessCommits(commits) {
-    commits.forEach(commit => {
-        commit.message = indent_commit_1.indentCommit(commit);
-    });
-    return commits;
-}
-//# sourceMappingURL=ruby.js.map
+exports.VersionTxt = VersionTxt;
+//# sourceMappingURL=version-txt.js.map
 
 /***/ }),
+/* 26 */,
+/* 27 */,
+/* 28 */,
 /* 29 */,
 /* 30 */,
 /* 31 */,
@@ -552,66 +510,7 @@ module.exports = opts => {
 
 
 /***/ }),
-/* 40 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-const java_update_1 = __webpack_require__(55);
-class VersionsManifest extends java_update_1.JavaUpdate {
-    updateContent(content) {
-        let newContent = content;
-        this.versions.forEach((version, packageName) => {
-            newContent = this.updateSingleVersion(newContent, packageName, version);
-        });
-        return newContent;
-    }
-    updateSingleVersion(content, packageName, version) {
-        const newLines = [];
-        content.split(/\r?\n/).forEach(line => {
-            if (version.includes('SNAPSHOT')) {
-                newLines.push(line.replace(new RegExp(`${packageName}:(.*):[0-9]+\\.[0-9]+\\.[0-9]+(-\\w+)?(-SNAPSHOT)?`, 'g'), `${packageName}:$1:${version}`));
-            }
-            else {
-                newLines.push(line.replace(new RegExp(`${packageName}:[0-9]+\\.[0-9]+\\.[0-9]+(-\\w+)?(-SNAPSHOT)?:[0-9]+\\.[0-9]+\\.[0-9]+(-\\w+)?(-SNAPSHOT)?`, 'g'), `${packageName}:${version}:${version}`));
-            }
-        });
-        return newLines.join('\n');
-    }
-    static parseVersions(content) {
-        const versions = new Map();
-        content.split(/\r?\n/).forEach(line => {
-            const match = line.match(/^([\w\-_]+):(.+):(.+)/);
-            if (match) {
-                versions.set(match[1], match[2]);
-            }
-        });
-        return versions;
-    }
-    static needsSnapshot(content) {
-        return !content.split(/\r?\n/).some(line => {
-            return !!line.match(/^[\w\-_]+:.+:.+-SNAPSHOT/);
-        });
-    }
-}
-exports.VersionsManifest = VersionsManifest;
-//# sourceMappingURL=versions-manifest.js.map
-
-/***/ }),
+/* 40 */,
 /* 41 */,
 /* 42 */,
 /* 43 */,
@@ -2865,87 +2764,7 @@ exports.SourceNode = SourceNode;
 
 
 /***/ }),
-/* 55 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-const INLINE_UPDATE_REGEX = /{x-version-update:([\w\-_]+):(current|released)}/;
-const BLOCK_START_REGEX = /{x-version-update-start:([\w\-_]+):(current|released)}/;
-const BLOCK_END_REGEX = /{x-version-update-end}/;
-const VERSION_REGEX = /\d+\.\d+\.\d+(-\w+)?(-SNAPSHOT)?/;
-class JavaUpdate {
-    constructor(options) {
-        this.create = false;
-        this.path = options.path;
-        this.changelogEntry = options.changelogEntry;
-        this.versions = new Map();
-        this.version = 'unused';
-        this.packageName = 'unused';
-        if (options.versions) {
-            this.versions = options.versions;
-        }
-        else if (options.version) {
-            this.versions.set(options.packageName, options.version);
-            this.version = options.version;
-            this.packageName = options.packageName;
-        }
-    }
-    updateContent(content) {
-        const newLines = [];
-        let blockPackageName = null;
-        content.split(/\r?\n/).forEach(line => {
-            let match = line.match(INLINE_UPDATE_REGEX);
-            if (match) {
-                const newVersion = this.versions.get(match[1]);
-                if (newVersion) {
-                    newLines.push(line.replace(VERSION_REGEX, newVersion));
-                }
-                else {
-                    newLines.push(line);
-                }
-            }
-            else if (blockPackageName) {
-                const newVersion = this.versions.get(blockPackageName);
-                if (newVersion) {
-                    newLines.push(line.replace(VERSION_REGEX, newVersion));
-                }
-                else {
-                    newLines.push(line);
-                }
-                if (line.match(BLOCK_END_REGEX)) {
-                    blockPackageName = null;
-                }
-            }
-            else {
-                match = line.match(BLOCK_START_REGEX);
-                if (match) {
-                    blockPackageName = match[1];
-                }
-                newLines.push(line);
-            }
-        });
-        return newLines.join('\n');
-    }
-}
-exports.JavaUpdate = JavaUpdate;
-//# sourceMappingURL=java_update.js.map
-
-/***/ }),
+/* 55 */,
 /* 56 */,
 /* 57 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
@@ -2966,9 +2785,11 @@ exports.JavaUpdate = JavaUpdate;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.GitHubRelease = void 0;
 const chalk = __webpack_require__(843);
 const checkpoint_1 = __webpack_require__(923);
-const github_1 = __webpack_require__(630);
+const release_pr_factory_1 = __webpack_require__(796);
+const github_1 = __webpack_require__(614);
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const parseGithubRepoUrl = __webpack_require__(345);
 const GITHUB_RELEASE_LABEL = 'autorelease: tagged';
@@ -2980,6 +2801,7 @@ class GitHubRelease {
         this.repoUrl = options.repoUrl;
         this.token = options.token;
         this.packageName = options.packageName;
+        this.releaseType = options.releaseType;
         this.changelogPath = 'CHANGELOG.md';
         this.gh = this.gitHubInstance(options.octokitAPIs);
     }
@@ -2990,16 +2812,26 @@ class GitHubRelease {
             const changelogContents = (await this.gh.getFileContents(this.changelogPath)).parsedContent;
             const latestReleaseNotes = GitHubRelease.extractLatestReleaseNotes(changelogContents, gitHubReleasePR.version);
             checkpoint_1.checkpoint(`found release notes: \n---\n${chalk.grey(latestReleaseNotes)}\n---\n`, checkpoint_1.CheckpointType.Success);
-            await this.gh.createRelease(this.packageName, gitHubReleasePR.version, gitHubReleasePR.sha, latestReleaseNotes);
+            // Attempt to lookup the package name from a well known location, such
+            // as package.json, if none is provided:
+            if (this.packageName === undefined && this.releaseType) {
+                this.packageName = await release_pr_factory_1.ReleasePRFactory.class(this.releaseType).lookupPackageName(this.gh);
+            }
+            if (this.packageName === undefined) {
+                throw Error('could not determine package name for release');
+            }
+            const release = await this.gh.createRelease(this.packageName, gitHubReleasePR.version, gitHubReleasePR.sha, latestReleaseNotes);
             // Add a label indicating that a release has been created on GitHub,
             // but a publication has not yet occurred.
             await this.gh.addLabels([GITHUB_RELEASE_LABEL], gitHubReleasePR.number);
             // Remove 'autorelease: pending' which indicates a GitHub release
             // has not yet been created.
             await this.gh.removeLabels(this.labels, gitHubReleasePR.number);
+            return release;
         }
         else {
             checkpoint_1.checkpoint('no recent release PRs found', checkpoint_1.CheckpointType.Failure);
+            return undefined;
         }
     }
     gitHubInstance(octokitAPIs) {
@@ -3461,7 +3293,60 @@ exports.ArraySet = ArraySet;
 /* 68 */,
 /* 69 */,
 /* 70 */,
-/* 71 */,
+/* 71 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const path = __webpack_require__(622);
+const which = __webpack_require__(814);
+const pathKey = __webpack_require__(39)();
+
+function resolveCommandAttempt(parsed, withoutPathExt) {
+    const cwd = process.cwd();
+    const hasCustomCwd = parsed.options.cwd != null;
+
+    // If a custom `cwd` was specified, we need to change the process cwd
+    // because `which` will do stat calls but does not support a custom cwd
+    if (hasCustomCwd) {
+        try {
+            process.chdir(parsed.options.cwd);
+        } catch (err) {
+            /* Empty */
+        }
+    }
+
+    let resolved;
+
+    try {
+        resolved = which.sync(parsed.command, {
+            path: (parsed.options.env || process.env)[pathKey],
+            pathExt: withoutPathExt ? path.delimiter : undefined,
+        });
+    } catch (e) {
+        /* Empty */
+    } finally {
+        process.chdir(cwd);
+    }
+
+    // If we successfully resolved, ensure that an absolute path is returned
+    // Note that when a custom `cwd` was used, we need to resolve to an absolute path based on it
+    if (resolved) {
+        resolved = path.resolve(hasCustomCwd ? parsed.options.cwd : '', resolved);
+    }
+
+    return resolved;
+}
+
+function resolveCommand(parsed) {
+    return resolveCommandAttempt(parsed) || resolveCommandAttempt(parsed, true);
+}
+
+module.exports = resolveCommand;
+
+
+/***/ }),
 /* 72 */,
 /* 73 */,
 /* 74 */,
@@ -3507,153 +3392,153 @@ module.exports = require("os");
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ReleasePR = void 0;
 const semver = __webpack_require__(876);
 const checkpoint_1 = __webpack_require__(923);
-const github_1 = __webpack_require__(630);
+const github_1 = __webpack_require__(614);
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const parseGithubRepoUrl = __webpack_require__(345);
-var ReleaseType;
-(function (ReleaseType) {
-    ReleaseType["Node"] = "node";
-    ReleaseType["PHPYoshi"] = "php-yoshi";
-    ReleaseType["JavaAuthYoshi"] = "java-auth-yoshi";
-    ReleaseType["JavaBom"] = "java-bom";
-    ReleaseType["JavaYoshi"] = "java-yoshi";
-    ReleaseType["Python"] = "python";
-    ReleaseType["TerraformModule"] = "terraform-module";
-    ReleaseType["Ruby"] = "ruby";
-    ReleaseType["RubyYoshi"] = "ruby-yoshi";
-})(ReleaseType = exports.ReleaseType || (exports.ReleaseType = {}));
 const DEFAULT_LABELS = 'autorelease: pending';
-class ReleasePR {
-    constructor(options) {
-        this.bumpMinorPreMajor = options.bumpMinorPreMajor || false;
-        this.labels = options.label
-            ? options.label.split(',')
-            : DEFAULT_LABELS.split(',');
-        this.repoUrl = options.repoUrl;
-        this.token = options.token;
-        this.packageName = options.packageName;
-        this.releaseAs = options.releaseAs;
-        this.apiUrl = options.apiUrl;
-        this.proxyKey = options.proxyKey;
-        this.snapshot = options.snapshot;
-        // drop a `v` prefix if provided:
-        this.lastPackageVersion = options.lastPackageVersion
-            ? options.lastPackageVersion.replace(/^v/, '')
-            : undefined;
-        this.gh = this.gitHubInstance(options.octokitAPIs);
-    }
-    async run() {
-        const pr = await this.gh.findMergedReleasePR(this.labels);
-        if (pr) {
-            // a PR already exists in the autorelease: pending state.
-            checkpoint_1.checkpoint(`pull #${pr.number} ${pr.sha} has not yet been released`, checkpoint_1.CheckpointType.Failure);
+let ReleasePR = /** @class */ (() => {
+    class ReleasePR {
+        constructor(options) {
+            this.bumpMinorPreMajor = options.bumpMinorPreMajor || false;
+            this.labels = options.label
+                ? options.label.split(',')
+                : DEFAULT_LABELS.split(',');
+            this.repoUrl = options.repoUrl;
+            this.token = options.token;
+            this.packageName = options.packageName;
+            this.releaseAs = options.releaseAs;
+            this.apiUrl = options.apiUrl;
+            this.proxyKey = options.proxyKey;
+            this.snapshot = options.snapshot;
+            // drop a `v` prefix if provided:
+            this.lastPackageVersion = options.lastPackageVersion
+                ? options.lastPackageVersion.replace(/^v/, '')
+                : undefined;
+            this.gh = this.gitHubInstance(options.octokitAPIs);
         }
-        else {
-            return this._run();
-        }
-    }
-    async _run() {
-        throw Error('must be implemented by subclass');
-    }
-    async closeStaleReleasePRs(currentPRNumber, includePackageName = false) {
-        const prs = await this.gh.findOpenReleasePRs(this.labels);
-        for (let i = 0, pr; i < prs.length; i++) {
-            pr = prs[i];
-            // don't close the most up-to-date release PR.
-            if (pr.number !== currentPRNumber) {
-                // on mono repos that maintain multiple open release PRs, we use the
-                // pull request title to differentiate between PRs:
-                if (includePackageName && !pr.title.includes(` ${this.packageName} `)) {
-                    continue;
-                }
-                checkpoint_1.checkpoint(`closing pull #${pr.number} on ${this.repoUrl}`, checkpoint_1.CheckpointType.Failure);
-                await this.gh.closePR(pr.number);
-            }
-        }
-    }
-    defaultInitialVersion() {
-        return '1.0.0';
-    }
-    async coerceReleaseCandidate(cc, latestTag) {
-        const releaseAsRe = /release-as: v?([0-9]+\.[0-9]+\.[0-9a-z-])+\s*/i;
-        const previousTag = latestTag ? latestTag.name : undefined;
-        let version = latestTag ? latestTag.version : this.defaultInitialVersion();
-        // If a commit contains the footer release-as: 1.x.x, we use this version
-        // from the commit footer rather than the version returned by suggestBump().
-        const releaseAsCommit = cc.commits.find((element) => {
-            if (element.message.match(releaseAsRe)) {
-                return true;
+        async run() {
+            const pr = await this.gh.findMergedReleasePR(this.labels);
+            if (pr) {
+                // a PR already exists in the autorelease: pending state.
+                checkpoint_1.checkpoint(`pull #${pr.number} ${pr.sha} has not yet been released`, checkpoint_1.CheckpointType.Failure);
             }
             else {
-                return false;
+                return this._run();
             }
-        });
-        if (releaseAsCommit) {
-            const match = releaseAsCommit.message.match(releaseAsRe);
-            version = match[1];
         }
-        else if (latestTag && !this.releaseAs) {
-            const bump = await cc.suggestBump(version);
-            const candidate = semver.inc(version, bump.releaseType);
-            if (!candidate)
-                throw Error(`failed to increment ${version}`);
-            version = candidate;
+        async _run() {
+            throw Error('must be implemented by subclass');
         }
-        else if (this.releaseAs) {
-            version = this.releaseAs;
+        async closeStaleReleasePRs(currentPRNumber, includePackageName = false) {
+            const prs = await this.gh.findOpenReleasePRs(this.labels);
+            for (let i = 0, pr; i < prs.length; i++) {
+                pr = prs[i];
+                // don't close the most up-to-date release PR.
+                if (pr.number !== currentPRNumber) {
+                    // on mono repos that maintain multiple open release PRs, we use the
+                    // pull request title to differentiate between PRs:
+                    if (includePackageName && !pr.title.includes(` ${this.packageName} `)) {
+                        continue;
+                    }
+                    checkpoint_1.checkpoint(`closing pull #${pr.number} on ${this.repoUrl}`, checkpoint_1.CheckpointType.Failure);
+                    await this.gh.closePR(pr.number);
+                }
+            }
         }
-        return { version, previousTag };
+        defaultInitialVersion() {
+            return '1.0.0';
+        }
+        // A releaser can implement this method to automatically detect
+        // the release name when creating a GitHub release, for instance by returning
+        // name in package.json, or setup.py.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        static async lookupPackageName(gh) {
+            return Promise.resolve(undefined);
+        }
+        async coerceReleaseCandidate(cc, latestTag) {
+            const releaseAsRe = /release-as: v?([0-9]+\.[0-9]+\.[0-9a-z-])+\s*/i;
+            const previousTag = latestTag ? latestTag.name : undefined;
+            let version = latestTag ? latestTag.version : this.defaultInitialVersion();
+            // If a commit contains the footer release-as: 1.x.x, we use this version
+            // from the commit footer rather than the version returned by suggestBump().
+            const releaseAsCommit = cc.commits.find((element) => {
+                if (element.message.match(releaseAsRe)) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            });
+            if (releaseAsCommit) {
+                const match = releaseAsCommit.message.match(releaseAsRe);
+                version = match[1];
+            }
+            else if (latestTag && !this.releaseAs) {
+                const bump = await cc.suggestBump(version);
+                const candidate = semver.inc(version, bump.releaseType);
+                if (!candidate)
+                    throw Error(`failed to increment ${version}`);
+                version = candidate;
+            }
+            else if (this.releaseAs) {
+                version = this.releaseAs;
+            }
+            return { version, previousTag };
+        }
+        async commits(sha, perPage = 100, labels = false, path = null) {
+            const commits = await this.gh.commitsSinceSha(sha, perPage, labels, path);
+            if (commits.length) {
+                checkpoint_1.checkpoint(`found ${commits.length} commits since ${sha}`, checkpoint_1.CheckpointType.Success);
+            }
+            else {
+                checkpoint_1.checkpoint(`no commits found since ${sha}`, checkpoint_1.CheckpointType.Failure);
+            }
+            return commits;
+        }
+        gitHubInstance(octokitAPIs) {
+            const [owner, repo] = parseGithubRepoUrl(this.repoUrl);
+            return new github_1.GitHub({
+                token: this.token,
+                owner,
+                repo,
+                apiUrl: this.apiUrl,
+                proxyKey: this.proxyKey,
+                octokitAPIs,
+            });
+        }
+        async openPR(sha, changelogEntry, updates, version, includePackageName = false) {
+            const title = includePackageName
+                ? `Release ${this.packageName} ${version}`
+                : `chore: release ${version}`;
+            const body = `:robot: I have created a release \\*beep\\* \\*boop\\* \n---\n${changelogEntry}\n\nThis PR was generated with [Release Please](https://github.com/googleapis/release-please).`;
+            const pr = await this.gh.openPR({
+                branch: includePackageName
+                    ? `release-${this.packageName}-v${version}`
+                    : `release-v${version}`,
+                version,
+                sha,
+                updates,
+                title,
+                body,
+                labels: this.labels,
+            });
+            // a return of -1 indicates that PR was not updated.
+            if (pr > 0) {
+                await this.gh.addLabels(this.labels, pr);
+                checkpoint_1.checkpoint(`${this.repoUrl} find stale PRs with label "${this.labels.join(',')}"`, checkpoint_1.CheckpointType.Success);
+                await this.closeStaleReleasePRs(pr, includePackageName);
+            }
+        }
+        changelogEmpty(changelogEntry) {
+            return changelogEntry.split('\n').length === 1;
+        }
     }
-    async commits(sha, perPage = 100, labels = false, path = null) {
-        const commits = await this.gh.commitsSinceSha(sha, perPage, labels, path);
-        if (commits.length) {
-            checkpoint_1.checkpoint(`found ${commits.length} commits since ${sha}`, checkpoint_1.CheckpointType.Success);
-        }
-        else {
-            checkpoint_1.checkpoint(`no commits found since ${sha}`, checkpoint_1.CheckpointType.Failure);
-        }
-        return commits;
-    }
-    gitHubInstance(octokitAPIs) {
-        const [owner, repo] = parseGithubRepoUrl(this.repoUrl);
-        return new github_1.GitHub({
-            token: this.token,
-            owner,
-            repo,
-            apiUrl: this.apiUrl,
-            proxyKey: this.proxyKey,
-            octokitAPIs,
-        });
-    }
-    async openPR(sha, changelogEntry, updates, version, includePackageName = false) {
-        const title = includePackageName
-            ? `Release ${this.packageName} ${version}`
-            : `chore: release ${version}`;
-        const body = `:robot: I have created a release \\*beep\\* \\*boop\\* \n---\n${changelogEntry}\n\nThis PR was generated with [Release Please](https://github.com/googleapis/release-please).`;
-        const pr = await this.gh.openPR({
-            branch: includePackageName
-                ? `release-${this.packageName}-v${version}`
-                : `release-v${version}`,
-            version,
-            sha,
-            updates,
-            title,
-            body,
-            labels: this.labels,
-        });
-        // a return of -1 indicates that PR was not updated.
-        if (pr > 0) {
-            await this.gh.addLabels(this.labels, pr);
-            checkpoint_1.checkpoint(`${this.repoUrl} find stale PRs with label "${this.labels.join(',')}"`, checkpoint_1.CheckpointType.Success);
-            await this.closeStaleReleasePRs(pr, includePackageName);
-        }
-    }
-    changelogEmpty(changelogEntry) {
-        return changelogEntry.split('\n').length === 1;
-    }
-}
+    ReleasePR.releaserName = 'base';
+    return ReleasePR;
+})();
 exports.ReleasePR = ReleasePR;
 //# sourceMappingURL=release-pr.js.map
 
@@ -3686,7 +3571,7 @@ exports.SourceNode = __webpack_require__(54).SourceNode;
 
 const core = __webpack_require__(470)
 const { GitHubRelease } = __webpack_require__(57)
-const { ReleasePRFactory } = __webpack_require__(443)
+const { ReleasePRFactory } = __webpack_require__(796)
 
 const RELEASE_LABEL = 'autorelease: pending'
 
@@ -3704,7 +3589,8 @@ async function main () {
     packageName,
     token
   })
-  await gr.createRelease()
+  const releaseCreated = await gr.createRelease()
+  if (releaseCreated) core.setOutput('release_created', true)
 
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
@@ -4158,72 +4044,12 @@ exports.SourceMapGenerator = SourceMapGenerator;
 
 /***/ }),
 /* 107 */,
-/* 108 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-const path_1 = __webpack_require__(622);
-class CommitSplit {
-    constructor(opts) {
-        opts = opts || {};
-        this.root = opts.root || './';
-    }
-    split(commits) {
-        const splitCommits = {};
-        commits.forEach((commit) => {
-            const dedupe = new Set();
-            for (let i = 0; i < commit.files.length; i++) {
-                const file = commit.files[i];
-                const splitPath = path_1.relative(this.root, file).split(/[/\\]/);
-                // indicates that we have a top-level file and not a folder
-                // in this edge-case we should not attempt to update the path.
-                if (splitPath.length === 1)
-                    continue;
-                const pkgName = splitPath[0];
-                if (dedupe.has(pkgName))
-                    continue;
-                else
-                    dedupe.add(pkgName);
-                if (!splitCommits[pkgName])
-                    splitCommits[pkgName] = [];
-                splitCommits[pkgName].push(commit);
-            }
-        });
-        return splitCommits;
-    }
-}
-exports.CommitSplit = CommitSplit;
-//# sourceMappingURL=commit-split.js.map
-
-/***/ }),
+/* 108 */,
 /* 109 */,
 /* 110 */,
 /* 111 */,
 /* 112 */,
-/* 113 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-const compare = __webpack_require__(874)
-const rcompare = (a, b, loose) => compare(b, a, loose)
-module.exports = rcompare
-
-
-/***/ }),
+/* 113 */,
 /* 114 */,
 /* 115 */,
 /* 116 */,
@@ -4928,9 +4754,9 @@ function conventionalChangelogWriter (context, options) {
     includeDetails: false,
     ignoreReverted: true,
     doFlush: true,
-    mainTemplate: readFileSync(__webpack_require__.ab + "template1.hbs", 'utf-8'),
-    headerPartial: readFileSync(__webpack_require__.ab + "header1.hbs", 'utf-8'),
-    commitPartial: readFileSync(__webpack_require__.ab + "commit1.hbs", 'utf-8'),
+    mainTemplate: readFileSync(__webpack_require__.ab + "template.hbs", 'utf-8'),
+    headerPartial: readFileSync(__webpack_require__.ab + "header.hbs", 'utf-8'),
+    commitPartial: readFileSync(__webpack_require__.ab + "commit.hbs", 'utf-8'),
     footerPartial: readFileSync(__webpack_require__.ab + "footer.hbs", 'utf-8')
   }, options)
 
@@ -5172,6 +4998,7 @@ module.exports.MaxBufferError = MaxBufferError;
 /* 149 */
 /***/ (function(module, exports, __webpack_require__) {
 
+/*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
 /* eslint-disable node/no-deprecated-api */
 var buffer = __webpack_require__(293)
 var Buffer = buffer.Buffer
@@ -5786,7 +5613,12 @@ module.exports = {
 /* 188 */,
 /* 189 */,
 /* 190 */,
-/* 191 */,
+/* 191 */
+/***/ (function(module) {
+
+module.exports = {"_from":"release-please@latest","_id":"release-please@5.2.0","_inBundle":false,"_integrity":"sha512-lGRE/WYWkXKzjKoMLcMMQ8Qb8y8+voO7EbmgrTk6A0rvSUfJIHnyzzsfuiDgC8+Bh0pW1FYmflb7Dzly35KOyg==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"tag","registry":true,"raw":"release-please@latest","name":"release-please","escapedName":"release-please","rawSpec":"latest","saveSpec":null,"fetchSpec":"latest"},"_requiredBy":["#USER","/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-5.2.0.tgz","_shasum":"7d897f8b4e61443bb95221197cf8eb5f1d375c1b","_spec":"release-please@latest","_where":"/Users/bencoe/oss/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"bundleDependencies":false,"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^17.1.4","chalk":"^4.0.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.0.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.13.0","yargs":"^15.0.0"},"deprecated":false,"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^4.0.0","@types/chai":"^4.1.7","@types/mocha":"^7.0.0","@types/node":"^11.13.6","@types/semver":"^7.0.0","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^7.0.0","nock":"^12.0.0","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"5.2.0"};
+
+/***/ }),
 /* 192 */,
 /* 193 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
@@ -6106,6 +5938,7 @@ module.exports = exports['default'];
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.SetupCfg = void 0;
 class SetupCfg {
     constructor(options) {
         this.create = false;
@@ -6113,6 +5946,7 @@ class SetupCfg {
         this.changelogEntry = options.changelogEntry;
         this.version = options.version;
         this.packageName = options.packageName;
+        this.skipCi = options.skipCi;
     }
     updateContent(content) {
         return content.replace(/version ?= ?[0-9]+\.[0-9]+\.[0-9](-\w+)?/, `version = ${this.version}`);
@@ -6127,7 +5961,34 @@ exports.SetupCfg = SetupCfg;
 /* 204 */,
 /* 205 */,
 /* 206 */,
-/* 207 */,
+/* 207 */
+/***/ (function(module) {
+
+"use strict";
+
+
+var isStream = module.exports = function (stream) {
+	return stream !== null && typeof stream === 'object' && typeof stream.pipe === 'function';
+};
+
+isStream.writable = function (stream) {
+	return isStream(stream) && stream.writable !== false && typeof stream._write === 'function' && typeof stream._writableState === 'object';
+};
+
+isStream.readable = function (stream) {
+	return isStream(stream) && stream.readable !== false && typeof stream._read === 'function' && typeof stream._readableState === 'object';
+};
+
+isStream.duplex = function (stream) {
+	return isStream.writable(stream) && isStream.readable(stream);
+};
+
+isStream.transform = function (stream) {
+	return isStream.duplex(stream) && typeof stream._transform === 'function' && typeof stream._transformState === 'object';
+};
+
+
+/***/ }),
 /* 208 */,
 /* 209 */,
 /* 210 */,
@@ -6256,7 +6117,7 @@ var Duplex;
 Readable.ReadableState = ReadableState;
 /*<replacement>*/
 
-var EE = __webpack_require__(614).EventEmitter;
+var EE = __webpack_require__(759).EventEmitter;
 
 var EElistenerCount = function EElistenerCount(emitter, type) {
   return emitter.listeners(type).length;
@@ -7467,32 +7328,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 233 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-const java_update_1 = __webpack_require__(55);
-class Readme extends java_update_1.JavaUpdate {
-}
-exports.Readme = Readme;
-//# sourceMappingURL=readme.js.map
-
-/***/ }),
+/* 233 */,
 /* 234 */,
 /* 235 */,
 /* 236 */,
@@ -8633,6 +8469,7 @@ module.exports = function (fromModel) {
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Changelog = void 0;
 const checkpoint_1 = __webpack_require__(923);
 class Changelog {
     constructor(options) {
@@ -8641,6 +8478,7 @@ class Changelog {
         this.changelogEntry = options.changelogEntry;
         this.version = options.version;
         this.packageName = options.packageName;
+        this.skipCi = options.skipCi;
     }
     updateContent(content) {
         content = content || '';
@@ -8668,50 +8506,7 @@ exports.Changelog = Changelog;
 //# sourceMappingURL=changelog.js.map
 
 /***/ }),
-/* 262 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-function indentCommit(commit) {
-    const reduced = [];
-    let inList = false;
-    commit.message.split(/\r?\n/).forEach((line, i) => {
-        if (i !== 0)
-            line = `  ${line}`;
-        else
-            reduced.push(line);
-        if (/^\s*\*/.test(line)) {
-            inList = true;
-            reduced.push(line);
-        }
-        else if (/^ +[\w]/.test(line) && inList) {
-            reduced[reduced.length - 1] = `${reduced[reduced.length - 1]}\n${line}`;
-        }
-        else {
-            inList = false;
-        }
-    });
-    return reduced.join('\n');
-}
-exports.indentCommit = indentCommit;
-//# sourceMappingURL=indent-commit.js.map
-
-/***/ }),
+/* 262 */,
 /* 263 */,
 /* 264 */,
 /* 265 */,
@@ -8877,7 +8672,7 @@ exports.moveHelperToHooks = moveHelperToHooks;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
-var _helpersBlockHelperMissing = __webpack_require__(464);
+var _helpersBlockHelperMissing = __webpack_require__(758);
 
 var _helpersBlockHelperMissing2 = _interopRequireDefault(_helpersBlockHelperMissing);
 
@@ -10391,190 +10186,7 @@ module.exports = eos;
 
 /***/ }),
 /* 288 */,
-/* 289 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-const release_pr_1 = __webpack_require__(93);
-const conventional_commits_1 = __webpack_require__(514);
-const checkpoint_1 = __webpack_require__(923);
-const commit_split_1 = __webpack_require__(108);
-const semver = __webpack_require__(876);
-// Generic
-const changelog_1 = __webpack_require__(261);
-// Yoshi PHP Monorepo
-const php_client_version_1 = __webpack_require__(963);
-const php_manifest_1 = __webpack_require__(734);
-const root_composer_1 = __webpack_require__(794);
-const version_1 = __webpack_require__(700);
-const CHANGELOG_SECTIONS = [
-    { type: 'feat', section: 'Features' },
-    { type: 'fix', section: 'Bug Fixes' },
-    { type: 'perf', section: 'Performance Improvements' },
-    { type: 'revert', section: 'Reverts' },
-    { type: 'docs', section: 'Documentation' },
-    { type: 'chore', section: 'Miscellaneous Chores' },
-    { type: 'style', section: 'Styles', hidden: true },
-    { type: 'refactor', section: 'Code Refactoring', hidden: true },
-    { type: 'test', section: 'Tests', hidden: true },
-    { type: 'build', section: 'Build System', hidden: true },
-    { type: 'ci', section: 'Continuous Integration', hidden: true },
-];
-class PHPYoshi extends release_pr_1.ReleasePR {
-    async _run() {
-        const latestTag = await this.gh.latestTag();
-        const commits = await this.commits(latestTag ? latestTag.sha : undefined);
-        // we create an instance of conventional CHANGELOG for bumping the
-        // top-level tag version we maintain on the mono-repo itself.
-        const ccb = new conventional_commits_1.ConventionalCommits({
-            commits,
-            githubRepoUrl: this.repoUrl,
-            bumpMinorPreMajor: true,
-            changelogSections: CHANGELOG_SECTIONS,
-        });
-        const candidate = await this.coerceReleaseCandidate(ccb, latestTag);
-        // partition a set of packages in the mono-repo that need to be
-        // updated since our last release -- the set of string keys
-        // is sorted to ensure consistency in the CHANGELOG.
-        const updates = [];
-        let changelogEntry = `## ${candidate.version}`;
-        const bulkUpdate = await this.releaseAllPHPLibraries(commits, updates, changelogEntry);
-        changelogEntry = bulkUpdate.changelogEntry;
-        // update the aggregate package information in the root
-        // composer.json and manifest.json.
-        updates.push(new root_composer_1.RootComposer({
-            path: 'composer.json',
-            changelogEntry,
-            version: candidate.version,
-            versions: bulkUpdate.versionUpdates,
-            packageName: this.packageName,
-        }));
-        updates.push(new php_manifest_1.PHPManifest({
-            path: 'docs/manifest.json',
-            changelogEntry,
-            version: candidate.version,
-            versions: bulkUpdate.versionUpdates,
-            packageName: this.packageName,
-        }));
-        updates.push(new changelog_1.Changelog({
-            path: 'CHANGELOG.md',
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        ['src/Version.php', 'src/ServiceBuilder.php'].forEach((path) => {
-            updates.push(new php_client_version_1.PHPClientVersion({
-                path,
-                changelogEntry,
-                version: candidate.version,
-                packageName: this.packageName,
-            }));
-        });
-        await this.openPR(commits[0].sha, changelogEntry, updates, candidate.version);
-    }
-    async releaseAllPHPLibraries(commits, updates, changelogEntry) {
-        const cs = new commit_split_1.CommitSplit();
-        const commitLookup = cs.split(commits);
-        const pkgKeys = Object.keys(commitLookup).sort();
-        // map of library names that need to be updated in the top level
-        // composer.json and manifest.json.
-        const versionUpdates = new Map();
-        // walk each individual library updating the VERSION file, and
-        // if necessary the `const VERSION` in the client library.
-        for (let i = 0; i < pkgKeys.length; i++) {
-            const pkgKey = pkgKeys[i];
-            const cc = new conventional_commits_1.ConventionalCommits({
-                commits: commitLookup[pkgKey],
-                githubRepoUrl: this.repoUrl,
-                bumpMinorPreMajor: this.bumpMinorPreMajor,
-                changelogSections: CHANGELOG_SECTIONS,
-            });
-            // some packages in the mono-repo might have only had chores,
-            // build updates, etc., applied.
-            if (!this.changelogEmpty(await cc.generateChangelogEntry({ version: '0.0.0' }))) {
-                try {
-                    const contents = await this.gh.getFileContents(`${pkgKey}/VERSION`);
-                    const bump = await cc.suggestBump(contents.parsedContent);
-                    const candidate = semver.inc(contents.parsedContent, bump.releaseType);
-                    if (!candidate) {
-                        checkpoint_1.checkpoint(`failed to update ${pkgKey} version`, checkpoint_1.CheckpointType.Failure);
-                        continue;
-                    }
-                    const meta = JSON.parse((await this.gh.getFileContents(`${pkgKey}/composer.json`))
-                        .parsedContent);
-                    versionUpdates.set(meta.name, candidate);
-                    changelogEntry = updatePHPChangelogEntry(`${meta.name} ${candidate}`, changelogEntry, await cc.generateChangelogEntry({ version: candidate }));
-                    updates.push(new version_1.Version({
-                        path: `${pkgKey}/VERSION`,
-                        changelogEntry,
-                        version: candidate,
-                        packageName: this.packageName,
-                        contents,
-                    }));
-                    // extra.component indicates an entry-point class file
-                    // that must have its version # updatd.
-                    if (meta.extra &&
-                        meta.extra.component &&
-                        meta.extra.component.entry) {
-                        updates.push(new php_client_version_1.PHPClientVersion({
-                            path: `${pkgKey}/${meta.extra.component.entry}`,
-                            changelogEntry,
-                            version: candidate,
-                            packageName: this.packageName,
-                        }));
-                    }
-                }
-                catch (err) {
-                    if (err.status === 404) {
-                        // if the updated path has no VERSION, assume this isn't a
-                        // module that needs updating.
-                        continue;
-                    }
-                    else {
-                        throw err;
-                    }
-                }
-            }
-        }
-        return { changelogEntry, versionUpdates };
-    }
-}
-exports.PHPYoshi = PHPYoshi;
-function updatePHPChangelogEntry(pkgKey, changelogEntry, entryUpdate) {
-    {
-        // Remove the first line of the entry, in favor of <summary>.
-        // This also allows us to use the same regex for extracting release
-        // notes (since the string "## v0.0.0" doesn't show up multiple times).
-        const entryUpdateSplit = entryUpdate.split(/\r?\n/);
-        entryUpdateSplit.shift();
-        entryUpdate = entryUpdateSplit.join('\n');
-    }
-    return `${changelogEntry}
-
-<details><summary>${pkgKey}</summary>
-
-${entryUpdate}
-
-</details>`;
-}
-//# sourceMappingURL=php-yoshi.js.map
-
-/***/ }),
+/* 289 */,
 /* 290 */,
 /* 291 */,
 /* 292 */,
@@ -10605,7 +10217,7 @@ module.exports = eq
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-const VERSION = "2.2.0";
+const VERSION = "2.2.1";
 
 /**
  * Some “list” response that can be paginated have a different response structure
@@ -11884,30 +11496,12 @@ module.exports = parser
 /* 321 */,
 /* 322 */,
 /* 323 */
-/***/ (function(module) {
+/***/ (function(module, __unusedexports, __webpack_require__) {
 
-"use strict";
-
-
-var isStream = module.exports = function (stream) {
-	return stream !== null && typeof stream === 'object' && typeof stream.pipe === 'function';
-};
-
-isStream.writable = function (stream) {
-	return isStream(stream) && stream.writable !== false && typeof stream._write === 'function' && typeof stream._writableState === 'object';
-};
-
-isStream.readable = function (stream) {
-	return isStream(stream) && stream.readable !== false && typeof stream._read === 'function' && typeof stream._readableState === 'object';
-};
-
-isStream.duplex = function (stream) {
-	return isStream.writable(stream) && isStream.readable(stream);
-};
-
-isStream.transform = function (stream) {
-	return isStream.duplex(stream) && typeof stream._transform === 'function' && typeof stream._transformState === 'object';
-};
+const outside = __webpack_require__(462)
+// Determine if version is less than all the versions possible in the range
+const ltr = (version, range, options) => outside(version, range, '<', options)
+module.exports = ltr
 
 
 /***/ }),
@@ -12737,7 +12331,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var isPlainObject = _interopDefault(__webpack_require__(696));
-var universalUserAgent = __webpack_require__(796);
+var universalUserAgent = __webpack_require__(526);
 
 function lowercaseKeys(object) {
   if (!object) {
@@ -15792,150 +15386,9 @@ function escapeProperty(s) {
 
 /***/ }),
 /* 432 */,
-/* 433 */
-/***/ (function(module) {
-
-"use strict";
-
-module.exports = function(val) {
-  return Array.isArray(val) ? val : [val];
-};
-
-
-/***/ }),
+/* 433 */,
 /* 434 */,
-/* 435 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-const fs_1 = __webpack_require__(747);
-const path_1 = __webpack_require__(622);
-const release_pr_1 = __webpack_require__(93);
-const conventional_commits_1 = __webpack_require__(514);
-const checkpoint_1 = __webpack_require__(923);
-const indent_commit_1 = __webpack_require__(262);
-const changelog_1 = __webpack_require__(261);
-const version_rb_1 = __webpack_require__(749);
-const CHANGELOG_SECTIONS = [
-    { type: 'feat', section: 'Features' },
-    { type: 'fix', section: 'Bug Fixes' },
-    { type: 'perf', section: 'Performance Improvements' },
-    { type: 'revert', section: 'Reverts' },
-    { type: 'docs', section: 'Documentation' },
-    { type: 'style', section: 'Styles', hidden: true },
-    { type: 'chore', section: 'Miscellaneous Chores', hidden: true },
-    { type: 'refactor', section: 'Code Refactoring', hidden: true },
-    { type: 'test', section: 'Tests', hidden: true },
-    { type: 'build', section: 'Build System', hidden: true },
-    { type: 'ci', section: 'Continuous Integration', hidden: true },
-];
-class RubyYoshi extends release_pr_1.ReleasePR {
-    async _run() {
-        const lastReleaseSha = this.lastPackageVersion
-            ? await this.gh.getTagSha(`${this.packageName}/v${this.lastPackageVersion}`)
-            : undefined;
-        const commits = await this.commits(lastReleaseSha, 100, false, this.packageName);
-        if (commits.length === 0) {
-            checkpoint_1.checkpoint(`no commits found since ${lastReleaseSha}`, checkpoint_1.CheckpointType.Failure);
-            return;
-        }
-        else {
-            const cc = new conventional_commits_1.ConventionalCommits({
-                commits: postProcessCommits(commits),
-                githubRepoUrl: this.repoUrl,
-                bumpMinorPreMajor: this.bumpMinorPreMajor,
-                commitPartial: fs_1.readFileSync(__webpack_require__.ab + "commit.hbs", 'utf8'),
-                headerPartial: fs_1.readFileSync(__webpack_require__.ab + "header.hbs", 'utf8'),
-                mainTemplate: fs_1.readFileSync(__webpack_require__.ab + "template.hbs", 'utf8'),
-                changelogSections: CHANGELOG_SECTIONS,
-            });
-            const candidate = await this.coerceReleaseCandidate(cc, {
-                version: this.lastPackageVersion,
-                name: this.lastPackageVersion,
-            });
-            const changelogEntry = await cc.generateChangelogEntry({
-                version: candidate.version,
-                currentTag: `v${candidate.version}`,
-                previousTag: undefined,
-            });
-            // don't create a release candidate until user facing changes
-            // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
-            // one line is a good indicator that there were no interesting commits.
-            if (this.changelogEmpty(changelogEntry)) {
-                checkpoint_1.checkpoint(`no user facing commits found since ${lastReleaseSha ? lastReleaseSha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-                return;
-            }
-            const updates = [];
-            updates.push(new changelog_1.Changelog({
-                path: `${this.packageName}/CHANGELOG.md`,
-                changelogEntry,
-                version: candidate.version,
-                packageName: this.packageName,
-            }));
-            updates.push(new version_rb_1.VersionRB({
-                path: `${this.packageName}/lib/${this.packageName.replace(/-/g, '/')}/version.rb`,
-                changelogEntry,
-                version: candidate.version,
-                packageName: this.packageName,
-            }));
-            await this.openPR(commits[0].sha, `${changelogEntry}\n---\n${this.summarizeCommits(lastReleaseSha, commits)}\n`, updates, candidate.version, true);
-        }
-    }
-    // create a summary of the commits landed since the last release,
-    // for the benefit of the release PR.
-    summarizeCommits(lastReleaseSha, commits) {
-        // summarize the commits that landed:
-        let summary = '### Commits since last release:\n\n';
-        const updatedFiles = {};
-        commits.forEach(commit => {
-            if (commit.sha === null)
-                return;
-            const splitMessage = commit.message.split('\n');
-            summary += `* [${splitMessage[0]}](https://github.com/${this.repoUrl}/commit/${commit.sha})\n`;
-            if (splitMessage.length > 2) {
-                summary = `${summary}<pre><code>${splitMessage
-                    .slice(1)
-                    .join('\n')}</code></pre>\n`;
-            }
-            commit.files.forEach(file => {
-                if (file.startsWith(this.packageName)) {
-                    updatedFiles[file] = true;
-                }
-            });
-        });
-        // summarize the files that changed:
-        summary = `${summary}\n### Files edited since last release:\n\n<pre><code>`;
-        Object.keys(updatedFiles).forEach(file => {
-            summary += `${file}\n`;
-        });
-        return `${summary}</code></pre>\n[Compare Changes](https://github.com/${this.repoUrl}/compare/${lastReleaseSha}...HEAD)\n`;
-    }
-}
-exports.RubyYoshi = RubyYoshi;
-function postProcessCommits(commits) {
-    commits.forEach(commit => {
-        commit.message = indent_commit_1.indentCommit(commit);
-    });
-    return commits;
-}
-//# sourceMappingURL=ruby-yoshi.js.map
-
-/***/ }),
+/* 435 */,
 /* 436 */,
 /* 437 */,
 /* 438 */,
@@ -15943,79 +15396,8 @@ function postProcessCommits(commits) {
 /* 440 */,
 /* 441 */,
 /* 442 */,
-/* 443 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-const release_pr_1 = __webpack_require__(93);
-const ruby_1 = __webpack_require__(28);
-const java_auth_yoshi_1 = __webpack_require__(895);
-const java_bom_1 = __webpack_require__(957);
-const node_1 = __webpack_require__(618);
-const php_yoshi_1 = __webpack_require__(289);
-const python_1 = __webpack_require__(540);
-const ruby_yoshi_1 = __webpack_require__(435);
-const java_yoshi_1 = __webpack_require__(771);
-const terraform_module_1 = __webpack_require__(940);
-class ReleasePRFactory {
-    static build(releaseType, options) {
-        const releaseOptions = {
-            ...options,
-            ...{ releaseType },
-        };
-        switch (releaseType) {
-            case release_pr_1.ReleaseType.Node:
-                return new node_1.Node(releaseOptions);
-            case release_pr_1.ReleaseType.PHPYoshi:
-                return new php_yoshi_1.PHPYoshi(releaseOptions);
-            case release_pr_1.ReleaseType.JavaAuthYoshi:
-                // TODO: coerce this to the generic Java release
-                return new java_auth_yoshi_1.JavaAuthYoshi(releaseOptions);
-            case release_pr_1.ReleaseType.JavaBom:
-                return new java_bom_1.JavaBom(releaseOptions);
-            case release_pr_1.ReleaseType.JavaYoshi:
-                return new java_yoshi_1.JavaYoshi(releaseOptions);
-            case release_pr_1.ReleaseType.TerraformModule:
-                return new terraform_module_1.TerraformModule(releaseOptions);
-            case release_pr_1.ReleaseType.Python:
-                return new python_1.Python(releaseOptions);
-            case release_pr_1.ReleaseType.Ruby:
-                return new ruby_1.Ruby(releaseOptions);
-            case release_pr_1.ReleaseType.RubyYoshi:
-                return new ruby_yoshi_1.RubyYoshi(releaseOptions);
-            default:
-                throw Error('unknown release type');
-        }
-    }
-}
-exports.ReleasePRFactory = ReleasePRFactory;
-//# sourceMappingURL=release-pr-factory.js.map
-
-/***/ }),
-/* 444 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-const compare = __webpack_require__(874)
-const lte = (a, b, loose) => compare(a, b, loose) <= 0
-module.exports = lte
-
-
-/***/ }),
+/* 443 */,
+/* 444 */,
 /* 445 */,
 /* 446 */,
 /* 447 */,
@@ -16027,123 +15409,180 @@ module.exports = lte
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-var universalUserAgent = __webpack_require__(796);
+var universalUserAgent = __webpack_require__(526);
 var beforeAfterHook = __webpack_require__(523);
 var request = __webpack_require__(753);
-var graphql = __webpack_require__(898);
+var graphql = __webpack_require__(743);
 var authToken = __webpack_require__(813);
 
-const VERSION = "2.5.0";
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
 
-class Octokit {
-  constructor(options = {}) {
-    const hook = new beforeAfterHook.Collection();
-    const requestDefaults = {
-      baseUrl: request.request.endpoint.DEFAULTS.baseUrl,
-      headers: {},
-      request: Object.assign({}, options.request, {
-        hook: hook.bind(null, "request")
-      }),
-      mediaType: {
-        previews: [],
-        format: ""
+  return obj;
+}
+
+function ownKeys(object, enumerableOnly) {
+  var keys = Object.keys(object);
+
+  if (Object.getOwnPropertySymbols) {
+    var symbols = Object.getOwnPropertySymbols(object);
+    if (enumerableOnly) symbols = symbols.filter(function (sym) {
+      return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+    });
+    keys.push.apply(keys, symbols);
+  }
+
+  return keys;
+}
+
+function _objectSpread2(target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i] != null ? arguments[i] : {};
+
+    if (i % 2) {
+      ownKeys(Object(source), true).forEach(function (key) {
+        _defineProperty(target, key, source[key]);
+      });
+    } else if (Object.getOwnPropertyDescriptors) {
+      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+    } else {
+      ownKeys(Object(source)).forEach(function (key) {
+        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+      });
+    }
+  }
+
+  return target;
+}
+
+const VERSION = "2.5.3";
+
+let Octokit =
+/** @class */
+(() => {
+  class Octokit {
+    constructor(options = {}) {
+      const hook = new beforeAfterHook.Collection();
+      const requestDefaults = {
+        baseUrl: request.request.endpoint.DEFAULTS.baseUrl,
+        headers: {},
+        request: Object.assign({}, options.request, {
+          hook: hook.bind(null, "request")
+        }),
+        mediaType: {
+          previews: [],
+          format: ""
+        }
+      }; // prepend default user agent with `options.userAgent` if set
+
+      requestDefaults.headers["user-agent"] = [options.userAgent, `octokit-core.js/${VERSION} ${universalUserAgent.getUserAgent()}`].filter(Boolean).join(" ");
+
+      if (options.baseUrl) {
+        requestDefaults.baseUrl = options.baseUrl;
       }
-    }; // prepend default user agent with `options.userAgent` if set
 
-    requestDefaults.headers["user-agent"] = [options.userAgent, `octokit-core.js/${VERSION} ${universalUserAgent.getUserAgent()}`].filter(Boolean).join(" ");
+      if (options.previews) {
+        requestDefaults.mediaType.previews = options.previews;
+      }
 
-    if (options.baseUrl) {
-      requestDefaults.baseUrl = options.baseUrl;
-    }
+      if (options.timeZone) {
+        requestDefaults.headers["time-zone"] = options.timeZone;
+      }
 
-    if (options.previews) {
-      requestDefaults.mediaType.previews = options.previews;
-    }
+      this.request = request.request.defaults(requestDefaults);
+      this.graphql = graphql.withCustomRequest(this.request).defaults(_objectSpread2(_objectSpread2({}, requestDefaults), {}, {
+        baseUrl: requestDefaults.baseUrl.replace(/\/api\/v3$/, "/api")
+      }));
+      this.log = Object.assign({
+        debug: () => {},
+        info: () => {},
+        warn: console.warn.bind(console),
+        error: console.error.bind(console)
+      }, options.log);
+      this.hook = hook; // (1) If neither `options.authStrategy` nor `options.auth` are set, the `octokit` instance
+      //     is unauthenticated. The `this.auth()` method is a no-op and no request hook is registred.
+      // (2) If only `options.auth` is set, use the default token authentication strategy.
+      // (3) If `options.authStrategy` is set then use it and pass in `options.auth`. Always pass own request as many strategies accept a custom request instance.
+      // TODO: type `options.auth` based on `options.authStrategy`.
 
-    if (options.timeZone) {
-      requestDefaults.headers["time-zone"] = options.timeZone;
-    }
+      if (!options.authStrategy) {
+        if (!options.auth) {
+          // (1)
+          this.auth = async () => ({
+            type: "unauthenticated"
+          });
+        } else {
+          // (2)
+          const auth = authToken.createTokenAuth(options.auth); // @ts-ignore  ¯\_(ツ)_/¯
 
-    this.request = request.request.defaults(requestDefaults);
-    this.graphql = graphql.withCustomRequest(this.request).defaults(requestDefaults);
-    this.log = Object.assign({
-      debug: () => {},
-      info: () => {},
-      warn: console.warn.bind(console),
-      error: console.error.bind(console)
-    }, options.log);
-    this.hook = hook; // (1) If neither `options.authStrategy` nor `options.auth` are set, the `octokit` instance
-    //     is unauthenticated. The `this.auth()` method is a no-op and no request hook is registred.
-    // (2) If only `options.auth` is set, use the default token authentication strategy.
-    // (3) If `options.authStrategy` is set then use it and pass in `options.auth`. Always pass own request as many strategies accept a custom request instance.
-    // TODO: type `options.auth` based on `options.authStrategy`.
-
-    if (!options.authStrategy) {
-      if (!options.auth) {
-        // (1)
-        this.auth = async () => ({
-          type: "unauthenticated"
-        });
+          hook.wrap("request", auth.hook);
+          this.auth = auth;
+        }
       } else {
-        // (2)
-        const auth = authToken.createTokenAuth(options.auth); // @ts-ignore  ¯\_(ツ)_/¯
+        const auth = options.authStrategy(Object.assign({
+          request: this.request
+        }, options.auth)); // @ts-ignore  ¯\_(ツ)_/¯
 
         hook.wrap("request", auth.hook);
         this.auth = auth;
-      }
-    } else {
-      const auth = options.authStrategy(Object.assign({
-        request: this.request
-      }, options.auth)); // @ts-ignore  ¯\_(ツ)_/¯
-
-      hook.wrap("request", auth.hook);
-      this.auth = auth;
-    } // apply plugins
-    // https://stackoverflow.com/a/16345172
+      } // apply plugins
+      // https://stackoverflow.com/a/16345172
 
 
-    const classConstructor = this.constructor;
-    classConstructor.plugins.forEach(plugin => {
-      Object.assign(this, plugin(this, options));
-    });
-  }
-
-  static defaults(defaults) {
-    const OctokitWithDefaults = class extends this {
-      constructor(...args) {
-        const options = args[0] || {};
-        super(Object.assign({}, defaults, options, options.userAgent && defaults.userAgent ? {
-          userAgent: `${options.userAgent} ${defaults.userAgent}`
-        } : null));
-      }
-
-    };
-    return OctokitWithDefaults;
-  }
-  /**
-   * Attach a plugin (or many) to your Octokit instance.
-   *
-   * @example
-   * const API = Octokit.plugin(plugin1, plugin2, plugin3, ...)
-   */
-
-
-  static plugin(p1, ...p2) {
-    var _a;
-
-    if (p1 instanceof Array) {
-      console.warn(["Passing an array of plugins to Octokit.plugin() has been deprecated.", "Instead of:", "  Octokit.plugin([plugin1, plugin2, ...])", "Use:", "  Octokit.plugin(plugin1, plugin2, ...)"].join("\n"));
+      const classConstructor = this.constructor;
+      classConstructor.plugins.forEach(plugin => {
+        Object.assign(this, plugin(this, options));
+      });
     }
 
-    const currentPlugins = this.plugins;
-    let newPlugins = [...(p1 instanceof Array ? p1 : [p1]), ...p2];
-    const NewOctokit = (_a = class extends this {}, _a.plugins = currentPlugins.concat(newPlugins.filter(plugin => !currentPlugins.includes(plugin))), _a);
-    return NewOctokit;
+    static defaults(defaults) {
+      const OctokitWithDefaults = class extends this {
+        constructor(...args) {
+          const options = args[0] || {};
+          super(Object.assign({}, defaults, options, options.userAgent && defaults.userAgent ? {
+            userAgent: `${options.userAgent} ${defaults.userAgent}`
+          } : null));
+        }
+
+      };
+      return OctokitWithDefaults;
+    }
+    /**
+     * Attach a plugin (or many) to your Octokit instance.
+     *
+     * @example
+     * const API = Octokit.plugin(plugin1, plugin2, plugin3, ...)
+     */
+
+
+    static plugin(p1, ...p2) {
+      var _a;
+
+      if (p1 instanceof Array) {
+        console.warn(["Passing an array of plugins to Octokit.plugin() has been deprecated.", "Instead of:", "  Octokit.plugin([plugin1, plugin2, ...])", "Use:", "  Octokit.plugin(plugin1, plugin2, ...)"].join("\n"));
+      }
+
+      const currentPlugins = this.plugins;
+      let newPlugins = [...(p1 instanceof Array ? p1 : [p1]), ...p2];
+      const NewOctokit = (_a = class extends this {}, _a.plugins = currentPlugins.concat(newPlugins.filter(plugin => !currentPlugins.includes(plugin))), _a);
+      return NewOctokit;
+    }
+
   }
 
-}
-Octokit.VERSION = VERSION;
-Octokit.plugins = [];
+  Octokit.VERSION = VERSION;
+  Octokit.plugins = [];
+  return Octokit;
+})();
 
 exports.Octokit = Octokit;
 //# sourceMappingURL=index.js.map
@@ -17997,6 +17436,7 @@ exports.FetchError = FetchError;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ReadMe = void 0;
 class ReadMe {
     constructor(options) {
         this.create = false;
@@ -18004,6 +17444,7 @@ class ReadMe {
         this.changelogEntry = options.changelogEntry;
         this.version = options.version;
         this.packageName = options.packageName;
+        this.skipCi = options.skipCi;
     }
     updateContent(content) {
         const minorVersion = this.version.split('.').slice(0, 2).join('.');
@@ -18018,54 +17459,88 @@ exports.ReadMe = ReadMe;
 /* 460 */,
 /* 461 */,
 /* 462 */
-/***/ (function(module) {
+/***/ (function(module, __unusedexports, __webpack_require__) {
 
-"use strict";
+const SemVer = __webpack_require__(65)
+const Comparator = __webpack_require__(174)
+const {ANY} = Comparator
+const Range = __webpack_require__(124)
+const satisfies = __webpack_require__(310)
+const gt = __webpack_require__(486)
+const lt = __webpack_require__(586)
+const lte = __webpack_require__(898)
+const gte = __webpack_require__(167)
 
+const outside = (version, range, hilo, options) => {
+  version = new SemVer(version, options)
+  range = new Range(range, options)
 
-// See http://www.robvanderwoude.com/escapechars.php
-const metaCharsRegExp = /([()\][%!^"`<>&|;, *?])/g;
+  let gtfn, ltefn, ltfn, comp, ecomp
+  switch (hilo) {
+    case '>':
+      gtfn = gt
+      ltefn = lte
+      ltfn = lt
+      comp = '>'
+      ecomp = '>='
+      break
+    case '<':
+      gtfn = lt
+      ltefn = gte
+      ltfn = gt
+      comp = '<'
+      ecomp = '<='
+      break
+    default:
+      throw new TypeError('Must provide a hilo val of "<" or ">"')
+  }
 
-function escapeCommand(arg) {
-    // Escape meta chars
-    arg = arg.replace(metaCharsRegExp, '^$1');
+  // If it satisifes the range it is not outside
+  if (satisfies(version, range, options)) {
+    return false
+  }
 
-    return arg;
-}
+  // From now on, variable terms are as if we're in "gtr" mode.
+  // but note that everything is flipped for the "ltr" function.
 
-function escapeArgument(arg, doubleEscapeMetaChars) {
-    // Convert to string
-    arg = `${arg}`;
+  for (let i = 0; i < range.set.length; ++i) {
+    const comparators = range.set[i]
 
-    // Algorithm below is based on https://qntm.org/cmd
+    let high = null
+    let low = null
 
-    // Sequence of backslashes followed by a double quote:
-    // double up all the backslashes and escape the double quote
-    arg = arg.replace(/(\\*)"/g, '$1$1\\"');
+    comparators.forEach((comparator) => {
+      if (comparator.semver === ANY) {
+        comparator = new Comparator('>=0.0.0')
+      }
+      high = high || comparator
+      low = low || comparator
+      if (gtfn(comparator.semver, high.semver, options)) {
+        high = comparator
+      } else if (ltfn(comparator.semver, low.semver, options)) {
+        low = comparator
+      }
+    })
 
-    // Sequence of backslashes followed by the end of the string
-    // (which will become a double quote later):
-    // double up all the backslashes
-    arg = arg.replace(/(\\*)$/, '$1$1');
-
-    // All other backslashes occur literally
-
-    // Quote the whole thing:
-    arg = `"${arg}"`;
-
-    // Escape meta chars
-    arg = arg.replace(metaCharsRegExp, '^$1');
-
-    // Double escape meta chars if necessary
-    if (doubleEscapeMetaChars) {
-        arg = arg.replace(metaCharsRegExp, '^$1');
+    // If the edge version comparator has a operator then our version
+    // isn't outside it
+    if (high.operator === comp || high.operator === ecomp) {
+      return false
     }
 
-    return arg;
+    // If the lowest version comparator has an operator and our version
+    // is less than it then it isn't higher than the range
+    if ((!low.operator || low.operator === comp) &&
+        ltefn(version, low.semver)) {
+      return false
+    } else if (low.operator === ecomp && ltfn(version, low.semver)) {
+      return false
+    }
+  }
+  return true
 }
 
-module.exports.command = escapeCommand;
-module.exports.argument = escapeArgument;
+module.exports = outside
 
 
 /***/ }),
@@ -18132,48 +17607,11 @@ exports.RequestError = RequestError;
 
 /***/ }),
 /* 464 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, __unusedexports, __webpack_require__) {
 
-"use strict";
-
-
-exports.__esModule = true;
-
-var _utils = __webpack_require__(423);
-
-exports['default'] = function (instance) {
-  instance.registerHelper('blockHelperMissing', function (context, options) {
-    var inverse = options.inverse,
-        fn = options.fn;
-
-    if (context === true) {
-      return fn(this);
-    } else if (context === false || context == null) {
-      return inverse(this);
-    } else if (_utils.isArray(context)) {
-      if (context.length > 0) {
-        if (options.ids) {
-          options.ids = [options.name];
-        }
-
-        return instance.helpers.each(context, options);
-      } else {
-        return inverse(this);
-      }
-    } else {
-      if (options.data && options.ids) {
-        var data = _utils.createFrame(options.data);
-        data.contextPath = _utils.appendContextPath(options.data.contextPath, options.name);
-        options = { data: data };
-      }
-
-      return fn(context, options);
-    }
-  });
-};
-
-module.exports = exports['default'];
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2hlbHBlcnMvYmxvY2staGVscGVyLW1pc3NpbmcuanMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7OztxQkFBd0QsVUFBVTs7cUJBRW5ELFVBQVMsUUFBUSxFQUFFO0FBQ2hDLFVBQVEsQ0FBQyxjQUFjLENBQUMsb0JBQW9CLEVBQUUsVUFBUyxPQUFPLEVBQUUsT0FBTyxFQUFFO0FBQ3ZFLFFBQUksT0FBTyxHQUFHLE9BQU8sQ0FBQyxPQUFPO1FBQzNCLEVBQUUsR0FBRyxPQUFPLENBQUMsRUFBRSxDQUFDOztBQUVsQixRQUFJLE9BQU8sS0FBSyxJQUFJLEVBQUU7QUFDcEIsYUFBTyxFQUFFLENBQUMsSUFBSSxDQUFDLENBQUM7S0FDakIsTUFBTSxJQUFJLE9BQU8sS0FBSyxLQUFLLElBQUksT0FBTyxJQUFJLElBQUksRUFBRTtBQUMvQyxhQUFPLE9BQU8sQ0FBQyxJQUFJLENBQUMsQ0FBQztLQUN0QixNQUFNLElBQUksZUFBUSxPQUFPLENBQUMsRUFBRTtBQUMzQixVQUFJLE9BQU8sQ0FBQyxNQUFNLEdBQUcsQ0FBQyxFQUFFO0FBQ3RCLFlBQUksT0FBTyxDQUFDLEdBQUcsRUFBRTtBQUNmLGlCQUFPLENBQUMsR0FBRyxHQUFHLENBQUMsT0FBTyxDQUFDLElBQUksQ0FBQyxDQUFDO1NBQzlCOztBQUVELGVBQU8sUUFBUSxDQUFDLE9BQU8sQ0FBQyxJQUFJLENBQUMsT0FBTyxFQUFFLE9BQU8sQ0FBQyxDQUFDO09BQ2hELE1BQU07QUFDTCxlQUFPLE9BQU8sQ0FBQyxJQUFJLENBQUMsQ0FBQztPQUN0QjtLQUNGLE1BQU07QUFDTCxVQUFJLE9BQU8sQ0FBQyxJQUFJLElBQUksT0FBTyxDQUFDLEdBQUcsRUFBRTtBQUMvQixZQUFJLElBQUksR0FBRyxtQkFBWSxPQUFPLENBQUMsSUFBSSxDQUFDLENBQUM7QUFDckMsWUFBSSxDQUFDLFdBQVcsR0FBRyx5QkFDakIsT0FBTyxDQUFDLElBQUksQ0FBQyxXQUFXLEVBQ3hCLE9BQU8sQ0FBQyxJQUFJLENBQ2IsQ0FBQztBQUNGLGVBQU8sR0FBRyxFQUFFLElBQUksRUFBRSxJQUFJLEVBQUUsQ0FBQztPQUMxQjs7QUFFRCxhQUFPLEVBQUUsQ0FBQyxPQUFPLEVBQUUsT0FBTyxDQUFDLENBQUM7S0FDN0I7R0FDRixDQUFDLENBQUM7Q0FDSiIsImZpbGUiOiJibG9jay1oZWxwZXItbWlzc2luZy5qcyIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IGFwcGVuZENvbnRleHRQYXRoLCBjcmVhdGVGcmFtZSwgaXNBcnJheSB9IGZyb20gJy4uL3V0aWxzJztcblxuZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24oaW5zdGFuY2UpIHtcbiAgaW5zdGFuY2UucmVnaXN0ZXJIZWxwZXIoJ2Jsb2NrSGVscGVyTWlzc2luZycsIGZ1bmN0aW9uKGNvbnRleHQsIG9wdGlvbnMpIHtcbiAgICBsZXQgaW52ZXJzZSA9IG9wdGlvbnMuaW52ZXJzZSxcbiAgICAgIGZuID0gb3B0aW9ucy5mbjtcblxuICAgIGlmIChjb250ZXh0ID09PSB0cnVlKSB7XG4gICAgICByZXR1cm4gZm4odGhpcyk7XG4gICAgfSBlbHNlIGlmIChjb250ZXh0ID09PSBmYWxzZSB8fCBjb250ZXh0ID09IG51bGwpIHtcbiAgICAgIHJldHVybiBpbnZlcnNlKHRoaXMpO1xuICAgIH0gZWxzZSBpZiAoaXNBcnJheShjb250ZXh0KSkge1xuICAgICAgaWYgKGNvbnRleHQubGVuZ3RoID4gMCkge1xuICAgICAgICBpZiAob3B0aW9ucy5pZHMpIHtcbiAgICAgICAgICBvcHRpb25zLmlkcyA9IFtvcHRpb25zLm5hbWVdO1xuICAgICAgICB9XG5cbiAgICAgICAgcmV0dXJuIGluc3RhbmNlLmhlbHBlcnMuZWFjaChjb250ZXh0LCBvcHRpb25zKTtcbiAgICAgIH0gZWxzZSB7XG4gICAgICAgIHJldHVybiBpbnZlcnNlKHRoaXMpO1xuICAgICAgfVxuICAgIH0gZWxzZSB7XG4gICAgICBpZiAob3B0aW9ucy5kYXRhICYmIG9wdGlvbnMuaWRzKSB7XG4gICAgICAgIGxldCBkYXRhID0gY3JlYXRlRnJhbWUob3B0aW9ucy5kYXRhKTtcbiAgICAgICAgZGF0YS5jb250ZXh0UGF0aCA9IGFwcGVuZENvbnRleHRQYXRoKFxuICAgICAgICAgIG9wdGlvbnMuZGF0YS5jb250ZXh0UGF0aCxcbiAgICAgICAgICBvcHRpb25zLm5hbWVcbiAgICAgICAgKTtcbiAgICAgICAgb3B0aW9ucyA9IHsgZGF0YTogZGF0YSB9O1xuICAgICAgfVxuXG4gICAgICByZXR1cm4gZm4oY29udGV4dCwgb3B0aW9ucyk7XG4gICAgfVxuICB9KTtcbn1cbiJdfQ==
+const compareBuild = __webpack_require__(16)
+const rsort = (list, loose) => list.sort((a, b) => compareBuild(b, a, loose))
+module.exports = rsort
 
 
 /***/ }),
@@ -18590,100 +18028,13 @@ module.exports = gt
 /* 489 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
-"use strict";
-
-
-const path = __webpack_require__(622);
-const which = __webpack_require__(814);
-const pathKey = __webpack_require__(39)();
-
-function resolveCommandAttempt(parsed, withoutPathExt) {
-    const cwd = process.cwd();
-    const hasCustomCwd = parsed.options.cwd != null;
-
-    // If a custom `cwd` was specified, we need to change the process cwd
-    // because `which` will do stat calls but does not support a custom cwd
-    if (hasCustomCwd) {
-        try {
-            process.chdir(parsed.options.cwd);
-        } catch (err) {
-            /* Empty */
-        }
-    }
-
-    let resolved;
-
-    try {
-        resolved = which.sync(parsed.command, {
-            path: (parsed.options.env || process.env)[pathKey],
-            pathExt: withoutPathExt ? path.delimiter : undefined,
-        });
-    } catch (e) {
-        /* Empty */
-    } finally {
-        process.chdir(cwd);
-    }
-
-    // If we successfully resolved, ensure that an absolute path is returned
-    // Note that when a custom `cwd` was used, we need to resolve to an absolute path based on it
-    if (resolved) {
-        resolved = path.resolve(hasCustomCwd ? parsed.options.cwd : '', resolved);
-    }
-
-    return resolved;
-}
-
-function resolveCommand(parsed) {
-    return resolveCommandAttempt(parsed) || resolveCommandAttempt(parsed, true);
-}
-
-module.exports = resolveCommand;
+const SemVer = __webpack_require__(65)
+const patch = (a, loose) => new SemVer(a, loose).patch
+module.exports = patch
 
 
 /***/ }),
-/* 490 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-function maxBumpType(bumpTypes) {
-    if (bumpTypes.some(bumpType => bumpType === 'major')) {
-        return 'major';
-    }
-    if (bumpTypes.some(bumpType => bumpType === 'minor')) {
-        return 'minor';
-    }
-    return 'patch';
-}
-exports.maxBumpType = maxBumpType;
-function fromSemverReleaseType(releaseType) {
-    switch (releaseType) {
-        case 'major':
-        case 'minor':
-        case 'patch':
-            return releaseType;
-        default:
-            throw Error(`unsupported release type ${releaseType}`);
-    }
-}
-exports.fromSemverReleaseType = fromSemverReleaseType;
-//# sourceMappingURL=bump_type.js.map
-
-/***/ }),
+/* 490 */,
 /* 491 */,
 /* 492 */,
 /* 493 */,
@@ -18700,7 +18051,7 @@ var assert = __webpack_require__(357)
 var signals = __webpack_require__(654)
 var isWin = /^win/i.test(process.platform)
 
-var EE = __webpack_require__(614)
+var EE = __webpack_require__(759)
 /* istanbul ignore if */
 if (typeof EE !== 'function') {
   EE = EE.EventEmitter
@@ -19217,6 +18568,7 @@ module.exports = function (obj, modifier) {
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ConventionalCommits = void 0;
 const chalk = __webpack_require__(843);
 const semver = __webpack_require__(876);
 const stream_1 = __webpack_require__(413);
@@ -19429,7 +18781,35 @@ module.exports.Collection = Hook.Collection
 /***/ }),
 /* 524 */,
 /* 525 */,
-/* 526 */,
+/* 526 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var osName = _interopDefault(__webpack_require__(2));
+
+function getUserAgent() {
+  try {
+    return `Node.js/${process.version.substr(1)} (${osName()}; ${process.arch})`;
+  } catch (error) {
+    if (/wmic os get Caption/.test(error.message)) {
+      return "Windows <version undetectable>";
+    }
+
+    return "<environment undetectable>";
+  }
+}
+
+exports.getUserAgent = getUserAgent;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
 /* 527 */,
 /* 528 */,
 /* 529 */,
@@ -19438,7 +18818,7 @@ module.exports.Collection = Hook.Collection
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
 // Determine if version is greater than all the versions possible in the range.
-const outside = __webpack_require__(781)
+const outside = __webpack_require__(462)
 const gtr = (version, range, options) => outside(version, range, '>', options)
 module.exports = gtr
 
@@ -19471,6 +18851,7 @@ module.exports = gtr
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Python = void 0;
 const release_pr_1 = __webpack_require__(93);
 const conventional_commits_1 = __webpack_require__(514);
 const checkpoint_1 = __webpack_require__(923);
@@ -19479,53 +18860,57 @@ const changelog_1 = __webpack_require__(261);
 // Python specific.
 const setup_py_1 = __webpack_require__(910);
 const setup_cfg_1 = __webpack_require__(201);
-class Python extends release_pr_1.ReleasePR {
-    async _run() {
-        const latestTag = await this.gh.latestTag();
-        const commits = await this.commits(latestTag ? latestTag.sha : undefined);
-        const cc = new conventional_commits_1.ConventionalCommits({
-            commits,
-            githubRepoUrl: this.repoUrl,
-            bumpMinorPreMajor: this.bumpMinorPreMajor,
-        });
-        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
-        const changelogEntry = await cc.generateChangelogEntry({
-            version: candidate.version,
-            currentTag: `v${candidate.version}`,
-            previousTag: candidate.previousTag,
-        });
-        // don't create a release candidate until user facing changes
-        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
-        // one line is a good indicator that there were no interesting commits.
-        if (this.changelogEmpty(changelogEntry)) {
-            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return;
+let Python = /** @class */ (() => {
+    class Python extends release_pr_1.ReleasePR {
+        async _run() {
+            const latestTag = await this.gh.latestTag();
+            const commits = await this.commits(latestTag ? latestTag.sha : undefined);
+            const cc = new conventional_commits_1.ConventionalCommits({
+                commits,
+                githubRepoUrl: this.repoUrl,
+                bumpMinorPreMajor: this.bumpMinorPreMajor,
+            });
+            const candidate = await this.coerceReleaseCandidate(cc, latestTag);
+            const changelogEntry = await cc.generateChangelogEntry({
+                version: candidate.version,
+                currentTag: `v${candidate.version}`,
+                previousTag: candidate.previousTag,
+            });
+            // don't create a release candidate until user facing changes
+            // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
+            // one line is a good indicator that there were no interesting commits.
+            if (this.changelogEmpty(changelogEntry)) {
+                checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+                return;
+            }
+            const updates = [];
+            updates.push(new changelog_1.Changelog({
+                path: 'CHANGELOG.md',
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+            updates.push(new setup_cfg_1.SetupCfg({
+                path: 'setup.cfg',
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+            updates.push(new setup_py_1.SetupPy({
+                path: 'setup.py',
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+            await this.openPR(commits[0].sha, `${changelogEntry}\n---\n`, updates, candidate.version);
         }
-        const updates = [];
-        updates.push(new changelog_1.Changelog({
-            path: 'CHANGELOG.md',
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        updates.push(new setup_cfg_1.SetupCfg({
-            path: 'setup.cfg',
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        updates.push(new setup_py_1.SetupPy({
-            path: 'setup.py',
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        await this.openPR(commits[0].sha, `${changelogEntry}\n---\n`, updates, candidate.version);
+        defaultInitialVersion() {
+            return '0.1.0';
+        }
     }
-    defaultInitialVersion() {
-        return '0.1.0';
-    }
-}
+    Python.releaserName = 'python';
+    return Python;
+})();
 exports.Python = Python;
 //# sourceMappingURL=python.js.map
 
@@ -38667,8 +38052,8 @@ module.exports.codes = codes;
 
 const path = __webpack_require__(622);
 const niceTry = __webpack_require__(948);
-const resolveCommand = __webpack_require__(489);
-const escape = __webpack_require__(462);
+const resolveCommand = __webpack_require__(71);
+const escape = __webpack_require__(981);
 const readShebang = __webpack_require__(389);
 const semver = __webpack_require__(48);
 
@@ -38962,9 +38347,9 @@ module.exports = function (config) {
   })
 
   return Q.all([
-    readFile(__webpack_require__.ab + "template2.hbs", 'utf-8'),
-    readFile(__webpack_require__.ab + "header2.hbs", 'utf-8'),
-    readFile(__webpack_require__.ab + "commit2.hbs", 'utf-8'),
+    readFile(__webpack_require__.ab + "template1.hbs", 'utf-8'),
+    readFile(__webpack_require__.ab + "header1.hbs", 'utf-8'),
+    readFile(__webpack_require__.ab + "commit1.hbs", 'utf-8'),
     readFile(__webpack_require__.ab + "footer1.hbs", 'utf-8')
   ])
     .spread((template, header, commit, footer) => {
@@ -39481,12 +38866,54 @@ module.exports = convert;
 
 /***/ }),
 /* 593 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
-const compareBuild = __webpack_require__(16)
-const rsort = (list, loose) => list.sort((a, b) => compareBuild(b, a, loose))
-module.exports = rsort
+"use strict";
 
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getReleaserNames = exports.getReleasers = void 0;
+const fs_1 = __webpack_require__(747);
+const path_1 = __webpack_require__(622);
+// dynamically load all the releasers in the folder, and index based on their
+// releaserName property:
+function getReleasers() {
+    const releasers = {};
+    const root = path_1.dirname(/*require.resolve*/(593));
+    for (const file of fs_1.readdirSync(root, { withFileTypes: true })) {
+        if (file.isFile() &&
+            !file.name.match(/.*\.ts.*/) &&
+            !file.name.match(/.*\.map$/) &&
+            !file.name.match(/index\.js/)) {
+            const obj = require(`./${file.name}`);
+            const releaser = obj[Object.keys(obj)[0]];
+            releasers[releaser.releaserName] = releaser;
+        }
+    }
+    return releasers;
+}
+exports.getReleasers = getReleasers;
+function getReleaserNames() {
+    const releasers = getReleasers();
+    return Object.keys(releasers).map(key => {
+        const releaser = releasers[key];
+        return releaser.releaserName;
+    });
+}
+exports.getReleaserNames = getReleaserNames;
+//# sourceMappingURL=index.js.map
 
 /***/ }),
 /* 594 */,
@@ -40648,15 +40075,6 @@ module.exports = (chalk, temporary) => {
 /* 612 */,
 /* 613 */,
 /* 614 */
-/***/ (function(module) {
-
-module.exports = require("events");
-
-/***/ }),
-/* 615 */,
-/* 616 */,
-/* 617 */,
-/* 618 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
 "use strict";
@@ -40675,158 +40093,10 @@ module.exports = require("events");
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
-const release_pr_1 = __webpack_require__(93);
-const conventional_commits_1 = __webpack_require__(514);
-const checkpoint_1 = __webpack_require__(923);
-// Generic
-const changelog_1 = __webpack_require__(261);
-// JavaScript
-const package_json_1 = __webpack_require__(815);
-const samples_package_json_1 = __webpack_require__(637);
-class Node extends release_pr_1.ReleasePR {
-    async _run() {
-        const latestTag = await this.gh.latestTag();
-        const commits = await this.commits(latestTag ? latestTag.sha : undefined);
-        const cc = new conventional_commits_1.ConventionalCommits({
-            commits,
-            githubRepoUrl: this.repoUrl,
-            bumpMinorPreMajor: this.bumpMinorPreMajor,
-        });
-        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
-        const changelogEntry = await cc.generateChangelogEntry({
-            version: candidate.version,
-            currentTag: `v${candidate.version}`,
-            previousTag: candidate.previousTag,
-        });
-        // don't create a release candidate until user facing changes
-        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
-        // one line is a good indicator that there were no interesting commits.
-        if (this.changelogEmpty(changelogEntry)) {
-            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return;
-        }
-        const updates = [];
-        // Make an effort to populate packageName from the contents of
-        // the package.json, rather than forcing this to be set:
-        const contents = await this.gh.getFileContents('package.json');
-        const pkg = JSON.parse(contents.parsedContent);
-        if (pkg.name)
-            this.packageName = pkg.name;
-        updates.push(new changelog_1.Changelog({
-            path: 'CHANGELOG.md',
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        updates.push(new package_json_1.PackageJson({
-            path: 'package.json',
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-            contents,
-        }));
-        updates.push(new samples_package_json_1.SamplesPackageJson({
-            path: 'samples/package.json',
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        await this.openPR(commits[0].sha, `${changelogEntry}\n---\n`, updates, candidate.version);
-    }
-}
-exports.Node = Node;
-//# sourceMappingURL=node.js.map
-
-/***/ }),
-/* 619 */,
-/* 620 */,
-/* 621 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-const path = __webpack_require__(622);
-const pathKey = __webpack_require__(39);
-
-module.exports = opts => {
-	opts = Object.assign({
-		cwd: process.cwd(),
-		path: process.env[pathKey()]
-	}, opts);
-
-	let prev;
-	let pth = path.resolve(opts.cwd);
-	const ret = [];
-
-	while (prev !== pth) {
-		ret.push(path.join(pth, 'node_modules/.bin'));
-		prev = pth;
-		pth = path.resolve(pth, '..');
-	}
-
-	// ensure the running `node` binary is used
-	ret.push(path.dirname(process.execPath));
-
-	return ret.concat(opts.path).join(path.delimiter);
-};
-
-module.exports.env = opts => {
-	opts = Object.assign({
-		env: process.env
-	}, opts);
-
-	const env = Object.assign({}, opts.env);
-	const path = pathKey({env});
-
-	opts.path = env[path];
-	env[path] = module.exports(opts);
-
-	return env;
-};
-
-
-/***/ }),
-/* 622 */
-/***/ (function(module) {
-
-module.exports = require("path");
-
-/***/ }),
-/* 623 */,
-/* 624 */,
-/* 625 */,
-/* 626 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-module.exports = __webpack_require__(413);
-
-
-/***/ }),
-/* 627 */,
-/* 628 */,
-/* 629 */,
-/* 630 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.GitHub = void 0;
 const rest_1 = __webpack_require__(889);
 const request_1 = __webpack_require__(753);
-const graphql_1 = __webpack_require__(898);
+const graphql_1 = __webpack_require__(743);
 const chalk = __webpack_require__(843);
 const semver = __webpack_require__(876);
 const checkpoint_1 = __webpack_require__(923);
@@ -40845,7 +40115,7 @@ class GitHub {
             const defaults = {
                 baseUrl: this.apiUrl,
                 headers: {
-                    'user-agent': `release-please/${__webpack_require__(759).version}`,
+                    'user-agent': `release-please/${__webpack_require__(191).version}`,
                     // some proxies do not require the token prefix.
                     Authorization: `${this.proxyKey ? '' : 'token '}${this.token}`,
                 },
@@ -41090,8 +40360,8 @@ class GitHub {
         }));
         return refResponse.data.object.sha;
     }
-    async latestTag(perPage = 100) {
-        const tags = await this.allTags(perPage);
+    async latestTag() {
+        const tags = await this.allTags();
         const versions = Object.keys(tags).filter(t => {
             // remove any pre-releases from the list:
             return !t.includes('-');
@@ -41161,7 +40431,7 @@ class GitHub {
         }
         return openReleasePRs;
     }
-    async allTags(perPage = 100) {
+    async allTags() {
         const tags = {};
         for await (const response of this.octokit.paginate.iterator(this.decoratePaginateOpts({
             method: 'GET',
@@ -41185,15 +40455,14 @@ class GitHub {
             labels,
         });
     }
-    async findExistingReleaseIssue(title, labels, perPage = 100) {
-        const paged = 0;
+    async findExistingReleaseIssue(title, labels) {
         try {
             for await (const response of this.octokit.paginate.iterator(this.decoratePaginateOpts({
                 method: 'GET',
                 url: `/repos/${this.owner}/${this.repo}/issues?labels=${labels.join(',')}${this.proxyKey ? `&key=${this.proxyKey}` : ''}`,
                 per_page: 100,
             }))) {
-                for (let i = 0, issue; response.data[i] !== undefined; i++) {
+                for (let i = 0; response.data[i] !== undefined; i++) {
                     const issue = response.data[i];
                     if (issue.title.indexOf(title) !== -1 && issue.state === 'open') {
                         return issue;
@@ -41310,6 +40579,21 @@ class GitHub {
         }
     }
     async updateFiles(updates, branch, refName) {
+        // does the user care about skipping CI at all?
+        const skipCiEverSet = updates.some(upd => typeof upd.skipCi !== 'undefined');
+        if (skipCiEverSet) {
+            // if skipCi was set for some of the updates, disable CI for others
+            updates.forEach(upd => {
+                if (typeof upd.skipCi === 'undefined') {
+                    upd.skipCi = true;
+                }
+            });
+        }
+        if (!skipCiEverSet && updates.length > 0) {
+            // if skipCi was not set for any of the files, disable CI for all files except the last one
+            updates.forEach(upd => (upd.skipCi = true));
+            updates[updates.length - 1].skipCi = false;
+        }
         for (let i = 0; i < updates.length; i++) {
             const update = updates[i];
             let content;
@@ -41347,7 +40631,7 @@ class GitHub {
                     owner: this.owner,
                     repo: this.repo,
                     path: update.path,
-                    message: `updated ${update.path} [ci skip]`,
+                    message: `updated ${update.path}` + (update.skipCi ? ' [ci skip]' : ''),
                     content: Buffer.from(updatedContent, 'utf8').toString('base64'),
                     sha: content.data.sha,
                     branch,
@@ -41358,7 +40642,7 @@ class GitHub {
                     owner: this.owner,
                     repo: this.repo,
                     path: update.path,
-                    message: `created ${update.path} [ci skip]`,
+                    message: `created ${update.path}` + (update.skipCi ? ' [ci skip]' : ''),
                     content: Buffer.from(updatedContent, 'utf8').toString('base64'),
                     branch,
                 });
@@ -41416,14 +40700,14 @@ class GitHub {
     }
     async createRelease(packageName, version, sha, releaseNotes) {
         checkpoint_1.checkpoint(`creating release ${version}`, checkpoint_1.CheckpointType.Success);
-        await this.request(`POST /repos/:owner/:repo/releases${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, {
+        return (await this.request(`POST /repos/:owner/:repo/releases${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, {
             owner: this.owner,
             repo: this.repo,
             tag_name: version,
             target_commitish: sha,
             body: releaseNotes,
             name: `${packageName} ${version}`,
-        });
+        })).data;
     }
     async removeLabels(labels, prNumber) {
         for (let i = 0, label; i < labels.length; i++) {
@@ -41454,6 +40738,185 @@ class AuthError extends Error {
     }
 }
 //# sourceMappingURL=github.js.map
+
+/***/ }),
+/* 615 */,
+/* 616 */,
+/* 617 */,
+/* 618 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Node = void 0;
+const release_pr_1 = __webpack_require__(93);
+const conventional_commits_1 = __webpack_require__(514);
+const checkpoint_1 = __webpack_require__(923);
+// Generic
+const changelog_1 = __webpack_require__(261);
+// JavaScript
+const package_json_1 = __webpack_require__(815);
+const samples_package_json_1 = __webpack_require__(637);
+let Node = /** @class */ (() => {
+    class Node extends release_pr_1.ReleasePR {
+        async _run() {
+            const latestTag = await this.gh.latestTag();
+            const commits = await this.commits(latestTag ? latestTag.sha : undefined);
+            const cc = new conventional_commits_1.ConventionalCommits({
+                commits,
+                githubRepoUrl: this.repoUrl,
+                bumpMinorPreMajor: this.bumpMinorPreMajor,
+            });
+            const candidate = await this.coerceReleaseCandidate(cc, latestTag);
+            const changelogEntry = await cc.generateChangelogEntry({
+                version: candidate.version,
+                currentTag: `v${candidate.version}`,
+                previousTag: candidate.previousTag,
+            });
+            // don't create a release candidate until user facing changes
+            // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
+            // one line is a good indicator that there were no interesting commits.
+            if (this.changelogEmpty(changelogEntry)) {
+                checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+                return;
+            }
+            const updates = [];
+            // Make an effort to populate packageName from the contents of
+            // the package.json, rather than forcing this to be set:
+            const contents = await this.gh.getFileContents('package.json');
+            const pkg = JSON.parse(contents.parsedContent);
+            if (pkg.name)
+                this.packageName = pkg.name;
+            updates.push(new changelog_1.Changelog({
+                path: 'CHANGELOG.md',
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+            updates.push(new package_json_1.PackageJson({
+                path: 'package.json',
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+                contents,
+            }));
+            updates.push(new samples_package_json_1.SamplesPackageJson({
+                path: 'samples/package.json',
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+            await this.openPR(commits[0].sha, `${changelogEntry}\n---\n`, updates, candidate.version);
+        }
+        // A releaser can implement this method to automatically detect
+        // the release name when creating a GitHub release, for instance by returning
+        // name in package.json, or setup.py.
+        static async lookupPackageName(gh) {
+            // Make an effort to populate packageName from the contents of
+            // the package.json, rather than forcing this to be set:
+            const contents = await gh.getFileContents('package.json');
+            const pkg = JSON.parse(contents.parsedContent);
+            if (pkg.name)
+                return pkg.name;
+            else
+                return undefined;
+        }
+    }
+    Node.releaserName = 'node';
+    return Node;
+})();
+exports.Node = Node;
+//# sourceMappingURL=node.js.map
+
+/***/ }),
+/* 619 */,
+/* 620 */,
+/* 621 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+const path = __webpack_require__(622);
+const pathKey = __webpack_require__(39);
+
+module.exports = opts => {
+	opts = Object.assign({
+		cwd: process.cwd(),
+		path: process.env[pathKey()]
+	}, opts);
+
+	let prev;
+	let pth = path.resolve(opts.cwd);
+	const ret = [];
+
+	while (prev !== pth) {
+		ret.push(path.join(pth, 'node_modules/.bin'));
+		prev = pth;
+		pth = path.resolve(pth, '..');
+	}
+
+	// ensure the running `node` binary is used
+	ret.push(path.dirname(process.execPath));
+
+	return ret.concat(opts.path).join(path.delimiter);
+};
+
+module.exports.env = opts => {
+	opts = Object.assign({
+		env: process.env
+	}, opts);
+
+	const env = Object.assign({}, opts.env);
+	const path = pathKey({env});
+
+	opts.path = env[path];
+	env[path] = module.exports(opts);
+
+	return env;
+};
+
+
+/***/ }),
+/* 622 */
+/***/ (function(module) {
+
+module.exports = require("path");
+
+/***/ }),
+/* 623 */,
+/* 624 */,
+/* 625 */,
+/* 626 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+module.exports = __webpack_require__(413);
+
+
+/***/ }),
+/* 627 */,
+/* 628 */,
+/* 629 */,
+/* 630 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+const compare = __webpack_require__(874)
+const rcompare = (a, b, loose) => compare(b, a, loose)
+module.exports = rcompare
+
 
 /***/ }),
 /* 631 */,
@@ -42676,6 +42139,7 @@ if ( true && require.extensions) {
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.SamplesPackageJson = void 0;
 const checkpoint_1 = __webpack_require__(923);
 class SamplesPackageJson {
     constructor(options) {
@@ -42684,6 +42148,7 @@ class SamplesPackageJson {
         this.changelogEntry = options.changelogEntry;
         this.version = options.version;
         this.packageName = options.packageName;
+        this.skipCi = options.skipCi;
     }
     updateContent(content) {
         const parsed = JSON.parse(content);
@@ -42704,7 +42169,82 @@ exports.SamplesPackageJson = SamplesPackageJson;
 /* 640 */,
 /* 641 */,
 /* 642 */,
-/* 643 */,
+/* 643 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Simple = void 0;
+const release_pr_1 = __webpack_require__(93);
+const conventional_commits_1 = __webpack_require__(514);
+const checkpoint_1 = __webpack_require__(923);
+// Generic
+const changelog_1 = __webpack_require__(261);
+// version.txt support
+const version_txt_1 = __webpack_require__(25);
+let Simple = /** @class */ (() => {
+    class Simple extends release_pr_1.ReleasePR {
+        async _run() {
+            const latestTag = await this.gh.latestTag();
+            const commits = await this.commits(latestTag ? latestTag.sha : undefined);
+            const cc = new conventional_commits_1.ConventionalCommits({
+                commits,
+                githubRepoUrl: this.repoUrl,
+                bumpMinorPreMajor: this.bumpMinorPreMajor,
+            });
+            const candidate = await this.coerceReleaseCandidate(cc, latestTag);
+            const changelogEntry = await cc.generateChangelogEntry({
+                version: candidate.version,
+                currentTag: `v${candidate.version}`,
+                previousTag: candidate.previousTag,
+            });
+            // don't create a release candidate until user facing changes
+            // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
+            // one line is a good indicator that there were no interesting commits.
+            if (this.changelogEmpty(changelogEntry)) {
+                checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+                return;
+            }
+            const updates = [];
+            const contents = await this.gh.getFileContents('version.txt');
+            updates.push(new changelog_1.Changelog({
+                path: 'CHANGELOG.md',
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+            updates.push(new version_txt_1.VersionTxt({
+                path: 'version.txt',
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+                contents,
+                skipCi: false,
+            }));
+            await this.openPR(commits[0].sha, `${changelogEntry}\n---\n`, updates, candidate.version);
+        }
+    }
+    Simple.releaserName = 'simple';
+    return Simple;
+})();
+exports.Simple = Simple;
+//# sourceMappingURL=simple.js.map
+
+/***/ }),
 /* 644 */,
 /* 645 */,
 /* 646 */,
@@ -42774,32 +42314,7 @@ if (process.platform === 'linux') {
 
 
 /***/ }),
-/* 655 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-const java_update_1 = __webpack_require__(55);
-class PomXML extends java_update_1.JavaUpdate {
-}
-exports.PomXML = PomXML;
-//# sourceMappingURL=pom-xml.js.map
-
-/***/ }),
+/* 655 */,
 /* 656 */,
 /* 657 */,
 /* 658 */,
@@ -43297,15 +42812,7 @@ function simpleEnd(buf) {
 /***/ }),
 /* 675 */,
 /* 676 */,
-/* 677 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-const SemVer = __webpack_require__(65)
-const patch = (a, loose) => new SemVer(a, loose).patch
-module.exports = patch
-
-
-/***/ }),
+/* 677 */,
 /* 678 */,
 /* 679 */,
 /* 680 */,
@@ -43331,6 +42838,7 @@ module.exports = patch
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.graphqlToCommits = void 0;
 const CONVENTIONAL_COMMIT_REGEX = /^[\w]+(\(\w+\))?!?: /;
 async function graphqlToCommits(github, response) {
     const commitHistory = response.repository.defaultBranchRef.target.history;
@@ -43373,7 +42881,7 @@ async function graphqlToCommit(github, commitEdge) {
     // if, on the off chance, there are more than 100 files attached to a
     // PR, paginate in the additional files.
     while ( true && prEdge.node.files) {
-        for (let i = 0, fileEdge; i < prEdge.node.files.edges.length; i++) {
+        for (let i = 0; i < prEdge.node.files.edges.length; i++) {
             commit.files.push(prEdge.node.files.edges[i].node.path);
         }
         if (prEdge.node.files.pageInfo.hasNextPage) {
@@ -43556,42 +43064,7 @@ module.exports = (promise, onFinally) => {
 /***/ }),
 /* 698 */,
 /* 699 */,
-/* 700 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-class Version {
-    constructor(options) {
-        this.create = false;
-        this.path = options.path;
-        this.changelogEntry = options.changelogEntry;
-        this.version = options.version;
-        this.packageName = options.packageName;
-        this.contents = options.contents;
-    }
-    updateContent(content) {
-        return `${this.version}`;
-    }
-}
-exports.Version = Version;
-//# sourceMappingURL=version.js.map
-
-/***/ }),
+/* 700 */,
 /* 701 */
 /***/ (function(module) {
 
@@ -43893,104 +43366,14 @@ module.exports = valid
 /* 724 */,
 /* 725 */,
 /* 726 */,
-/* 727 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-class GoogleUtils {
-    constructor(options) {
-        this.create = false;
-        this.path = options.path;
-        this.changelogEntry = options.changelogEntry;
-        this.version = options.version;
-        this.packageName = options.packageName;
-    }
-    updateContent(content) {
-        return content.replace(/"[0-9]\.[0-9]+\.[0-9](-\w+)?"/, `"${this.version}"`);
-    }
-}
-exports.GoogleUtils = GoogleUtils;
-//# sourceMappingURL=google-utils.js.map
-
-/***/ }),
+/* 727 */,
 /* 728 */,
 /* 729 */,
 /* 730 */,
 /* 731 */,
 /* 732 */,
 /* 733 */,
-/* 734 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-const checkpoint_1 = __webpack_require__(923);
-class PHPManifest {
-    constructor(options) {
-        this.create = false;
-        this.path = options.path;
-        this.changelogEntry = options.changelogEntry;
-        this.version = options.version;
-        this.versions = options.versions;
-        this.packageName = options.packageName;
-    }
-    updateContent(content) {
-        if (!this.versions || this.versions.size === 0) {
-            checkpoint_1.checkpoint(`no updates necessary for ${this.path}`, checkpoint_1.CheckpointType.Failure);
-            return content;
-        }
-        const parsed = JSON.parse(content);
-        parsed.modules.forEach((module) => {
-            if (!this.versions)
-                return;
-            for (const [key, version] of this.versions) {
-                if (module.name === key) {
-                    checkpoint_1.checkpoint(`adding ${key}@${version} to manifest`, checkpoint_1.CheckpointType.Success);
-                    module.versions.unshift(`v${version}`);
-                }
-            }
-            // the mono-repo's own API version should be added to the
-            // google/cloud key:
-            if (module.name === 'google/cloud') {
-                module.versions.unshift(`v${this.version}`);
-            }
-        });
-        return JSON.stringify(parsed, null, 4) + '\n';
-    }
-}
-exports.PHPManifest = PHPManifest;
-//# sourceMappingURL=php-manifest.js.map
-
-/***/ }),
+/* 734 */,
 /* 735 */,
 /* 736 */
 /***/ (function(module, exports) {
@@ -44743,7 +44126,7 @@ module.exports = exports["default"];
 
 "use strict";
 
-var arrayify = __webpack_require__(433);
+var arrayify = __webpack_require__(790);
 var dotPropGet = __webpack_require__(152).get;
 
 function compareFunc(prop) {
@@ -44881,7 +44264,98 @@ function sync (path, options) {
 
 
 /***/ }),
-/* 743 */,
+/* 743 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+var request = __webpack_require__(753);
+var universalUserAgent = __webpack_require__(526);
+
+const VERSION = "4.5.0";
+
+class GraphqlError extends Error {
+  constructor(request, response) {
+    const message = response.data.errors[0].message;
+    super(message);
+    Object.assign(this, response.data);
+    this.name = "GraphqlError";
+    this.request = request; // Maintains proper stack trace (only available on V8)
+
+    /* istanbul ignore next */
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+
+}
+
+const NON_VARIABLE_OPTIONS = ["method", "baseUrl", "url", "headers", "request", "query", "mediaType"];
+function graphql(request, query, options) {
+  options = typeof query === "string" ? options = Object.assign({
+    query
+  }, options) : options = query;
+  const requestOptions = Object.keys(options).reduce((result, key) => {
+    if (NON_VARIABLE_OPTIONS.includes(key)) {
+      result[key] = options[key];
+      return result;
+    }
+
+    if (!result.variables) {
+      result.variables = {};
+    }
+
+    result.variables[key] = options[key];
+    return result;
+  }, {});
+  return request(requestOptions).then(response => {
+    if (response.data.errors) {
+      throw new GraphqlError(requestOptions, {
+        data: response.data
+      });
+    }
+
+    return response.data.data;
+  });
+}
+
+function withDefaults(request$1, newDefaults) {
+  const newRequest = request$1.defaults(newDefaults);
+
+  const newApi = (query, options) => {
+    return graphql(newRequest, query, options);
+  };
+
+  return Object.assign(newApi, {
+    defaults: withDefaults.bind(null, newRequest),
+    endpoint: request.request.endpoint
+  });
+}
+
+const graphql$1 = withDefaults(request.request, {
+  headers: {
+    "user-agent": `octokit-graphql.js/${VERSION} ${universalUserAgent.getUserAgent()}`
+  },
+  method: "POST",
+  url: "/graphql"
+});
+function withCustomRequest(customRequest) {
+  return withDefaults(customRequest, {
+    method: "POST",
+    url: "/graphql"
+  });
+}
+
+exports.graphql = graphql$1;
+exports.withCustomRequest = withCustomRequest;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
 /* 744 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -44900,41 +44374,7 @@ module.exports = require("fs");
 
 /***/ }),
 /* 748 */,
-/* 749 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-class VersionRB {
-    constructor(options) {
-        this.create = false;
-        this.path = options.path;
-        this.changelogEntry = options.changelogEntry;
-        this.version = options.version;
-        this.packageName = options.packageName;
-    }
-    updateContent(content) {
-        return content.replace(/"[0-9]+\.[0-9]+\.[0-9](-\w+)?"/, `"${this.version}"`);
-    }
-}
-exports.VersionRB = VersionRB;
-//# sourceMappingURL=version-rb.js.map
-
-/***/ }),
+/* 749 */,
 /* 750 */,
 /* 751 */,
 /* 752 */
@@ -44945,7 +44385,7 @@ const neq = __webpack_require__(873)
 const gt = __webpack_require__(486)
 const gte = __webpack_require__(167)
 const lt = __webpack_require__(586)
-const lte = __webpack_require__(444)
+const lte = __webpack_require__(898)
 
 const cmp = (a, op, b, loose) => {
   switch (op) {
@@ -45002,7 +44442,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var endpoint = __webpack_require__(385);
-var universalUserAgent = __webpack_require__(796);
+var universalUserAgent = __webpack_require__(526);
 var isPlainObject = _interopDefault(__webpack_require__(696));
 var nodeFetch = _interopDefault(__webpack_require__(454));
 var requestError = __webpack_require__(463);
@@ -45192,99 +44632,59 @@ module.exports = {
 
 
 /***/ }),
-/* 755 */
-/***/ (function(__unusedmodule, exports) {
+/* 755 */,
+/* 756 */,
+/* 757 */,
+/* 758 */
+/***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-const VERSION_REGEX = /(\d+)\.(\d+)\.(\d+)(-\w+)?(-SNAPSHOT)?/;
-class Version {
-    constructor(major, minor, patch, extra, snapshot) {
-        this.major = major;
-        this.minor = minor;
-        this.patch = patch;
-        this.extra = extra;
-        this.snapshot = snapshot;
-    }
-    static parse(version) {
-        const match = version.match(VERSION_REGEX);
-        if (!match) {
-            throw Error(`unable to parse version string: ${version}`);
+
+exports.__esModule = true;
+
+var _utils = __webpack_require__(423);
+
+exports['default'] = function (instance) {
+  instance.registerHelper('blockHelperMissing', function (context, options) {
+    var inverse = options.inverse,
+        fn = options.fn;
+
+    if (context === true) {
+      return fn(this);
+    } else if (context === false || context == null) {
+      return inverse(this);
+    } else if (_utils.isArray(context)) {
+      if (context.length > 0) {
+        if (options.ids) {
+          options.ids = [options.name];
         }
-        const major = Number(match[1]);
-        const minor = Number(match[2]);
-        const patch = Number(match[3]);
-        let extra = '';
-        let snapshot = false;
-        if (match[5]) {
-            extra = match[4];
-            snapshot = match[5] === '-SNAPSHOT';
-        }
-        else if (match[4]) {
-            if (match[4] === '-SNAPSHOT') {
-                snapshot = true;
-            }
-            else {
-                extra = match[4];
-            }
-        }
-        return new Version(major, minor, patch, extra, snapshot);
+
+        return instance.helpers.each(context, options);
+      } else {
+        return inverse(this);
+      }
+    } else {
+      if (options.data && options.ids) {
+        var data = _utils.createFrame(options.data);
+        data.contextPath = _utils.appendContextPath(options.data.contextPath, options.name);
+        options = { data: data };
+      }
+
+      return fn(context, options);
     }
-    bump(bumpType) {
-        switch (bumpType) {
-            case 'major':
-                this.major += 1;
-                this.minor = 0;
-                this.patch = 0;
-                this.snapshot = false;
-                break;
-            case 'minor':
-                this.minor += 1;
-                this.patch = 0;
-                this.snapshot = false;
-                break;
-            case 'patch':
-                this.patch += 1;
-                this.snapshot = false;
-                break;
-            case 'snapshot':
-                this.patch += 1;
-                this.snapshot = true;
-                break;
-            default:
-                throw Error(`unsupported bump type: ${bumpType}`);
-        }
-        return this;
-    }
-    toString() {
-        return `${this.major}.${this.minor}.${this.patch}${this.extra}${this.snapshot ? '-SNAPSHOT' : ''}`;
-    }
-}
-exports.Version = Version;
-//# sourceMappingURL=version.js.map
+  });
+};
+
+module.exports = exports['default'];
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2hlbHBlcnMvYmxvY2staGVscGVyLW1pc3NpbmcuanMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7OztxQkFBd0QsVUFBVTs7cUJBRW5ELFVBQVMsUUFBUSxFQUFFO0FBQ2hDLFVBQVEsQ0FBQyxjQUFjLENBQUMsb0JBQW9CLEVBQUUsVUFBUyxPQUFPLEVBQUUsT0FBTyxFQUFFO0FBQ3ZFLFFBQUksT0FBTyxHQUFHLE9BQU8sQ0FBQyxPQUFPO1FBQzNCLEVBQUUsR0FBRyxPQUFPLENBQUMsRUFBRSxDQUFDOztBQUVsQixRQUFJLE9BQU8sS0FBSyxJQUFJLEVBQUU7QUFDcEIsYUFBTyxFQUFFLENBQUMsSUFBSSxDQUFDLENBQUM7S0FDakIsTUFBTSxJQUFJLE9BQU8sS0FBSyxLQUFLLElBQUksT0FBTyxJQUFJLElBQUksRUFBRTtBQUMvQyxhQUFPLE9BQU8sQ0FBQyxJQUFJLENBQUMsQ0FBQztLQUN0QixNQUFNLElBQUksZUFBUSxPQUFPLENBQUMsRUFBRTtBQUMzQixVQUFJLE9BQU8sQ0FBQyxNQUFNLEdBQUcsQ0FBQyxFQUFFO0FBQ3RCLFlBQUksT0FBTyxDQUFDLEdBQUcsRUFBRTtBQUNmLGlCQUFPLENBQUMsR0FBRyxHQUFHLENBQUMsT0FBTyxDQUFDLElBQUksQ0FBQyxDQUFDO1NBQzlCOztBQUVELGVBQU8sUUFBUSxDQUFDLE9BQU8sQ0FBQyxJQUFJLENBQUMsT0FBTyxFQUFFLE9BQU8sQ0FBQyxDQUFDO09BQ2hELE1BQU07QUFDTCxlQUFPLE9BQU8sQ0FBQyxJQUFJLENBQUMsQ0FBQztPQUN0QjtLQUNGLE1BQU07QUFDTCxVQUFJLE9BQU8sQ0FBQyxJQUFJLElBQUksT0FBTyxDQUFDLEdBQUcsRUFBRTtBQUMvQixZQUFJLElBQUksR0FBRyxtQkFBWSxPQUFPLENBQUMsSUFBSSxDQUFDLENBQUM7QUFDckMsWUFBSSxDQUFDLFdBQVcsR0FBRyx5QkFDakIsT0FBTyxDQUFDLElBQUksQ0FBQyxXQUFXLEVBQ3hCLE9BQU8sQ0FBQyxJQUFJLENBQ2IsQ0FBQztBQUNGLGVBQU8sR0FBRyxFQUFFLElBQUksRUFBRSxJQUFJLEVBQUUsQ0FBQztPQUMxQjs7QUFFRCxhQUFPLEVBQUUsQ0FBQyxPQUFPLEVBQUUsT0FBTyxDQUFDLENBQUM7S0FDN0I7R0FDRixDQUFDLENBQUM7Q0FDSiIsImZpbGUiOiJibG9jay1oZWxwZXItbWlzc2luZy5qcyIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IGFwcGVuZENvbnRleHRQYXRoLCBjcmVhdGVGcmFtZSwgaXNBcnJheSB9IGZyb20gJy4uL3V0aWxzJztcblxuZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24oaW5zdGFuY2UpIHtcbiAgaW5zdGFuY2UucmVnaXN0ZXJIZWxwZXIoJ2Jsb2NrSGVscGVyTWlzc2luZycsIGZ1bmN0aW9uKGNvbnRleHQsIG9wdGlvbnMpIHtcbiAgICBsZXQgaW52ZXJzZSA9IG9wdGlvbnMuaW52ZXJzZSxcbiAgICAgIGZuID0gb3B0aW9ucy5mbjtcblxuICAgIGlmIChjb250ZXh0ID09PSB0cnVlKSB7XG4gICAgICByZXR1cm4gZm4odGhpcyk7XG4gICAgfSBlbHNlIGlmIChjb250ZXh0ID09PSBmYWxzZSB8fCBjb250ZXh0ID09IG51bGwpIHtcbiAgICAgIHJldHVybiBpbnZlcnNlKHRoaXMpO1xuICAgIH0gZWxzZSBpZiAoaXNBcnJheShjb250ZXh0KSkge1xuICAgICAgaWYgKGNvbnRleHQubGVuZ3RoID4gMCkge1xuICAgICAgICBpZiAob3B0aW9ucy5pZHMpIHtcbiAgICAgICAgICBvcHRpb25zLmlkcyA9IFtvcHRpb25zLm5hbWVdO1xuICAgICAgICB9XG5cbiAgICAgICAgcmV0dXJuIGluc3RhbmNlLmhlbHBlcnMuZWFjaChjb250ZXh0LCBvcHRpb25zKTtcbiAgICAgIH0gZWxzZSB7XG4gICAgICAgIHJldHVybiBpbnZlcnNlKHRoaXMpO1xuICAgICAgfVxuICAgIH0gZWxzZSB7XG4gICAgICBpZiAob3B0aW9ucy5kYXRhICYmIG9wdGlvbnMuaWRzKSB7XG4gICAgICAgIGxldCBkYXRhID0gY3JlYXRlRnJhbWUob3B0aW9ucy5kYXRhKTtcbiAgICAgICAgZGF0YS5jb250ZXh0UGF0aCA9IGFwcGVuZENvbnRleHRQYXRoKFxuICAgICAgICAgIG9wdGlvbnMuZGF0YS5jb250ZXh0UGF0aCxcbiAgICAgICAgICBvcHRpb25zLm5hbWVcbiAgICAgICAgKTtcbiAgICAgICAgb3B0aW9ucyA9IHsgZGF0YTogZGF0YSB9O1xuICAgICAgfVxuXG4gICAgICByZXR1cm4gZm4oY29udGV4dCwgb3B0aW9ucyk7XG4gICAgfVxuICB9KTtcbn1cbiJdfQ==
+
 
 /***/ }),
-/* 756 */,
-/* 757 */,
-/* 758 */,
 /* 759 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@4.2.2","/usr/src/npm/@bcoe/release-please-action"]],"_from":"release-please@4.2.2","_id":"release-please@4.2.2","_inBundle":false,"_integrity":"sha512-Hf0yAS27ilBzS6ekhGNsfDkBHTXnzIQGYv84syZfUDb5bFHHy+CZK+wOUkqxu3aRvJClKPR2M7CIBcjUYstcwA==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@4.2.2","name":"release-please","escapedName":"release-please","rawSpec":"4.2.2","saveSpec":null,"fetchSpec":"4.2.2"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-4.2.2.tgz","_spec":"4.2.2","_where":"/usr/src/npm/@bcoe/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^17.1.4","chalk":"^4.0.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.0.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.13.0","yargs":"^15.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^2.5.1","@types/chai":"^4.1.7","@types/mocha":"^7.0.0","@types/node":"^11.13.6","@types/semver":"^7.0.0","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^7.0.0","nock":"^12.0.0","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"4.2.2"};
+module.exports = require("events");
 
 /***/ }),
 /* 760 */
@@ -45374,189 +44774,7 @@ module.exports = function (x) {
 /***/ }),
 /* 769 */,
 /* 770 */,
-/* 771 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-const release_pr_1 = __webpack_require__(93);
-const conventional_commits_1 = __webpack_require__(514);
-const checkpoint_1 = __webpack_require__(923);
-// Generic
-const changelog_1 = __webpack_require__(261);
-// Java
-const google_utils_1 = __webpack_require__(727);
-const pom_xml_1 = __webpack_require__(655);
-const versions_manifest_1 = __webpack_require__(40);
-const readme_1 = __webpack_require__(233);
-const version_1 = __webpack_require__(755);
-const bump_type_1 = __webpack_require__(490);
-const CHANGELOG_SECTIONS = [
-    { type: 'feat', section: 'Features' },
-    { type: 'fix', section: 'Bug Fixes' },
-    { type: 'perf', section: 'Performance Improvements' },
-    { type: 'deps', section: 'Dependencies' },
-    { type: 'revert', section: 'Reverts' },
-    { type: 'docs', section: 'Documentation' },
-    { type: 'style', section: 'Styles', hidden: true },
-    { type: 'chore', section: 'Miscellaneous Chores', hidden: true },
-    { type: 'refactor', section: 'Code Refactoring', hidden: true },
-    { type: 'test', section: 'Tests', hidden: true },
-    { type: 'build', section: 'Build System', hidden: true },
-    { type: 'ci', section: 'Continuous Integration', hidden: true },
-];
-async function delay({ ms = 3000 }) {
-    if (process.env.ENVIRONMENT === 'test')
-        return;
-    new Promise(resolve => {
-        setTimeout(() => {
-            return resolve();
-        }, ms);
-    });
-}
-class JavaYoshi extends release_pr_1.ReleasePR {
-    async _run() {
-        const versionsManifestContent = await this.gh.getFileContents('versions.txt');
-        console.info('version.txt content', versionsManifestContent.parsedContent);
-        const currentVersions = versions_manifest_1.VersionsManifest.parseVersions(versionsManifestContent.parsedContent);
-        this.snapshot = versions_manifest_1.VersionsManifest.needsSnapshot(versionsManifestContent.parsedContent);
-        if (this.snapshot) {
-            this.labels = ['type: process'];
-            // TODO: this temporarily resolves a race condition between creating a release
-            // and updating tags on the release PR. This should be replaced by a queuing
-            // mechanism to delay/retry this request.
-            if (this.snapshot) {
-                checkpoint_1.checkpoint('snapshot: sleeping for 15 seconds...', checkpoint_1.CheckpointType.Success);
-                await delay({ ms: 15000 });
-                checkpoint_1.checkpoint('snapshot: finished sleeping', checkpoint_1.CheckpointType.Success);
-            }
-        }
-        const latestTag = await this.gh.latestTag();
-        const commits = this.snapshot
-            ? [
-                {
-                    sha: 'abc123',
-                    message: 'fix: ',
-                    files: [],
-                },
-            ]
-            : await this.commits(latestTag ? latestTag.sha : undefined, 100, true);
-        let prSHA = commits[0].sha;
-        // Snapshots populate a fake "fix:"" commit, so that they will always
-        // result in a patch update. We still need to know the HEAD sba, so that
-        // we can use this as a starting point for the snapshot PR:
-        if (this.snapshot) {
-            const latestCommit = (await this.commits(latestTag ? latestTag.sha : undefined, 1, true))[0];
-            prSHA = latestCommit.sha;
-        }
-        const cc = new conventional_commits_1.ConventionalCommits({
-            commits,
-            githubRepoUrl: this.repoUrl,
-            bumpMinorPreMajor: this.bumpMinorPreMajor,
-            changelogSections: CHANGELOG_SECTIONS,
-        });
-        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
-        const candidateVersions = await this.coerceVersions(cc, currentVersions);
-        let changelogEntry = await cc.generateChangelogEntry({
-            version: candidate.version,
-            currentTag: `v${candidate.version}`,
-            previousTag: candidate.previousTag,
-        });
-        // snapshot entries are special:
-        // 1. they don't update the README or CHANGELOG.
-        // 2. they always update a patch with the -SNAPSHOT suffix.
-        // 3. they're haunted.
-        if (this.snapshot) {
-            candidate.version = `${candidate.version}-SNAPSHOT`;
-            changelogEntry =
-                '### Updating meta-information for bleeding-edge SNAPSHOT release.';
-        }
-        // don't create a release candidate until user facing changes
-        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
-        // one line is a good indicator that there were no interesting commits.
-        if (this.changelogEmpty(changelogEntry) && !this.snapshot) {
-            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return;
-        }
-        const updates = [];
-        if (!this.snapshot) {
-            updates.push(new changelog_1.Changelog({
-                path: 'CHANGELOG.md',
-                changelogEntry,
-                versions: candidateVersions,
-                version: candidate.version,
-                packageName: this.packageName,
-            }));
-            updates.push(new readme_1.Readme({
-                path: 'README.md',
-                changelogEntry,
-                versions: candidateVersions,
-                version: candidate.version,
-                packageName: this.packageName,
-            }));
-            updates.push(new google_utils_1.GoogleUtils({
-                // TODO(@chingor): should this use search like pom.xml?
-                path: 'google-api-client/src/main/java/com/google/api/client/googleapis/GoogleUtils.java',
-                changelogEntry,
-                versions: candidateVersions,
-                version: candidate.version,
-                packageName: this.packageName,
-                contents: versionsManifestContent,
-            }));
-        }
-        updates.push(new versions_manifest_1.VersionsManifest({
-            path: 'versions.txt',
-            changelogEntry,
-            versions: candidateVersions,
-            version: candidate.version,
-            packageName: this.packageName,
-            contents: versionsManifestContent,
-        }));
-        const pomFiles = await this.gh.findFilesByFilename('pom.xml');
-        pomFiles.forEach(path => {
-            updates.push(new pom_xml_1.PomXML({
-                path,
-                changelogEntry,
-                versions: candidateVersions,
-                version: candidate.version,
-                packageName: this.packageName,
-            }));
-        });
-        console.info(`attempting to open PR latestTagSha = ${latestTag ? latestTag.sha : 'none'} prSha = ${prSHA}`);
-        await this.openPR(prSHA, `${changelogEntry}\n---\n`, updates, candidate.version);
-    }
-    defaultInitialVersion() {
-        return '0.1.0';
-    }
-    async coerceVersions(cc, currentVersions) {
-        const newVersions = new Map();
-        for (const [k, version] of currentVersions) {
-            const bump = await cc.suggestBump(version);
-            const newVersion = version_1.Version.parse(version);
-            newVersion.bump(this.snapshot ? 'snapshot' : bump_type_1.fromSemverReleaseType(bump.releaseType));
-            newVersions.set(k, newVersion.toString());
-        }
-        return newVersions;
-    }
-}
-exports.JavaYoshi = JavaYoshi;
-//# sourceMappingURL=java-yoshi.js.map
-
-/***/ }),
+/* 771 */,
 /* 772 */,
 /* 773 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
@@ -46138,92 +45356,7 @@ function transformLiteralToPath(sexpr) {
 /* 778 */,
 /* 779 */,
 /* 780 */,
-/* 781 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-const SemVer = __webpack_require__(65)
-const Comparator = __webpack_require__(174)
-const {ANY} = Comparator
-const Range = __webpack_require__(124)
-const satisfies = __webpack_require__(310)
-const gt = __webpack_require__(486)
-const lt = __webpack_require__(586)
-const lte = __webpack_require__(444)
-const gte = __webpack_require__(167)
-
-const outside = (version, range, hilo, options) => {
-  version = new SemVer(version, options)
-  range = new Range(range, options)
-
-  let gtfn, ltefn, ltfn, comp, ecomp
-  switch (hilo) {
-    case '>':
-      gtfn = gt
-      ltefn = lte
-      ltfn = lt
-      comp = '>'
-      ecomp = '>='
-      break
-    case '<':
-      gtfn = lt
-      ltefn = gte
-      ltfn = gt
-      comp = '<'
-      ecomp = '<='
-      break
-    default:
-      throw new TypeError('Must provide a hilo val of "<" or ">"')
-  }
-
-  // If it satisifes the range it is not outside
-  if (satisfies(version, range, options)) {
-    return false
-  }
-
-  // From now on, variable terms are as if we're in "gtr" mode.
-  // but note that everything is flipped for the "ltr" function.
-
-  for (let i = 0; i < range.set.length; ++i) {
-    const comparators = range.set[i]
-
-    let high = null
-    let low = null
-
-    comparators.forEach((comparator) => {
-      if (comparator.semver === ANY) {
-        comparator = new Comparator('>=0.0.0')
-      }
-      high = high || comparator
-      low = low || comparator
-      if (gtfn(comparator.semver, high.semver, options)) {
-        high = comparator
-      } else if (ltfn(comparator.semver, low.semver, options)) {
-        low = comparator
-      }
-    })
-
-    // If the edge version comparator has a operator then our version
-    // isn't outside it
-    if (high.operator === comp || high.operator === ecomp) {
-      return false
-    }
-
-    // If the lowest version comparator has an operator and our version
-    // is less than it then it isn't higher than the range
-    if ((!low.operator || low.operator === comp) &&
-        ltefn(version, low.semver)) {
-      return false
-    } else if (low.operator === ecomp && ltfn(version, low.semver)) {
-      return false
-    }
-  }
-  return true
-}
-
-module.exports = outside
-
-
-/***/ }),
+/* 781 */,
 /* 782 */,
 /* 783 */,
 /* 784 */,
@@ -46425,19 +45558,22 @@ PrintVisitor.prototype.HashPair = function (pair) {
 /* 788 */,
 /* 789 */,
 /* 790 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ (function(module) {
 
-const outside = __webpack_require__(781)
-// Determine if version is less than all the versions possible in the range
-const ltr = (version, range, options) => outside(version, range, '<', options)
-module.exports = ltr
+"use strict";
+
+module.exports = function(val) {
+  return Array.isArray(val) ? val : [val];
+};
 
 
 /***/ }),
 /* 791 */,
 /* 792 */,
 /* 793 */,
-/* 794 */
+/* 794 */,
+/* 795 */,
+/* 796 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
 "use strict";
@@ -46456,65 +45592,52 @@ module.exports = ltr
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
-const checkpoint_1 = __webpack_require__(923);
-class RootComposer {
-    constructor(options) {
-        this.create = false;
-        this.path = options.path;
-        this.changelogEntry = options.changelogEntry;
-        this.version = options.version;
-        this.versions = options.versions;
-        this.packageName = options.packageName;
+exports.ReleasePRFactory = void 0;
+const releasers_1 = __webpack_require__(593);
+const node_1 = __webpack_require__(618);
+const python_1 = __webpack_require__(540);
+const simple_1 = __webpack_require__(643);
+const terraform_module_1 = __webpack_require__(940);
+class ReleasePRFactory {
+    static build(releaseType, options) {
+        const releaseOptions = {
+            ...options,
+            ...{ releaseType },
+        };
+        return new (ReleasePRFactory.class(releaseType))(releaseOptions);
     }
-    updateContent(content) {
-        if (!this.versions || this.versions.size === 0) {
-            checkpoint_1.checkpoint(`no updates necessary for ${this.path}`, checkpoint_1.CheckpointType.Failure);
-            return content;
+    // Return a ReleasePR class, based on the release type, e.g., node, python:
+    static class(releaseType) {
+        const releasers = releasers_1.getReleasers();
+        const releaser = releasers[releaseType];
+        if (!releaser) {
+            throw Error('unknown release type');
         }
-        const parsed = JSON.parse(content);
-        if (this.versions) {
-            // eslint-disable-next-line prefer-const
-            for (let [key, version] of this.versions.entries()) {
-                version = version || '1.0.0';
-                checkpoint_1.checkpoint(`updating ${key} from ${parsed.replace[key]} to ${version}`, checkpoint_1.CheckpointType.Success);
-                parsed.replace[key] = version;
-            }
+        return releaser;
+    }
+    // For the benefit of WebPack, we provide a static factory for a subset
+    // of the releasers available in the release please GitHub action:
+    static buildStatic(releaseType, options) {
+        const releaseOptions = {
+            ...options,
+            ...{ releaseType },
+        };
+        switch (releaseType) {
+            case 'node':
+                return new node_1.Node(releaseOptions);
+            case 'python':
+                return new python_1.Python(releaseOptions);
+            case 'simple':
+                return new simple_1.Simple(releaseOptions);
+            case 'terraform-module':
+                return new terraform_module_1.TerraformModule(releaseOptions);
+            default:
+                throw Error('unknown release type');
         }
-        return JSON.stringify(parsed, null, 4) + '\n';
     }
 }
-exports.RootComposer = RootComposer;
-//# sourceMappingURL=root-composer.js.map
-
-/***/ }),
-/* 795 */,
-/* 796 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
-
-var osName = _interopDefault(__webpack_require__(2));
-
-function getUserAgent() {
-  try {
-    return `Node.js/${process.version.substr(1)} (${osName()}; ${process.arch})`;
-  } catch (error) {
-    if (/wmic os get Caption/.test(error.message)) {
-      return "Windows <version undetectable>";
-    }
-
-    return "<environment undetectable>";
-  }
-}
-
-exports.getUserAgent = getUserAgent;
-//# sourceMappingURL=index.js.map
-
+exports.ReleasePRFactory = ReleasePRFactory;
+//# sourceMappingURL=release-pr-factory.js.map
 
 /***/ }),
 /* 797 */,
@@ -46798,6 +45921,7 @@ function whichSync (cmd, opt) {
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.PackageJson = void 0;
 const checkpoint_1 = __webpack_require__(923);
 class PackageJson {
     constructor(options) {
@@ -46806,6 +45930,7 @@ class PackageJson {
         this.changelogEntry = options.changelogEntry;
         this.version = options.version;
         this.packageName = options.packageName;
+        this.skipCi = options.skipCi;
     }
     updateContent(content) {
         const parsed = JSON.parse(content);
@@ -47159,8 +46284,20 @@ Object.defineProperty(exports, '__esModule', { value: true });
 
 const Endpoints = {
   actions: {
+    addSelectedRepoToOrgSecret: ["PUT /orgs/{org}/actions/secrets/{secret_name}/repositories/{repository_id}"],
     cancelWorkflowRun: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel"],
-    createOrUpdateSecretForRepo: ["PUT /repos/{owner}/{repo}/actions/secrets/{name}"],
+    createOrUpdateOrgSecret: ["PUT /orgs/{org}/actions/secrets/{secret_name}"],
+    createOrUpdateRepoSecret: ["PUT /repos/{owner}/{repo}/actions/secrets/{secret_name}", {}, {
+      renamedParameters: {
+        name: "secret_name"
+      }
+    }],
+    createOrUpdateSecretForRepo: ["PUT /repos/{owner}/{repo}/actions/secrets/{secret_name}", {}, {
+      renamed: ["actions", "createOrUpdateRepoSecret"],
+      renamedParameters: {
+        name: "secret_name"
+      }
+    }],
     createRegistrationToken: ["POST /repos/{owner}/{repo}/actions/runners/registration-token", {}, {
       renamed: ["actions", "createRegistrationTokenForRepo"]
     }],
@@ -47172,7 +46309,18 @@ const Endpoints = {
     createRemoveTokenForOrg: ["POST /orgs/{org}/actions/runners/remove-token"],
     createRemoveTokenForRepo: ["POST /repos/{owner}/{repo}/actions/runners/remove-token"],
     deleteArtifact: ["DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"],
-    deleteSecretFromRepo: ["DELETE /repos/{owner}/{repo}/actions/secrets/{name}"],
+    deleteOrgSecret: ["DELETE /orgs/{org}/actions/secrets/{secret_name}"],
+    deleteRepoSecret: ["DELETE /repos/{owner}/{repo}/actions/secrets/{secret_name}", {}, {
+      renamedParameters: {
+        name: "secret_name"
+      }
+    }],
+    deleteSecretFromRepo: ["DELETE /repos/{owner}/{repo}/actions/secrets/{secret_name}", {}, {
+      renamed: ["actions", "deleteRepoSecret"],
+      renamedParameters: {
+        name: "secret_name"
+      }
+    }],
     deleteSelfHostedRunnerFromOrg: ["DELETE /orgs/{org}/actions/runners/{runner_id}"],
     deleteSelfHostedRunnerFromRepo: ["DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}"],
     deleteWorkflowRunLogs: ["DELETE /repos/{owner}/{repo}/actions/runs/{run_id}/logs"],
@@ -47180,8 +46328,23 @@ const Endpoints = {
     downloadWorkflowJobLogs: ["GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs"],
     downloadWorkflowRunLogs: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs"],
     getArtifact: ["GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"],
-    getPublicKey: ["GET /repos/{owner}/{repo}/actions/secrets/public-key"],
-    getSecret: ["GET /repos/{owner}/{repo}/actions/secrets/{name}"],
+    getOrgPublicKey: ["GET /orgs/{org}/actions/secrets/public-key"],
+    getOrgSecret: ["GET /orgs/{org}/actions/secrets/{secret_name}"],
+    getPublicKey: ["GET /repos/{owner}/{repo}/actions/secrets/public-key", {}, {
+      renamed: ["actions", "getRepoPublicKey"]
+    }],
+    getRepoPublicKey: ["GET /repos/{owner}/{repo}/actions/secrets/public-key"],
+    getRepoSecret: ["GET /repos/{owner}/{repo}/actions/secrets/{secret_name}", {}, {
+      renamedParameters: {
+        name: "secret_name"
+      }
+    }],
+    getSecret: ["GET /repos/{owner}/{repo}/actions/secrets/{secret_name}", {}, {
+      renamed: ["actions", "getRepoSecret"],
+      renamedParameters: {
+        name: "secret_name"
+      }
+    }],
     getSelfHostedRunner: ["GET /repos/{owner}/{repo}/actions/runners/{runner_id}", {}, {
       renamed: ["actions", "getSelfHostedRunnerForRepo"]
     }],
@@ -47190,16 +46353,23 @@ const Endpoints = {
     getWorkflow: ["GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}"],
     getWorkflowJob: ["GET /repos/{owner}/{repo}/actions/jobs/{job_id}"],
     getWorkflowRun: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}"],
+    getWorkflowRunUsage: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/timing"],
+    getWorkflowUsage: ["GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/timing"],
     listArtifactsForRepo: ["GET /repos/{owner}/{repo}/actions/artifacts"],
     listDownloadsForSelfHostedRunnerApplication: ["GET /repos/{owner}/{repo}/actions/runners/downloads", {}, {
       renamed: ["actions", "listRunnerApplicationsForRepo"]
     }],
     listJobsForWorkflowRun: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs"],
+    listOrgSecrets: ["GET /orgs/{org}/actions/secrets"],
+    listRepoSecrets: ["GET /repos/{owner}/{repo}/actions/secrets"],
     listRepoWorkflowRuns: ["GET /repos/{owner}/{repo}/actions/runs"],
     listRepoWorkflows: ["GET /repos/{owner}/{repo}/actions/workflows"],
     listRunnerApplicationsForOrg: ["GET /orgs/{org}/actions/runners/downloads"],
     listRunnerApplicationsForRepo: ["GET /repos/{owner}/{repo}/actions/runners/downloads"],
-    listSecretsForRepo: ["GET /repos/{owner}/{repo}/actions/secrets"],
+    listSecretsForRepo: ["GET /repos/{owner}/{repo}/actions/secrets", {}, {
+      renamed: ["actions", "listRepoSecrets"]
+    }],
+    listSelectedReposForOrgSecret: ["GET /orgs/{org}/actions/secrets/{secret_name}/repositories"],
     listSelfHostedRunnersForOrg: ["GET /orgs/{org}/actions/runners"],
     listSelfHostedRunnersForRepo: ["GET /repos/{owner}/{repo}/actions/runners"],
     listWorkflowJobLogs: ["GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs", {}, {
@@ -47211,9 +46381,11 @@ const Endpoints = {
     }],
     listWorkflowRuns: ["GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs"],
     reRunWorkflow: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun"],
+    removeSelectedRepoFromOrgSecret: ["DELETE /orgs/{org}/actions/secrets/{secret_name}/repositories/{repository_id}"],
     removeSelfHostedRunner: ["DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}", {}, {
       renamed: ["actions", "deleteSelfHostedRunnerFromRepo"]
-    }]
+    }],
+    setSelectedReposForOrgSecret: ["PUT /orgs/{org}/actions/secrets/{secret_name}/repositories"]
   },
   activity: {
     checkRepoIsStarredByAuthenticatedUser: ["GET /user/starred/{owner}/{repo}"],
@@ -48351,7 +47523,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "3.10.0";
+const VERSION = "3.12.2";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -48407,26 +47579,30 @@ function decorate(octokit, scope, methodName, defaults, decorations) {
 
     if (decorations.deprecated) {
       octokit.log.warn(decorations.deprecated);
-    } // There currently are no renamed parameters
-    // if (decorations.renamedParameters) {
-    //   // @ts-ignore https://github.com/microsoft/TypeScript/issues/25488
-    //   const options = requestWithDefaults.endpoint.merge(...args);
-    //   for (const [name, alias] of Object.entries(
-    //     decorations.renamedParameters
-    //   )) {
-    //     if (name in options) {
-    //       octokit.log.warn(
-    //         `"${name}" parameter is deprecated for "octokit.${scope}.${methodName}()". Use "${alias}" instead`
-    //       );
-    //       if (!(alias in options)) {
-    //         options[alias] = options[name];
-    //       }
-    //       delete options[name];
-    //     }
-    //   }
-    //   return requestWithDefaults(options);
-    // }
-    // @ts-ignore https://github.com/microsoft/TypeScript/issues/25488
+    }
+
+    if (decorations.renamedParameters) {
+      // @ts-ignore https://github.com/microsoft/TypeScript/issues/25488
+      const options = requestWithDefaults.endpoint.merge(...args);
+
+      for (const [name, alias] of Object.entries(decorations.renamedParameters)) {
+        // There is currently no deprecated parameter that is optional,
+        // so we never hit the else branch below at this point.
+
+        /* istanbul ignore else */
+        if (name in options) {
+          octokit.log.warn(`"${name}" parameter is deprecated for "octokit.${scope}.${methodName}()". Use "${alias}" instead`);
+
+          if (!(alias in options)) {
+            options[alias] = options[name];
+          }
+
+          delete options[name];
+        }
+      }
+
+      return requestWithDefaults(options);
+    } // @ts-ignore https://github.com/microsoft/TypeScript/issues/25488
 
 
     return requestWithDefaults(...args);
@@ -49035,20 +48211,20 @@ module.exports = {
   diff: __webpack_require__(822),
   major: __webpack_require__(744),
   minor: __webpack_require__(803),
-  patch: __webpack_require__(677),
+  patch: __webpack_require__(489),
   prerelease: __webpack_require__(968),
   compare: __webpack_require__(874),
-  rcompare: __webpack_require__(113),
+  rcompare: __webpack_require__(630),
   compareLoose: __webpack_require__(283),
   compareBuild: __webpack_require__(16),
   sort: __webpack_require__(120),
-  rsort: __webpack_require__(593),
+  rsort: __webpack_require__(464),
   gt: __webpack_require__(486),
   lt: __webpack_require__(586),
   eq: __webpack_require__(298),
   neq: __webpack_require__(873),
   gte: __webpack_require__(167),
-  lte: __webpack_require__(444),
+  lte: __webpack_require__(898),
   cmp: __webpack_require__(752),
   coerce: __webpack_require__(499),
   Comparator: __webpack_require__(174),
@@ -49059,9 +48235,9 @@ module.exports = {
   minSatisfying: __webpack_require__(740),
   minVersion: __webpack_require__(164),
   validRange: __webpack_require__(480),
-  outside: __webpack_require__(781),
+  outside: __webpack_require__(462),
   gtr: __webpack_require__(531),
-  ltr: __webpack_require__(790),
+  ltr: __webpack_require__(323),
   intersects: __webpack_require__(259),
   simplifyRange: __webpack_require__(877),
   subset: __webpack_require__(999),
@@ -49410,7 +48586,7 @@ var pluginRequestLog = __webpack_require__(916);
 var pluginPaginateRest = __webpack_require__(299);
 var pluginRestEndpointMethods = __webpack_require__(842);
 
-const VERSION = "17.8.0";
+const VERSION = "17.9.2";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.restEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`
@@ -49426,118 +48602,7 @@ exports.Octokit = Octokit;
 /* 892 */,
 /* 893 */,
 /* 894 */,
-/* 895 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-const release_pr_1 = __webpack_require__(93);
-const conventional_commits_1 = __webpack_require__(514);
-const checkpoint_1 = __webpack_require__(923);
-// Generic
-const changelog_1 = __webpack_require__(261);
-// Java
-const pom_xml_1 = __webpack_require__(655);
-// Yoshi Java Auth Library
-const versions_manifest_1 = __webpack_require__(40);
-const readme_1 = __webpack_require__(233);
-class JavaAuthYoshi extends release_pr_1.ReleasePR {
-    async _run() {
-        const latestTag = await this.gh.latestTag();
-        const commits = this.snapshot
-            ? [
-                {
-                    sha: 'abc123',
-                    message: 'fix: ',
-                    files: [],
-                },
-            ]
-            : await this.commits(latestTag ? latestTag.sha : undefined, 100, true);
-        let prSHA = commits[0].sha;
-        const cc = new conventional_commits_1.ConventionalCommits({
-            commits,
-            githubRepoUrl: this.repoUrl,
-            bumpMinorPreMajor: this.bumpMinorPreMajor,
-        });
-        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
-        let changelogEntry = await cc.generateChangelogEntry({
-            version: candidate.version,
-            currentTag: `v${candidate.version}`,
-            previousTag: candidate.previousTag,
-        });
-        // snapshot entries are special:
-        // 1. they don't update the README or CHANGELOG.
-        // 2. they always update a patch with the -SNAPSHOT suffix.
-        // 3. they're haunted.
-        if (this.snapshot) {
-            prSHA = latestTag.sha;
-            candidate.version = `${candidate.version}-SNAPSHOT`;
-            changelogEntry =
-                '### Updating meta-information for bleeding-edge SNAPSHOT release.';
-        }
-        // don't create a release candidate until user facing changes
-        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
-        // one line is a good indicator that there were no interesting commits.
-        if (this.changelogEmpty(changelogEntry) && !this.snapshot) {
-            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return;
-        }
-        const updates = [];
-        if (!this.snapshot) {
-            updates.push(new changelog_1.Changelog({
-                path: 'CHANGELOG.md',
-                changelogEntry,
-                version: candidate.version,
-                packageName: this.packageName,
-            }));
-            updates.push(new readme_1.Readme({
-                path: 'README.md',
-                changelogEntry,
-                version: candidate.version,
-                packageName: this.packageName,
-            }));
-        }
-        updates.push(new versions_manifest_1.VersionsManifest({
-            path: 'versions.txt',
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        [
-            'appengine/pom.xml',
-            'bom/pom.xml',
-            'credentials/pom.xml',
-            'oauth2_http/pom.xml',
-            'pom.xml',
-        ].forEach(path => {
-            updates.push(new pom_xml_1.PomXML({
-                path,
-                changelogEntry,
-                version: candidate.version,
-                packageName: this.packageName,
-            }));
-        });
-        await this.openPR(prSHA, `${changelogEntry}\n---\n`, updates, candidate.version);
-    }
-}
-exports.JavaAuthYoshi = JavaAuthYoshi;
-//# sourceMappingURL=java-auth-yoshi.js.map
-
-/***/ }),
+/* 895 */,
 /* 896 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -49756,94 +48821,11 @@ function () {
 /***/ }),
 /* 897 */,
 /* 898 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
+/***/ (function(module, __unusedexports, __webpack_require__) {
 
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-var request = __webpack_require__(753);
-var universalUserAgent = __webpack_require__(796);
-
-const VERSION = "4.4.0";
-
-class GraphqlError extends Error {
-  constructor(request, response) {
-    const message = response.data.errors[0].message;
-    super(message);
-    Object.assign(this, response.data);
-    this.name = "GraphqlError";
-    this.request = request; // Maintains proper stack trace (only available on V8)
-
-    /* istanbul ignore next */
-
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-  }
-
-}
-
-const NON_VARIABLE_OPTIONS = ["method", "baseUrl", "url", "headers", "request", "query", "mediaType"];
-function graphql(request, query, options) {
-  options = typeof query === "string" ? options = Object.assign({
-    query
-  }, options) : options = query;
-  const requestOptions = Object.keys(options).reduce((result, key) => {
-    if (NON_VARIABLE_OPTIONS.includes(key)) {
-      result[key] = options[key];
-      return result;
-    }
-
-    if (!result.variables) {
-      result.variables = {};
-    }
-
-    result.variables[key] = options[key];
-    return result;
-  }, {});
-  return request(requestOptions).then(response => {
-    if (response.data.errors) {
-      throw new GraphqlError(requestOptions, {
-        data: response.data
-      });
-    }
-
-    return response.data.data;
-  });
-}
-
-function withDefaults(request$1, newDefaults) {
-  const newRequest = request$1.defaults(newDefaults);
-
-  const newApi = (query, options) => {
-    return graphql(newRequest, query, options);
-  };
-
-  return Object.assign(newApi, {
-    defaults: withDefaults.bind(null, newRequest),
-    endpoint: request.request.endpoint
-  });
-}
-
-const graphql$1 = withDefaults(request.request, {
-  headers: {
-    "user-agent": `octokit-graphql.js/${VERSION} ${universalUserAgent.getUserAgent()}`
-  },
-  method: "POST",
-  url: "/graphql"
-});
-function withCustomRequest(customRequest) {
-  return withDefaults(customRequest, {
-    method: "POST",
-    url: "/graphql"
-  });
-}
-
-exports.graphql = graphql$1;
-exports.withCustomRequest = withCustomRequest;
-//# sourceMappingURL=index.js.map
+const compare = __webpack_require__(874)
+const lte = (a, b, loose) => compare(a, b, loose) <= 0
+module.exports = lte
 
 
 /***/ }),
@@ -49877,6 +48859,7 @@ exports.withCustomRequest = withCustomRequest;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.SetupPy = void 0;
 class SetupPy {
     constructor(options) {
         this.create = false;
@@ -49884,6 +48867,7 @@ class SetupPy {
         this.changelogEntry = options.changelogEntry;
         this.version = options.version;
         this.packageName = options.packageName;
+        this.skipCi = options.skipCi;
     }
     updateContent(content) {
         return content.replace(/version ?= ?["'][0-9]+\.[0-9]+\.[0-9](-\w+)?["']/, `version = "${this.version}"`);
@@ -49999,6 +48983,7 @@ module.exports = __webpack_require__(669).deprecate;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.checkpoint = exports.CheckpointType = void 0;
 const chalk = __webpack_require__(843);
 const figures = __webpack_require__(848);
 var CheckpointType;
@@ -51880,6 +50865,7 @@ module.exports = inc
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.TerraformModule = void 0;
 const release_pr_1 = __webpack_require__(93);
 const conventional_commits_1 = __webpack_require__(514);
 const checkpoint_1 = __webpack_require__(923);
@@ -51887,47 +50873,51 @@ const checkpoint_1 = __webpack_require__(923);
 const changelog_1 = __webpack_require__(261);
 // Terraform specific.
 const readme_1 = __webpack_require__(458);
-class TerraformModule extends release_pr_1.ReleasePR {
-    async _run() {
-        const latestTag = await this.gh.latestTag();
-        const commits = await this.commits(latestTag ? latestTag.sha : undefined);
-        const cc = new conventional_commits_1.ConventionalCommits({
-            commits,
-            githubRepoUrl: this.repoUrl,
-            bumpMinorPreMajor: this.bumpMinorPreMajor,
-        });
-        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
-        const changelogEntry = await cc.generateChangelogEntry({
-            version: candidate.version,
-            currentTag: `v${candidate.version}`,
-            previousTag: candidate.previousTag,
-        });
-        // don't create a release candidate until user facing changes
-        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
-        // one line is a good indicator that there were no interesting commits.
-        if (this.changelogEmpty(changelogEntry)) {
-            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return;
+let TerraformModule = /** @class */ (() => {
+    class TerraformModule extends release_pr_1.ReleasePR {
+        async _run() {
+            const latestTag = await this.gh.latestTag();
+            const commits = await this.commits(latestTag ? latestTag.sha : undefined);
+            const cc = new conventional_commits_1.ConventionalCommits({
+                commits,
+                githubRepoUrl: this.repoUrl,
+                bumpMinorPreMajor: this.bumpMinorPreMajor,
+            });
+            const candidate = await this.coerceReleaseCandidate(cc, latestTag);
+            const changelogEntry = await cc.generateChangelogEntry({
+                version: candidate.version,
+                currentTag: `v${candidate.version}`,
+                previousTag: candidate.previousTag,
+            });
+            // don't create a release candidate until user facing changes
+            // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
+            // one line is a good indicator that there were no interesting commits.
+            if (this.changelogEmpty(changelogEntry)) {
+                checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+                return;
+            }
+            const updates = [];
+            updates.push(new changelog_1.Changelog({
+                path: 'CHANGELOG.md',
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+            updates.push(new readme_1.ReadMe({
+                path: 'README.md',
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+            await this.openPR(commits[0].sha, `${changelogEntry}\n---\n`, updates, candidate.version);
         }
-        const updates = [];
-        updates.push(new changelog_1.Changelog({
-            path: 'CHANGELOG.md',
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        updates.push(new readme_1.ReadMe({
-            path: 'README.md',
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        await this.openPR(commits[0].sha, `${changelogEntry}\n---\n`, updates, candidate.version);
+        defaultInitialVersion() {
+            return '0.1.0';
+        }
     }
-    defaultInitialVersion() {
-        return '0.1.0';
-    }
-}
+    TerraformModule.releaserName = 'terraform-module';
+    return TerraformModule;
+})();
 exports.TerraformModule = TerraformModule;
 //# sourceMappingURL=terraform-module.js.map
 
@@ -52045,7 +51035,7 @@ const childProcess = __webpack_require__(129);
 const crossSpawn = __webpack_require__(20);
 const stripEof = __webpack_require__(768);
 const npmRunPath = __webpack_require__(621);
-const isStream = __webpack_require__(323);
+const isStream = __webpack_require__(207);
 const _getStream = __webpack_require__(145);
 const pFinally = __webpack_require__(697);
 const onExit = __webpack_require__(497);
@@ -52404,237 +51394,13 @@ module.exports.shellSync = (cmd, opts) => handleShell(module.exports.sync, cmd, 
 
 /***/ }),
 /* 956 */,
-/* 957 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-const release_pr_1 = __webpack_require__(93);
-const conventional_commits_1 = __webpack_require__(514);
-const checkpoint_1 = __webpack_require__(923);
-// Generic
-const changelog_1 = __webpack_require__(261);
-// Java
-const pom_xml_1 = __webpack_require__(655);
-const versions_manifest_1 = __webpack_require__(40);
-const readme_1 = __webpack_require__(233);
-const bump_type_1 = __webpack_require__(490);
-const version_1 = __webpack_require__(755);
-const CHANGELOG_SECTIONS = [
-    { type: 'feat', section: 'Features' },
-    { type: 'fix', section: 'Bug Fixes' },
-    { type: 'perf', section: 'Performance Improvements' },
-    { type: 'deps', section: 'Dependencies' },
-    { type: 'revert', section: 'Reverts' },
-    { type: 'docs', section: 'Documentation' },
-    { type: 'style', section: 'Styles', hidden: true },
-    { type: 'chore', section: 'Miscellaneous Chores', hidden: true },
-    { type: 'refactor', section: 'Code Refactoring', hidden: true },
-    { type: 'test', section: 'Tests', hidden: true },
-    { type: 'build', section: 'Build System', hidden: true },
-    { type: 'ci', section: 'Continuous Integration', hidden: true },
-];
-const DEPENDENCY_UPDATE_REGEX = /^deps: update dependency (.*) to (v.*)(\s\(#\d+\))?$/m;
-const DEPENDENCY_PATCH_VERSION_REGEX = /^v\d+\.\d+\.[1-9]\d*(-.*)?/;
-async function delay({ ms = 3000 }) {
-    if (process.env.ENVIRONMENT === 'test')
-        return;
-    new Promise(resolve => {
-        setTimeout(() => {
-            return resolve();
-        }, ms);
-    });
-}
-class JavaBom extends release_pr_1.ReleasePR {
-    async _run() {
-        const versionsManifestContent = await this.gh.getFileContents('versions.txt');
-        console.info('version.txt content', versionsManifestContent.parsedContent);
-        const currentVersions = versions_manifest_1.VersionsManifest.parseVersions(versionsManifestContent.parsedContent);
-        this.snapshot = versions_manifest_1.VersionsManifest.needsSnapshot(versionsManifestContent.parsedContent);
-        if (this.snapshot) {
-            this.labels = ['type: process'];
-            // TODO: this temporarily resolves a race condition between creating a release
-            // and updating tags on the release PR. This should be replaced by a queuing
-            // mechanism to delay/retry this request.
-            if (this.snapshot) {
-                checkpoint_1.checkpoint('snapshot: sleeping for 15 seconds...', checkpoint_1.CheckpointType.Success);
-                await delay({ ms: 15000 });
-                checkpoint_1.checkpoint('snapshot: finished sleeping', checkpoint_1.CheckpointType.Success);
-            }
-        }
-        const latestTag = await this.gh.latestTag();
-        const commits = await this.commits(latestTag ? latestTag.sha : undefined, this.snapshot ? 1 : 100, true);
-        const prSHA = commits[0].sha;
-        const cc = new conventional_commits_1.ConventionalCommits({
-            commits,
-            githubRepoUrl: this.repoUrl,
-            bumpMinorPreMajor: this.bumpMinorPreMajor,
-            changelogSections: CHANGELOG_SECTIONS,
-        });
-        const bumpType = this.snapshot
-            ? 'snapshot'
-            : bump_type_1.maxBumpType([
-                JavaBom.determineBumpType(commits),
-                bump_type_1.fromSemverReleaseType((await cc.suggestBump((latestTag === null || latestTag === void 0 ? void 0 : latestTag.version) || this.defaultInitialVersion())).releaseType),
-            ]);
-        const candidate = {
-            version: latestTag
-                ? version_1.Version.parse(latestTag.version).bump(bumpType).toString()
-                : this.defaultInitialVersion(),
-            previousTag: latestTag === null || latestTag === void 0 ? void 0 : latestTag.version,
-        };
-        const changelogEntry = this.snapshot
-            ? '### Updating meta-information for bleeding-edge SNAPSHOT release.'
-            : await cc.generateChangelogEntry({
-                version: candidate.version,
-                currentTag: `v${candidate.version}`,
-                previousTag: candidate.previousTag,
-            });
-        // don't create a release candidate until user facing changes
-        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
-        // one line is a good indicator that there were no interesting commits.
-        if (this.changelogEmpty(changelogEntry) && !this.snapshot) {
-            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return;
-        }
-        const candidateVersions = JavaBom.bumpAllVersions(bumpType, currentVersions);
-        const updates = [];
-        if (!this.snapshot) {
-            updates.push(new changelog_1.Changelog({
-                path: 'CHANGELOG.md',
-                changelogEntry,
-                versions: candidateVersions,
-                version: candidate.version,
-                packageName: this.packageName,
-            }));
-            updates.push(new readme_1.Readme({
-                path: 'README.md',
-                changelogEntry,
-                versions: candidateVersions,
-                version: candidate.version,
-                packageName: this.packageName,
-            }));
-        }
-        updates.push(new versions_manifest_1.VersionsManifest({
-            path: 'versions.txt',
-            changelogEntry,
-            versions: candidateVersions,
-            version: candidate.version,
-            packageName: this.packageName,
-            contents: versionsManifestContent,
-        }));
-        const pomFiles = await this.gh.findFilesByFilename('pom.xml');
-        pomFiles.forEach(path => {
-            updates.push(new pom_xml_1.PomXML({
-                path,
-                changelogEntry,
-                versions: candidateVersions,
-                version: candidate.version,
-                packageName: this.packageName,
-            }));
-        });
-        console.info(`attempting to open PR latestTagSha = ${latestTag.sha} prSha = ${prSHA}`);
-        await this.openPR(prSHA, `${changelogEntry}\n---\n`, updates, candidate.version);
-    }
-    defaultInitialVersion() {
-        return '0.1.0';
-    }
-    static bumpAllVersions(bumpType, currentVersions) {
-        const newVersions = new Map();
-        for (const [k, version] of currentVersions) {
-            newVersions.set(k, version_1.Version.parse(version).bump(bumpType).toString());
-        }
-        return newVersions;
-    }
-    static dependencyUpdates(commits) {
-        const versionsMap = new Map();
-        commits.forEach(commit => {
-            const match = commit.message.match(DEPENDENCY_UPDATE_REGEX);
-            if (!match)
-                return;
-            // commits are sorted by latest first, so if there is a collision,
-            // then we've already recorded the latest version
-            if (versionsMap.has(match[1]))
-                return;
-            versionsMap.set(match[1], match[2]);
-        });
-        return versionsMap;
-    }
-    static isNonPatchVersion(commit) {
-        let match = commit.message.match(DEPENDENCY_UPDATE_REGEX);
-        if (!match)
-            return false;
-        match = match[2].match(DEPENDENCY_PATCH_VERSION_REGEX);
-        if (!match)
-            return true;
-        return false;
-    }
-    static determineBumpType(commits) {
-        if (commits.some(this.isNonPatchVersion)) {
-            return 'minor';
-        }
-        return 'patch';
-    }
-}
-exports.JavaBom = JavaBom;
-//# sourceMappingURL=java-bom.js.map
-
-/***/ }),
+/* 957 */,
 /* 958 */,
 /* 959 */,
 /* 960 */,
 /* 961 */,
 /* 962 */,
-/* 963 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-class PHPClientVersion {
-    constructor(options) {
-        this.create = false;
-        this.path = options.path;
-        this.changelogEntry = options.changelogEntry;
-        this.version = options.version;
-        this.packageName = options.packageName;
-        this.contents = options.contents;
-    }
-    updateContent(content) {
-        return content.replace(/const VERSION = '[0-9]+\.[0-9]+\.[0-9]+'/, `const VERSION = '${this.version}'`);
-    }
-}
-exports.PHPClientVersion = PHPClientVersion;
-//# sourceMappingURL=php-client-version.js.map
-
-/***/ }),
+/* 963 */,
 /* 964 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -53200,7 +51966,58 @@ module.exports = exports['default'];
 
 /***/ }),
 /* 980 */,
-/* 981 */,
+/* 981 */
+/***/ (function(module) {
+
+"use strict";
+
+
+// See http://www.robvanderwoude.com/escapechars.php
+const metaCharsRegExp = /([()\][%!^"`<>&|;, *?])/g;
+
+function escapeCommand(arg) {
+    // Escape meta chars
+    arg = arg.replace(metaCharsRegExp, '^$1');
+
+    return arg;
+}
+
+function escapeArgument(arg, doubleEscapeMetaChars) {
+    // Convert to string
+    arg = `${arg}`;
+
+    // Algorithm below is based on https://qntm.org/cmd
+
+    // Sequence of backslashes followed by a double quote:
+    // double up all the backslashes and escape the double quote
+    arg = arg.replace(/(\\*)"/g, '$1$1\\"');
+
+    // Sequence of backslashes followed by the end of the string
+    // (which will become a double quote later):
+    // double up all the backslashes
+    arg = arg.replace(/(\\*)$/, '$1$1');
+
+    // All other backslashes occur literally
+
+    // Quote the whole thing:
+    arg = `"${arg}"`;
+
+    // Escape meta chars
+    arg = arg.replace(metaCharsRegExp, '^$1');
+
+    // Double escape meta chars if necessary
+    if (doubleEscapeMetaChars) {
+        arg = arg.replace(metaCharsRegExp, '^$1');
+    }
+
+    return arg;
+}
+
+module.exports.command = escapeCommand;
+module.exports.argument = escapeArgument;
+
+
+/***/ }),
 /* 982 */,
 /* 983 */,
 /* 984 */
