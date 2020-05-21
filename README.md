@@ -110,8 +110,7 @@ jobs:
 ```
 
 > So that you can keep 2FA enabled for npm publications, we recommend setting
-`registry-url` to your own [Wombat Dressing Room](https://github.com/GoogleCloudPlatform/
-wombat-dressing-room) deployment.
+`registry-url` to your own [Wombat Dressing Room](https://github.com/GoogleCloudPlatform/wombat-dressing-room) deployment.
 
 ## License
 
