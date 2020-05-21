@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://www.github.com/bcoe/release-please-action/compare/v1.1.0...v1.2.0) (2020-05-21)
+
+
+### Features
+
+* output whether or not a release was created ([#24](https://www.github.com/bcoe/release-please-action/issues/24)) ([b80ca61](https://www.github.com/bcoe/release-please-action/commit/b80ca61e2612c87bad38d85451c7f696a040bdc8))
+
 ## [1.1.0](https://www.github.com/bcoe/release-please-action/compare/v1.0.1...v1.1.0) (2020-05-20)
 
 
