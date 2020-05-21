@@ -41,6 +41,17 @@ Automate releases with Conventional Commit Messages.
 | package-name         | A name for the artifact releases are being created for (this might be the `name` field in a `setup.py` or `package.json`) |
 | bump-minor-pre-major | Should breaking changes before 1.0.0 produce minor bumps?  Default `No` |
 
+### Release types supported
+
+Release Please automates releases for the following flavors of repositories:
+
+| release type            | description
+|-------------------|---------------------------------------------------------|
+| node              | [A Node.js repository, with a package.json and CHANGELOG.md](https://github.com/yargs/yargs) |
+| python            | [A Python repository, with a setup.py, setup.cfg, and CHANGELOG.md](https://github.com/googleapis/java-storage) |
+| terraform-module  | [A terraform module, with a version in the README.md, and a CHANGELOG.md](https://github.com/terraform-google-modules/terraform-google-project-factory) |
+| simple            | [A repository with a version.txt and a CHANGELOG.md](https://github.com/googleapis/gapic-generator) |
+
 ## How release please works
 
 Release Please automates CHANGELOG generation, the creation of GitHub releases,
