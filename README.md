@@ -72,7 +72,7 @@ The most important prefixes you should have in mind are:
 
 ## Automating publication to npm
 
-With a few small changes, the Release Please action can be made to publish to
+With a few additions, the Release Please action can be made to publish to
 npm when a Release PR is merged:
 
 Simply update your action as follows:
