@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.2.1](https://www.github.com/bcoe/release-please-action/compare/v1.2.0...v1.2.1) (2020-05-21)
+
+
+### Bug Fixes
+
+* use the static build helper ([6872559](https://www.github.com/bcoe/release-please-action/commit/687255987d0e25878a9d56fd69de09c232bbcea3))
+
 ## [1.2.0](https://www.github.com/bcoe/release-please-action/compare/v1.1.0...v1.2.0) (2020-05-21)
 
 
