@@ -91,9 +91,11 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
           package-name: test-release-please
-      - uses: actions/checkout@v2
-        if: ${{ steps.release.outputs.release_created }}
       # The logic below handles the npm publication:
+      - uses: actions/checkout@v2
+        # these if statements ensure that a publication only occurs when
+        # a new release is created:
+        if: ${{ steps.release.outputs.release_created }}
       - uses: actions/setup-node@v1
         with:
           node-version: 12
@@ -107,11 +109,9 @@ jobs:
         if: ${{ steps.release.outputs.release_created }}
 ```
 
-> Note: `if: ${{ steps.release.outputs.release_created }}` ensures that publication
-will only occur when Release Please has created a new release on GitHub.
-
-_So that you can keep 2FA enabled for npm publications, we recommend setting
-`registry-url` to your own [Wombat Dressing Room](https://github.com/GoogleCloudPlatform/wombat-dressing-room) deployment._
+> So that you can keep 2FA enabled for npm publications, we recommend setting
+`registry-url` to your own [Wombat Dressing Room](https://github.com/GoogleCloudPlatform/
+wombat-dressing-room) deployment.
 
 ## License
 
