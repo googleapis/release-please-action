@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.2.2](https://www.github.com/bcoe/release-please-action/compare/v1.2.1...v1.2.2) (2020-06-11)
+
+
+### Bug Fixes
+
+* **deps:** depend on release-please ^5.2.1 to support merge commits  ([#28](https://www.github.com/bcoe/release-please-action/issues/28)) ([5c2e7c4](https://www.github.com/bcoe/release-please-action/commit/5c2e7c41fc2a838bdd1c4319f18385e4784b020f))
+
 ### [1.2.1](https://www.github.com/bcoe/release-please-action/compare/v1.2.0...v1.2.1) (2020-05-21)
 
 
