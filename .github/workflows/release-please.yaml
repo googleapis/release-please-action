@@ -2,12 +2,13 @@ on:
   push:
     branches:
       - master
+      - main
 name: release-please
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v1.2.1
+      - uses: GoogleCloudPlatform/release-please-action@v1.3.0
         with:
           token: ${{ secrets.RELEASE_CLA_SIGNED }}
           release-type: node
