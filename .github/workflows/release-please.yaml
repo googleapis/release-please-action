@@ -9,6 +9,6 @@ jobs:
     steps:
       - uses: GoogleCloudPlatform/release-please-action@v1.2.1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_CLA_SIGNED }}
           release-type: node
           package-name: release-please-action
