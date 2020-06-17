@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.3.1](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.3.0...v1.3.1) (2020-06-17)
+
+
+### Bug Fixes
+
+* **build:** update to match new default branch ([#36](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/36)) ([1188197](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/1188197913717dd90bc1d79e1139269f427411e9))
+
 ## [1.3.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.2.2...v1.3.0) (2020-06-17)
 
 
