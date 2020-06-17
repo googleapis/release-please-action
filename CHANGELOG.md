@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.2.2...v1.3.0) (2020-06-17)
+
+
+### Features
+
+* **release-please:** configurable default branch; package-lock.json now updated ([#34](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/34)) ([a4607bd](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/a4607bde22b13d1ff7f153625f6e9c84ddf20a41))
+
+
+### Bug Fixes
+
+* **docs:** update docs to GoogleCloudPlatform ([#31](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/31)) ([4f72a02](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/4f72a02b61bc06a7607189ce5eea318ac382d242))
+
 ### [1.2.2](https://www.github.com/bcoe/release-please-action/compare/v1.2.1...v1.2.2) (2020-06-11)
 
 
