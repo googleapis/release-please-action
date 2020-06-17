@@ -96,7 +96,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v1.2.1
+      - uses: GoogleCloudPlatform/release-please-action@v1.3.0
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
