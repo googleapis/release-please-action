@@ -8,8 +8,11 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
+      - run: git config user.name yoshi-automation
+      - run: git config user.email yoshi-automation@google.com
+      - run: git commit --author "yoshi-automation <yoshi-automation@google.com>"
       - uses: GoogleCloudPlatform/release-please-action@v1.3.0
         with:
-          token: ${{ secrets.RELEASE_CLA_SIGNED }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
           package-name: release-please-action
