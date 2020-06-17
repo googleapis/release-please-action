@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.3.2](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.3.1...v1.3.2) (2020-06-17)
+
+
+### Bug Fixes
+
+* **build:** switch to GITHUB_TOKEN ([#38](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/38)) ([188d363](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/188d36320b0644bc436b701963d78be6386fe2c3))
+
 ### [1.3.1](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.3.0...v1.3.1) (2020-06-17)
 
 
