@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.2.3](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.2.2...v1.2.3) (2020-06-17)
+
+
+### Bug Fixes
+
+* **docs:** update docs to GoogleCloudPlatform ([#31](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/31)) ([4f72a02](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/4f72a02b61bc06a7607189ce5eea318ac382d242))
+
 ### [1.2.2](https://www.github.com/bcoe/release-please-action/compare/v1.2.1...v1.2.2) (2020-06-11)
 
 
