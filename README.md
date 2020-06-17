@@ -14,7 +14,7 @@ Automate releases with Conventional Commit Messages.
     on:
       push:
         branches:
-          - master
+          - main
     name: release-please
     jobs:
       release-please:
@@ -90,7 +90,7 @@ npm when a Release PR is merged:
 on:
   push:
     branches:
-      - master
+      - main
 name: release-please
 jobs:
   release-please:
