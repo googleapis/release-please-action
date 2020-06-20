@@ -20,7 +20,7 @@ Automate releases with Conventional Commit Messages.
       release-please:
         runs-on: ubuntu-latest
         steps:
-          - uses: GoogleCloudPlatform/release-please-action@v1.0.1
+          - uses: GoogleCloudPlatform/release-please-action@v1.3.2
             with:
               token: ${{ secrets.GITHUB_TOKEN }}
               release-type: node
@@ -37,7 +37,7 @@ Automate releases with Conventional Commit Messages.
 | Variable             | Description                                      |
 | -------------------- | ------------------------------------------------ |
 | token                | A GitHub secret token, you will most likely want to use the special `secrets.GITHUB_TOKEN` |
-| release-type         | What type of project is this a release for? Currently we support `node`, `ruby`, `python`, `terraform-module`, new types of releases can be [added here](https://github.com/googleapis/release-please/tree/master/src/releasers) |
+| release-type         | What type of project is this a release for? Reference [Release types supported](#release-types-supported); new types of releases can be [added here](https://github.com/googleapis/release-please/tree/master/src/releasers) |
 | package-name         | A name for the artifact releases are being created for (this might be the `name` field in a `setup.py` or `package.json`) |
 | bump-minor-pre-major | Should breaking changes before 1.0.0 produce minor bumps?  Default `No` |
 
@@ -49,6 +49,7 @@ Release Please automates releases for the following flavors of repositories:
 |-------------------|---------------------------------------------------------|
 | node              | [A Node.js repository, with a package.json and CHANGELOG.md](https://github.com/yargs/yargs) |
 | python            | [A Python repository, with a setup.py, setup.cfg, and CHANGELOG.md](https://github.com/googleapis/java-storage) |
+| ruby              | [A Ruby repository, with version.rb and CHANGELOG.md](https://github.com/google/google-id-token)
 | terraform-module  | [A terraform module, with a version in the README.md, and a CHANGELOG.md](https://github.com/terraform-google-modules/terraform-google-project-factory) |
 | simple            | [A repository with a version.txt and a CHANGELOG.md](https://github.com/googleapis/gapic-generator) |
 
