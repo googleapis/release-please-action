@@ -34,24 +34,30 @@ Automate releases with Conventional Commit Messages.
 
 ## Configuration
 
-| Variable             | Description                                      |
-| -------------------- | ------------------------------------------------ |
-| token                | A GitHub secret token, you will most likely want to use the special `secrets.GITHUB_TOKEN` |
-| release-type         | What type of project is this a release for? Reference [Release types supported](#release-types-supported); new types of releases can be [added here](https://github.com/googleapis/release-please/tree/master/src/releasers) |
-| package-name         | A name for the artifact releases are being created for (this might be the `name` field in a `setup.py` or `package.json`) |
-| bump-minor-pre-major | Should breaking changes before 1.0.0 produce minor bumps?  Default `No` |
+| input | description |
+|:---:|---|
+| `token` | A GitHub secret token, you will most likely want to use the special `secrets.GITHUB_TOKEN` |
+| `release-type` | What type of project is this a release for? Reference [Release types supported](#release-types-supported); new types of releases can be [added here](https://github.com/googleapis/release-please/tree/master/src/releasers) |
+| `package-name` | A name for the artifact releases are being created for (this might be the `name` field in a `setup.py` or `package.json`) |
+| `bump-minor-pre-major` | Should breaking changes before 1.0.0 produce minor bumps?  Default `No` |
+
+| output | description |
+|:---:|---|
+| `release_created` | `true` if the release was created, `false` otherwise |
+| `upload_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
+| `tag_name` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 
 ### Release types supported
 
 Release Please automates releases for the following flavors of repositories:
 
-| release type            | description
-|-------------------|---------------------------------------------------------|
-| node              | [A Node.js repository, with a package.json and CHANGELOG.md](https://github.com/yargs/yargs) |
-| python            | [A Python repository, with a setup.py, setup.cfg, and CHANGELOG.md](https://github.com/googleapis/java-storage) |
-| ruby              | [A Ruby repository, with version.rb and CHANGELOG.md](https://github.com/google/google-id-token)
-| terraform-module  | [A terraform module, with a version in the README.md, and a CHANGELOG.md](https://github.com/terraform-google-modules/terraform-google-project-factory) |
-| simple            | [A repository with a version.txt and a CHANGELOG.md](https://github.com/googleapis/gapic-generator) |
+| release type | description |
+|:---:|---|
+| `node` | [A Node.js repository, with a package.json and CHANGELOG.md](https://github.com/yargs/yargs) |
+| `python` | [A Python repository, with a setup.py, setup.cfg, and CHANGELOG.md](https://github.com/googleapis/java-storage) |
+| `ruby` | [A Ruby repository, with version.rb and CHANGELOG.md](https://github.com/google/google-id-token) |
+| `terraform-module` | [A terraform module, with a version in the README.md, and a CHANGELOG.md](https://github.com/terraform-google-modules/terraform-google-project-factory) |
+| `simple` | [A repository with a version.txt and a CHANGELOG.md](https://github.com/googleapis/gapic-generator) |
 
 ## How release please works
 
