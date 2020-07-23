@@ -19,7 +19,12 @@ async function main () {
     token
   })
   const releaseCreated = await gr.createRelease()
-  if (releaseCreated) core.setOutput('release_created', true)
+  if (releaseCreated) {
+    const { upload_url, tag_name } = releaseCreated
+    core.setOutput('release_created', true)
+    core.setOutput('upload_url', upload_url)
+    core.setOutput('tag_name', tag_name)
+  }
 
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
