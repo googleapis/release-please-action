@@ -20,7 +20,7 @@ Automate releases with Conventional Commit Messages.
       release-please:
         runs-on: ubuntu-latest
         steps:
-          - uses: GoogleCloudPlatform/release-please-action@v1.3.2
+          - uses: GoogleCloudPlatform/release-please-action@v1.5.0
             with:
               token: ${{ secrets.GITHUB_TOKEN }}
               release-type: node
@@ -97,7 +97,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v1.3.0
+      - uses: GoogleCloudPlatform/release-please-action@v1.5.0
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
