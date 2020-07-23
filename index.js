@@ -20,6 +20,7 @@ async function main () {
   })
   const releaseCreated = await gr.createRelease()
   if (releaseCreated) {
+    // eslint-disable-next-line
     const { upload_url, tag_name } = releaseCreated
     core.setOutput('release_created', true)
     core.setOutput('upload_url', upload_url)
