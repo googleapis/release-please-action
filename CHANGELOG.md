@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.4.0...v1.5.0) (2020-07-23)
+
+
+### Features
+
+* **release-please:** auth gets; stop skipping all ci/cd ([#45](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/45)) ([367f112](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/367f112c21cbef9eef1ec197173f276b42b2fcbf))
+
 ## [1.4.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.3.2...v1.4.0) (2020-07-23)
 
 
