@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.3.2...v1.4.0) (2020-07-23)
+
+
+### Features
+
+* output tag name and upload url ([#43](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/43)) ([90469b0](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/90469b02b471d8f7cba6c353b4c1ec1bab5bcde4))
+
 ### [1.3.2](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.3.1...v1.3.2) (2020-06-17)
 
 
