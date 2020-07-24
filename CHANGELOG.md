@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.5.1](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.5.0...v1.5.1) (2020-07-24)
+
+
+### Bug Fixes
+
+* run tests on release PRs ([#47](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/47)) ([b4c1bd2](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/b4c1bd25c7ff2d17dcdd9a91d018dc7058c654a8))
+
 ## [1.5.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.4.0...v1.5.0) (2020-07-23)
 
 
