@@ -5,10 +5,12 @@ const { ReleasePRFactory } = require('release-please/build/src/release-pr-factor
 const RELEASE_LABEL = 'autorelease: pending'
 
 async function main () {
-  const token = core.getInput('token')
-  const releaseType = core.getInput('release-type')
-  const packageName = core.getInput('package-name')
   const bumpMinorPreMajor = Boolean(core.getInput('bump-minor-pre-major'))
+  const monorepoTags = Boolean(core.getInput('monorepo-tags'))
+  const packageName = core.getInput('package-name')
+  const path = core.getInput('path')
+  const releaseType = core.getInput('release-type')
+  const token = core.getInput('token')
 
   // First we check for any merged release PRs (PRs merged with the label
   // "autorelease: pending"):
@@ -16,6 +18,7 @@ async function main () {
     label: RELEASE_LABEL,
     repoUrl: process.env.GITHUB_REPOSITORY,
     packageName,
+    path,
     token
   })
   const releaseCreated = await gr.createRelease()
@@ -30,12 +33,14 @@ async function main () {
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
   const release = ReleasePRFactory.buildStatic(releaseType, {
-    packageName: packageName,
+    monorepoTags,
+    packageName,
+    path,
     apiUrl: 'https://api.github.com',
     repoUrl: process.env.GITHUB_REPOSITORY,
     token: token,
     label: RELEASE_LABEL,
-    bumpMinorPreMajor: bumpMinorPreMajor
+    bumpMinorPreMajor
   })
   await release.run()
 }
