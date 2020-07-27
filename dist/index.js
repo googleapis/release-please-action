@@ -1079,6 +1079,7 @@ exports.SourceNode = SourceNode;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GitHubRelease = void 0;
 const chalk = __webpack_require__(843);
+const path_1 = __webpack_require__(622);
 const checkpoint_1 = __webpack_require__(923);
 const release_pr_factory_1 = __webpack_require__(796);
 const github_1 = __webpack_require__(614);
@@ -1092,6 +1093,7 @@ class GitHubRelease {
         this.labels = options.label.split(',');
         this.repoUrl = options.repoUrl;
         this.token = options.token;
+        this.path = options.path;
         this.packageName = options.packageName;
         this.releaseType = options.releaseType;
         this.changelogPath = 'CHANGELOG.md';
@@ -1101,8 +1103,11 @@ class GitHubRelease {
         const gitHubReleasePR = await this.gh.findMergedReleasePR(this.labels);
         if (gitHubReleasePR) {
             checkpoint_1.checkpoint(`found release branch ${chalk.green(gitHubReleasePR.version)} at ${chalk.green(gitHubReleasePR.sha)}`, checkpoint_1.CheckpointType.Success);
-            const changelogContents = (await this.gh.getFileContents(this.changelogPath)).parsedContent;
-            const latestReleaseNotes = GitHubRelease.extractLatestReleaseNotes(changelogContents, gitHubReleasePR.version);
+            const changelogContents = (await this.gh.getFileContents(this.addPath(this.changelogPath))).parsedContent;
+            console.info(changelogContents, gitHubReleasePR.version);
+            const latestReleaseNotes = GitHubRelease.extractLatestReleaseNotes(changelogContents, 
+            // For monorepo releases, the library name is prepended to the tag and branch:
+            gitHubReleasePR.version.split('-').pop() || gitHubReleasePR.version);
             checkpoint_1.checkpoint(`found release notes: \n---\n${chalk.grey(latestReleaseNotes)}\n---\n`, checkpoint_1.CheckpointType.Success);
             // Attempt to lookup the package name from a well known location, such
             // as package.json, if none is provided:
@@ -1124,6 +1129,14 @@ class GitHubRelease {
         else {
             checkpoint_1.checkpoint('no recent release PRs found', checkpoint_1.CheckpointType.Failure);
             return undefined;
+        }
+    }
+    addPath(file) {
+        if (this.path === undefined) {
+            return file;
+        }
+        else {
+            return path_1.join(this.path, `./${file}`);
         }
     }
     gitHubInstance(octokitAPIs) {
@@ -1521,7 +1534,9 @@ class ReleasePR {
             : DEFAULT_LABELS.split(',');
         this.repoUrl = options.repoUrl;
         this.token = options.token;
+        this.path = options.path;
         this.packageName = options.packageName;
+        this.monorepoTags = options.monorepoTags || false;
         this.releaseAs = options.releaseAs;
         this.apiUrl = options.apiUrl;
         this.proxyKey = options.proxyKey;
@@ -1608,10 +1623,14 @@ class ReleasePR {
         }
         return { version, previousTag };
     }
-    async commits(sha, perPage = 100, labels = false, path = null) {
+    async commits(opts) {
+        const sha = opts.sha;
+        const perPage = opts.perPage || 100;
+        const labels = opts.labels || false;
+        const path = opts.path || undefined;
         const commits = await this.gh.commitsSinceSha(sha, perPage, labels, path);
         if (commits.length) {
-            checkpoint_1.checkpoint(`found ${commits.length} commits since ${sha}`, checkpoint_1.CheckpointType.Success);
+            checkpoint_1.checkpoint(`found ${commits.length} commits since ${sha ? sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Success);
         }
         else {
             checkpoint_1.checkpoint(`no commits found since ${sha}`, checkpoint_1.CheckpointType.Failure);
@@ -1630,7 +1649,12 @@ class ReleasePR {
             octokitAPIs,
         });
     }
-    async openPR(sha, changelogEntry, updates, version, includePackageName = false) {
+    async openPR(options) {
+        const sha = options.sha;
+        const changelogEntry = options.changelogEntry;
+        const updates = options.updates;
+        const version = options.version;
+        const includePackageName = options.includePackageName;
         const title = includePackageName
             ? `Release ${this.packageName} ${version}`
             : `chore: release ${version}`;
@@ -1655,6 +1679,16 @@ class ReleasePR {
     }
     changelogEmpty(changelogEntry) {
         return changelogEntry.split('\n').length === 1;
+    }
+    addPath(file) {
+        if (this.path === undefined) {
+            return file;
+        }
+        else {
+            const path = this.path.replace(/[/\\]$/, '');
+            file = file.replace(/^[/\\]/, '');
+            return `${path}/${file}`;
+        }
     }
 }
 exports.ReleasePR = ReleasePR;
@@ -1695,10 +1729,12 @@ const { ReleasePRFactory } = __webpack_require__(796)
 const RELEASE_LABEL = 'autorelease: pending'
 
 async function main () {
-  const token = core.getInput('token')
-  const releaseType = core.getInput('release-type')
-  const packageName = core.getInput('package-name')
   const bumpMinorPreMajor = Boolean(core.getInput('bump-minor-pre-major'))
+  const monorepoTags = Boolean(core.getInput('monorepo-tags'))
+  const packageName = core.getInput('package-name')
+  const path = core.getInput('path')
+  const releaseType = core.getInput('release-type')
+  const token = core.getInput('token')
 
   // First we check for any merged release PRs (PRs merged with the label
   // "autorelease: pending"):
@@ -1706,10 +1742,12 @@ async function main () {
     label: RELEASE_LABEL,
     repoUrl: process.env.GITHUB_REPOSITORY,
     packageName,
-    token
+    path,
+    token,
   })
   const releaseCreated = await gr.createRelease()
   if (releaseCreated) {
+    // eslint-disable-next-line
     const { upload_url, tag_name } = releaseCreated
     core.setOutput('release_created', true)
     core.setOutput('upload_url', upload_url)
@@ -1719,12 +1757,14 @@ async function main () {
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
   const release = ReleasePRFactory.buildStatic(releaseType, {
-    packageName: packageName,
+    monorepoTags,
+    packageName,
+    path,
     apiUrl: 'https://api.github.com',
     repoUrl: process.env.GITHUB_REPOSITORY,
     token: token,
     label: RELEASE_LABEL,
-    bumpMinorPreMajor: bumpMinorPreMajor
+    bumpMinorPreMajor
   })
   await release.run()
 }
@@ -8117,7 +8157,7 @@ module.exports = eq
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-const VERSION = "2.2.4";
+const VERSION = "2.3.0";
 
 /**
  * Some “list” response that can be paginated have a different response structure
@@ -16431,8 +16471,11 @@ const CHANGELOG_SECTIONS = [
 ];
 class Python extends release_pr_1.ReleasePR {
     async _run() {
-        const latestTag = await this.gh.latestTag();
-        const commits = await this.commits(latestTag ? latestTag.sha : undefined);
+        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}-` : undefined);
+        const commits = await this.commits({
+            sha: latestTag ? latestTag.sha : undefined,
+            path: this.path,
+        });
         const cc = new conventional_commits_1.ConventionalCommits({
             commits,
             githubRepoUrl: this.repoUrl,
@@ -16454,24 +16497,30 @@ class Python extends release_pr_1.ReleasePR {
         }
         const updates = [];
         updates.push(new changelog_1.Changelog({
-            path: 'CHANGELOG.md',
+            path: this.addPath('CHANGELOG.md'),
             changelogEntry,
             version: candidate.version,
             packageName: this.packageName,
         }));
         updates.push(new setup_cfg_1.SetupCfg({
-            path: 'setup.cfg',
+            path: this.addPath('setup.cfg'),
             changelogEntry,
             version: candidate.version,
             packageName: this.packageName,
         }));
         updates.push(new setup_py_1.SetupPy({
-            path: 'setup.py',
+            path: this.addPath('setup.py'),
             changelogEntry,
             version: candidate.version,
             packageName: this.packageName,
         }));
-        await this.openPR(commits[0].sha, `${changelogEntry}\n---\n`, updates, candidate.version);
+        await this.openPR({
+            sha: commits[0].sha,
+            changelogEntry: `${changelogEntry}\n---\n`,
+            updates,
+            version: candidate.version,
+            includePackageName: this.monorepoTags,
+        });
     }
     defaultInitialVersion() {
         return '0.1.0';
@@ -37846,8 +37895,8 @@ class GitHub {
         }));
         return refResponse.data.object.sha;
     }
-    async latestTag() {
-        const tags = await this.allTags();
+    async latestTag(prefix) {
+        const tags = await this.allTags(prefix);
         const versions = Object.keys(tags).filter(t => {
             // remove any pre-releases from the list:
             return !t.includes('-');
@@ -37917,15 +37966,19 @@ class GitHub {
         }
         return openReleasePRs;
     }
-    async allTags() {
+    async allTags(prefix) {
         const tags = {};
         for await (const response of this.octokit.paginate.iterator(this.decoratePaginateOpts({
             method: 'GET',
             url: `/repos/${this.owner}/${this.repo}/tags?per_page=100${this.proxyKey ? `&key=${this.proxyKey}` : ''}`,
         }))) {
             response.data.forEach((data) => {
-                const version = semver.valid(data.name);
-                if (version) {
+                // For monorepos, a prefix can be provided, indicating that only tags
+                // matching the prefix should be returned:
+                if (prefix && !data.name.startsWith(prefix))
+                    return;
+                let version = data.name.replace(prefix, '');
+                if ((version = semver.valid(version))) {
                     tags[version] = { sha: data.commit.sha, name: data.name, version };
                 }
             });
@@ -38276,8 +38329,11 @@ const package_json_1 = __webpack_require__(815);
 const samples_package_json_1 = __webpack_require__(637);
 class Node extends release_pr_1.ReleasePR {
     async _run() {
-        const latestTag = await this.gh.latestTag();
-        const commits = await this.commits(latestTag ? latestTag.sha : undefined);
+        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}-` : undefined);
+        const commits = await this.commits({
+            sha: latestTag ? latestTag.sha : undefined,
+            path: this.path,
+        });
         const cc = new conventional_commits_1.ConventionalCommits({
             commits,
             githubRepoUrl: this.repoUrl,
@@ -38299,36 +38355,42 @@ class Node extends release_pr_1.ReleasePR {
         const updates = [];
         // Make an effort to populate packageName from the contents of
         // the package.json, rather than forcing this to be set:
-        const contents = await this.gh.getFileContents('package.json');
+        const contents = await this.gh.getFileContents(this.addPath('package.json'));
         const pkg = JSON.parse(contents.parsedContent);
         if (pkg.name)
             this.packageName = pkg.name;
         updates.push(new package_json_1.PackageJson({
-            path: 'package-lock.json',
+            path: this.addPath('package-lock.json'),
             changelogEntry,
             version: candidate.version,
             packageName: this.packageName,
         }));
         updates.push(new samples_package_json_1.SamplesPackageJson({
-            path: 'samples/package.json',
+            path: this.addPath('samples/package.json'),
             changelogEntry,
             version: candidate.version,
             packageName: this.packageName,
         }));
         updates.push(new changelog_1.Changelog({
-            path: 'CHANGELOG.md',
+            path: this.addPath('CHANGELOG.md'),
             changelogEntry,
             version: candidate.version,
             packageName: this.packageName,
         }));
         updates.push(new package_json_1.PackageJson({
-            path: 'package.json',
+            path: this.addPath('package.json'),
             changelogEntry,
             version: candidate.version,
             packageName: this.packageName,
             contents,
         }));
-        await this.openPR(commits[0].sha, `${changelogEntry}\n---\n`, updates, candidate.version);
+        await this.openPR({
+            sha: commits[0].sha,
+            changelogEntry: `${changelogEntry}\n---\n`,
+            updates,
+            version: candidate.version,
+            includePackageName: this.monorepoTags,
+        });
     }
     // A releaser can implement this method to automatically detect
     // the release name when creating a GitHub release, for instance by returning
@@ -39653,8 +39715,11 @@ const changelog_1 = __webpack_require__(261);
 const version_txt_1 = __webpack_require__(25);
 class Simple extends release_pr_1.ReleasePR {
     async _run() {
-        const latestTag = await this.gh.latestTag();
-        const commits = await this.commits(latestTag ? latestTag.sha : undefined);
+        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}-` : undefined);
+        const commits = await this.commits({
+            sha: latestTag ? latestTag.sha : undefined,
+            path: this.path,
+        });
         const cc = new conventional_commits_1.ConventionalCommits({
             commits,
             githubRepoUrl: this.repoUrl,
@@ -39689,7 +39754,13 @@ class Simple extends release_pr_1.ReleasePR {
             contents,
             skipCi: false,
         }));
-        await this.openPR(commits[0].sha, `${changelogEntry}\n---\n`, updates, candidate.version);
+        await this.openPR({
+            sha: commits[0].sha,
+            changelogEntry: `${changelogEntry}\n---\n`,
+            updates,
+            version: candidate.version,
+            includePackageName: this.monorepoTags,
+        });
     }
 }
 exports.Simple = Simple;
@@ -41994,7 +42065,7 @@ module.exports = exports['default'];
 /* 759 */
 /***/ (function(module) {
 
-module.exports = {"_from":"release-please@latest","_id":"release-please@5.5.2","_inBundle":false,"_integrity":"sha512-NAnAYFhvgNZXeBcwyhOckWEOzLob7vbEjTT2ZmOoHOeo2sHX0/qf8Jqj0iNGLGhDOb/AWj6Nc/UKv+Jyly0FEA==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"tag","registry":true,"raw":"release-please@latest","name":"release-please","escapedName":"release-please","rawSpec":"latest","saveSpec":null,"fetchSpec":"latest"},"_requiredBy":["#USER","/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-5.5.2.tgz","_shasum":"355753127b30875be35ec0335b0295a5fe4c2637","_spec":"release-please@latest","_where":"/Users/bencoe/oss/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"bundleDependencies":false,"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.0","chalk":"^4.0.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.0.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.16.0","yargs":"^15.0.0"},"deprecated":false,"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/semver":"^7.0.0","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"5.5.2"};
+module.exports = {"_from":"release-please@latest","_id":"release-please@5.6.0","_inBundle":false,"_integrity":"sha512-p/CR4x8PAkMb2ScYwYEKNAsgSsBTeTWyKo95ST0vVwceL0KXBIoDLWJ3PNwIx+vxFe4adBnd28uGU/Bz5l+uLw==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"tag","registry":true,"raw":"release-please@latest","name":"release-please","escapedName":"release-please","rawSpec":"latest","saveSpec":null,"fetchSpec":"latest"},"_requiredBy":["#USER","/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-5.6.0.tgz","_shasum":"5f08831abc8d911e11617c92444f99c2af4ccc41","_spec":"release-please@latest","_where":"/Users/bencoe/oss/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"bundleDependencies":false,"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.0","chalk":"^4.0.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.0.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.16.0","yargs":"^15.0.0"},"deprecated":false,"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/semver":"^7.0.0","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"5.6.0"};
 
 /***/ }),
 /* 760 */
@@ -44456,7 +44527,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "4.1.1";
+const VERSION = "4.1.2";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -45453,7 +45524,7 @@ var pluginRequestLog = __webpack_require__(916);
 var pluginPaginateRest = __webpack_require__(299);
 var pluginRestEndpointMethods = __webpack_require__(842);
 
-const VERSION = "18.0.2";
+const VERSION = "18.0.3";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.restEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`
@@ -47742,8 +47813,11 @@ const changelog_1 = __webpack_require__(261);
 const readme_1 = __webpack_require__(458);
 class TerraformModule extends release_pr_1.ReleasePR {
     async _run() {
-        const latestTag = await this.gh.latestTag();
-        const commits = await this.commits(latestTag ? latestTag.sha : undefined);
+        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}-` : undefined);
+        const commits = await this.commits({
+            sha: latestTag ? latestTag.sha : undefined,
+            path: this.path,
+        });
         const cc = new conventional_commits_1.ConventionalCommits({
             commits,
             githubRepoUrl: this.repoUrl,
@@ -47764,18 +47838,24 @@ class TerraformModule extends release_pr_1.ReleasePR {
         }
         const updates = [];
         updates.push(new changelog_1.Changelog({
-            path: 'CHANGELOG.md',
+            path: this.addPath('CHANGELOG.md'),
             changelogEntry,
             version: candidate.version,
             packageName: this.packageName,
         }));
         updates.push(new readme_1.ReadMe({
-            path: 'README.md',
+            path: this.addPath('README.md'),
             changelogEntry,
             version: candidate.version,
             packageName: this.packageName,
         }));
-        await this.openPR(commits[0].sha, `${changelogEntry}\n---\n`, updates, candidate.version);
+        await this.openPR({
+            sha: commits[0].sha,
+            changelogEntry: `${changelogEntry}\n---\n`,
+            updates,
+            version: candidate.version,
+            includePackageName: this.monorepoTags,
+        });
     }
     defaultInitialVersion() {
         return '0.1.0';
