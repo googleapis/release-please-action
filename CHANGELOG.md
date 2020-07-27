@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.6.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.5.0...v1.6.0) (2020-07-27)
+
+
+### Features
+
+* adds support for releases from alternate paths ([#50](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/50)) ([6fc9b14](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/6fc9b14e82521ecefd65c6b7f6b4f32561ce35f6))
+
+
+### Bug Fixes
+
+* run tests on release PRs ([#47](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/47)) ([b4c1bd2](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/b4c1bd25c7ff2d17dcdd9a91d018dc7058c654a8))
+
 ## [1.5.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.4.0...v1.5.0) (2020-07-23)
 
 
