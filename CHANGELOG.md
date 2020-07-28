@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.6.1](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.6.0...v1.6.1) (2020-07-28)
+
+
+### Bug Fixes
+
+* add missing  path and  monorepo-tags options ([#52](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/52)) ([41fbc62](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/41fbc62bb12a4b0ff33a3ae5f401acc3d1bf3b7f))
+
 ## [1.6.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.5.0...v1.6.0) (2020-07-27)
 
 
