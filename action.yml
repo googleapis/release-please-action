@@ -14,6 +14,12 @@ inputs:
   bump-minor-pre-major:
     description: 'should breaking changes before 1.0.0 produce minor bumps'
     required: false
+  path:
+    description: "create a release from a path other than the repository's root"
+    required: false
+  monorepo-tags:
+    description: 'add prefix to tags and branches, allowing multiple libraries to be released from the same repository'
+    required: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
