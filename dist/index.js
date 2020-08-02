@@ -1742,8 +1742,8 @@ async function main () {
     label: RELEASE_LABEL,
     repoUrl: process.env.GITHUB_REPOSITORY,
     packageName,
-    path,
-    token,
+    path: path ? path : undefined,
+    token
   })
   const releaseCreated = await gr.createRelease()
   if (releaseCreated) {
