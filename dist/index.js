@@ -1732,7 +1732,7 @@ async function main () {
   const bumpMinorPreMajor = Boolean(core.getInput('bump-minor-pre-major'))
   const monorepoTags = Boolean(core.getInput('monorepo-tags'))
   const packageName = core.getInput('package-name')
-  const path = core.getInput('path')
+  const path = core.getInput('path') ? core.getInput('path') : undefined
   const releaseType = core.getInput('release-type')
   const token = core.getInput('token')
 
@@ -1742,7 +1742,7 @@ async function main () {
     label: RELEASE_LABEL,
     repoUrl: process.env.GITHUB_REPOSITORY,
     packageName,
-    path: path ? path : undefined,
+    path,
     token
   })
   const releaseCreated = await gr.createRelease()
@@ -3138,116 +3138,147 @@ SafeBuffer.allocUnsafeSlow = function (size) {
 
 "use strict";
 
-var isObj = __webpack_require__(804);
+const isObj = __webpack_require__(804);
 
-module.exports.get = function (obj, path) {
-	if (!isObj(obj) || typeof path !== 'string') {
-		return obj;
-	}
+const disallowedKeys = [
+	'__proto__',
+	'prototype',
+	'constructor'
+];
 
-	var pathArr = getPathSegments(path);
-
-	for (var i = 0; i < pathArr.length; i++) {
-		var descriptor = Object.getOwnPropertyDescriptor(obj, pathArr[i]) || Object.getOwnPropertyDescriptor(Object.prototype, pathArr[i]);
-		if (descriptor && !descriptor.enumerable) {
-			return;
-		}
-
-		obj = obj[pathArr[i]];
-
-		if (obj === undefined || obj === null) {
-			// `obj` is either `undefined` or `null` so we want to stop the loop, and
-			// if this is not the last bit of the path, and
-			// if it did't return `undefined`
-			// it would return `null` if `obj` is `null`
-			// but we want `get({foo: null}, 'foo.bar')` to equal `undefined` not `null`
-			if (i !== pathArr.length - 1) {
-				return undefined;
-			}
-
-			break;
-		}
-	}
-
-	return obj;
-};
-
-module.exports.set = function (obj, path, value) {
-	if (!isObj(obj) || typeof path !== 'string') {
-		return;
-	}
-
-	var pathArr = getPathSegments(path);
-
-	for (var i = 0; i < pathArr.length; i++) {
-		var p = pathArr[i];
-
-		if (!isObj(obj[p])) {
-			obj[p] = {};
-		}
-
-		if (i === pathArr.length - 1) {
-			obj[p] = value;
-		}
-
-		obj = obj[p];
-	}
-};
-
-module.exports.delete = function (obj, path) {
-	if (!isObj(obj) || typeof path !== 'string') {
-		return;
-	}
-
-	var pathArr = getPathSegments(path);
-
-	for (var i = 0; i < pathArr.length; i++) {
-		var p = pathArr[i];
-
-		if (i === pathArr.length - 1) {
-			delete obj[p];
-			return;
-		}
-
-		obj = obj[p];
-	}
-};
-
-module.exports.has = function (obj, path) {
-	if (!isObj(obj) || typeof path !== 'string') {
-		return false;
-	}
-
-	var pathArr = getPathSegments(path);
-
-	for (var i = 0; i < pathArr.length; i++) {
-		obj = obj[pathArr[i]];
-
-		if (obj === undefined) {
-			return false;
-		}
-	}
-
-	return true;
-};
+const isValidPath = pathSegments => !pathSegments.some(segment => disallowedKeys.includes(segment));
 
 function getPathSegments(path) {
-	var pathArr = path.split('.');
-	var parts = [];
+	const pathArray = path.split('.');
+	const parts = [];
 
-	for (var i = 0; i < pathArr.length; i++) {
-		var p = pathArr[i];
+	for (let i = 0; i < pathArray.length; i++) {
+		let p = pathArray[i];
 
-		while (p[p.length - 1] === '\\' && pathArr[i + 1] !== undefined) {
+		while (p[p.length - 1] === '\\' && pathArray[i + 1] !== undefined) {
 			p = p.slice(0, -1) + '.';
-			p += pathArr[++i];
+			p += pathArray[++i];
 		}
 
 		parts.push(p);
 	}
 
+	if (!isValidPath(parts)) {
+		return [];
+	}
+
 	return parts;
 }
+
+module.exports = {
+	get(object, path, value) {
+		if (!isObj(object) || typeof path !== 'string') {
+			return value === undefined ? object : value;
+		}
+
+		const pathArray = getPathSegments(path);
+		if (pathArray.length === 0) {
+			return;
+		}
+
+		for (let i = 0; i < pathArray.length; i++) {
+			if (!Object.prototype.propertyIsEnumerable.call(object, pathArray[i])) {
+				return value;
+			}
+
+			object = object[pathArray[i]];
+
+			if (object === undefined || object === null) {
+				// `object` is either `undefined` or `null` so we want to stop the loop, and
+				// if this is not the last bit of the path, and
+				// if it did't return `undefined`
+				// it would return `null` if `object` is `null`
+				// but we want `get({foo: null}, 'foo.bar')` to equal `undefined`, or the supplied value, not `null`
+				if (i !== pathArray.length - 1) {
+					return value;
+				}
+
+				break;
+			}
+		}
+
+		return object;
+	},
+
+	set(object, path, value) {
+		if (!isObj(object) || typeof path !== 'string') {
+			return object;
+		}
+
+		const root = object;
+		const pathArray = getPathSegments(path);
+
+		for (let i = 0; i < pathArray.length; i++) {
+			const p = pathArray[i];
+
+			if (!isObj(object[p])) {
+				object[p] = {};
+			}
+
+			if (i === pathArray.length - 1) {
+				object[p] = value;
+			}
+
+			object = object[p];
+		}
+
+		return root;
+	},
+
+	delete(object, path) {
+		if (!isObj(object) || typeof path !== 'string') {
+			return;
+		}
+
+		const pathArray = getPathSegments(path);
+
+		for (let i = 0; i < pathArray.length; i++) {
+			const p = pathArray[i];
+
+			if (i === pathArray.length - 1) {
+				delete object[p];
+				return;
+			}
+
+			object = object[p];
+
+			if (!isObj(object)) {
+				return;
+			}
+		}
+	},
+
+	has(object, path) {
+		if (!isObj(object) || typeof path !== 'string') {
+			return false;
+		}
+
+		const pathArray = getPathSegments(path);
+		if (pathArray.length === 0) {
+			return false;
+		}
+
+		// eslint-disable-next-line unicorn/no-for-loop
+		for (let i = 0; i < pathArray.length; i++) {
+			if (isObj(object)) {
+				if (!(pathArray[i] in object)) {
+					return false;
+				}
+
+				object = object[pathArray[i]];
+			} else {
+				return false;
+			}
+		}
+
+		return true;
+	}
+};
 
 
 /***/ }),
@@ -3644,7 +3675,7 @@ const parserOpts = __webpack_require__(239)
 const writerOpts = __webpack_require__(579)
 
 module.exports = function (config) {
-  return Q.all([parserOpts, writerOpts])
+  return Q.all([parserOpts(config), writerOpts(config)])
     .spread((parserOpts, writerOpts) => {
       return { parserOpts, writerOpts }
     })
@@ -42998,9 +43029,10 @@ module.exports = minor
 
 "use strict";
 
-module.exports = function (x) {
-	var type = typeof x;
-	return x !== null && (type === 'object' || type === 'function');
+
+module.exports = value => {
+	const type = typeof value;
+	return value !== null && (type === 'object' || type === 'function');
 };
 
 

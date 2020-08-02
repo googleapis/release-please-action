@@ -8,7 +8,7 @@ async function main () {
   const bumpMinorPreMajor = Boolean(core.getInput('bump-minor-pre-major'))
   const monorepoTags = Boolean(core.getInput('monorepo-tags'))
   const packageName = core.getInput('package-name')
-  const path = core.getInput('path')
+  const path = core.getInput('path') ? core.getInput('path') : undefined
   const releaseType = core.getInput('release-type')
   const token = core.getInput('token')
 
@@ -18,7 +18,7 @@ async function main () {
     label: RELEASE_LABEL,
     repoUrl: process.env.GITHUB_REPOSITORY,
     packageName,
-    path: path ? path : undefined,
+    path,
     token
   })
   const releaseCreated = await gr.createRelease()
