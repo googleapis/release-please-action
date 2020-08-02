@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.6.2](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.6.1...v1.6.2) (2020-08-02)
+
+
+### Bug Fixes
+
+* falsy path should be passed as undefined ([#54](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/54)) ([21233d3](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/21233d3c9f239105feab8f1df3e5fb013c1bd7f8))
+
 ### [1.6.1](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.6.0...v1.6.1) (2020-07-28)
 
 
