@@ -1,5 +1,12 @@
 # Changelog
 
+### [1.6.3](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.6.2...v1.6.3) (2020-08-02)
+
+
+### Bug Fixes
+
+* path was sometimes empty string ([37d7741](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/37d774119e97ee91ab924fc3e30902a38a64c6bb))
+
 ### [1.6.2](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.6.1...v1.6.2) (2020-08-02)
 
 
