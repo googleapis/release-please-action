@@ -177,7 +177,38 @@ exports.quickSort = function (ary, comparator) {
 /* 5 */,
 /* 6 */,
 /* 7 */,
-/* 8 */,
+/* 8 */
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = function (config) {
+  config = defaultConfig(config)
+  return {
+    headerPattern: /^(\w*)(?:\((.*)\))?!?: (.*)$/,
+    breakingHeaderPattern: /^(\w*)(?:\((.*)\))?!: (.*)$/,
+    headerCorrespondence: [
+      'type',
+      'scope',
+      'subject'
+    ],
+    noteKeywords: ['BREAKING CHANGE'],
+    revertPattern: /^(?:Revert|revert:)\s"?([\s\S]+?)"?\s*This reverts commit (\w*)\./i,
+    revertCorrespondence: ['header', 'hash'],
+    issuePrefixes: config.issuePrefixes
+  }
+}
+
+// merge user set configuration with default configuration.
+function defaultConfig (config) {
+  config = config || {}
+  config.issuePrefixes = config.issuePrefixes || ['#']
+  return config
+}
+
+
+/***/ }),
 /* 9 */,
 /* 10 */,
 /* 11 */
@@ -272,12 +303,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.VersionTxt = void 0;
 class VersionTxt {
     constructor(options) {
-        this.create = false;
+        this.create = true;
         this.path = options.path;
         this.changelogEntry = options.changelogEntry;
         this.version = options.version;
         this.packageName = options.packageName;
-        this.skipCi = options.skipCi;
     }
     updateContent() {
         return this.version + '\n';
@@ -300,7 +330,124 @@ exports.VersionTxt = VersionTxt;
 /* 36 */,
 /* 37 */,
 /* 38 */,
-/* 39 */,
+/* 39 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.parseTextFiles = exports.createPullRequest = void 0;
+const handler = __webpack_require__(59);
+const types_1 = __webpack_require__(521);
+const logger_1 = __webpack_require__(148);
+const default_options_handler_1 = __webpack_require__(955);
+const retry = __webpack_require__(523);
+/**
+ * Make a new GitHub Pull Request with a set of changes applied on top of primary branch HEAD.
+ * The changes are committed into a new branch based on the upstream repository options using the authenticated Octokit account.
+ * Then a Pull Request is made from that branch.
+ *
+ * Also throws error if git data from the fork is not ready in 5 minutes.
+ *
+ * From the docs
+ * https://developer.github.com/v3/repos/forks/#create-a-fork
+ * """
+ * Forking a Repository happens asynchronously.
+ * You may have to wait a short period of time before you can access the git objects.
+ * If this takes longer than 5 minutes, be sure to contact GitHub Support or GitHub Premium Support.
+ * """
+ *
+ * If changes are empty then the workflow will not run.
+ * Rethrows an HttpError if Octokit GitHub API returns an error. HttpError Octokit access_token and client_secret headers redact all sensitive information.
+ * @param {Octokit} octokit The authenticated octokit instance, instantiated with an access token having permissiong to create a fork on the target repository
+ * @param {Changes | null | undefined} changes A set of changes. The changes may be empty
+ * @param {CreatePullRequestUserOptions} options The configuration for interacting with GitHub provided by the user.
+ * @param {Logger} logger The logger instance (optional).
+ * @returns {Promise<number>} a void promise
+ */
+async function createPullRequest(octokit, changes, options, loggerOption) {
+    logger_1.setupLogger(loggerOption);
+    // if null undefined, or the empty map then no changes have been provided.
+    // Do not execute GitHub workflow
+    if (changes === null || changes === undefined || changes.size === 0) {
+        logger_1.logger.info('Empty change set provided. No changes need to be made. Cancelling workflow.');
+        return 0;
+    }
+    const gitHubConfigs = default_options_handler_1.addPullRequestDefaults(options);
+    logger_1.logger.info('Starting GitHub PR workflow...');
+    const upstream = {
+        owner: gitHubConfigs.upstreamOwner,
+        repo: gitHubConfigs.upstreamRepo,
+    };
+    const origin = await handler.fork(octokit, upstream);
+    const originBranch = {
+        ...origin,
+        branch: gitHubConfigs.branch,
+    };
+    const refHeadSha = await retry(async () => await handler.branch(octokit, origin, upstream, originBranch.branch, gitHubConfigs.primary), {
+        retries: 5,
+        factor: 2.8411,
+        minTimeout: 3000,
+        randomize: false,
+        onRetry: () => {
+            logger_1.logger.info('Retrying at a later time...');
+        },
+    });
+    await handler.commitAndPush(octokit, refHeadSha, changes, originBranch, gitHubConfigs.message, gitHubConfigs.force);
+    const description = {
+        body: gitHubConfigs.description,
+        title: gitHubConfigs.title,
+    };
+    const prNumber = await handler.openPullRequest(octokit, upstream, originBranch, description, gitHubConfigs.maintainersCanModify, gitHubConfigs.primary);
+    logger_1.logger.info(`Successfully opened pull request: ${prNumber}.`);
+    return prNumber;
+}
+exports.createPullRequest = createPullRequest;
+/**
+ * Convert a Map<string,string> or {[path: string]: string}, where the key is the relative file path in the repository,
+ * and the value is the text content. The files will be converted to a Map also containing the file mode information '100644'
+ * @param {Object<string, string | null> | Map<string, string | null>} textFiles a map/object where the key is the relative file path and the value is the text file content
+ * @returns {Changes} Map of the file path to the string file content and the file mode '100644'
+ */
+function parseTextFiles(textFiles) {
+    const changes = new Map();
+    if (textFiles instanceof Map) {
+        textFiles.forEach((content, path) => {
+            if (typeof path !== 'string' ||
+                (content !== null && typeof content !== 'string')) {
+                throw TypeError('The file changeset provided must have a string key and a string/null value');
+            }
+            changes.set(path, new types_1.FileData(content));
+        });
+    }
+    else {
+        for (const [path, content] of Object.entries(textFiles)) {
+            if (typeof path !== 'string' ||
+                (content !== null && typeof content !== 'string')) {
+                throw TypeError('The file changeset provided must have a string key and a string/null value');
+            }
+            changes.set(path, new types_1.FileData(content));
+        }
+    }
+    return changes;
+}
+exports.parseTextFiles = parseTextFiles;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
 /* 40 */,
 /* 41 */,
 /* 42 */,
@@ -1088,6 +1235,7 @@ const parseGithubRepoUrl = __webpack_require__(345);
 const GITHUB_RELEASE_LABEL = 'autorelease: tagged';
 class GitHubRelease {
     constructor(options) {
+        var _a;
         this.apiUrl = options.apiUrl;
         this.proxyKey = options.proxyKey;
         this.labels = options.label.split(',');
@@ -1096,7 +1244,7 @@ class GitHubRelease {
         this.path = options.path;
         this.packageName = options.packageName;
         this.releaseType = options.releaseType;
-        this.changelogPath = 'CHANGELOG.md';
+        this.changelogPath = (_a = options.changelogPath) !== null && _a !== void 0 ? _a : 'CHANGELOG.md';
         this.gh = this.gitHubInstance(options.octokitAPIs);
     }
     async createRelease() {
@@ -1104,7 +1252,6 @@ class GitHubRelease {
         if (gitHubReleasePR) {
             checkpoint_1.checkpoint(`found release branch ${chalk.green(gitHubReleasePR.version)} at ${chalk.green(gitHubReleasePR.sha)}`, checkpoint_1.CheckpointType.Success);
             const changelogContents = (await this.gh.getFileContents(this.addPath(this.changelogPath))).parsedContent;
-            console.info(changelogContents, gitHubReleasePR.version);
             const latestReleaseNotes = GitHubRelease.extractLatestReleaseNotes(changelogContents, 
             // For monorepo releases, the library name is prepended to the tag and branch:
             gitHubReleasePR.version.split('-').pop() || gitHubReleasePR.version);
@@ -1165,7 +1312,31 @@ exports.GitHubRelease = GitHubRelease;
 
 /***/ }),
 /* 58 */,
-/* 59 */,
+/* 59 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+__exportStar(__webpack_require__(853), exports);
+var branch_handler_1 = __webpack_require__(688);
+Object.defineProperty(exports, "branch", { enumerable: true, get: function () { return branch_handler_1.branch; } });
+var commit_and_push_handler_1 = __webpack_require__(83);
+Object.defineProperty(exports, "commitAndPush", { enumerable: true, get: function () { return commit_and_push_handler_1.commitAndPush; } });
+__exportStar(__webpack_require__(422), exports);
+//# sourceMappingURL=index.js.map
+
+/***/ }),
 /* 60 */,
 /* 61 */,
 /* 62 */,
@@ -1484,7 +1655,157 @@ module.exports = SemVer
 /* 80 */,
 /* 81 */,
 /* 82 */,
-/* 83 */,
+/* 83 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.commitAndPush = exports.updateRef = exports.createCommit = exports.createTree = exports.generateTreeObjects = void 0;
+const logger_1 = __webpack_require__(148);
+/**
+ * Generate and return a GitHub tree object structure
+ * containing the target change data
+ * See https://developer.github.com/v3/git/trees/#tree-object
+ * @param {Changes} changes the set of repository changes
+ * @returns {TreeObject[]} The new GitHub changes
+ */
+function generateTreeObjects(changes) {
+    const tree = [];
+    changes.forEach((fileData, path) => {
+        if (fileData.content === null) {
+            // if no file content then file is deleted
+            tree.push({
+                path,
+                mode: fileData.mode,
+                type: 'blob',
+                sha: null,
+            });
+        }
+        else {
+            // update file with its content
+            tree.push({
+                path,
+                mode: fileData.mode,
+                type: 'blob',
+                content: fileData.content,
+            });
+        }
+    });
+    return tree;
+}
+exports.generateTreeObjects = generateTreeObjects;
+/**
+ * Upload and create a remote GitHub tree
+ * and resolves with the new tree SHA.
+ * Rejects if GitHub V3 API fails with the GitHub error response
+ * @param {Octokit} octokit The authenticated octokit instance
+ * @param {RepoDomain} origin the the remote repository to push changes to
+ * @param {string} refHead the base of the new commit(s)
+ * @param {TreeObject[]} tree the set of GitHub changes to upload
+ * @returns {Promise<string>} the GitHub tree SHA
+ */
+async function createTree(octokit, origin, refHead, tree) {
+    const oldTreeSha = (await octokit.git.getCommit({
+        owner: origin.owner,
+        repo: origin.repo,
+        commit_sha: refHead,
+    })).data.tree.sha;
+    logger_1.logger.info('Got the latest commit tree');
+    const treeSha = (await octokit.git.createTree({
+        owner: origin.owner,
+        repo: origin.repo,
+        tree,
+        base_tree: oldTreeSha,
+    })).data.sha;
+    logger_1.logger.info(`Successfully created a tree with the desired changes with SHA ${treeSha}`);
+    return treeSha;
+}
+exports.createTree = createTree;
+/**
+ * Create a commit with a repo snapshot SHA on top of the reference HEAD
+ * and resolves with the SHA of the commit.
+ * Rejects if GitHub V3 API fails with the GitHub error response
+ * @param {Octokit} octokit The authenticated octokit instance
+ * @param {RepoDomain} origin the the remote repository to push changes to
+ * @param {string} refHead the base of the new commit(s)
+ * @param {string} treeSha the tree SHA that this commit will point to
+ * @param {string} message the message of the new commit
+ * @returns {Promise<string>} the new commit SHA
+ */
+async function createCommit(octokit, origin, refHead, treeSha, message) {
+    const commitData = (await octokit.git.createCommit({
+        owner: origin.owner,
+        repo: origin.repo,
+        message,
+        tree: treeSha,
+        parents: [refHead],
+    })).data;
+    logger_1.logger.info(`Successfully created commit. See commit at ${commitData.url}`);
+    return commitData.sha;
+}
+exports.createCommit = createCommit;
+/**
+ * Update a reference to a SHA
+ * Rejects if GitHub V3 API fails with the GitHub error response
+ * @param {Octokit} octokit The authenticated octokit instance
+ * @param {BranchDomain} origin the the remote branch to push changes to
+ * @param {string} newSha the ref to update the commit HEAD to
+ * @param {boolean} force to force the commit changes given refHead
+ * @returns {Promise<void>}
+ */
+async function updateRef(octokit, origin, newSha, force) {
+    await octokit.git.updateRef({
+        owner: origin.owner,
+        repo: origin.repo,
+        ref: `heads/${origin.branch}`,
+        sha: newSha,
+        force,
+    });
+    logger_1.logger.info(`Successfully updated reference ${origin.branch} to ${newSha}`);
+}
+exports.updateRef = updateRef;
+/**
+ * Given a set of changes, apply the commit(s) on top of the given branch's head and upload it to GitHub
+ * Rejects if GitHub V3 API fails with the GitHub error response
+ * @param {Octokit} octokit The authenticated octokit instance
+ * @param {string} refHead the base of the new commit(s)
+ * @param {Changes} changes the set of repository changes
+ * @param {RepoDomain} origin the the remote repository to push changes to
+ * @param {string} originBranchName the remote branch that will contain the new changes
+ * @param {string} commitMessage the message of the new commit
+ * @param {boolean} force to force the commit changes given refHead
+ * @returns {Promise<void>}
+ */
+async function commitAndPush(octokit, refHead, changes, originBranch, commitMessage, force) {
+    try {
+        const tree = generateTreeObjects(changes);
+        const treeSha = await createTree(octokit, originBranch, refHead, tree);
+        const commitSha = await createCommit(octokit, originBranch, refHead, treeSha, commitMessage);
+        await updateRef(octokit, originBranch, commitSha, force);
+    }
+    catch (err) {
+        logger_1.logger.error('Error while creating a tree and updating the ref');
+        throw err;
+    }
+}
+exports.commitAndPush = commitAndPush;
+//# sourceMappingURL=commit-and-push-handler.js.map
+
+/***/ }),
 /* 84 */,
 /* 85 */,
 /* 86 */,
@@ -1594,7 +1915,7 @@ class ReleasePR {
         return Promise.resolve(undefined);
     }
     async coerceReleaseCandidate(cc, latestTag) {
-        const releaseAsRe = /release-as: v?([0-9]+\.[0-9]+\.[0-9a-z-])+\s*/i;
+        const releaseAsRe = /release-as:\s*v?([0-9]+\.[0-9]+\.[0-9a-z]+(-[0-9a-z.]+)?)\s*/i;
         const previousTag = latestTag ? latestTag.name : undefined;
         let version = latestTag ? latestTag.version : this.defaultInitialVersion();
         // If a commit contains the footer release-as: 1.x.x, we use this version
@@ -1670,8 +1991,8 @@ class ReleasePR {
             body,
             labels: this.labels,
         });
-        // a return of -1 indicates that PR was not updated.
-        if (pr > 0) {
+        // a return of 0 indicates that PR was not updated.
+        if (pr !== 0) {
             await this.gh.addLabels(this.labels, pr);
             checkpoint_1.checkpoint(`${this.repoUrl} find stale PRs with label "${this.labels.join(',')}"`, checkpoint_1.CheckpointType.Success);
             await this.closeStaleReleasePRs(pr, includePackageName);
@@ -1712,7 +2033,173 @@ exports.SourceNode = __webpack_require__(54).SourceNode;
 /***/ }),
 /* 95 */,
 /* 96 */,
-/* 97 */,
+/* 97 */
+/***/ (function(module) {
+
+module.exports = stringify
+stringify.default = stringify
+stringify.stable = deterministicStringify
+stringify.stableStringify = deterministicStringify
+
+var arr = []
+var replacerStack = []
+
+// Regular stringify
+function stringify (obj, replacer, spacer) {
+  decirc(obj, '', [], undefined)
+  var res
+  if (replacerStack.length === 0) {
+    res = JSON.stringify(obj, replacer, spacer)
+  } else {
+    res = JSON.stringify(obj, replaceGetterValues(replacer), spacer)
+  }
+  while (arr.length !== 0) {
+    var part = arr.pop()
+    if (part.length === 4) {
+      Object.defineProperty(part[0], part[1], part[3])
+    } else {
+      part[0][part[1]] = part[2]
+    }
+  }
+  return res
+}
+function decirc (val, k, stack, parent) {
+  var i
+  if (typeof val === 'object' && val !== null) {
+    for (i = 0; i < stack.length; i++) {
+      if (stack[i] === val) {
+        var propertyDescriptor = Object.getOwnPropertyDescriptor(parent, k)
+        if (propertyDescriptor.get !== undefined) {
+          if (propertyDescriptor.configurable) {
+            Object.defineProperty(parent, k, { value: '[Circular]' })
+            arr.push([parent, k, val, propertyDescriptor])
+          } else {
+            replacerStack.push([val, k])
+          }
+        } else {
+          parent[k] = '[Circular]'
+          arr.push([parent, k, val])
+        }
+        return
+      }
+    }
+    stack.push(val)
+    // Optimize for Arrays. Big arrays could kill the performance otherwise!
+    if (Array.isArray(val)) {
+      for (i = 0; i < val.length; i++) {
+        decirc(val[i], i, stack, val)
+      }
+    } else {
+      var keys = Object.keys(val)
+      for (i = 0; i < keys.length; i++) {
+        var key = keys[i]
+        decirc(val[key], key, stack, val)
+      }
+    }
+    stack.pop()
+  }
+}
+
+// Stable-stringify
+function compareFunction (a, b) {
+  if (a < b) {
+    return -1
+  }
+  if (a > b) {
+    return 1
+  }
+  return 0
+}
+
+function deterministicStringify (obj, replacer, spacer) {
+  var tmp = deterministicDecirc(obj, '', [], undefined) || obj
+  var res
+  if (replacerStack.length === 0) {
+    res = JSON.stringify(tmp, replacer, spacer)
+  } else {
+    res = JSON.stringify(tmp, replaceGetterValues(replacer), spacer)
+  }
+  while (arr.length !== 0) {
+    var part = arr.pop()
+    if (part.length === 4) {
+      Object.defineProperty(part[0], part[1], part[3])
+    } else {
+      part[0][part[1]] = part[2]
+    }
+  }
+  return res
+}
+
+function deterministicDecirc (val, k, stack, parent) {
+  var i
+  if (typeof val === 'object' && val !== null) {
+    for (i = 0; i < stack.length; i++) {
+      if (stack[i] === val) {
+        var propertyDescriptor = Object.getOwnPropertyDescriptor(parent, k)
+        if (propertyDescriptor.get !== undefined) {
+          if (propertyDescriptor.configurable) {
+            Object.defineProperty(parent, k, { value: '[Circular]' })
+            arr.push([parent, k, val, propertyDescriptor])
+          } else {
+            replacerStack.push([val, k])
+          }
+        } else {
+          parent[k] = '[Circular]'
+          arr.push([parent, k, val])
+        }
+        return
+      }
+    }
+    if (typeof val.toJSON === 'function') {
+      return
+    }
+    stack.push(val)
+    // Optimize for Arrays. Big arrays could kill the performance otherwise!
+    if (Array.isArray(val)) {
+      for (i = 0; i < val.length; i++) {
+        deterministicDecirc(val[i], i, stack, val)
+      }
+    } else {
+      // Create a temporary object in the required way
+      var tmp = {}
+      var keys = Object.keys(val).sort(compareFunction)
+      for (i = 0; i < keys.length; i++) {
+        var key = keys[i]
+        deterministicDecirc(val[key], key, stack, val)
+        tmp[key] = val[key]
+      }
+      if (parent !== undefined) {
+        arr.push([parent, k, val])
+        parent[k] = tmp
+      } else {
+        return tmp
+      }
+    }
+    stack.pop()
+  }
+}
+
+// wraps replacer function to handle values we couldn't replace
+// and mark them as [Circular]
+function replaceGetterValues (replacer) {
+  replacer = replacer !== undefined ? replacer : function (k, v) { return v }
+  return function (key, val) {
+    if (replacerStack.length > 0) {
+      for (var i = 0; i < replacerStack.length; i++) {
+        var part = replacerStack[i]
+        if (part[1] === key && part[0] === val) {
+          val = '[Circular]'
+          replacerStack.splice(i, 1)
+          break
+        }
+      }
+    }
+    return replacer.call(this, key, val)
+  }
+}
+
+
+/***/ }),
 /* 98 */,
 /* 99 */,
 /* 100 */,
@@ -2806,7 +3293,202 @@ module.exports = exports['default'];
 /* 133 */,
 /* 134 */,
 /* 135 */,
-/* 136 */,
+/* 136 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+/* eslint no-prototype-builtins: 0 */
+const flatstr = __webpack_require__(649)
+const {
+  lsCacheSym,
+  levelValSym,
+  useOnlyCustomLevelsSym,
+  streamSym,
+  formattersSym,
+  hooksSym
+} = __webpack_require__(230)
+const { noop, genLog } = __webpack_require__(382)
+
+const levels = {
+  trace: 10,
+  debug: 20,
+  info: 30,
+  warn: 40,
+  error: 50,
+  fatal: 60
+}
+const levelMethods = {
+  fatal: (hook) => {
+    const logFatal = genLog(levels.fatal, hook)
+    return function (...args) {
+      const stream = this[streamSym]
+      logFatal.call(this, ...args)
+      if (typeof stream.flushSync === 'function') {
+        try {
+          stream.flushSync()
+        } catch (e) {
+          // https://github.com/pinojs/pino/pull/740#discussion_r346788313
+        }
+      }
+    }
+  },
+  error: (hook) => genLog(levels.error, hook),
+  warn: (hook) => genLog(levels.warn, hook),
+  info: (hook) => genLog(levels.info, hook),
+  debug: (hook) => genLog(levels.debug, hook),
+  trace: (hook) => genLog(levels.trace, hook)
+}
+
+const nums = Object.keys(levels).reduce((o, k) => {
+  o[levels[k]] = k
+  return o
+}, {})
+
+const initialLsCache = Object.keys(nums).reduce((o, k) => {
+  o[k] = flatstr('{"level":' + Number(k))
+  return o
+}, {})
+
+function genLsCache (instance) {
+  const formatter = instance[formattersSym].level
+  const { labels } = instance.levels
+  const cache = {}
+  for (const label in labels) {
+    const level = formatter(labels[label], Number(label))
+    cache[label] = JSON.stringify(level).slice(0, -1)
+  }
+  instance[lsCacheSym] = cache
+  return instance
+}
+
+function isStandardLevel (level, useOnlyCustomLevels) {
+  if (useOnlyCustomLevels) {
+    return false
+  }
+
+  switch (level) {
+    case 'fatal':
+    case 'error':
+    case 'warn':
+    case 'info':
+    case 'debug':
+    case 'trace':
+      return true
+    default:
+      return false
+  }
+}
+
+function setLevel (level) {
+  const { labels, values } = this.levels
+  if (typeof level === 'number') {
+    if (labels[level] === undefined) throw Error('unknown level value' + level)
+    level = labels[level]
+  }
+  if (values[level] === undefined) throw Error('unknown level ' + level)
+  const preLevelVal = this[levelValSym]
+  const levelVal = this[levelValSym] = values[level]
+  const useOnlyCustomLevelsVal = this[useOnlyCustomLevelsSym]
+  const hook = this[hooksSym].logMethod
+
+  for (var key in values) {
+    if (levelVal > values[key]) {
+      this[key] = noop
+      continue
+    }
+    this[key] = isStandardLevel(key, useOnlyCustomLevelsVal) ? levelMethods[key](hook) : genLog(values[key], hook)
+  }
+
+  this.emit(
+    'level-change',
+    level,
+    levelVal,
+    labels[preLevelVal],
+    preLevelVal
+  )
+}
+
+function getLevel (level) {
+  const { levels, levelVal } = this
+  // protection against potential loss of Pino scope from serializers (edge case with circular refs - https://github.com/pinojs/pino/issues/833)
+  return (levels && levels.labels) ? levels.labels[levelVal] : ''
+}
+
+function isLevelEnabled (logLevel) {
+  const { values } = this.levels
+  const logLevelVal = values[logLevel]
+  return logLevelVal !== undefined && (logLevelVal >= this[levelValSym])
+}
+
+function mappings (customLevels = null, useOnlyCustomLevels = false) {
+  const customNums = customLevels ? Object.keys(customLevels).reduce((o, k) => {
+    o[customLevels[k]] = k
+    return o
+  }, {}) : null
+
+  const labels = Object.assign(
+    Object.create(Object.prototype, { Infinity: { value: 'silent' } }),
+    useOnlyCustomLevels ? null : nums,
+    customNums
+  )
+  const values = Object.assign(
+    Object.create(Object.prototype, { silent: { value: Infinity } }),
+    useOnlyCustomLevels ? null : levels,
+    customLevels
+  )
+  return { labels, values }
+}
+
+function assertDefaultLevelFound (defaultLevel, customLevels, useOnlyCustomLevels) {
+  if (typeof defaultLevel === 'number') {
+    const values = [].concat(
+      Object.keys(customLevels || {}).map(key => customLevels[key]),
+      useOnlyCustomLevels ? [] : Object.keys(nums).map(level => +level),
+      Infinity
+    )
+    if (!values.includes(defaultLevel)) {
+      throw Error(`default level:${defaultLevel} must be included in custom levels`)
+    }
+    return
+  }
+
+  const labels = Object.assign(
+    Object.create(Object.prototype, { silent: { value: Infinity } }),
+    useOnlyCustomLevels ? null : levels,
+    customLevels
+  )
+  if (!(defaultLevel in labels)) {
+    throw Error(`default level:${defaultLevel} must be included in custom levels`)
+  }
+}
+
+function assertNoLevelCollisions (levels, customLevels) {
+  const { labels, values } = levels
+  for (const k in customLevels) {
+    if (k in values) {
+      throw Error('levels cannot be overridden')
+    }
+    if (customLevels[k] in labels) {
+      throw Error('pre-existing level values cannot be used for new levels')
+    }
+  }
+}
+
+module.exports = {
+  initialLsCache,
+  genLsCache,
+  levelMethods,
+  getLevel,
+  setLevel,
+  isLevelEnabled,
+  mappings,
+  assertNoLevelCollisions,
+  assertDefaultLevelFound
+}
+
+
+/***/ }),
 /* 137 */,
 /* 138 */
 /***/ (function(module) {
@@ -3059,7 +3741,41 @@ module.exports = exports['default'];
 /* 145 */,
 /* 146 */,
 /* 147 */,
-/* 148 */,
+/* 148 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.setupLogger = exports.logger = void 0;
+const Pino = __webpack_require__(722);
+let logger;
+exports.logger = logger;
+function setupLogger(userLogger) {
+    if (typeof userLogger === 'undefined' || typeof userLogger === 'object') {
+        exports.logger = logger = Pino(userLogger);
+    }
+    else {
+        exports.logger = logger = userLogger;
+    }
+}
+exports.setupLogger = setupLogger;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
 /* 149 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -3655,14 +4371,24 @@ module.exports = {
 /***/ }),
 /* 182 */,
 /* 183 */,
-/* 184 */,
+/* 184 */
+/***/ (function(module) {
+
+module.exports = require("vm");
+
+/***/ }),
 /* 185 */,
 /* 186 */,
 /* 187 */,
 /* 188 */,
 /* 189 */,
 /* 190 */,
-/* 191 */,
+/* 191 */
+/***/ (function(module) {
+
+module.exports = {"_from":"release-please@latest","_id":"release-please@6.0.0","_inBundle":false,"_integrity":"sha512-Cu4+GK+1puU1P45gYI4A78AlwtbjydyGW6Ws0Od/hz1ac2KHnp/pguxe2pwQVevp1KZPlTpHo4slvolMKPi8MA==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"tag","registry":true,"raw":"release-please@latest","name":"release-please","escapedName":"release-please","rawSpec":"latest","saveSpec":null,"fetchSpec":"latest"},"_requiredBy":["#USER","/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.0.0.tgz","_shasum":"dfe9bf5765063bddd5f35c582cbf7b5bbb4c104e","_spec":"release-please@latest","_where":"/Users/bencoe/oss/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"bundleDependencies":false,"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.3.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.16.0","yargs":"^15.0.0"},"deprecated":false,"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.0.0"};
+
+/***/ }),
 /* 192 */,
 /* 193 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
@@ -3671,7 +4397,7 @@ module.exports = {
 
 
 const Q = __webpack_require__(416)
-const parserOpts = __webpack_require__(239)
+const parserOpts = __webpack_require__(8)
 const writerOpts = __webpack_require__(579)
 
 module.exports = function (config) {
@@ -3944,7 +4670,6 @@ class SetupCfg {
         this.changelogEntry = options.changelogEntry;
         this.version = options.version;
         this.packageName = options.packageName;
-        this.skipCi = options.skipCi;
     }
     updateContent(content) {
         return content.replace(/version ?= ?[0-9]+\.[0-9]+\.[0-9](-\w+)?/, `version = ${this.version}`);
@@ -3957,7 +4682,51 @@ exports.SetupCfg = SetupCfg;
 /* 202 */,
 /* 203 */,
 /* 204 */,
-/* 205 */,
+/* 205 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const { createContext, runInContext } = __webpack_require__(184)
+
+module.exports = validator
+
+function validator (opts = {}) {
+  const {
+    ERR_PATHS_MUST_BE_STRINGS = () => 'fast-redact - Paths must be strings',
+    ERR_INVALID_PATH = (s) => `fast-redact – Invalid path (${s})`
+  } = opts
+
+  return function validate ({ paths }) {
+    paths.forEach((s) => {
+      if (typeof s !== 'string') {
+        throw Error(ERR_PATHS_MUST_BE_STRINGS())
+      }
+      try {
+        if (/〇/.test(s)) throw Error()
+        const proxy = new Proxy({}, { get: () => proxy, set: () => { throw Error() } })
+        const expr = (s[0] === '[' ? '' : '.') + s.replace(/^\*/, '〇').replace(/\.\*/g, '.〇').replace(/\[\*\]/g, '[〇]')
+        if (/\n|\r|;/.test(expr)) throw Error()
+        if (/\/\*/.test(expr)) throw Error()
+        runInContext(`
+          (function () {
+            'use strict'
+            o${expr}
+            if ([o${expr}].length !== 1) throw Error()
+          })()
+        `, createContext({ o: proxy, 〇: null }), {
+          codeGeneration: { strings: false, wasm: false }
+        })
+      } catch (e) {
+        throw Error(ERR_INVALID_PATH(s))
+      }
+    })
+  }
+}
+
+
+/***/ }),
 /* 206 */,
 /* 207 */,
 /* 208 */,
@@ -4088,7 +4857,7 @@ var Duplex;
 Readable.ReadableState = ReadableState;
 /*<replacement>*/
 
-var EE = __webpack_require__(446).EventEmitter;
+var EE = __webpack_require__(759).EventEmitter;
 
 var EElistenerCount = function EElistenerCount(emitter, type) {
   return emitter.listeners(type).length;
@@ -5186,7 +5955,77 @@ function indexOf(xs, x) {
 /* 227 */,
 /* 228 */,
 /* 229 */,
-/* 230 */,
+/* 230 */
+/***/ (function(module) {
+
+"use strict";
+
+
+const setLevelSym = Symbol('pino.setLevel')
+const getLevelSym = Symbol('pino.getLevel')
+const levelValSym = Symbol('pino.levelVal')
+const useLevelLabelsSym = Symbol('pino.useLevelLabels')
+const useOnlyCustomLevelsSym = Symbol('pino.useOnlyCustomLevels')
+const mixinSym = Symbol('pino.mixin')
+
+const lsCacheSym = Symbol('pino.lsCache')
+const chindingsSym = Symbol('pino.chindings')
+const parsedChindingsSym = Symbol('pino.parsedChindings')
+
+const asJsonSym = Symbol('pino.asJson')
+const writeSym = Symbol('pino.write')
+const redactFmtSym = Symbol('pino.redactFmt')
+
+const timeSym = Symbol('pino.time')
+const timeSliceIndexSym = Symbol('pino.timeSliceIndex')
+const streamSym = Symbol('pino.stream')
+const stringifySym = Symbol('pino.stringify')
+const stringifiersSym = Symbol('pino.stringifiers')
+const endSym = Symbol('pino.end')
+const formatOptsSym = Symbol('pino.formatOpts')
+const messageKeySym = Symbol('pino.messageKey')
+const nestedKeySym = Symbol('pino.nestedKey')
+
+const wildcardFirstSym = Symbol('pino.wildcardFirst')
+
+// public symbols, no need to use the same pino
+// version for these
+const serializersSym = Symbol.for('pino.serializers')
+const formattersSym = Symbol.for('pino.formatters')
+const hooksSym = Symbol.for('pino.hooks')
+const needsMetadataGsym = Symbol.for('pino.metadata')
+
+module.exports = {
+  setLevelSym,
+  getLevelSym,
+  levelValSym,
+  useLevelLabelsSym,
+  mixinSym,
+  lsCacheSym,
+  chindingsSym,
+  parsedChindingsSym,
+  asJsonSym,
+  writeSym,
+  serializersSym,
+  redactFmtSym,
+  timeSym,
+  timeSliceIndexSym,
+  streamSym,
+  stringifySym,
+  stringifiersSym,
+  endSym,
+  formatOptsSym,
+  messageKeySym,
+  nestedKeySym,
+  wildcardFirstSym,
+  needsMetadataGsym,
+  useOnlyCustomLevelsSym,
+  formattersSym,
+  hooksSym
+}
+
+
+/***/ }),
 /* 231 */,
 /* 232 */
 /***/ (function(module) {
@@ -5413,28 +6252,99 @@ module.exports = pipeline;
 "use strict";
 
 
-module.exports = function (config) {
-  config = defaultConfig(config)
-  return {
-    headerPattern: /^(\w*)(?:\((.*)\))?!?: (.*)$/,
-    breakingHeaderPattern: /^(\w*)(?:\((.*)\))?!: (.*)$/,
-    headerCorrespondence: [
-      'type',
-      'scope',
-      'subject'
-    ],
-    noteKeywords: ['BREAKING CHANGE'],
-    revertPattern: /^(?:Revert|revert:)\s"?([\s\S]+?)"?\s*This reverts commit (\w*)\./i,
-    revertCorrespondence: ['header', 'hash'],
-    issuePrefixes: config.issuePrefixes
+module.exports = {
+  groupRedact,
+  groupRestore,
+  nestedRedact,
+  nestedRestore
+}
+
+function groupRestore ({ keys, values, target }) {
+  if (target == null) return
+  const length = keys.length
+  for (var i = 0; i < length; i++) {
+    const k = keys[i]
+    target[k] = values[i]
   }
 }
 
-// merge user set configuration with default configuration.
-function defaultConfig (config) {
-  config = config || {}
-  config.issuePrefixes = config.issuePrefixes || ['#']
-  return config
+function groupRedact (o, path, censor, isCensorFct) {
+  const target = get(o, path)
+  if (target == null) return { keys: null, values: null, target: null, flat: true }
+  const keys = Object.keys(target)
+  const length = keys.length
+  const values = new Array(length)
+  for (var i = 0; i < length; i++) {
+    const k = keys[i]
+    values[i] = target[k]
+    target[k] = isCensorFct ? censor(target[k]) : censor
+  }
+  return { keys, values, target, flat: true }
+}
+
+function nestedRestore (arr) {
+  const length = arr.length
+  for (var i = 0; i < length; i++) {
+    const { key, target, value } = arr[i]
+    target[key] = value
+  }
+}
+
+function nestedRedact (store, o, path, ns, censor, isCensorFct) {
+  const target = get(o, path)
+  if (target == null) return
+  const keys = Object.keys(target)
+  const length = keys.length
+  for (var i = 0; i < length; i++) {
+    const key = keys[i]
+    const { value, parent, exists } = specialSet(target, key, ns, censor, isCensorFct)
+
+    if (exists === true && parent !== null) {
+      store.push({ key: ns[ns.length - 1], target: parent, value })
+    }
+  }
+  return store
+}
+
+function has (obj, prop) {
+  return Object.prototype.hasOwnProperty.call(obj, prop)
+}
+
+function specialSet (o, k, p, v, f) {
+  var i = -1
+  var l = p.length
+  var li = l - 1
+  var n
+  var nv
+  var ov
+  var oov = null
+  var exists = true
+  ov = n = o[k]
+  if (typeof n !== 'object') return { value: null, parent: null, exists }
+  while (n != null && ++i < l) {
+    k = p[i]
+    oov = ov
+    if (!(k in n)) {
+      exists = false
+      break
+    }
+    ov = n[k]
+    nv = f ? v(ov) : v
+    nv = (i !== li) ? ov : nv
+    n[k] = (has(n, k) && nv === ov) || (nv === undefined && v !== undefined) ? n[k] : nv
+    n = n[k]
+    if (typeof n !== 'object') break
+  }
+  return { value: ov, parent: oov, exists }
+}
+function get (o, p) {
+  var i = -1
+  var l = p.length
+  var n = o
+  while (n != null && ++i < l) {
+    n = n[p[i]]
+  }
+  return n
 }
 
 
@@ -6449,7 +7359,6 @@ class Changelog {
         this.changelogEntry = options.changelogEntry;
         this.version = options.version;
         this.packageName = options.packageName;
-        this.skipCi = options.skipCi;
     }
     updateContent(content) {
         content = content || '';
@@ -7996,7 +8905,117 @@ exports.decode = function base64VLQ_decode(aStr, aIndex, aOutParam) {
 
 
 /***/ }),
-/* 278 */,
+/* 278 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const fastRedact = __webpack_require__(468)
+const { redactFmtSym, wildcardFirstSym } = __webpack_require__(230)
+const { rx, validator } = fastRedact
+
+const validate = validator({
+  ERR_PATHS_MUST_BE_STRINGS: () => 'pino – redacted paths must be strings',
+  ERR_INVALID_PATH: (s) => `pino – redact paths array contains an invalid path (${s})`
+})
+
+const CENSOR = '[Redacted]'
+const strict = false // TODO should this be configurable?
+
+function redaction (opts, serialize) {
+  const { paths, censor } = handle(opts)
+
+  const shape = paths.reduce((o, str) => {
+    rx.lastIndex = 0
+    const first = rx.exec(str)
+    const next = rx.exec(str)
+
+    // ns is the top-level path segment, brackets + quoting removed.
+    let ns = first[1] !== undefined
+      ? first[1].replace(/^(?:"|'|`)(.*)(?:"|'|`)$/, '$1')
+      : first[0]
+
+    if (ns === '*') {
+      ns = wildcardFirstSym
+    }
+
+    // top level key:
+    if (next === null) {
+      o[ns] = null
+      return o
+    }
+
+    // path with at least two segments:
+    // if ns is already redacted at the top level, ignore lower level redactions
+    if (o[ns] === null) {
+      return o
+    }
+
+    const { index } = next
+    const nextPath = `${str.substr(index, str.length - 1)}`
+
+    o[ns] = o[ns] || []
+
+    // shape is a mix of paths beginning with literal values and wildcard
+    // paths [ "a.b.c", "*.b.z" ] should reduce to a shape of
+    // { "a": [ "b.c", "b.z" ], *: [ "b.z" ] }
+    // note: "b.z" is in both "a" and * arrays because "a" matches the wildcard.
+    // (* entry has wildcardFirstSym as key)
+    if (ns !== wildcardFirstSym && o[ns].length === 0) {
+      // first time ns's get all '*' redactions so far
+      o[ns].push(...(o[wildcardFirstSym] || []))
+    }
+
+    if (ns === wildcardFirstSym) {
+      // new * path gets added to all previously registered literal ns's.
+      Object.keys(o).forEach(function (k) {
+        if (o[k]) {
+          o[k].push(nextPath)
+        }
+      })
+    }
+
+    o[ns].push(nextPath)
+    return o
+  }, {})
+
+  // the redactor assigned to the format symbol key
+  // provides top level redaction for instances where
+  // an object is interpolated into the msg string
+  const result = {
+    [redactFmtSym]: fastRedact({ paths, censor, serialize, strict })
+  }
+
+  const topCensor = (...args) =>
+    typeof censor === 'function' ? serialize(censor(...args)) : serialize(censor)
+
+  return [...Object.keys(shape), ...Object.getOwnPropertySymbols(shape)].reduce((o, k) => {
+    // top level key:
+    if (shape[k] === null) o[k] = topCensor
+    else o[k] = fastRedact({ paths: shape[k], censor, serialize, strict })
+    return o
+  }, result)
+}
+
+function handle (opts) {
+  if (Array.isArray(opts)) {
+    opts = { paths: opts, censor: CENSOR }
+    validate(opts)
+    return opts
+  }
+  var { paths, censor = CENSOR, remove } = opts
+  if (Array.isArray(paths) === false) { throw Error('pino – redact must contain an array of strings') }
+  if (remove === true) censor = undefined
+  validate({ paths, censor })
+
+  return { paths, censor }
+}
+
+module.exports = redaction
+
+
+/***/ }),
 /* 279 */,
 /* 280 */
 /***/ (function(module) {
@@ -8188,7 +9207,7 @@ module.exports = eq
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-const VERSION = "2.3.0";
+const VERSION = "2.3.2";
 
 /**
  * Some “list” response that can be paginated have a different response structure
@@ -8389,9 +9408,101 @@ module.exports = conventionalCommitsFilter
 /***/ }),
 /* 305 */,
 /* 306 */,
-/* 307 */,
+/* 307 */
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = {
+  mapHttpRequest,
+  reqSerializer
+}
+
+var rawSymbol = Symbol('pino-raw-req-ref')
+var pinoReqProto = Object.create({}, {
+  id: {
+    enumerable: true,
+    writable: true,
+    value: ''
+  },
+  method: {
+    enumerable: true,
+    writable: true,
+    value: ''
+  },
+  url: {
+    enumerable: true,
+    writable: true,
+    value: ''
+  },
+  headers: {
+    enumerable: true,
+    writable: true,
+    value: {}
+  },
+  remoteAddress: {
+    enumerable: true,
+    writable: true,
+    value: ''
+  },
+  remotePort: {
+    enumerable: true,
+    writable: true,
+    value: ''
+  },
+  raw: {
+    enumerable: false,
+    get: function () {
+      return this[rawSymbol]
+    },
+    set: function (val) {
+      this[rawSymbol] = val
+    }
+  }
+})
+Object.defineProperty(pinoReqProto, rawSymbol, {
+  writable: true,
+  value: {}
+})
+
+function reqSerializer (req) {
+  // req.info is for hapi compat.
+  var connection = req.info || req.connection
+  const _req = Object.create(pinoReqProto)
+  _req.id = (typeof req.id === 'function' ? req.id() : (req.id || (req.info ? req.info.id : undefined)))
+  _req.method = req.method
+  // req.originalUrl is for expressjs compat.
+  if (req.originalUrl) {
+    _req.url = req.originalUrl
+  } else {
+    // req.url.path is  for hapi compat.
+    _req.url = req.path || (req.url ? (req.url.path || req.url) : undefined)
+  }
+  _req.headers = req.headers
+  _req.remoteAddress = connection && connection.remoteAddress
+  _req.remotePort = connection && connection.remotePort
+  // req.raw is  for hapi compat/equivalence
+  _req.raw = req.raw || req
+  return _req
+}
+
+function mapHttpRequest (req) {
+  return {
+    req: reqSerializer(req)
+  }
+}
+
+
+/***/ }),
 /* 308 */,
-/* 309 */,
+/* 309 */
+/***/ (function(module) {
+
+module.exports = eval("require")("pino-pretty");
+
+
+/***/ }),
 /* 310 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -9464,7 +10575,110 @@ module.exports = parser
 
 
 /***/ }),
-/* 321 */,
+/* 321 */
+/***/ (function(module) {
+
+"use strict";
+
+function tryStringify (o) {
+  try { return JSON.stringify(o) } catch(e) { return '"[Circular]"' }
+}
+
+module.exports = format
+
+function format(f, args, opts) {
+  var ss = (opts && opts.stringify) || tryStringify
+  var offset = 1
+  if (typeof f === 'object' && f !== null) {
+    var len = args.length + offset
+    if (len === 1) return f
+    var objects = new Array(len)
+    objects[0] = ss(f)
+    for (var index = 1; index < len; index++) {
+      objects[index] = ss(args[index])
+    }
+    return objects.join(' ')
+  }
+  if (typeof f !== 'string') {
+    return f
+  }
+  var argLen = args.length
+  if (argLen === 0) return f
+  var x = ''
+  var str = ''
+  var a = 1 - offset
+  var lastPos = -1
+  var flen = (f && f.length) || 0
+  for (var i = 0; i < flen;) {
+    if (f.charCodeAt(i) === 37 && i + 1 < flen) {
+      lastPos = lastPos > -1 ? lastPos : 0
+      switch (f.charCodeAt(i + 1)) {
+        case 100: // 'd'
+          if (a >= argLen)
+            break
+          if (lastPos < i)
+            str += f.slice(lastPos, i)
+          if (args[a] == null)  break
+          str += Number(args[a])
+          lastPos = i = i + 2
+          break
+        case 79: // 'O'
+        case 111: // 'o'
+        case 106: // 'j'
+          if (a >= argLen)
+            break
+          if (lastPos < i)
+            str += f.slice(lastPos, i)
+          if (args[a] === undefined) break
+          var type = typeof args[a]
+          if (type === 'string') {
+            str += '\'' + args[a] + '\''
+            lastPos = i + 2
+            i++
+            break
+          }
+          if (type === 'function') {
+            str += args[a].name || '<anonymous>'
+            lastPos = i + 2
+            i++
+            break
+          }
+          str += ss(args[a])
+          lastPos = i + 2
+          i++
+          break
+        case 115: // 's'
+          if (a >= argLen)
+            break
+          if (lastPos < i)
+            str += f.slice(lastPos, i)
+          str += String(args[a])
+          lastPos = i + 2
+          i++
+          break
+        case 37: // '%'
+          if (lastPos < i)
+            str += f.slice(lastPos, i)
+          str += '%'
+          lastPos = i + 2
+          i++
+          break
+      }
+      ++a
+    }
+    ++i
+  }
+  if (lastPos === -1)
+    return f
+  else if (lastPos < flen) {
+    str += f.slice(lastPos)
+  }
+
+  return str
+}
+
+
+/***/ }),
 /* 322 */,
 /* 323 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
@@ -9481,9 +10695,60 @@ module.exports = ltr
 /* 326 */,
 /* 327 */,
 /* 328 */,
-/* 329 */,
+/* 329 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+var errSerializer = __webpack_require__(621)
+var reqSerializers = __webpack_require__(307)
+var resSerializers = __webpack_require__(578)
+
+module.exports = {
+  err: errSerializer,
+  mapHttpRequest: reqSerializers.mapHttpRequest,
+  mapHttpResponse: resSerializers.mapHttpResponse,
+  req: reqSerializers.reqSerializer,
+  res: resSerializers.resSerializer,
+
+  wrapErrorSerializer: function wrapErrorSerializer (customSerializer) {
+    if (customSerializer === errSerializer) return customSerializer
+    return function wrapErrSerializer (err) {
+      return customSerializer(errSerializer(err))
+    }
+  },
+
+  wrapRequestSerializer: function wrapRequestSerializer (customSerializer) {
+    if (customSerializer === reqSerializers.reqSerializer) return customSerializer
+    return function wrappedReqSerializer (req) {
+      return customSerializer(reqSerializers.reqSerializer(req))
+    }
+  },
+
+  wrapResponseSerializer: function wrapResponseSerializer (customSerializer) {
+    if (customSerializer === resSerializers.resSerializer) return customSerializer
+    return function wrappedResSerializer (res) {
+      return customSerializer(resSerializers.resSerializer(res))
+    }
+  }
+}
+
+
+/***/ }),
 /* 330 */,
-/* 331 */,
+/* 331 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const { version } = __webpack_require__(929)
+
+module.exports = { version }
+
+
+/***/ }),
 /* 332 */,
 /* 333 */,
 /* 334 */,
@@ -9984,7 +11249,181 @@ exports.computeSourceURL = computeSourceURL;
 
 
 /***/ }),
-/* 339 */,
+/* 339 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* global define */
+
+
+exports.__esModule = true;
+
+var _utils = __webpack_require__(423);
+
+var SourceNode = undefined;
+
+try {
+  /* istanbul ignore next */
+  if (typeof define !== 'function' || !define.amd) {
+    // We don't support this in AMD environments. For these environments, we asusme that
+    // they are running on the browser and thus have no need for the source-map library.
+    var SourceMap = __webpack_require__(94);
+    SourceNode = SourceMap.SourceNode;
+  }
+} catch (err) {}
+/* NOP */
+
+/* istanbul ignore if: tested but not covered in istanbul due to dist build  */
+if (!SourceNode) {
+  SourceNode = function (line, column, srcFile, chunks) {
+    this.src = '';
+    if (chunks) {
+      this.add(chunks);
+    }
+  };
+  /* istanbul ignore next */
+  SourceNode.prototype = {
+    add: function add(chunks) {
+      if (_utils.isArray(chunks)) {
+        chunks = chunks.join('');
+      }
+      this.src += chunks;
+    },
+    prepend: function prepend(chunks) {
+      if (_utils.isArray(chunks)) {
+        chunks = chunks.join('');
+      }
+      this.src = chunks + this.src;
+    },
+    toStringWithSourceMap: function toStringWithSourceMap() {
+      return { code: this.toString() };
+    },
+    toString: function toString() {
+      return this.src;
+    }
+  };
+}
+
+function castChunk(chunk, codeGen, loc) {
+  if (_utils.isArray(chunk)) {
+    var ret = [];
+
+    for (var i = 0, len = chunk.length; i < len; i++) {
+      ret.push(codeGen.wrap(chunk[i], loc));
+    }
+    return ret;
+  } else if (typeof chunk === 'boolean' || typeof chunk === 'number') {
+    // Handle primitives that the SourceNode will throw up on
+    return chunk + '';
+  }
+  return chunk;
+}
+
+function CodeGen(srcFile) {
+  this.srcFile = srcFile;
+  this.source = [];
+}
+
+CodeGen.prototype = {
+  isEmpty: function isEmpty() {
+    return !this.source.length;
+  },
+  prepend: function prepend(source, loc) {
+    this.source.unshift(this.wrap(source, loc));
+  },
+  push: function push(source, loc) {
+    this.source.push(this.wrap(source, loc));
+  },
+
+  merge: function merge() {
+    var source = this.empty();
+    this.each(function (line) {
+      source.add(['  ', line, '\n']);
+    });
+    return source;
+  },
+
+  each: function each(iter) {
+    for (var i = 0, len = this.source.length; i < len; i++) {
+      iter(this.source[i]);
+    }
+  },
+
+  empty: function empty() {
+    var loc = this.currentLocation || { start: {} };
+    return new SourceNode(loc.start.line, loc.start.column, this.srcFile);
+  },
+  wrap: function wrap(chunk) {
+    var loc = arguments.length <= 1 || arguments[1] === undefined ? this.currentLocation || { start: {} } : arguments[1];
+
+    if (chunk instanceof SourceNode) {
+      return chunk;
+    }
+
+    chunk = castChunk(chunk, this, loc);
+
+    return new SourceNode(loc.start.line, loc.start.column, this.srcFile, chunk);
+  },
+
+  functionCall: function functionCall(fn, type, params) {
+    params = this.generateList(params);
+    return this.wrap([fn, type ? '.' + type + '(' : '(', params, ')']);
+  },
+
+  quotedString: function quotedString(str) {
+    return '"' + (str + '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\u2028/g, '\\u2028') // Per Ecma-262 7.3 + 7.8.4
+    .replace(/\u2029/g, '\\u2029') + '"';
+  },
+
+  objectLiteral: function objectLiteral(obj) {
+    // istanbul ignore next
+
+    var _this = this;
+
+    var pairs = [];
+
+    Object.keys(obj).forEach(function (key) {
+      var value = castChunk(obj[key], _this);
+      if (value !== 'undefined') {
+        pairs.push([_this.quotedString(key), ':', value]);
+      }
+    });
+
+    var ret = this.generateList(pairs);
+    ret.prepend('{');
+    ret.add('}');
+    return ret;
+  },
+
+  generateList: function generateList(entries) {
+    var ret = this.empty();
+
+    for (var i = 0, len = entries.length; i < len; i++) {
+      if (i) {
+        ret.add(',');
+      }
+
+      ret.add(castChunk(entries[i], this));
+    }
+
+    return ret;
+  },
+
+  generateArray: function generateArray(entries) {
+    var ret = this.generateList(entries);
+    ret.prepend('[');
+    ret.add(']');
+
+    return ret;
+  }
+};
+
+exports['default'] = CodeGen;
+module.exports = exports['default'];
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2NvbXBpbGVyL2NvZGUtZ2VuLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7O3FCQUN3QixVQUFVOztBQUVsQyxJQUFJLFVBQVUsWUFBQSxDQUFDOztBQUVmLElBQUk7O0FBRUYsTUFBSSxPQUFPLE1BQU0sS0FBSyxVQUFVLElBQUksQ0FBQyxNQUFNLENBQUMsR0FBRyxFQUFFOzs7QUFHL0MsUUFBSSxTQUFTLEdBQUcsT0FBTyxDQUFDLFlBQVksQ0FBQyxDQUFDO0FBQ3RDLGNBQVUsR0FBRyxTQUFTLENBQUMsVUFBVSxDQUFDO0dBQ25DO0NBQ0YsQ0FBQyxPQUFPLEdBQUcsRUFBRSxFQUViOzs7O0FBQUEsQUFHRCxJQUFJLENBQUMsVUFBVSxFQUFFO0FBQ2YsWUFBVSxHQUFHLFVBQVMsSUFBSSxFQUFFLE1BQU0sRUFBRSxPQUFPLEVBQUUsTUFBTSxFQUFFO0FBQ25ELFFBQUksQ0FBQyxHQUFHLEdBQUcsRUFBRSxDQUFDO0FBQ2QsUUFBSSxNQUFNLEVBQUU7QUFDVixVQUFJLENBQUMsR0FBRyxDQUFDLE1BQU0sQ0FBQyxDQUFDO0tBQ2xCO0dBQ0YsQ0FBQzs7QUFFRixZQUFVLENBQUMsU0FBUyxHQUFHO0FBQ3JCLE9BQUcsRUFBRSxhQUFTLE1BQU0sRUFBRTtBQUNwQixVQUFJLGVBQVEsTUFBTSxDQUFDLEVBQUU7QUFDbkIsY0FBTSxHQUFHLE1BQU0sQ0FBQyxJQUFJLENBQUMsRUFBRSxDQUFDLENBQUM7T0FDMUI7QUFDRCxVQUFJLENBQUMsR0FBRyxJQUFJLE1BQU0sQ0FBQztLQUNwQjtBQUNELFdBQU8sRUFBRSxpQkFBUyxNQUFNLEVBQUU7QUFDeEIsVUFBSSxlQUFRLE1BQU0sQ0FBQyxFQUFFO0FBQ25CLGNBQU0sR0FBRyxNQUFNLENBQUMsSUFBSSxDQUFDLEVBQUUsQ0FBQyxDQUFDO09BQzFCO0FBQ0QsVUFBSSxDQUFDLEdBQUcsR0FBRyxNQUFNLEdBQUcsSUFBSSxDQUFDLEdBQUcsQ0FBQztL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QUcsQ0FBQyxDQUFDO0FBQ2pCLE9BQUcsQ0FBQyxHQUFHLENBQUMsR0FBRyxDQUFDLENBQUM7O0FBRWIsV0FBTyxHQUFHLENBQUM7R0FDWjtDQUNGLENBQUM7O3FCQUVhLE9BQU8iLCJmaWxlIjoiY29kZS1nZW4uanMiLCJzb3VyY2VzQ29udGVudCI6WyIvKiBnbG9iYWwgZGVmaW5lICovXG5pbXBvcnQgeyBpc0FycmF5IH0gZnJvbSAnLi4vdXRpbHMnO1xuXG5sZXQgU291cmNlTm9kZTtcblxudHJ5IHtcbiAgLyogaXN0YW5idWwgaWdub3JlIG5leHQgKi9cbiAgaWYgKHR5cGVvZiBkZWZpbmUgIT09ICdmdW5jdGlvbicgfHwgIWRlZmluZS5hbWQpIHtcbiAgICAvLyBXZSBkb24ndCBzdXBwb3J0IHRoaXMgaW4gQU1EIGVudmlyb25tZW50cy4gRm9yIHRoZXNlIGVudmlyb25tZW50cywgd2UgYXN1c21lIHRoYXRcbiAgICAvLyB0aGV5IGFyZSBydW5uaW5nIG9uIHRoZSBicm93c2VyIGFuZCB0aHVzIGhhdmUgbm8gbmVlZCBmb3IgdGhlIHNvdXJjZS1tYXAgbGlicmFyeS5cbiAgICBsZXQgU291cmNlTWFwID0gcmVxdWlyZSgnc291cmNlLW1hcCcpO1xuICAgIFNvdXJjZU5vZGUgPSBTb3VyY2VNYXAuU291cmNlTm9kZTtcbiAgfVxufSBjYXRjaCAoZXJyKSB7XG4gIC8qIE5PUCAqL1xufVxuXG4vKiBpc3RhbmJ1bCBpZ25vcmUgaWY6IHRlc3RlZCBidXQgbm90IGNvdmVyZWQgaW4gaXN0YW5idWwgZHVlIHRvIGRpc3QgYnVpbGQgICovXG5pZiAoIVNvdXJjZU5vZGUpIHtcbiAgU291cmNlTm9kZSA9IGZ1bmN0aW9uKGxpbmUsIGNvbHVtbiwgc3JjRmlsZSwgY2h1bmtzKSB7XG4gICAgdGhpcy5zcmMgPSAnJztcbiAgICBpZiAoY2h1bmtzKSB7XG4gICAgICB0aGlzLmFkZChjaHVua3MpO1xuICAgIH1cbiAgfTtcbiAgLyogaXN0YW5idWwgaWdub3JlIG5leHQgKi9cbiAgU291cmNlTm9kZS5wcm90b3R5cGUgPSB7XG4gICAgYWRkOiBmdW5jdGlvbihjaHVua3MpIHtcbiAgICAgIGlmIChpc0FycmF5KGNodW5rcykpIHtcbiAgICAgICAgY2h1bmtzID0gY2h1bmtzLmpvaW4oJycpO1xuICAgICAgfVxuICAgICAgdGhpcy5zcmMgKz0gY2h1bmtzO1xuICAgIH0sXG4gICAgcHJlcGVuZDogZnVuY3Rpb24oY2h1bmtzKSB7XG4gICAgICBpZiAoaXNBcnJheShjaHVua3MpKSB7XG4gICAgICAgIGNodW5rcyA9IGNodW5rcy5qb2luKCcnKTtcbiAgICAgIH1cbiAgICAgIHRoaXMuc3JjID0gY2h1bmtzICsgdGhpcy5zcmM7XG4gICAgfSxcbiAgICB0b1N0cmluZ1dpdGhTb3VyY2VNYXA6IGZ1bmN0aW9uKCkge1xuICAgICAgcmV0dXJuIHsgY29kZTogdGhpcy50b1N0cmluZygpIH07XG4gICAgfSxcbiAgICB0b1N0cmluZzogZnVuY3Rpb24oKSB7XG4gICAgICByZXR1cm4gdGhpcy5zcmM7XG4gICAgfVxuICB9O1xufVxuXG5mdW5jdGlvbiBjYXN0Q2h1bmsoY2h1bmssIGNvZGVHZW4sIGxvYykge1xuICBpZiAoaXNBcnJheShjaHVuaykpIHtcbiAgICBsZXQgcmV0ID0gW107XG5cbiAgICBmb3IgKGxldCBpID0gMCwgbGVuID0gY2h1bmsubGVuZ3RoOyBpIDwgbGVuOyBpKyspIHtcbiAgICAgIHJldC5wdXNoKGNvZGVHZW4ud3JhcChjaHVua1tpXSwgbG9jKSk7XG4gICAgfVxuICAgIHJldHVybiByZXQ7XG4gIH0gZWxzZSBpZiAodHlwZW9mIGNodW5rID09PSAnYm9vbGVhbicgfHwgdHlwZW9mIGNodW5rID09PSAnbnVtYmVyJykge1xuICAgIC8vIEhhbmRsZSBwcmltaXRpdmVzIHRoYXQgdGhlIFNvdXJjZU5vZGUgd2lsbCB0aHJvdyB1cCBvblxuICAgIHJldHVybiBjaHVuayArICcnO1xuICB9XG4gIHJldHVybiBjaHVuaztcbn1cblxuZnVuY3Rpb24gQ29kZUdlbihzcmNGaWxlKSB7XG4gIHRoaXMuc3JjRmlsZSA9IHNyY0ZpbGU7XG4gIHRoaXMuc291cmNlID0gW107XG59XG5cbkNvZGVHZW4ucHJvdG90eXBlID0ge1xuICBpc0VtcHR5KCkge1xuICAgIHJldHVybiAhdGhpcy5zb3VyY2UubGVuZ3RoO1xuICB9LFxuICBwcmVwZW5kOiBmdW5jdGlvbihzb3VyY2UsIGxvYykge1xuICAgIHRoaXMuc291cmNlLnVuc2hpZnQodGhpcy53cmFwKHNvdXJjZSwgbG9jKSk7XG4gIH0sXG4gIHB1c2g6IGZ1bmN0aW9uKHNvdXJjZSwgbG9jKSB7XG4gICAgdGhpcy5zb3VyY2UucHVzaCh0aGlzLndyYXAoc291cmNlLCBsb2MpKTtcbiAgfSxcblxuICBtZXJnZTogZnVuY3Rpb24oKSB7XG4gICAgbGV0IHNvdXJjZSA9IHRoaXMuZW1wdHkoKTtcbiAgICB0aGlzLmVhY2goZnVuY3Rpb24obGluZSkge1xuICAgICAgc291cmNlLmFkZChbJyAgJywgbGluZSwgJ1xcbiddKTtcbiAgICB9KTtcbiAgICByZXR1cm4gc291cmNlO1xuICB9LFxuXG4gIGVhY2g6IGZ1bmN0aW9uKGl0ZXIpIHtcbiAgICBmb3IgKGxldCBpID0gMCwgbGVuID0gdGhpcy5zb3VyY2UubGVuZ3RoOyBpIDwgbGVuOyBpKyspIHtcbiAgICAgIGl0ZXIodGhpcy5zb3VyY2VbaV0pO1xuICAgIH1cbiAgfSxcblxuICBlbXB0eTogZnVuY3Rpb24oKSB7XG4gICAgbGV0IGxvYyA9IHRoaXMuY3VycmVudExvY2F0aW9uIHx8IHsgc3RhcnQ6IHt9IH07XG4gICAgcmV0dXJuIG5ldyBTb3VyY2VOb2RlKGxvYy5zdGFydC5saW5lLCBsb2Muc3RhcnQuY29sdW1uLCB0aGlzLnNyY0ZpbGUpO1xuICB9LFxuICB3cmFwOiBmdW5jdGlvbihjaHVuaywgbG9jID0gdGhpcy5jdXJyZW50TG9jYXRpb24gfHwgeyBzdGFydDoge30gfSkge1xuICAgIGlmIChjaHVuayBpbnN0YW5jZW9mIFNvdXJjZU5vZGUpIHtcbiAgICAgIHJldHVybiBjaHVuaztcbiAgICB9XG5cbiAgICBjaHVuayA9IGNhc3RDaHVuayhjaHVuaywgdGhpcywgbG9jKTtcblxuICAgIHJldHVybiBuZXcgU291cmNlTm9kZShcbiAgICAgIGxvYy5zdGFydC5saW5lLFxuICAgICAgbG9jLnN0YXJ0LmNvbHVtbixcbiAgICAgIHRoaXMuc3JjRmlsZSxcbiAgICAgIGNodW5rXG4gICAgKTtcbiAgfSxcblxuICBmdW5jdGlvbkNhbGw6IGZ1bmN0aW9uKGZuLCB0eXBlLCBwYXJhbXMpIHtcbiAgICBwYXJhbXMgPSB0aGlzLmdlbmVyYXRlTGlzdChwYXJhbXMpO1xuICAgIHJldHVybiB0aGlzLndyYXAoW2ZuLCB0eXBlID8gJy4nICsgdHlwZSArICcoJyA6ICcoJywgcGFyYW1zLCAnKSddKTtcbiAgfSxcblxuICBxdW90ZWRTdHJpbmc6IGZ1bmN0aW9uKHN0cikge1xuICAgIHJldHVybiAoXG4gICAgICAnXCInICtcbiAgICAgIChzdHIgKyAnJylcbiAgICAgICAgLnJlcGxhY2UoL1xcXFwvZywgJ1xcXFxcXFxcJylcbiAgICAgICAgLnJlcGxhY2UoL1wiL2csICdcXFxcXCInKVxuICAgICAgICAucmVwbGFjZSgvXFxuL2csICdcXFxcbicpXG4gICAgICAgIC5yZXBsYWNlKC9cXHIvZywgJ1xcXFxyJylcbiAgICAgICAgLnJlcGxhY2UoL1xcdTIwMjgvZywgJ1xcXFx1MjAyOCcpIC8vIFBlciBFY21hLTI2MiA3LjMgKyA3LjguNFxuICAgICAgICAucmVwbGFjZSgvXFx1MjAyOS9nLCAnXFxcXHUyMDI5JykgK1xuICAgICAgJ1wiJ1xuICAgICk7XG4gIH0sXG5cbiAgb2JqZWN0TGl0ZXJhbDogZnVuY3Rpb24ob2JqKSB7XG4gICAgbGV0IHBhaXJzID0gW107XG5cbiAgICBPYmplY3Qua2V5cyhvYmopLmZvckVhY2goa2V5ID0+IHtcbiAgICAgIGxldCB2YWx1ZSA9IGNhc3RDaHVuayhvYmpba2V5XSwgdGhpcyk7XG4gICAgICBpZiAodmFsdWUgIT09ICd1bmRlZmluZWQnKSB7XG4gICAgICAgIHBhaXJzLnB1c2goW3RoaXMucXVvdGVkU3RyaW5nKGtleSksICc6JywgdmFsdWVdKTtcbiAgICAgIH1cbiAgICB9KTtcblxuICAgIGxldCByZXQgPSB0aGlzLmdlbmVyYXRlTGlzdChwYWlycyk7XG4gICAgcmV0LnByZXBlbmQoJ3snKTtcbiAgICByZXQuYWRkKCd9Jyk7XG4gICAgcmV0dXJuIHJldDtcbiAgfSxcblxuICBnZW5lcmF0ZUxpc3Q6IGZ1bmN0aW9uKGVudHJpZXMpIHtcbiAgICBsZXQgcmV0ID0gdGhpcy5lbXB0eSgpO1xuXG4gICAgZm9yIChsZXQgaSA9IDAsIGxlbiA9IGVudHJpZXMubGVuZ3RoOyBpIDwgbGVuOyBpKyspIHtcbiAgICAgIGlmIChpKSB7XG4gICAgICAgIHJldC5hZGQoJywnKTtcbiAgICAgIH1cblxuICAgICAgcmV0LmFkZChjYXN0Q2h1bmsoZW50cmllc1tpXSwgdGhpcykpO1xuICAgIH1cblxuICAgIHJldHVybiByZXQ7XG4gIH0sXG5cbiAgZ2VuZXJhdGVBcnJheTogZnVuY3Rpb24oZW50cmllcykge1xuICAgIGxldCByZXQgPSB0aGlzLmdlbmVyYXRlTGlzdChlbnRyaWVzKTtcbiAgICByZXQucHJlcGVuZCgnWycpO1xuICAgIHJldC5hZGQoJ10nKTtcblxuICAgIHJldHVybiByZXQ7XG4gIH1cbn07XG5cbmV4cG9ydCBkZWZhdWx0IENvZGVHZW47XG4iXX0=
+
+
+/***/ }),
 /* 340 */,
 /* 341 */,
 /* 342 */,
@@ -10242,7 +11681,112 @@ module.exports = (flag, argv = process.argv) => {
 /* 370 */,
 /* 371 */,
 /* 372 */,
-/* 373 */,
+/* 373 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+var RetryOperation = __webpack_require__(988);
+
+exports.operation = function(options) {
+  var timeouts = exports.timeouts(options);
+  return new RetryOperation(timeouts, {
+      forever: options && options.forever,
+      unref: options && options.unref,
+      maxRetryTime: options && options.maxRetryTime
+  });
+};
+
+exports.timeouts = function(options) {
+  if (options instanceof Array) {
+    return [].concat(options);
+  }
+
+  var opts = {
+    retries: 10,
+    factor: 2,
+    minTimeout: 1 * 1000,
+    maxTimeout: Infinity,
+    randomize: false
+  };
+  for (var key in options) {
+    opts[key] = options[key];
+  }
+
+  if (opts.minTimeout > opts.maxTimeout) {
+    throw new Error('minTimeout is greater than maxTimeout');
+  }
+
+  var timeouts = [];
+  for (var i = 0; i < opts.retries; i++) {
+    timeouts.push(this.createTimeout(i, opts));
+  }
+
+  if (options && options.forever && !timeouts.length) {
+    timeouts.push(this.createTimeout(i, opts));
+  }
+
+  // sort the array numerically ascending
+  timeouts.sort(function(a,b) {
+    return a - b;
+  });
+
+  return timeouts;
+};
+
+exports.createTimeout = function(attempt, opts) {
+  var random = (opts.randomize)
+    ? (Math.random() + 1)
+    : 1;
+
+  var timeout = Math.round(random * opts.minTimeout * Math.pow(opts.factor, attempt));
+  timeout = Math.min(timeout, opts.maxTimeout);
+
+  return timeout;
+};
+
+exports.wrap = function(obj, options, methods) {
+  if (options instanceof Array) {
+    methods = options;
+    options = null;
+  }
+
+  if (!methods) {
+    methods = [];
+    for (var key in obj) {
+      if (typeof obj[key] === 'function') {
+        methods.push(key);
+      }
+    }
+  }
+
+  for (var i = 0; i < methods.length; i++) {
+    var method   = methods[i];
+    var original = obj[method];
+
+    obj[method] = function retryWrapper(original) {
+      var op       = exports.operation(options);
+      var args     = Array.prototype.slice.call(arguments, 1);
+      var callback = args.pop();
+
+      args.push(function(err) {
+        if (op.retry(err)) {
+          return;
+        }
+        if (err) {
+          arguments[0] = op.mainError();
+        }
+        callback.apply(this, arguments);
+      });
+
+      op.attempt(function() {
+        original.apply(obj, args);
+      });
+    }.bind(obj, original);
+    obj[method].options = options;
+  }
+};
+
+
+/***/ }),
 /* 374 */,
 /* 375 */,
 /* 376 */,
@@ -10283,7 +11827,447 @@ module.exports = exports['default'];
 
 /***/ }),
 /* 381 */,
-/* 382 */,
+/* 382 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+/* eslint no-prototype-builtins: 0 */
+
+const format = __webpack_require__(321)
+const { mapHttpRequest, mapHttpResponse } = __webpack_require__(329)
+const SonicBoom = __webpack_require__(450)
+const stringifySafe = __webpack_require__(97)
+const {
+  lsCacheSym,
+  chindingsSym,
+  parsedChindingsSym,
+  writeSym,
+  serializersSym,
+  formatOptsSym,
+  endSym,
+  stringifiersSym,
+  stringifySym,
+  wildcardFirstSym,
+  needsMetadataGsym,
+  redactFmtSym,
+  streamSym,
+  nestedKeySym,
+  formattersSym,
+  messageKeySym
+} = __webpack_require__(230)
+
+function noop () {}
+
+function genLog (level, hook) {
+  if (!hook) return LOG
+
+  return function hookWrappedLog (...args) {
+    hook.call(this, args, LOG)
+  }
+
+  function LOG (o, ...n) {
+    if (typeof o === 'object') {
+      var msg = o
+      if (o !== null) {
+        if (o.method && o.headers && o.socket) {
+          o = mapHttpRequest(o)
+        } else if (typeof o.setHeader === 'function') {
+          o = mapHttpResponse(o)
+        }
+      }
+      if (this[nestedKeySym]) o = { [this[nestedKeySym]]: o }
+      var formatParams
+      if (msg === null && n.length === 0) {
+        formatParams = [null]
+      } else {
+        msg = n.shift()
+        formatParams = n
+      }
+      this[writeSym](o, format(msg, formatParams, this[formatOptsSym]), level)
+    } else {
+      this[writeSym](null, format(o, n, this[formatOptsSym]), level)
+    }
+  }
+}
+
+// magically escape strings for json
+// relying on their charCodeAt
+// everything below 32 needs JSON.stringify()
+// 34 and 92 happens all the time, so we
+// have a fast case for them
+function asString (str) {
+  var result = ''
+  var last = 0
+  var found = false
+  var point = 255
+  const l = str.length
+  if (l > 100) {
+    return JSON.stringify(str)
+  }
+  for (var i = 0; i < l && point >= 32; i++) {
+    point = str.charCodeAt(i)
+    if (point === 34 || point === 92) {
+      result += str.slice(last, i) + '\\'
+      last = i
+      found = true
+    }
+  }
+  if (!found) {
+    result = str
+  } else {
+    result += str.slice(last)
+  }
+  return point < 32 ? JSON.stringify(str) : '"' + result + '"'
+}
+
+function asJson (obj, msg, num, time) {
+  const stringify = this[stringifySym]
+  const stringifiers = this[stringifiersSym]
+  const end = this[endSym]
+  const chindings = this[chindingsSym]
+  const serializers = this[serializersSym]
+  const formatters = this[formattersSym]
+  const messageKey = this[messageKeySym]
+  var data = this[lsCacheSym][num] + time
+
+  // we need the child bindings added to the output first so instance logged
+  // objects can take precedence when JSON.parse-ing the resulting log line
+  data = data + chindings
+
+  var value
+  var notHasOwnProperty = obj.hasOwnProperty === undefined
+  if (formatters.log) {
+    obj = formatters.log(obj)
+  }
+  if (msg !== undefined) {
+    obj[messageKey] = msg
+  }
+  const wildcardStringifier = stringifiers[wildcardFirstSym]
+  for (var key in obj) {
+    value = obj[key]
+    if ((notHasOwnProperty || obj.hasOwnProperty(key)) && value !== undefined) {
+      value = serializers[key] ? serializers[key](value) : value
+
+      const stringifier = stringifiers[key] || wildcardStringifier
+
+      switch (typeof value) {
+        case 'undefined':
+        case 'function':
+          continue
+        case 'number':
+          /* eslint no-fallthrough: "off" */
+          if (Number.isFinite(value) === false) {
+            value = null
+          }
+        // this case explicitly falls through to the next one
+        case 'boolean':
+          if (stringifier) value = stringifier(value)
+          break
+        case 'string':
+          value = (stringifier || asString)(value)
+          break
+        default:
+          value = (stringifier || stringify)(value)
+      }
+      if (value === undefined) continue
+      data += ',"' + key + '":' + value
+    }
+  }
+
+  return data + end
+}
+
+function asChindings (instance, bindings) {
+  var key
+  var value
+  var data = instance[chindingsSym]
+  const stringify = instance[stringifySym]
+  const stringifiers = instance[stringifiersSym]
+  const wildcardStringifier = stringifiers[wildcardFirstSym]
+  const serializers = instance[serializersSym]
+  const formatter = instance[formattersSym].bindings
+  bindings = formatter(bindings)
+
+  for (key in bindings) {
+    value = bindings[key]
+    const valid = key !== 'level' &&
+      key !== 'serializers' &&
+      key !== 'formatters' &&
+      key !== 'customLevels' &&
+      bindings.hasOwnProperty(key) &&
+      value !== undefined
+    if (valid === true) {
+      value = serializers[key] ? serializers[key](value) : value
+      value = (stringifiers[key] || wildcardStringifier || stringify)(value)
+      if (value === undefined) continue
+      data += ',"' + key + '":' + value
+    }
+  }
+  return data
+}
+
+function getPrettyStream (opts, prettifier, dest, instance) {
+  if (prettifier && typeof prettifier === 'function') {
+    prettifier = prettifier.bind(instance)
+    return prettifierMetaWrapper(prettifier(opts), dest, opts)
+  }
+  try {
+    var prettyFactory = __webpack_require__(309)
+    prettyFactory.asMetaWrapper = prettifierMetaWrapper
+    return prettifierMetaWrapper(prettyFactory(opts), dest, opts)
+  } catch (e) {
+    throw Error('Missing `pino-pretty` module: `pino-pretty` must be installed separately')
+  }
+}
+
+function prettifierMetaWrapper (pretty, dest, opts) {
+  opts = Object.assign({ suppressFlushSyncWarning: false }, opts)
+  var warned = false
+  return {
+    [needsMetadataGsym]: true,
+    lastLevel: 0,
+    lastMsg: null,
+    lastObj: null,
+    lastLogger: null,
+    flushSync () {
+      if (opts.suppressFlushSyncWarning || warned) {
+        return
+      }
+      warned = true
+      setMetadataProps(dest, this)
+      dest.write(pretty(Object.assign({
+        level: 40, // warn
+        msg: 'pino.final with prettyPrint does not support flushing',
+        time: Date.now()
+      }, this.chindings())))
+    },
+    chindings () {
+      const lastLogger = this.lastLogger
+      var chindings = null
+
+      // protection against flushSync being called before logging
+      // anything
+      if (!lastLogger) {
+        return null
+      }
+
+      if (lastLogger.hasOwnProperty(parsedChindingsSym)) {
+        chindings = lastLogger[parsedChindingsSym]
+      } else {
+        chindings = JSON.parse('{' + lastLogger[chindingsSym].substr(1) + '}')
+        lastLogger[parsedChindingsSym] = chindings
+      }
+
+      return chindings
+    },
+    write (chunk) {
+      const lastLogger = this.lastLogger
+      const chindings = this.chindings()
+
+      var time = this.lastTime
+
+      if (time.match(/^\d+/)) {
+        time = parseInt(time)
+      }
+
+      var lastObj = this.lastObj
+      var lastMsg = this.lastMsg
+      var errorProps = null
+
+      const formatters = lastLogger[formattersSym]
+      const formattedObj = formatters.log ? formatters.log(lastObj) : lastObj
+
+      const messageKey = lastLogger[messageKeySym]
+      if (lastMsg && formattedObj && !formattedObj.hasOwnProperty(messageKey)) {
+        formattedObj[messageKey] = lastMsg
+      }
+
+      const obj = Object.assign({
+        level: this.lastLevel,
+        time
+      }, formattedObj, errorProps)
+
+      const serializers = lastLogger[serializersSym]
+      const keys = Object.keys(serializers)
+      var key
+
+      for (var i = 0; i < keys.length; i++) {
+        key = keys[i]
+        if (obj[key] !== undefined) {
+          obj[key] = serializers[key](obj[key])
+        }
+      }
+
+      for (key in chindings) {
+        if (!obj.hasOwnProperty(key)) {
+          obj[key] = chindings[key]
+        }
+      }
+
+      const stringifiers = lastLogger[stringifiersSym]
+      const redact = stringifiers[redactFmtSym]
+
+      const formatted = pretty(typeof redact === 'function' ? redact(obj) : obj)
+      if (formatted === undefined) return
+
+      setMetadataProps(dest, this)
+      dest.write(formatted)
+    }
+  }
+}
+
+function hasBeenTampered (stream) {
+  return stream.write !== stream.constructor.prototype.write
+}
+
+function buildSafeSonicBoom (opts) {
+  const stream = new SonicBoom(opts)
+  stream.on('error', filterBrokenPipe)
+  return stream
+
+  function filterBrokenPipe (err) {
+    // TODO verify on Windows
+    if (err.code === 'EPIPE') {
+      // If we get EPIPE, we should stop logging here
+      // however we have no control to the consumer of
+      // SonicBoom, so we just overwrite the write method
+      stream.write = noop
+      stream.end = noop
+      stream.flushSync = noop
+      stream.destroy = noop
+      return
+    }
+    stream.removeListener('error', filterBrokenPipe)
+    stream.emit('error', err)
+  }
+}
+
+function createArgsNormalizer (defaultOptions) {
+  return function normalizeArgs (instance, opts = {}, stream) {
+    // support stream as a string
+    if (typeof opts === 'string') {
+      stream = buildSafeSonicBoom({ dest: opts, sync: true })
+      opts = {}
+    } else if (typeof stream === 'string') {
+      stream = buildSafeSonicBoom({ dest: stream, sync: true })
+    } else if (opts instanceof SonicBoom || opts.writable || opts._writableState) {
+      stream = opts
+      opts = null
+    }
+    opts = Object.assign({}, defaultOptions, opts)
+    if ('extreme' in opts) {
+      throw Error('The extreme option has been removed, use pino.destination({ sync: false }) instead')
+    }
+    if ('onTerminated' in opts) {
+      throw Error('The onTerminated option has been removed, use pino.final instead')
+    }
+    if ('changeLevelName' in opts) {
+      process.emitWarning(
+        'The changeLevelName option is deprecated and will be removed in v7. Use levelKey instead.',
+        { code: 'changeLevelName_deprecation' }
+      )
+      opts.levelKey = opts.changeLevelName
+      delete opts.changeLevelName
+    }
+    const { enabled, prettyPrint, prettifier, messageKey } = opts
+    if (enabled === false) opts.level = 'silent'
+    stream = stream || process.stdout
+    if (stream === process.stdout && stream.fd >= 0 && !hasBeenTampered(stream)) {
+      stream = buildSafeSonicBoom({ fd: stream.fd, sync: true })
+    }
+    if (prettyPrint) {
+      const prettyOpts = Object.assign({ messageKey }, prettyPrint)
+      stream = getPrettyStream(prettyOpts, prettifier, stream, instance)
+    }
+    return { opts, stream }
+  }
+}
+
+function final (logger, handler) {
+  if (typeof logger === 'undefined' || typeof logger.child !== 'function') {
+    throw Error('expected a pino logger instance')
+  }
+  const hasHandler = (typeof handler !== 'undefined')
+  if (hasHandler && typeof handler !== 'function') {
+    throw Error('if supplied, the handler parameter should be a function')
+  }
+  const stream = logger[streamSym]
+  if (typeof stream.flushSync !== 'function') {
+    throw Error('final requires a stream that has a flushSync method, such as pino.destination')
+  }
+
+  const finalLogger = new Proxy(logger, {
+    get: (logger, key) => {
+      if (key in logger.levels.values) {
+        return (...args) => {
+          logger[key](...args)
+          stream.flushSync()
+        }
+      }
+      return logger[key]
+    }
+  })
+
+  if (!hasHandler) {
+    return finalLogger
+  }
+
+  return (err = null, ...args) => {
+    try {
+      stream.flushSync()
+    } catch (e) {
+      // it's too late to wait for the stream to be ready
+      // because this is a final tick scenario.
+      // in practice there shouldn't be a situation where it isn't
+      // however, swallow the error just in case (and for easier testing)
+    }
+    return handler(err, finalLogger, ...args)
+  }
+}
+
+function stringify (obj) {
+  try {
+    return JSON.stringify(obj)
+  } catch (_) {
+    return stringifySafe(obj)
+  }
+}
+
+function buildFormatters (level, bindings, log) {
+  return {
+    level,
+    bindings,
+    log
+  }
+}
+
+function setMetadataProps (dest, that) {
+  if (dest[needsMetadataGsym] === true) {
+    dest.lastLevel = that.lastLevel
+    dest.lastMsg = that.lastMsg
+    dest.lastObj = that.lastObj
+    dest.lastTime = that.lastTime
+    dest.lastLogger = that.lastLogger
+  }
+}
+
+module.exports = {
+  noop,
+  buildSafeSonicBoom,
+  getPrettyStream,
+  asChindings,
+  asJson,
+  genLog,
+  createArgsNormalizer,
+  final,
+  stringify,
+  buildFormatters
+}
+
+
+/***/ }),
 /* 383 */,
 /* 384 */,
 /* 385 */
@@ -10679,177 +12663,191 @@ exports.endpoint = endpoint;
 /* 390 */,
 /* 391 */,
 /* 392 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, __unusedexports, __webpack_require__) {
 
 "use strict";
-/* global define */
 
 
-exports.__esModule = true;
+/* eslint no-prototype-builtins: 0 */
 
-var _utils = __webpack_require__(423);
+const { EventEmitter } = __webpack_require__(759)
+const SonicBoom = __webpack_require__(450)
+const flatstr = __webpack_require__(649)
+const {
+  lsCacheSym,
+  levelValSym,
+  setLevelSym,
+  getLevelSym,
+  chindingsSym,
+  parsedChindingsSym,
+  mixinSym,
+  asJsonSym,
+  writeSym,
+  timeSym,
+  timeSliceIndexSym,
+  streamSym,
+  serializersSym,
+  formattersSym,
+  useOnlyCustomLevelsSym,
+  needsMetadataGsym
+} = __webpack_require__(230)
+const {
+  getLevel,
+  setLevel,
+  isLevelEnabled,
+  mappings,
+  initialLsCache,
+  genLsCache,
+  assertNoLevelCollisions
+} = __webpack_require__(136)
+const {
+  asChindings,
+  asJson,
+  buildFormatters
+} = __webpack_require__(382)
+const {
+  version
+} = __webpack_require__(331)
 
-var SourceNode = undefined;
-
-try {
-  /* istanbul ignore next */
-  if (typeof define !== 'function' || !define.amd) {
-    // We don't support this in AMD environments. For these environments, we asusme that
-    // they are running on the browser and thus have no need for the source-map library.
-    var SourceMap = __webpack_require__(94);
-    SourceNode = SourceMap.SourceNode;
-  }
-} catch (err) {}
-/* NOP */
-
-/* istanbul ignore if: tested but not covered in istanbul due to dist build  */
-if (!SourceNode) {
-  SourceNode = function (line, column, srcFile, chunks) {
-    this.src = '';
-    if (chunks) {
-      this.add(chunks);
-    }
-  };
-  /* istanbul ignore next */
-  SourceNode.prototype = {
-    add: function add(chunks) {
-      if (_utils.isArray(chunks)) {
-        chunks = chunks.join('');
-      }
-      this.src += chunks;
-    },
-    prepend: function prepend(chunks) {
-      if (_utils.isArray(chunks)) {
-        chunks = chunks.join('');
-      }
-      this.src = chunks + this.src;
-    },
-    toStringWithSourceMap: function toStringWithSourceMap() {
-      return { code: this.toString() };
-    },
-    toString: function toString() {
-      return this.src;
-    }
-  };
+// note: use of class is satirical
+// https://github.com/pinojs/pino/pull/433#pullrequestreview-127703127
+const constructor = class Pino {}
+const prototype = {
+  constructor,
+  child,
+  bindings,
+  setBindings,
+  flush,
+  isLevelEnabled,
+  version,
+  get level () { return this[getLevelSym]() },
+  set level (lvl) { this[setLevelSym](lvl) },
+  get levelVal () { return this[levelValSym] },
+  set levelVal (n) { throw Error('levelVal is read-only') },
+  [lsCacheSym]: initialLsCache,
+  [writeSym]: write,
+  [asJsonSym]: asJson,
+  [getLevelSym]: getLevel,
+  [setLevelSym]: setLevel
 }
 
-function castChunk(chunk, codeGen, loc) {
-  if (_utils.isArray(chunk)) {
-    var ret = [];
+Object.setPrototypeOf(prototype, EventEmitter.prototype)
 
-    for (var i = 0, len = chunk.length; i < len; i++) {
-      ret.push(codeGen.wrap(chunk[i], loc));
-    }
-    return ret;
-  } else if (typeof chunk === 'boolean' || typeof chunk === 'number') {
-    // Handle primitives that the SourceNode will throw up on
-    return chunk + '';
-  }
-  return chunk;
+// exporting and consuming the prototype object using factory pattern fixes scoping issues with getters when serializing
+module.exports = function () {
+  return Object.create(prototype)
 }
 
-function CodeGen(srcFile) {
-  this.srcFile = srcFile;
-  this.source = [];
+const resetChildingsFormatter = bindings => bindings
+function child (bindings) {
+  if (!bindings) {
+    throw Error('missing bindings for child Pino')
+  }
+  const serializers = this[serializersSym]
+  const formatters = this[formattersSym]
+  const instance = Object.create(this)
+  if (bindings.hasOwnProperty('serializers') === true) {
+    instance[serializersSym] = Object.create(null)
+
+    for (var k in serializers) {
+      instance[serializersSym][k] = serializers[k]
+    }
+    const parentSymbols = Object.getOwnPropertySymbols(serializers)
+    for (var i = 0; i < parentSymbols.length; i++) {
+      const ks = parentSymbols[i]
+      instance[serializersSym][ks] = serializers[ks]
+    }
+
+    for (var bk in bindings.serializers) {
+      instance[serializersSym][bk] = bindings.serializers[bk]
+    }
+    const bindingsSymbols = Object.getOwnPropertySymbols(bindings.serializers)
+    for (var bi = 0; bi < bindingsSymbols.length; bi++) {
+      const bks = bindingsSymbols[bi]
+      instance[serializersSym][bks] = bindings.serializers[bks]
+    }
+  } else instance[serializersSym] = serializers
+  if (bindings.hasOwnProperty('formatters')) {
+    const { level, bindings: chindings, log } = bindings.formatters
+    instance[formattersSym] = buildFormatters(
+      level || formatters.level,
+      chindings || resetChildingsFormatter,
+      log || formatters.log
+    )
+  } else {
+    instance[formattersSym] = buildFormatters(
+      formatters.level,
+      resetChildingsFormatter,
+      formatters.log
+    )
+  }
+  if (bindings.hasOwnProperty('customLevels') === true) {
+    assertNoLevelCollisions(this.levels, bindings.customLevels)
+    instance.levels = mappings(bindings.customLevels, instance[useOnlyCustomLevelsSym])
+    genLsCache(instance)
+  }
+  instance[chindingsSym] = asChindings(instance, bindings)
+  const childLevel = bindings.level || this.level
+  instance[setLevelSym](childLevel)
+
+  return instance
 }
 
-CodeGen.prototype = {
-  isEmpty: function isEmpty() {
-    return !this.source.length;
-  },
-  prepend: function prepend(source, loc) {
-    this.source.unshift(this.wrap(source, loc));
-  },
-  push: function push(source, loc) {
-    this.source.push(this.wrap(source, loc));
-  },
+function bindings () {
+  const chindings = this[chindingsSym]
+  var chindingsJson = `{${chindings.substr(1)}}` // at least contains ,"pid":7068,"hostname":"myMac"
+  var bindingsFromJson = JSON.parse(chindingsJson)
+  delete bindingsFromJson.pid
+  delete bindingsFromJson.hostname
+  return bindingsFromJson
+}
 
-  merge: function merge() {
-    var source = this.empty();
-    this.each(function (line) {
-      source.add(['  ', line, '\n']);
-    });
-    return source;
-  },
+function setBindings (newBindings) {
+  const chindings = asChindings(this, newBindings)
+  this[chindingsSym] = chindings
+  delete this[parsedChindingsSym]
+}
 
-  each: function each(iter) {
-    for (var i = 0, len = this.source.length; i < len; i++) {
-      iter(this.source[i]);
-    }
-  },
+function write (_obj, msg, num) {
+  const t = this[timeSym]()
+  const mixin = this[mixinSym]
+  const objError = _obj instanceof Error
+  var obj
 
-  empty: function empty() {
-    var loc = this.currentLocation || { start: {} };
-    return new SourceNode(loc.start.line, loc.start.column, this.srcFile);
-  },
-  wrap: function wrap(chunk) {
-    var loc = arguments.length <= 1 || arguments[1] === undefined ? this.currentLocation || { start: {} } : arguments[1];
-
-    if (chunk instanceof SourceNode) {
-      return chunk;
+  if (_obj === undefined || _obj === null) {
+    obj = mixin ? mixin() : {}
+  } else {
+    obj = Object.assign(mixin ? mixin() : {}, _obj)
+    if (!msg && objError) {
+      msg = _obj.message
     }
 
-    chunk = castChunk(chunk, this, loc);
-
-    return new SourceNode(loc.start.line, loc.start.column, this.srcFile, chunk);
-  },
-
-  functionCall: function functionCall(fn, type, params) {
-    params = this.generateList(params);
-    return this.wrap([fn, type ? '.' + type + '(' : '(', params, ')']);
-  },
-
-  quotedString: function quotedString(str) {
-    return '"' + (str + '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\u2028/g, '\\u2028') // Per Ecma-262 7.3 + 7.8.4
-    .replace(/\u2029/g, '\\u2029') + '"';
-  },
-
-  objectLiteral: function objectLiteral(obj) {
-    // istanbul ignore next
-
-    var _this = this;
-
-    var pairs = [];
-
-    Object.keys(obj).forEach(function (key) {
-      var value = castChunk(obj[key], _this);
-      if (value !== 'undefined') {
-        pairs.push([_this.quotedString(key), ':', value]);
+    if (objError) {
+      obj.stack = _obj.stack
+      if (!obj.type) {
+        obj.type = 'Error'
       }
-    });
-
-    var ret = this.generateList(pairs);
-    ret.prepend('{');
-    ret.add('}');
-    return ret;
-  },
-
-  generateList: function generateList(entries) {
-    var ret = this.empty();
-
-    for (var i = 0, len = entries.length; i < len; i++) {
-      if (i) {
-        ret.add(',');
-      }
-
-      ret.add(castChunk(entries[i], this));
     }
-
-    return ret;
-  },
-
-  generateArray: function generateArray(entries) {
-    var ret = this.generateList(entries);
-    ret.prepend('[');
-    ret.add(']');
-
-    return ret;
   }
-};
 
-exports['default'] = CodeGen;
-module.exports = exports['default'];
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2NvbXBpbGVyL2NvZGUtZ2VuLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7O3FCQUN3QixVQUFVOztBQUVsQyxJQUFJLFVBQVUsWUFBQSxDQUFDOztBQUVmLElBQUk7O0FBRUYsTUFBSSxPQUFPLE1BQU0sS0FBSyxVQUFVLElBQUksQ0FBQyxNQUFNLENBQUMsR0FBRyxFQUFFOzs7QUFHL0MsUUFBSSxTQUFTLEdBQUcsT0FBTyxDQUFDLFlBQVksQ0FBQyxDQUFDO0FBQ3RDLGNBQVUsR0FBRyxTQUFTLENBQUMsVUFBVSxDQUFDO0dBQ25DO0NBQ0YsQ0FBQyxPQUFPLEdBQUcsRUFBRSxFQUViOzs7O0FBQUEsQUFHRCxJQUFJLENBQUMsVUFBVSxFQUFFO0FBQ2YsWUFBVSxHQUFHLFVBQVMsSUFBSSxFQUFFLE1BQU0sRUFBRSxPQUFPLEVBQUUsTUFBTSxFQUFFO0FBQ25ELFFBQUksQ0FBQyxHQUFHLEdBQUcsRUFBRSxDQUFDO0FBQ2QsUUFBSSxNQUFNLEVBQUU7QUFDVixVQUFJLENBQUMsR0FBRyxDQUFDLE1BQU0sQ0FBQyxDQUFDO0tBQ2xCO0dBQ0YsQ0FBQzs7QUFFRixZQUFVLENBQUMsU0FBUyxHQUFHO0FBQ3JCLE9BQUcsRUFBRSxhQUFTLE1BQU0sRUFBRTtBQUNwQixVQUFJLGVBQVEsTUFBTSxDQUFDLEVBQUU7QUFDbkIsY0FBTSxHQUFHLE1BQU0sQ0FBQyxJQUFJLENBQUMsRUFBRSxDQUFDLENBQUM7T0FDMUI7QUFDRCxVQUFJLENBQUMsR0FBRyxJQUFJLE1BQU0sQ0FBQztLQUNwQjtBQUNELFdBQU8sRUFBRSxpQkFBUyxNQUFNLEVBQUU7QUFDeEIsVUFBSSxlQUFRLE1BQU0sQ0FBQyxFQUFFO0FBQ25CLGNBQU0sR0FBRyxNQUFNLENBQUMsSUFBSSxDQUFDLEVBQUUsQ0FBQyxDQUFDO09BQzFCO0FBQ0QsVUFBSSxDQUFDLEdBQUcsR0FBRyxNQUFNLEdBQUcsSUFBSSxDQUFDLEdBQUcsQ0FBQztL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QUcsQ0FBQyxDQUFDO0FBQ2pCLE9BQUcsQ0FBQyxHQUFHLENBQUMsR0FBRyxDQUFDLENBQUM7O0FBRWIsV0FBTyxHQUFHLENBQUM7R0FDWjtDQUNGLENBQUM7O3FCQUVhLE9BQU8iLCJmaWxlIjoiY29kZS1nZW4uanMiLCJzb3VyY2VzQ29udGVudCI6WyIvKiBnbG9iYWwgZGVmaW5lICovXG5pbXBvcnQgeyBpc0FycmF5IH0gZnJvbSAnLi4vdXRpbHMnO1xuXG5sZXQgU291cmNlTm9kZTtcblxudHJ5IHtcbiAgLyogaXN0YW5idWwgaWdub3JlIG5leHQgKi9cbiAgaWYgKHR5cGVvZiBkZWZpbmUgIT09ICdmdW5jdGlvbicgfHwgIWRlZmluZS5hbWQpIHtcbiAgICAvLyBXZSBkb24ndCBzdXBwb3J0IHRoaXMgaW4gQU1EIGVudmlyb25tZW50cy4gRm9yIHRoZXNlIGVudmlyb25tZW50cywgd2UgYXN1c21lIHRoYXRcbiAgICAvLyB0aGV5IGFyZSBydW5uaW5nIG9uIHRoZSBicm93c2VyIGFuZCB0aHVzIGhhdmUgbm8gbmVlZCBmb3IgdGhlIHNvdXJjZS1tYXAgbGlicmFyeS5cbiAgICBsZXQgU291cmNlTWFwID0gcmVxdWlyZSgnc291cmNlLW1hcCcpO1xuICAgIFNvdXJjZU5vZGUgPSBTb3VyY2VNYXAuU291cmNlTm9kZTtcbiAgfVxufSBjYXRjaCAoZXJyKSB7XG4gIC8qIE5PUCAqL1xufVxuXG4vKiBpc3RhbmJ1bCBpZ25vcmUgaWY6IHRlc3RlZCBidXQgbm90IGNvdmVyZWQgaW4gaXN0YW5idWwgZHVlIHRvIGRpc3QgYnVpbGQgICovXG5pZiAoIVNvdXJjZU5vZGUpIHtcbiAgU291cmNlTm9kZSA9IGZ1bmN0aW9uKGxpbmUsIGNvbHVtbiwgc3JjRmlsZSwgY2h1bmtzKSB7XG4gICAgdGhpcy5zcmMgPSAnJztcbiAgICBpZiAoY2h1bmtzKSB7XG4gICAgICB0aGlzLmFkZChjaHVua3MpO1xuICAgIH1cbiAgfTtcbiAgLyogaXN0YW5idWwgaWdub3JlIG5leHQgKi9cbiAgU291cmNlTm9kZS5wcm90b3R5cGUgPSB7XG4gICAgYWRkOiBmdW5jdGlvbihjaHVua3MpIHtcbiAgICAgIGlmIChpc0FycmF5KGNodW5rcykpIHtcbiAgICAgICAgY2h1bmtzID0gY2h1bmtzLmpvaW4oJycpO1xuICAgICAgfVxuICAgICAgdGhpcy5zcmMgKz0gY2h1bmtzO1xuICAgIH0sXG4gICAgcHJlcGVuZDogZnVuY3Rpb24oY2h1bmtzKSB7XG4gICAgICBpZiAoaXNBcnJheShjaHVua3MpKSB7XG4gICAgICAgIGNodW5rcyA9IGNodW5rcy5qb2luKCcnKTtcbiAgICAgIH1cbiAgICAgIHRoaXMuc3JjID0gY2h1bmtzICsgdGhpcy5zcmM7XG4gICAgfSxcbiAgICB0b1N0cmluZ1dpdGhTb3VyY2VNYXA6IGZ1bmN0aW9uKCkge1xuICAgICAgcmV0dXJuIHsgY29kZTogdGhpcy50b1N0cmluZygpIH07XG4gICAgfSxcbiAgICB0b1N0cmluZzogZnVuY3Rpb24oKSB7XG4gICAgICByZXR1cm4gdGhpcy5zcmM7XG4gICAgfVxuICB9O1xufVxuXG5mdW5jdGlvbiBjYXN0Q2h1bmsoY2h1bmssIGNvZGVHZW4sIGxvYykge1xuICBpZiAoaXNBcnJheShjaHVuaykpIHtcbiAgICBsZXQgcmV0ID0gW107XG5cbiAgICBmb3IgKGxldCBpID0gMCwgbGVuID0gY2h1bmsubGVuZ3RoOyBpIDwgbGVuOyBpKyspIHtcbiAgICAgIHJldC5wdXNoKGNvZGVHZW4ud3JhcChjaHVua1tpXSwgbG9jKSk7XG4gICAgfVxuICAgIHJldHVybiByZXQ7XG4gIH0gZWxzZSBpZiAodHlwZW9mIGNodW5rID09PSAnYm9vbGVhbicgfHwgdHlwZW9mIGNodW5rID09PSAnbnVtYmVyJykge1xuICAgIC8vIEhhbmRsZSBwcmltaXRpdmVzIHRoYXQgdGhlIFNvdXJjZU5vZGUgd2lsbCB0aHJvdyB1cCBvblxuICAgIHJldHVybiBjaHVuayArICcnO1xuICB9XG4gIHJldHVybiBjaHVuaztcbn1cblxuZnVuY3Rpb24gQ29kZUdlbihzcmNGaWxlKSB7XG4gIHRoaXMuc3JjRmlsZSA9IHNyY0ZpbGU7XG4gIHRoaXMuc291cmNlID0gW107XG59XG5cbkNvZGVHZW4ucHJvdG90eXBlID0ge1xuICBpc0VtcHR5KCkge1xuICAgIHJldHVybiAhdGhpcy5zb3VyY2UubGVuZ3RoO1xuICB9LFxuICBwcmVwZW5kOiBmdW5jdGlvbihzb3VyY2UsIGxvYykge1xuICAgIHRoaXMuc291cmNlLnVuc2hpZnQodGhpcy53cmFwKHNvdXJjZSwgbG9jKSk7XG4gIH0sXG4gIHB1c2g6IGZ1bmN0aW9uKHNvdXJjZSwgbG9jKSB7XG4gICAgdGhpcy5zb3VyY2UucHVzaCh0aGlzLndyYXAoc291cmNlLCBsb2MpKTtcbiAgfSxcblxuICBtZXJnZTogZnVuY3Rpb24oKSB7XG4gICAgbGV0IHNvdXJjZSA9IHRoaXMuZW1wdHkoKTtcbiAgICB0aGlzLmVhY2goZnVuY3Rpb24obGluZSkge1xuICAgICAgc291cmNlLmFkZChbJyAgJywgbGluZSwgJ1xcbiddKTtcbiAgICB9KTtcbiAgICByZXR1cm4gc291cmNlO1xuICB9LFxuXG4gIGVhY2g6IGZ1bmN0aW9uKGl0ZXIpIHtcbiAgICBmb3IgKGxldCBpID0gMCwgbGVuID0gdGhpcy5zb3VyY2UubGVuZ3RoOyBpIDwgbGVuOyBpKyspIHtcbiAgICAgIGl0ZXIodGhpcy5zb3VyY2VbaV0pO1xuICAgIH1cbiAgfSxcblxuICBlbXB0eTogZnVuY3Rpb24oKSB7XG4gICAgbGV0IGxvYyA9IHRoaXMuY3VycmVudExvY2F0aW9uIHx8IHsgc3RhcnQ6IHt9IH07XG4gICAgcmV0dXJuIG5ldyBTb3VyY2VOb2RlKGxvYy5zdGFydC5saW5lLCBsb2Muc3RhcnQuY29sdW1uLCB0aGlzLnNyY0ZpbGUpO1xuICB9LFxuICB3cmFwOiBmdW5jdGlvbihjaHVuaywgbG9jID0gdGhpcy5jdXJyZW50TG9jYXRpb24gfHwgeyBzdGFydDoge30gfSkge1xuICAgIGlmIChjaHVuayBpbnN0YW5jZW9mIFNvdXJjZU5vZGUpIHtcbiAgICAgIHJldHVybiBjaHVuaztcbiAgICB9XG5cbiAgICBjaHVuayA9IGNhc3RDaHVuayhjaHVuaywgdGhpcywgbG9jKTtcblxuICAgIHJldHVybiBuZXcgU291cmNlTm9kZShcbiAgICAgIGxvYy5zdGFydC5saW5lLFxuICAgICAgbG9jLnN0YXJ0LmNvbHVtbixcbiAgICAgIHRoaXMuc3JjRmlsZSxcbiAgICAgIGNodW5rXG4gICAgKTtcbiAgfSxcblxuICBmdW5jdGlvbkNhbGw6IGZ1bmN0aW9uKGZuLCB0eXBlLCBwYXJhbXMpIHtcbiAgICBwYXJhbXMgPSB0aGlzLmdlbmVyYXRlTGlzdChwYXJhbXMpO1xuICAgIHJldHVybiB0aGlzLndyYXAoW2ZuLCB0eXBlID8gJy4nICsgdHlwZSArICcoJyA6ICcoJywgcGFyYW1zLCAnKSddKTtcbiAgfSxcblxuICBxdW90ZWRTdHJpbmc6IGZ1bmN0aW9uKHN0cikge1xuICAgIHJldHVybiAoXG4gICAgICAnXCInICtcbiAgICAgIChzdHIgKyAnJylcbiAgICAgICAgLnJlcGxhY2UoL1xcXFwvZywgJ1xcXFxcXFxcJylcbiAgICAgICAgLnJlcGxhY2UoL1wiL2csICdcXFxcXCInKVxuICAgICAgICAucmVwbGFjZSgvXFxuL2csICdcXFxcbicpXG4gICAgICAgIC5yZXBsYWNlKC9cXHIvZywgJ1xcXFxyJylcbiAgICAgICAgLnJlcGxhY2UoL1xcdTIwMjgvZywgJ1xcXFx1MjAyOCcpIC8vIFBlciBFY21hLTI2MiA3LjMgKyA3LjguNFxuICAgICAgICAucmVwbGFjZSgvXFx1MjAyOS9nLCAnXFxcXHUyMDI5JykgK1xuICAgICAgJ1wiJ1xuICAgICk7XG4gIH0sXG5cbiAgb2JqZWN0TGl0ZXJhbDogZnVuY3Rpb24ob2JqKSB7XG4gICAgbGV0IHBhaXJzID0gW107XG5cbiAgICBPYmplY3Qua2V5cyhvYmopLmZvckVhY2goa2V5ID0+IHtcbiAgICAgIGxldCB2YWx1ZSA9IGNhc3RDaHVuayhvYmpba2V5XSwgdGhpcyk7XG4gICAgICBpZiAodmFsdWUgIT09ICd1bmRlZmluZWQnKSB7XG4gICAgICAgIHBhaXJzLnB1c2goW3RoaXMucXVvdGVkU3RyaW5nKGtleSksICc6JywgdmFsdWVdKTtcbiAgICAgIH1cbiAgICB9KTtcblxuICAgIGxldCByZXQgPSB0aGlzLmdlbmVyYXRlTGlzdChwYWlycyk7XG4gICAgcmV0LnByZXBlbmQoJ3snKTtcbiAgICByZXQuYWRkKCd9Jyk7XG4gICAgcmV0dXJuIHJldDtcbiAgfSxcblxuICBnZW5lcmF0ZUxpc3Q6IGZ1bmN0aW9uKGVudHJpZXMpIHtcbiAgICBsZXQgcmV0ID0gdGhpcy5lbXB0eSgpO1xuXG4gICAgZm9yIChsZXQgaSA9IDAsIGxlbiA9IGVudHJpZXMubGVuZ3RoOyBpIDwgbGVuOyBpKyspIHtcbiAgICAgIGlmIChpKSB7XG4gICAgICAgIHJldC5hZGQoJywnKTtcbiAgICAgIH1cblxuICAgICAgcmV0LmFkZChjYXN0Q2h1bmsoZW50cmllc1tpXSwgdGhpcykpO1xuICAgIH1cblxuICAgIHJldHVybiByZXQ7XG4gIH0sXG5cbiAgZ2VuZXJhdGVBcnJheTogZnVuY3Rpb24oZW50cmllcykge1xuICAgIGxldCByZXQgPSB0aGlzLmdlbmVyYXRlTGlzdChlbnRyaWVzKTtcbiAgICByZXQucHJlcGVuZCgnWycpO1xuICAgIHJldC5hZGQoJ10nKTtcblxuICAgIHJldHVybiByZXQ7XG4gIH1cbn07XG5cbmV4cG9ydCBkZWZhdWx0IENvZGVHZW47XG4iXX0=
+  const s = this[asJsonSym](obj, msg, num, t)
+
+  const stream = this[streamSym]
+  if (stream[needsMetadataGsym] === true) {
+    stream.lastLevel = num
+    stream.lastObj = obj
+    stream.lastMsg = msg
+    stream.lastTime = t.slice(this[timeSliceIndexSym])
+    stream.lastLogger = this // for child loggers
+  }
+  if (stream instanceof SonicBoom) stream.write(s)
+  else stream.write(flatstr(s))
+}
+
+function flush () {
+  const stream = this[streamSym]
+  if ('flush' in stream) stream.flush()
+}
 
 
 /***/ }),
@@ -13009,7 +15007,66 @@ return Q;
 /* 419 */,
 /* 420 */,
 /* 421 */,
-/* 422 */,
+/* 422 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.openPullRequest = void 0;
+const logger_1 = __webpack_require__(148);
+const DEFAULT_PRIMARY = 'master';
+/**
+ * Create a GitHub PR on the upstream organization's repo
+ * Throws an error if the GitHub API fails
+ * @param {Octokit} octokit The authenticated octokit instance
+ * @param {RepoDomain} upstream The upstream repository
+ * @param {BranchDomain} origin The remote origin information that contains the origin branch
+ * @param {Description} description The pull request title and detailed description
+ * @param {boolean} maintainersCanModify Whether or not maintainers can modify the pull request. Default is true
+ * @param {string} upstreamPrimary The upstream repository's primary branch. Default is master.
+ * @returns {Promise<void>}
+ */
+async function openPullRequest(octokit, upstream, origin, description, maintainersCanModify = true, upstreamPrimary = DEFAULT_PRIMARY) {
+    const head = `${origin.owner}:${origin.branch}`;
+    const existingPullRequest = (await octokit.pulls.list({
+        owner: upstream.owner,
+        repo: origin.repo,
+        head,
+    })).data.find(pr => pr.head.label === head);
+    if (existingPullRequest) {
+        logger_1.logger.info(`Found existing pull request for reference ${origin.owner}:${origin.branch}. Skipping creating a new pull request.`);
+        return existingPullRequest.number;
+    }
+    const pullResponseData = (await octokit.pulls.create({
+        owner: upstream.owner,
+        repo: origin.repo,
+        title: description.title,
+        head: `${origin.owner}:${origin.branch}`,
+        base: upstreamPrimary,
+        body: description.body,
+        maintainer_can_modify: maintainersCanModify,
+    })).data;
+    logger_1.logger.info(`Successfully opened pull request available at url: ${pullResponseData.url}.`);
+    return pullResponseData.number;
+}
+exports.openPullRequest = openPullRequest;
+//# sourceMappingURL=pull-request-handler.js.map
+
+/***/ }),
 /* 423 */
 /***/ (function(__unusedmodule, exports) {
 
@@ -13288,12 +15345,7 @@ function escapeProperty(s) {
 /* 443 */,
 /* 444 */,
 /* 445 */,
-/* 446 */
-/***/ (function(module) {
-
-module.exports = require("events");
-
-/***/ }),
+/* 446 */,
 /* 447 */,
 /* 448 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
@@ -13304,7 +15356,7 @@ module.exports = require("events");
 Object.defineProperty(exports, '__esModule', { value: true });
 
 var universalUserAgent = __webpack_require__(526);
-var beforeAfterHook = __webpack_require__(523);
+var beforeAfterHook = __webpack_require__(500);
 var request = __webpack_require__(753);
 var graphql = __webpack_require__(743);
 var authToken = __webpack_require__(813);
@@ -13358,7 +15410,7 @@ function _objectSpread2(target) {
   return target;
 }
 
-const VERSION = "3.1.1";
+const VERSION = "3.1.2";
 
 class Octokit {
   constructor(options = {}) {
@@ -13479,7 +15531,355 @@ exports.Octokit = Octokit;
 
 /***/ }),
 /* 449 */,
-/* 450 */,
+/* 450 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const fs = __webpack_require__(747)
+const EventEmitter = __webpack_require__(759)
+const flatstr = __webpack_require__(649)
+const inherits = __webpack_require__(669).inherits
+
+const BUSY_WRITE_TIMEOUT = 100
+
+const sleep = __webpack_require__(517)
+
+// 16 MB - magic number
+// This constant ensures that SonicBoom only needs
+// 32 MB of free memory to run. In case of having 1GB+
+// of data to write, this prevents an out of memory
+// condition.
+const MAX_WRITE = 16 * 1024 * 1024
+
+function openFile (file, sonic) {
+  sonic._opening = true
+  sonic._writing = true
+  sonic._asyncDrainScheduled = false
+  sonic.file = file
+
+  // NOTE: 'error' and 'ready' events emitted below only relevant when sonic.sync===false
+  // for sync mode, there is no way to add a listener that will receive these
+
+  function fileOpened (err, fd) {
+    if (err) {
+      sonic.emit('error', err)
+      return
+    }
+
+    sonic.fd = fd
+    sonic._reopening = false
+    sonic._opening = false
+    sonic._writing = false
+
+    sonic.emit('ready')
+
+    if (sonic._reopening) {
+      return
+    }
+
+    // start
+    var len = sonic._buf.length
+    if (len > 0 && len > sonic.minLength && !sonic.destroyed) {
+      actualWrite(sonic)
+    }
+  }
+
+  if (sonic.sync) {
+    const fd = fs.openSync(file, 'a')
+    fileOpened(null, fd)
+    process.nextTick(() => sonic.emit('ready'))
+  } else {
+    fs.open(file, 'a', fileOpened)
+  }
+}
+
+function SonicBoom (opts) {
+  if (!(this instanceof SonicBoom)) {
+    return new SonicBoom(opts)
+  }
+
+  var { fd, dest, minLength, sync } = opts || {}
+
+  fd = fd || dest
+
+  this._buf = ''
+  this.fd = -1
+  this._writing = false
+  this._writingBuf = ''
+  this._ending = false
+  this._reopening = false
+  this._asyncDrainScheduled = false
+  this.file = null
+  this.destroyed = false
+  this.sync = sync || false
+
+  this.minLength = minLength || 0
+
+  if (typeof fd === 'number') {
+    this.fd = fd
+    process.nextTick(() => this.emit('ready'))
+  } else if (typeof fd === 'string') {
+    openFile(fd, this)
+  } else {
+    throw new Error('SonicBoom supports only file descriptors and files')
+  }
+
+  this.release = (err, n) => {
+    if (err) {
+      if (err.code === 'EAGAIN') {
+        if (this.sync) {
+          // This error code should not happen in sync mode, because it is
+          // not using the underlining operating system asynchronous functions.
+          // However it happens, and so we handle it.
+          // Ref: https://github.com/pinojs/pino/issues/783
+          try {
+            sleep(BUSY_WRITE_TIMEOUT)
+            this.release(undefined, 0)
+          } catch (err) {
+            this.release(err)
+          }
+        } else {
+          // Let's give the destination some time to process the chunk.
+          setTimeout(() => {
+            fs.write(this.fd, this._writingBuf, 'utf8', this.release)
+          }, BUSY_WRITE_TIMEOUT)
+        }
+      } else {
+        this.emit('error', err)
+      }
+      return
+    }
+
+    if (this._writingBuf.length !== n) {
+      this._writingBuf = this._writingBuf.slice(n)
+      if (this.sync) {
+        try {
+          do {
+            n = fs.writeSync(this.fd, this._writingBuf, 'utf8')
+            this._writingBuf = this._writingBuf.slice(n)
+          } while (this._writingBuf.length !== 0)
+        } catch (err) {
+          this.release(err)
+          return
+        }
+      } else {
+        fs.write(this.fd, this._writingBuf, 'utf8', this.release)
+        return
+      }
+    }
+
+    this._writingBuf = ''
+
+    if (this.destroyed) {
+      return
+    }
+
+    var len = this._buf.length
+    if (this._reopening) {
+      this._writing = false
+      this._reopening = false
+      this.reopen()
+    } else if (len > 0 && len > this.minLength) {
+      actualWrite(this)
+    } else if (this._ending) {
+      if (len > 0) {
+        actualWrite(this)
+      } else {
+        this._writing = false
+        actualClose(this)
+      }
+    } else {
+      this._writing = false
+      if (this.sync) {
+        if (!this._asyncDrainScheduled) {
+          this._asyncDrainScheduled = true
+          process.nextTick(emitDrain, this)
+        }
+      } else {
+        this.emit('drain')
+      }
+    }
+  }
+
+  this.on('newListener', function (name) {
+    if (name === 'drain') {
+      this._asyncDrainScheduled = false
+    }
+  })
+}
+
+function emitDrain (sonic) {
+  const hasListeners = sonic.listenerCount('drain') > 0
+  if (!hasListeners) return
+  sonic._asyncDrainScheduled = false
+  sonic.emit('drain')
+}
+
+inherits(SonicBoom, EventEmitter)
+
+SonicBoom.prototype.write = function (data) {
+  if (this.destroyed) {
+    throw new Error('SonicBoom destroyed')
+  }
+
+  this._buf += data
+  var len = this._buf.length
+  if (!this._writing && len > this.minLength) {
+    actualWrite(this)
+  }
+  return len < 16384
+}
+
+SonicBoom.prototype.flush = function () {
+  if (this.destroyed) {
+    throw new Error('SonicBoom destroyed')
+  }
+
+  if (this._writing || this.minLength <= 0) {
+    return
+  }
+
+  actualWrite(this)
+}
+
+SonicBoom.prototype.reopen = function (file) {
+  if (this.destroyed) {
+    throw new Error('SonicBoom destroyed')
+  }
+
+  if (this._opening) {
+    this.once('ready', () => {
+      this.reopen(file)
+    })
+    return
+  }
+
+  if (this._ending) {
+    return
+  }
+
+  if (!this.file) {
+    throw new Error('Unable to reopen a file descriptor, you must pass a file to SonicBoom')
+  }
+
+  this._reopening = true
+
+  if (this._writing) {
+    return
+  }
+
+  fs.close(this.fd, (err) => {
+    if (err) {
+      return this.emit('error', err)
+    }
+  })
+
+  openFile(file || this.file, this)
+}
+
+SonicBoom.prototype.end = function () {
+  if (this.destroyed) {
+    throw new Error('SonicBoom destroyed')
+  }
+
+  if (this._opening) {
+    this.once('ready', () => {
+      this.end()
+    })
+    return
+  }
+
+  if (this._ending) {
+    return
+  }
+
+  this._ending = true
+
+  if (!this._writing && this._buf.length > 0 && this.fd >= 0) {
+    actualWrite(this)
+    return
+  }
+
+  if (this._writing) {
+    return
+  }
+
+  actualClose(this)
+}
+
+SonicBoom.prototype.flushSync = function () {
+  if (this.destroyed) {
+    throw new Error('SonicBoom destroyed')
+  }
+
+  if (this.fd < 0) {
+    throw new Error('sonic boom is not ready yet')
+  }
+
+  if (this._buf.length > 0) {
+    fs.writeSync(this.fd, this._buf, 'utf8')
+    this._buf = ''
+  }
+}
+
+SonicBoom.prototype.destroy = function () {
+  if (this.destroyed) {
+    return
+  }
+  actualClose(this)
+}
+
+function actualWrite (sonic) {
+  sonic._writing = true
+  var buf = sonic._buf
+  var release = sonic.release
+  if (buf.length > MAX_WRITE) {
+    buf = buf.slice(0, MAX_WRITE)
+    sonic._buf = sonic._buf.slice(MAX_WRITE)
+  } else {
+    sonic._buf = ''
+  }
+  flatstr(buf)
+  sonic._writingBuf = buf
+  if (sonic.sync) {
+    try {
+      var written = fs.writeSync(sonic.fd, buf, 'utf8')
+      release(null, written)
+    } catch (err) {
+      release(err)
+    }
+  } else {
+    fs.write(sonic.fd, buf, 'utf8', release)
+  }
+}
+
+function actualClose (sonic) {
+  if (sonic.fd === -1) {
+    sonic.once('ready', actualClose.bind(null, sonic))
+    return
+  }
+  // TODO write a test to check if we are not leaking fds
+  fs.close(sonic.fd, (err) => {
+    if (err) {
+      sonic.emit('error', err)
+      return
+    }
+
+    if (sonic._ending && !sonic._writing) {
+      sonic.emit('finish')
+    }
+    sonic.emit('close')
+  })
+  sonic.destroyed = true
+  sonic._buf = ''
+}
+
+module.exports = SonicBoom
+
+
+/***/ }),
 /* 451 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -15246,7 +17646,6 @@ class ReadMe {
         this.changelogEntry = options.changelogEntry;
         this.version = options.version;
         this.packageName = options.packageName;
-        this.skipCi = options.skipCi;
     }
     updateContent(content) {
         const minorVersion = this.version.split('.').slice(0, 2).join('.');
@@ -15454,8 +17853,120 @@ module.exports = exports['default'];
 
 
 /***/ }),
-/* 467 */,
-/* 468 */,
+/* 467 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const rx = __webpack_require__(789)
+
+module.exports = parse
+
+function parse ({ paths }) {
+  const wildcards = []
+  var wcLen = 0
+  const secret = paths.reduce(function (o, strPath, ix) {
+    var path = strPath.match(rx).map((p) => p.replace(/'|"|`/g, ''))
+    const leadingBracket = strPath[0] === '['
+    path = path.map((p) => {
+      if (p[0] === '[') return p.substr(1, p.length - 2)
+      else return p
+    })
+    const star = path.indexOf('*')
+    if (star > -1) {
+      const before = path.slice(0, star)
+      const beforeStr = before.join('.')
+      const after = path.slice(star + 1, path.length)
+      if (after.indexOf('*') > -1) throw Error('fast-redact – Only one wildcard per path is supported')
+      const nested = after.length > 0
+      wcLen++
+      wildcards.push({
+        before,
+        beforeStr,
+        after,
+        nested
+      })
+    } else {
+      o[strPath] = {
+        path: path,
+        val: undefined,
+        precensored: false,
+        circle: '',
+        escPath: JSON.stringify(strPath),
+        leadingBracket: leadingBracket
+      }
+    }
+    return o
+  }, {})
+
+  return { wildcards, wcLen, secret }
+}
+
+
+/***/ }),
+/* 468 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const validator = __webpack_require__(205)
+const parse = __webpack_require__(467)
+const redactor = __webpack_require__(519)
+const restorer = __webpack_require__(948)
+const { groupRedact, nestedRedact } = __webpack_require__(239)
+const state = __webpack_require__(525)
+const rx = __webpack_require__(789)
+const validate = validator()
+const noop = (o) => o
+noop.restore = noop
+
+const DEFAULT_CENSOR = '[REDACTED]'
+fastRedact.rx = rx
+fastRedact.validator = validator
+
+module.exports = fastRedact
+
+function fastRedact (opts = {}) {
+  const paths = Array.from(new Set(opts.paths || []))
+  const serialize = 'serialize' in opts ? (
+    opts.serialize === false ? opts.serialize
+      : (typeof opts.serialize === 'function' ? opts.serialize : JSON.stringify)
+  ) : JSON.stringify
+  const remove = opts.remove
+  if (remove === true && serialize !== JSON.stringify) {
+    throw Error('fast-redact – remove option may only be set when serializer is JSON.stringify')
+  }
+  const censor = remove === true
+    ? undefined
+    : 'censor' in opts ? opts.censor : DEFAULT_CENSOR
+
+  const isCensorFct = typeof censor === 'function'
+
+  if (paths.length === 0) return serialize || noop
+
+  validate({ paths, serialize, censor })
+
+  const { wildcards, wcLen, secret } = parse({ paths, censor })
+
+  const compileRestore = restorer({ secret, wcLen })
+  const strict = 'strict' in opts ? opts.strict : true
+
+  return redactor({ secret, wcLen, serialize, strict, isCensorFct }, state({
+    secret,
+    censor,
+    compileRestore,
+    serialize,
+    groupRedact,
+    nestedRedact,
+    wildcards,
+    wcLen
+  }))
+}
+
+
+/***/ }),
 /* 469 */,
 /* 470 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
@@ -16012,7 +18523,69 @@ module.exports = coerce
 
 
 /***/ }),
-/* 500 */,
+/* 500 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+var register = __webpack_require__(280)
+var addHook = __webpack_require__(510)
+var removeHook = __webpack_require__(866)
+
+// bind with array of arguments: https://stackoverflow.com/a/21792913
+var bind = Function.bind
+var bindable = bind.bind(bind)
+
+function bindApi (hook, state, name) {
+  var removeHookRef = bindable(removeHook, null).apply(null, name ? [state, name] : [state])
+  hook.api = { remove: removeHookRef }
+  hook.remove = removeHookRef
+
+  ;['before', 'error', 'after', 'wrap'].forEach(function (kind) {
+    var args = name ? [state, kind, name] : [state, kind]
+    hook[kind] = hook.api[kind] = bindable(addHook, null).apply(null, args)
+  })
+}
+
+function HookSingular () {
+  var singularHookName = 'h'
+  var singularHookState = {
+    registry: {}
+  }
+  var singularHook = register.bind(null, singularHookState, singularHookName)
+  bindApi(singularHook, singularHookState, singularHookName)
+  return singularHook
+}
+
+function HookCollection () {
+  var state = {
+    registry: {}
+  }
+
+  var hook = register.bind(null, state)
+  bindApi(hook, state)
+
+  return hook
+}
+
+var collectionHookDeprecationMessageDisplayed = false
+function Hook () {
+  if (!collectionHookDeprecationMessageDisplayed) {
+    console.warn('[before-after-hook]: "Hook()" repurposing warning, use "Hook.Collection()". Read more: https://git.io/upgrade-before-after-hook-to-1.4')
+    collectionHookDeprecationMessageDisplayed = true
+  }
+  return HookCollection()
+}
+
+Hook.Singular = HookSingular.bind()
+Hook.Collection = HookCollection.bind()
+
+module.exports = Hook
+// expose constructors as a named property for TypeScript
+module.exports.Hook = Hook
+module.exports.Singular = Hook.Singular
+module.exports.Collection = Hook.Collection
+
+
+/***/ }),
 /* 501 */
 /***/ (function(module) {
 
@@ -16332,7 +18905,7 @@ class ConventionalCommits {
         // point to branch from for PRs.
         const commitsReadable = new stream_1.Readable();
         this.commits.forEach((commit) => {
-            commitsReadable.push(`${commit.message}\n-hash-\n${commit.sha}`);
+            commitsReadable.push(`${commit.message}\n-hash-\n${commit.sha ? commit.sha : ''}`);
         });
         commitsReadable.push(null);
         return commitsReadable;
@@ -16344,77 +18917,287 @@ exports.ConventionalCommits = ConventionalCommits;
 /***/ }),
 /* 515 */,
 /* 516 */,
-/* 517 */,
+/* 517 */
+/***/ (function(module) {
+
+"use strict";
+
+
+/* global SharedArrayBuffer, Atomics */
+
+if (typeof SharedArrayBuffer !== 'undefined' && typeof Atomics !== 'undefined') {
+  const nil = new Int32Array(new SharedArrayBuffer(4))
+
+  function sleep (ms) {
+    // also filters out NaN, non-number types, including empty strings, but allows bigints
+    const valid = ms > 0 && ms < Infinity 
+    if (valid === false) {
+      if (typeof ms !== 'number' && typeof ms !== 'bigint') {
+        throw TypeError('sleep: ms must be a number')
+      }
+      throw RangeError('sleep: ms must be a number that is greater than 0 but less than Infinity')
+    }
+
+    Atomics.wait(nil, 0, 0, Number(ms))
+  }
+  module.exports = sleep
+} else {
+
+  function sleep (ms) {
+    // also filters out NaN, non-number types, including empty strings, but allows bigints
+    const valid = ms > 0 && ms < Infinity 
+    if (valid === false) {
+      if (typeof ms !== 'number' && typeof ms !== 'bigint') {
+        throw TypeError('sleep: ms must be a number')
+      }
+      throw RangeError('sleep: ms must be a number that is greater than 0 but less than Infinity')
+    }
+    const target = Date.now() + Number(ms)
+    while (target > Date.now()){}
+  }
+
+  module.exports = sleep
+
+}
+
+
+/***/ }),
 /* 518 */,
-/* 519 */,
+/* 519 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const rx = __webpack_require__(789)
+
+module.exports = redactor
+
+function redactor ({ secret, serialize, wcLen, strict, isCensorFct }, state) {
+  /* eslint-disable-next-line */
+  const redact = Function('o', `
+    if (typeof o !== 'object' || o == null) {
+      ${strictImpl(strict, serialize)}
+    }
+    const { censor, secret } = this
+    ${redactTmpl(secret, isCensorFct)}
+    this.compileRestore()
+    ${dynamicRedactTmpl(wcLen > 0, isCensorFct)}
+    ${resultTmpl(serialize)}
+  `).bind(state)
+
+  if (serialize === false) {
+    redact.restore = (o) => state.restore(o)
+  }
+
+  return redact
+}
+
+function redactTmpl (secret, isCensorFct) {
+  return Object.keys(secret).map((path) => {
+    const { escPath, leadingBracket } = secret[path]
+    const skip = leadingBracket ? 1 : 0
+    const delim = leadingBracket ? '' : '.'
+    const hops = []
+    var match
+    while ((match = rx.exec(path)) !== null) {
+      const [ , ix ] = match
+      const { index, input } = match
+      if (index > skip) hops.push(input.substring(0, index - (ix ? 0 : 1)))
+    }
+    var existence = hops.map((p) => `o${delim}${p}`).join(' && ')
+    if (existence.length === 0) existence += `o${delim}${path} != null`
+    else existence += ` && o${delim}${path} != null`
+
+    const circularDetection = `
+      switch (true) {
+        ${hops.reverse().map((p) => `
+          case o${delim}${p} === censor:
+            secret[${escPath}].circle = ${JSON.stringify(p)}
+            break
+        `).join('\n')}
+      }
+    `
+    return `
+      if (${existence}) {
+        const val = o${delim}${path}
+        if (val === censor) {
+          secret[${escPath}].precensored = true
+        } else {
+          secret[${escPath}].val = val
+          o${delim}${path} = ${isCensorFct ? 'censor(val)' : 'censor'}
+          ${circularDetection}
+        }
+      }
+    `
+  }).join('\n')
+}
+
+function dynamicRedactTmpl (hasWildcards, isCensorFct) {
+  return hasWildcards === true ? `
+    {
+      const { wildcards, wcLen, groupRedact, nestedRedact } = this
+      for (var i = 0; i < wcLen; i++) {
+        const { before, beforeStr, after, nested } = wildcards[i]
+        if (nested === true) {
+          secret[beforeStr] = secret[beforeStr] || []
+          nestedRedact(secret[beforeStr], o, before, after, censor, ${isCensorFct})
+        } else secret[beforeStr] = groupRedact(o, before, censor, ${isCensorFct})
+      }
+    }
+  ` : ''
+}
+
+function resultTmpl (serialize) {
+  return serialize === false ? `return o` : `
+    var s = this.serialize(o)
+    this.restore(o)
+    return s
+  `
+}
+
+function strictImpl (strict, serialize) {
+  return strict === true
+    ? `throw Error('fast-redact: primitives cannot be redacted')`
+    : serialize === false ? `return o` : `return this.serialize(o)`
+}
+
+
+/***/ }),
 /* 520 */,
-/* 521 */,
+/* 521 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.FileData = void 0;
+/**
+ * The content and the mode of a file.
+ * Default file mode is a text file which has code '100644'.
+ * If `content` is not null, then `content` must be the entire file content.
+ * See https://developer.github.com/v3/git/trees/#tree-object for details on mode.
+ */
+class FileData {
+    constructor(content, mode = '100644') {
+        this.mode = mode;
+        this.content = content;
+    }
+}
+exports.FileData = FileData;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
 /* 522 */,
 /* 523 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
-var register = __webpack_require__(280)
-var addHook = __webpack_require__(510)
-var removeHook = __webpack_require__(866)
+// Packages
+var retrier = __webpack_require__(560);
 
-// bind with array of arguments: https://stackoverflow.com/a/21792913
-var bind = Function.bind
-var bindable = bind.bind(bind)
+function retry(fn, opts) {
+  function run(resolve, reject) {
+    var options = opts || {};
 
-function bindApi (hook, state, name) {
-  var removeHookRef = bindable(removeHook, null).apply(null, name ? [state, name] : [state])
-  hook.api = { remove: removeHookRef }
-  hook.remove = removeHookRef
+    // Default `randomize` to true
+    if (!('randomize' in options)) {
+      options.randomize = true;
+    }
 
-  ;['before', 'error', 'after', 'wrap'].forEach(function (kind) {
-    var args = name ? [state, kind, name] : [state, kind]
-    hook[kind] = hook.api[kind] = bindable(addHook, null).apply(null, args)
-  })
-}
+    var op = retrier.operation(options);
 
-function HookSingular () {
-  var singularHookName = 'h'
-  var singularHookState = {
-    registry: {}
+    // We allow the user to abort retrying
+    // this makes sense in the cases where
+    // knowledge is obtained that retrying
+    // would be futile (e.g.: auth errors)
+
+    function bail(err) {
+      reject(err || new Error('Aborted'));
+    }
+
+    function onError(err, num) {
+      if (err.bail) {
+        bail(err);
+        return;
+      }
+
+      if (!op.retry(err)) {
+        reject(op.mainError());
+      } else if (options.onRetry) {
+        options.onRetry(err, num);
+      }
+    }
+
+    function runAttempt(num) {
+      var val;
+
+      try {
+        val = fn(bail, num);
+      } catch (err) {
+        onError(err, num);
+        return;
+      }
+
+      Promise.resolve(val)
+        .then(resolve)
+        .catch(function catchIt(err) {
+          onError(err, num);
+        });
+    }
+
+    op.attempt(runAttempt);
   }
-  var singularHook = register.bind(null, singularHookState, singularHookName)
-  bindApi(singularHook, singularHookState, singularHookName)
-  return singularHook
+
+  return new Promise(run);
 }
 
-function HookCollection () {
-  var state = {
-    registry: {}
-  }
-
-  var hook = register.bind(null, state)
-  bindApi(hook, state)
-
-  return hook
-}
-
-var collectionHookDeprecationMessageDisplayed = false
-function Hook () {
-  if (!collectionHookDeprecationMessageDisplayed) {
-    console.warn('[before-after-hook]: "Hook()" repurposing warning, use "Hook.Collection()". Read more: https://git.io/upgrade-before-after-hook-to-1.4')
-    collectionHookDeprecationMessageDisplayed = true
-  }
-  return HookCollection()
-}
-
-Hook.Singular = HookSingular.bind()
-Hook.Collection = HookCollection.bind()
-
-module.exports = Hook
-// expose constructors as a named property for TypeScript
-module.exports.Hook = Hook
-module.exports.Singular = Hook.Singular
-module.exports.Collection = Hook.Collection
+module.exports = retry;
 
 
 /***/ }),
 /* 524 */,
-/* 525 */,
+/* 525 */
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = state
+
+function state (o) {
+  const {
+    secret,
+    censor,
+    isCensorFct,
+    compileRestore,
+    serialize,
+    groupRedact,
+    nestedRedact,
+    wildcards,
+    wcLen
+  } = o
+  const builder = [{ secret, censor, isCensorFct, compileRestore }]
+  builder.push({ secret })
+  if (serialize !== false) builder.push({ serialize })
+  if (wcLen > 0) builder.push({ groupRedact, nestedRedact, wildcards, wcLen })
+  return Object.assign(...builder)
+}
+
+
+/***/ }),
 /* 526 */
 /***/ (function(__unusedmodule, exports) {
 
@@ -16493,7 +19276,11 @@ const setup_cfg_1 = __webpack_require__(201);
 const CHANGELOG_SECTIONS = [
     { type: 'feat', section: 'Features' },
     { type: 'fix', section: 'Bug Fixes' },
+    { type: 'perf', section: 'Performance Improvements' },
+    { type: 'deps', section: 'Dependencies' },
+    { type: 'revert', section: 'Reverts' },
     { type: 'docs', section: 'Documentation' },
+    { type: 'style', section: 'Styles', hidden: true },
     { type: 'chore', section: 'Miscellaneous Chores', hidden: true },
     { type: 'refactor', section: 'Code Refactoring', hidden: true },
     { type: 'test', section: 'Tests', hidden: true },
@@ -33869,7 +36656,12 @@ module.exports.sync = sync
 /***/ }),
 /* 558 */,
 /* 559 */,
-/* 560 */,
+/* 560 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+module.exports = __webpack_require__(373);
+
+/***/ }),
 /* 561 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -35871,7 +38663,60 @@ module.exports.obj = through2(function (options, transform, flush) {
 
 /***/ }),
 /* 577 */,
-/* 578 */,
+/* 578 */
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = {
+  mapHttpResponse,
+  resSerializer
+}
+
+var rawSymbol = Symbol('pino-raw-res-ref')
+var pinoResProto = Object.create({}, {
+  statusCode: {
+    enumerable: true,
+    writable: true,
+    value: 0
+  },
+  headers: {
+    enumerable: true,
+    writable: true,
+    value: ''
+  },
+  raw: {
+    enumerable: false,
+    get: function () {
+      return this[rawSymbol]
+    },
+    set: function (val) {
+      this[rawSymbol] = val
+    }
+  }
+})
+Object.defineProperty(pinoResProto, rawSymbol, {
+  writable: true,
+  value: {}
+})
+
+function resSerializer (res) {
+  const _res = Object.create(pinoResProto)
+  _res.statusCode = res.statusCode
+  _res.headers = res.getHeaders ? res.getHeaders() : res._headers
+  _res.raw = res
+  return _res
+}
+
+function mapHttpResponse (res) {
+  return {
+    res: resSerializer(res)
+  }
+}
+
+
+/***/ }),
 /* 579 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -37659,6 +40504,7 @@ module.exports = (chalk, temporary) => {
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GitHub = void 0;
+const code_suggester_1 = __webpack_require__(39);
 const rest_1 = __webpack_require__(889);
 const request_1 = __webpack_require__(753);
 const graphql_1 = __webpack_require__(743);
@@ -37677,11 +40523,14 @@ class GitHub {
         this.apiUrl = options.apiUrl || 'https://api.github.com';
         this.proxyKey = options.proxyKey;
         if (options.octokitAPIs === undefined) {
-            this.octokit = new rest_1.Octokit({ baseUrl: options.apiUrl });
+            this.octokit = new rest_1.Octokit({
+                baseUrl: options.apiUrl,
+                auth: this.token,
+            });
             const defaults = {
                 baseUrl: this.apiUrl,
                 headers: {
-                    'user-agent': `release-please/${__webpack_require__(759).version}`,
+                    'user-agent': `release-please/${__webpack_require__(191).version}`,
                     // some proxies do not require the token prefix.
                     Authorization: `${this.proxyKey ? '' : 'token '}${this.token}`,
                 },
@@ -38053,77 +40902,38 @@ class GitHub {
         return undefined;
     }
     async openPR(options) {
-        let refName = await this.refByBranchName(options.branch);
+        const defaultBranch = await this.getDefaultBranch(this.owner, this.repo);
+        // check if there's an existing PR, so that we can opt to update it
+        // rather than creating a new PR.
+        const refName = `refs/heads/${options.branch}`;
         let openReleasePR;
-        // If the branch exists, we delete it and create a new branch
-        // with the same name; this results in the existing PR being closed.
-        if (!refName) {
-            refName = `refs/heads/${options.branch}`;
-            // the branch didn't yet exist, so make it.
-            try {
-                checkpoint_1.checkpoint(`creating branch ${chalk.green(options.branch)}`, checkpoint_1.CheckpointType.Success);
-                await this.request(`POST /repos/:owner/:repo/git/refs${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, {
-                    owner: this.owner,
-                    repo: this.repo,
-                    ref: refName,
-                    sha: options.sha,
-                    key: this.proxyKey,
-                });
-            }
-            catch (err) {
-                if (err.status === 404) {
-                    // the most likely cause of a 404 during this step is actually
-                    // that the user does not have access to the repo:
-                    throw new AuthError();
-                }
-                else {
-                    throw err;
-                }
+        const releasePRCandidates = await this.findOpenReleasePRs(options.labels);
+        for (const releasePR of releasePRCandidates) {
+            if (refName && refName.includes(releasePR.head.ref)) {
+                openReleasePR = releasePR;
+                break;
             }
         }
-        else {
-            try {
-                checkpoint_1.checkpoint(`branch ${chalk.red(options.branch)} already exists`, checkpoint_1.CheckpointType.Failure);
-                // check if there's an existing PR, so that we can opt to update it
-                // rather than creating a new PR.
-                (await this.findOpenReleasePRs(options.labels)).forEach(releasePR => {
-                    if (refName && refName.indexOf(releasePR.head.ref) !== -1) {
-                        openReleasePR = releasePR;
-                    }
-                });
-                // short-circuit of there have been no changes to the
-                // pull-request body.
-                if (openReleasePR && openReleasePR.body === options.body) {
-                    checkpoint_1.checkpoint(`PR https://github.com/${this.owner}/${this.repo}/pull/${openReleasePR.number} remained the same`, checkpoint_1.CheckpointType.Failure);
-                    return -1;
-                }
-                await this.request(`PATCH /repos/:owner/:repo/git/refs/:ref${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, {
-                    owner: this.owner,
-                    repo: this.repo,
-                    // TODO: remove the replace logic depending on the outcome of:
-                    // https://github.com/octokit/rest.js/issues/1039.
-                    ref: refName.replace('refs/', ''),
-                    sha: options.sha,
-                    force: true,
-                });
-            }
-            catch (err) {
-                if (err.status === 404) {
-                    // the most likely cause of a 404 during this step is actually
-                    // that the user does not have access to the repo:
-                    throw new AuthError();
-                }
-                else {
-                    throw err;
-                }
-            }
+        // short-circuit of there have been no changes to the
+        // pull-request body.
+        if (openReleasePR && openReleasePR.body === options.body) {
+            checkpoint_1.checkpoint(`PR https://github.com/${this.owner}/${this.repo}/pull/${openReleasePR.number} remained the same`, checkpoint_1.CheckpointType.Failure);
+            return -1;
         }
-        await this.updateFiles(options.updates, options.branch, refName);
-        const base = await this.getDefaultBranch(this.owner, this.repo);
+        //  Actually update the files for the release:
+        const changes = await this.getChangeSet(options.updates, defaultBranch);
+        const prNumber = await code_suggester_1.createPullRequest(this.octokit, changes, {
+            upstreamOwner: this.owner,
+            upstreamRepo: this.repo,
+            title: options.title,
+            branch: options.branch,
+            description: options.body,
+            primary: defaultBranch,
+            force: true,
+            message: options.title,
+        }, { level: 'silent' });
+        // If a release PR was already open, update the title and body:
         if (openReleasePR) {
-            // TODO: dig into why `updateRef` closes an issue attached
-            // to the branch being updated:
-            // https://github.com/octokit/rest.js/issues/1373
             checkpoint_1.checkpoint(`update pull-request #${openReleasePR.number}: ${chalk.yellow(options.title)}`, checkpoint_1.CheckpointType.Success);
             await this.request(`PATCH /repos/:owner/:repo/pulls/:pull_number${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, {
                 pull_number: openReleasePR.number,
@@ -38132,55 +40942,17 @@ class GitHub {
                 title: options.title,
                 body: options.body,
                 state: 'open',
-                base,
             });
             return openReleasePR.number;
         }
         else {
-            checkpoint_1.checkpoint(`open pull-request: ${chalk.yellow(options.title)}`, checkpoint_1.CheckpointType.Success);
-            const resp = await this.request(`POST /repos/:owner/:repo/pulls${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, {
-                owner: this.owner,
-                repo: this.repo,
-                title: options.title,
-                body: options.body,
-                head: options.branch,
-                base,
-            });
-            return resp.data.number;
+            return prNumber;
         }
     }
-    async getDefaultBranch(owner, repo) {
-        if (this.defaultBranch) {
-            return this.defaultBranch;
-        }
-        const { data } = await this.octokit.repos.get({
-            repo,
-            owner,
-            headers: {
-                Authorization: `${this.proxyKey ? '' : 'token '}${this.token}`,
-            },
-        });
-        this.defaultBranch = data.default_branch;
-        return this.defaultBranch;
-    }
-    async updateFiles(updates, branch, refName) {
-        // does the user care about skipping CI at all?
-        const skipCiEverSet = updates.some(upd => typeof upd.skipCi !== 'undefined');
-        if (skipCiEverSet) {
-            // if skipCi was set for some of the updates, disable CI for others
-            updates.forEach(upd => {
-                if (typeof upd.skipCi === 'undefined') {
-                    upd.skipCi = true;
-                }
-            });
-        }
-        if (!skipCiEverSet && updates.length > 0) {
-            // if skipCi was not set for any of the files, disable CI for all files except the last one
-            updates.forEach(upd => (upd.skipCi = true));
-            updates[updates.length - 1].skipCi = false;
-        }
-        for (let i = 0; i < updates.length; i++) {
-            const update = updates[i];
+    async getChangeSet(updates, defaultBranch) {
+        const refName = `refs/heads/${defaultBranch}`;
+        const changes = new Map();
+        for (const update of updates) {
             let content;
             try {
                 if (update.contents) {
@@ -38211,59 +40983,28 @@ class GitHub {
                 ? Buffer.from(content.data.content, 'base64').toString('utf8')
                 : undefined;
             const updatedContent = update.updateContent(contentText);
-            if (content) {
-                await this.request(`PUT /repos/:owner/:repo/contents/:path${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, {
-                    owner: this.owner,
-                    repo: this.repo,
-                    path: update.path,
-                    message: `chore: updated ${update.path}` +
-                        (update.skipCi ? ' [ci skip]' : ''),
-                    content: Buffer.from(updatedContent, 'utf8').toString('base64'),
-                    sha: content.data.sha,
-                    branch,
-                });
-            }
-            else {
-                await this.request(`PUT /repos/:owner/:repo/contents/:path${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, {
-                    owner: this.owner,
-                    repo: this.repo,
-                    path: update.path,
-                    message: `chore: created ${update.path}` +
-                        (update.skipCi ? ' [ci skip]' : ''),
-                    content: Buffer.from(updatedContent, 'utf8').toString('base64'),
-                    branch,
+            if (updatedContent) {
+                changes.set(update.path, {
+                    content: updatedContent,
+                    mode: '100644',
                 });
             }
         }
+        return changes;
     }
-    async refByBranchName(branch) {
-        let ref;
-        try {
-            for await (const response of this.octokit.paginate.iterator(this.decoratePaginateOpts({
-                method: 'GET',
-                url: `/repos/${this.owner}/${this.repo}/git/refs?per_page=100${this.proxyKey ? `&key=${this.proxyKey}` : ''}`,
-            }))) {
-                const resp = response;
-                for (let i = 0, r; resp.data[i] !== undefined; i++) {
-                    r = resp.data[i];
-                    const refRe = new RegExp(`/${branch}$`);
-                    if (r.ref.match(refRe)) {
-                        ref = r.ref;
-                    }
-                }
-            }
+    async getDefaultBranch(owner, repo) {
+        if (this.defaultBranch) {
+            return this.defaultBranch;
         }
-        catch (err) {
-            if (err.status === 404) {
-                // the most likely cause of a 404 during this step is actually
-                // that the user does not have access to the repo:
-                throw new AuthError();
-            }
-            else {
-                throw err;
-            }
-        }
-        return ref;
+        const { data } = await this.octokit.repos.get({
+            repo,
+            owner,
+            headers: {
+                Authorization: `${this.proxyKey ? '' : 'token '}${this.token}`,
+            },
+        });
+        this.defaultBranch = data.default_branch;
+        return this.defaultBranch;
     }
     async closePR(prNumber) {
         await this.request(`PATCH /repos/:owner/:repo/pulls/:pull_number${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, {
@@ -38444,7 +41185,77 @@ Node.releaserName = 'node';
 /***/ }),
 /* 619 */,
 /* 620 */,
-/* 621 */,
+/* 621 */
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = errSerializer
+
+const seen = Symbol('circular-ref-tag')
+const rawSymbol = Symbol('pino-raw-err-ref')
+const pinoErrProto = Object.create({}, {
+  type: {
+    enumerable: true,
+    writable: true,
+    value: undefined
+  },
+  message: {
+    enumerable: true,
+    writable: true,
+    value: undefined
+  },
+  stack: {
+    enumerable: true,
+    writable: true,
+    value: undefined
+  },
+  raw: {
+    enumerable: false,
+    get: function () {
+      return this[rawSymbol]
+    },
+    set: function (val) {
+      this[rawSymbol] = val
+    }
+  }
+})
+Object.defineProperty(pinoErrProto, rawSymbol, {
+  writable: true,
+  value: {}
+})
+
+function errSerializer (err) {
+  if (!(err instanceof Error)) {
+    return err
+  }
+
+  err[seen] = undefined // tag to prevent re-looking at this
+  const _err = Object.create(pinoErrProto)
+  _err.type = err.constructor.name
+  _err.message = err.message
+  _err.stack = err.stack
+  for (const key in err) {
+    if (_err[key] === undefined) {
+      const val = err[key]
+      if (val instanceof Error) {
+        if (!val.hasOwnProperty(seen)) {
+          _err[key] = errSerializer(val)
+        }
+      } else {
+        _err[key] = val
+      }
+    }
+  }
+
+  delete err[seen] // clean up tag in case err is serialized again later
+  _err.raw = err
+  return _err
+}
+
+
+/***/ }),
 /* 622 */
 /***/ (function(module) {
 
@@ -38487,7 +41298,7 @@ var _exception2 = _interopRequireDefault(_exception);
 
 var _utils = __webpack_require__(423);
 
-var _codeGen = __webpack_require__(392);
+var _codeGen = __webpack_require__(339);
 
 var _codeGen2 = _interopRequireDefault(_codeGen);
 
@@ -39696,7 +42507,6 @@ class SamplesPackageJson {
         this.changelogEntry = options.changelogEntry;
         this.version = options.version;
         this.packageName = options.packageName;
-        this.skipCi = options.skipCi;
     }
     updateContent(content) {
         const parsed = JSON.parse(content);
@@ -39770,7 +42580,6 @@ class Simple extends release_pr_1.ReleasePR {
             return;
         }
         const updates = [];
-        const contents = await this.gh.getFileContents('version.txt');
         updates.push(new changelog_1.Changelog({
             path: 'CHANGELOG.md',
             changelogEntry,
@@ -39782,8 +42591,6 @@ class Simple extends release_pr_1.ReleasePR {
             changelogEntry,
             version: candidate.version,
             packageName: this.packageName,
-            contents,
-            skipCi: false,
         }));
         await this.openPR({
             sha: commits[0].sha,
@@ -39804,7 +42611,27 @@ Simple.releaserName = 'simple';
 /* 646 */,
 /* 647 */,
 /* 648 */,
-/* 649 */,
+/* 649 */
+/***/ (function(module) {
+
+"use strict";
+
+
+// You may be tempted to copy and paste this, 
+// but take a look at the commit history first,
+// this is a moving target so relying on the module
+// is the best way to make sure the optimization
+// method is kept up to date and compatible with
+// every Node version.
+
+function flatstr (s) {
+  s | 0
+  return s
+}
+
+module.exports = flatstr
+
+/***/ }),
 /* 650 */,
 /* 651 */,
 /* 652 */,
@@ -40444,7 +43271,123 @@ function prefixFromLabel(labels) {
 /* 685 */,
 /* 686 */,
 /* 687 */,
-/* 688 */,
+/* 688 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.branch = exports.createBranch = exports.existsBranchWithName = exports.getBranchHead = exports.createRef = void 0;
+const logger_1 = __webpack_require__(148);
+const REF_PREFIX = 'refs/heads/';
+const DEFAULT_PRIMARY_BRANCH = 'master';
+/**
+ * Create a new branch reference with the ref prefix
+ * @param {string} branchName name of the branch
+ */
+function createRef(branchName) {
+    return REF_PREFIX + branchName;
+}
+exports.createRef = createRef;
+/**
+ * get branch commit HEAD SHA of a repository
+ * Throws an error if the branch cannot be found
+ * @param {Octokit} octokit The authenticated octokit instance
+ * @param {RepoDomain} origin The domain information of the remote origin repository
+ * @param {string} branch the name of the branch
+ * @returns {Promise<string>} branch commit HEAD SHA
+ */
+async function getBranchHead(octokit, origin, branch) {
+    const branchData = (await octokit.repos.getBranch({
+        owner: origin.owner,
+        repo: origin.repo,
+        branch,
+    })).data;
+    logger_1.logger.info(`Successfully found branch HEAD sha "${branchData.commit.sha}".`);
+    return branchData.commit.sha;
+}
+exports.getBranchHead = getBranchHead;
+/**
+ * Determine if there is a branch with the provided name in the remote GitHub repository
+ * @param {Octokit} octokit The authenticated octokit instance
+ * @param {RepoDomain} remote The domain information of the remote repository
+ * @param {string} name The branch name to create on the repository
+ * @returns {Promise<boolean>} if there is a branch already existing in the remote GitHub repository
+ */
+async function existsBranchWithName(octokit, remote, name) {
+    const branches = (await octokit.repos.listBranches({
+        owner: remote.owner,
+        repo: remote.repo,
+    })).data;
+    const match = branches.some(branch => branch.name === name);
+    logger_1.logger.info(`Existing remote branch ${name} found on ${remote.owner}/${remote.repo}`);
+    return match;
+}
+exports.existsBranchWithName = existsBranchWithName;
+/**
+ * Create a branch on the remote repository if there is not an existing branch
+ * @param {Octokit} octokit The authenticated octokit instance
+ * @param {RepoDomain} remote The domain information of the remote origin repository
+ * @param {string} name The branch name to create on the origin repository
+ * @param {string} baseSha the sha that the base of the reference points to
+ * @param {boolean} duplicate whether there is an existing branch or not
+ * @returns {Promise<void>}
+ */
+async function createBranch(octokit, remote, name, baseSha, duplicate) {
+    if (!duplicate) {
+        const refData = (await octokit.git.createRef({
+            owner: remote.owner,
+            repo: remote.repo,
+            ref: createRef(name),
+            sha: baseSha,
+        })).data;
+        logger_1.logger.info(`Successfully created branch at ${refData.url}`);
+    }
+    else {
+        logger_1.logger.info('Skipping branch creation step...');
+    }
+}
+exports.createBranch = createBranch;
+/**
+ * Create a GitHub branch given a remote origin.
+ * Throws an exception if octokit fails, or if the base branch is invalid
+ * @param {Octokit} octokit The authenticated octokit instance
+ * @param {RepoDomain} origin The domain information of the remote origin repository
+ * @param {RepoDomain} upstream The domain information of the remote upstream repository
+ * @param {string} name The branch name to create on the origin repository
+ * @param {string} baseBranch the name of the branch to base the new branch off of. Default is master
+ * @returns {Promise<string>} the base SHA for subsequent commits to be based off for the origin branch
+ */
+async function branch(octokit, origin, upstream, name, baseBranch = DEFAULT_PRIMARY_BRANCH) {
+    // create branch from primary branch HEAD SHA
+    try {
+        const baseSha = await getBranchHead(octokit, upstream, baseBranch);
+        const duplicate = await existsBranchWithName(octokit, origin, name);
+        await createBranch(octokit, origin, name, baseSha, duplicate);
+        return baseSha;
+    }
+    catch (err) {
+        logger_1.logger.error('Error when creating branch');
+        throw err;
+    }
+}
+exports.branch = branch;
+//# sourceMappingURL=branch-handler.js.map
+
+/***/ }),
 /* 689 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -40835,7 +43778,234 @@ module.exports = valid
 /* 719 */,
 /* 720 */,
 /* 721 */,
-/* 722 */,
+/* 722 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+/* eslint no-prototype-builtins: 0 */
+const os = __webpack_require__(87)
+const stdSerializers = __webpack_require__(329)
+const redaction = __webpack_require__(278)
+const time = __webpack_require__(847)
+const proto = __webpack_require__(392)
+const symbols = __webpack_require__(230)
+const { assertDefaultLevelFound, mappings, genLsCache } = __webpack_require__(136)
+const {
+  createArgsNormalizer,
+  asChindings,
+  final,
+  stringify,
+  buildSafeSonicBoom,
+  buildFormatters,
+  noop
+} = __webpack_require__(382)
+const { version } = __webpack_require__(331)
+const {
+  chindingsSym,
+  redactFmtSym,
+  serializersSym,
+  timeSym,
+  timeSliceIndexSym,
+  streamSym,
+  stringifySym,
+  stringifiersSym,
+  setLevelSym,
+  endSym,
+  formatOptsSym,
+  messageKeySym,
+  nestedKeySym,
+  mixinSym,
+  useOnlyCustomLevelsSym,
+  formattersSym,
+  hooksSym
+} = symbols
+const { epochTime, nullTime } = time
+const { pid } = process
+const hostname = os.hostname()
+const defaultErrorSerializer = stdSerializers.err
+const defaultOptions = {
+  level: 'info',
+  messageKey: 'msg',
+  nestedKey: null,
+  enabled: true,
+  prettyPrint: false,
+  base: { pid, hostname },
+  serializers: Object.assign(Object.create(null), {
+    err: defaultErrorSerializer
+  }),
+  formatters: Object.assign(Object.create(null), {
+    bindings (bindings) {
+      return bindings
+    },
+    level (label, number) {
+      return { level: number }
+    }
+  }),
+  hooks: {
+    logMethod: undefined
+  },
+  timestamp: epochTime,
+  name: undefined,
+  redact: null,
+  customLevels: null,
+  levelKey: undefined,
+  useOnlyCustomLevels: false
+}
+
+const normalize = createArgsNormalizer(defaultOptions)
+
+const serializers = Object.assign(Object.create(null), stdSerializers)
+
+function pino (...args) {
+  const instance = {}
+  const { opts, stream } = normalize(instance, ...args)
+  const {
+    redact,
+    crlf,
+    serializers,
+    timestamp,
+    messageKey,
+    nestedKey,
+    base,
+    name,
+    level,
+    customLevels,
+    useLevelLabels,
+    changeLevelName,
+    levelKey,
+    mixin,
+    useOnlyCustomLevels,
+    formatters,
+    hooks
+  } = opts
+
+  const allFormatters = buildFormatters(
+    formatters.level,
+    formatters.bindings,
+    formatters.log
+  )
+
+  if (useLevelLabels && !(changeLevelName || levelKey)) {
+    process.emitWarning('useLevelLabels is deprecated, use the formatters.level option instead', 'Warning', 'PINODEP001')
+    allFormatters.level = labelsFormatter
+  } else if ((changeLevelName || levelKey) && !useLevelLabels) {
+    process.emitWarning('changeLevelName and levelKey are deprecated, use the formatters.level option instead', 'Warning', 'PINODEP002')
+    allFormatters.level = levelNameFormatter(changeLevelName || levelKey)
+  } else if ((changeLevelName || levelKey) && useLevelLabels) {
+    process.emitWarning('useLevelLabels is deprecated, use the formatters.level option instead', 'Warning', 'PINODEP001')
+    process.emitWarning('changeLevelName and levelKey are deprecated, use the formatters.level option instead', 'Warning', 'PINODEP002')
+    allFormatters.level = levelNameLabelFormatter(changeLevelName || levelKey)
+  }
+
+  if (serializers[Symbol.for('pino.*')]) {
+    process.emitWarning('The pino.* serializer is deprecated, use the formatters.log options instead', 'Warning', 'PINODEP003')
+    allFormatters.log = serializers[Symbol.for('pino.*')]
+  }
+
+  if (!allFormatters.bindings) {
+    allFormatters.bindings = defaultOptions.formatters.bindings
+  }
+  if (!allFormatters.level) {
+    allFormatters.level = defaultOptions.formatters.level
+  }
+
+  const stringifiers = redact ? redaction(redact, stringify) : {}
+  const formatOpts = redact
+    ? { stringify: stringifiers[redactFmtSym] }
+    : { stringify }
+  const end = '}' + (crlf ? '\r\n' : '\n')
+  const coreChindings = asChindings.bind(null, {
+    [chindingsSym]: '',
+    [serializersSym]: serializers,
+    [stringifiersSym]: stringifiers,
+    [stringifySym]: stringify,
+    [formattersSym]: allFormatters
+  })
+  const chindings = base === null ? '' : (name === undefined)
+    ? coreChindings(base) : coreChindings(Object.assign({}, base, { name }))
+  const time = (timestamp instanceof Function)
+    ? timestamp : (timestamp ? epochTime : nullTime)
+  const timeSliceIndex = time().indexOf(':') + 1
+
+  if (useOnlyCustomLevels && !customLevels) throw Error('customLevels is required if useOnlyCustomLevels is set true')
+  if (mixin && typeof mixin !== 'function') throw Error(`Unknown mixin type "${typeof mixin}" - expected "function"`)
+
+  assertDefaultLevelFound(level, customLevels, useOnlyCustomLevels)
+  const levels = mappings(customLevels, useOnlyCustomLevels)
+
+  Object.assign(instance, {
+    levels,
+    [useOnlyCustomLevelsSym]: useOnlyCustomLevels,
+    [streamSym]: stream,
+    [timeSym]: time,
+    [timeSliceIndexSym]: timeSliceIndex,
+    [stringifySym]: stringify,
+    [stringifiersSym]: stringifiers,
+    [endSym]: end,
+    [formatOptsSym]: formatOpts,
+    [messageKeySym]: messageKey,
+    [nestedKeySym]: nestedKey,
+    [serializersSym]: serializers,
+    [mixinSym]: mixin,
+    [chindingsSym]: chindings,
+    [formattersSym]: allFormatters,
+    [hooksSym]: hooks,
+    silent: noop
+  })
+
+  Object.setPrototypeOf(instance, proto())
+
+  genLsCache(instance)
+
+  instance[setLevelSym](level)
+
+  return instance
+}
+
+function labelsFormatter (label, number) {
+  return { level: label }
+}
+
+function levelNameFormatter (name) {
+  return function (label, number) {
+    return { [name]: number }
+  }
+}
+
+function levelNameLabelFormatter (name) {
+  return function (label, number) {
+    return { [name]: label }
+  }
+}
+
+pino.extreme = (dest = process.stdout.fd) => {
+  process.emitWarning(
+    'The pino.extreme() option is deprecated and will be removed in v7. Use pino.destination({ sync: false }) instead.',
+    { code: 'extreme_deprecation' }
+  )
+  return buildSafeSonicBoom({ dest, minLength: 4096, sync: false })
+}
+pino.destination = (dest = process.stdout.fd) => {
+  if (typeof dest === 'object') {
+    dest.dest = dest.dest || process.stdout.fd
+    return buildSafeSonicBoom(dest)
+  } else {
+    return buildSafeSonicBoom({ dest, minLength: 0, sync: true })
+  }
+}
+
+pino.final = final
+pino.levels = mappings()
+pino.stdSerializers = serializers
+pino.stdTimeFunctions = Object.assign({}, time)
+pino.symbols = symbols
+pino.version = version
+
+module.exports = pino
+
+
+/***/ }),
 /* 723 */,
 /* 724 */,
 /* 725 */,
@@ -41687,13 +44857,16 @@ Object.defineProperty(exports, '__esModule', { value: true });
 var request = __webpack_require__(753);
 var universalUserAgent = __webpack_require__(526);
 
-const VERSION = "4.5.2";
+const VERSION = "4.5.4";
 
 class GraphqlError extends Error {
   constructor(request, response) {
     const message = response.data.errors[0].message;
     super(message);
     Object.assign(this, response.data);
+    Object.assign(this, {
+      headers: response.headers
+    });
     this.name = "GraphqlError";
     this.request = request; // Maintains proper stack trace (only available on V8)
 
@@ -41726,7 +44899,14 @@ function graphql(request, query, options) {
   }, {});
   return request(requestOptions).then(response => {
     if (response.data.errors) {
+      const headers = {};
+
+      for (const key of Object.keys(response.headers)) {
+        headers[key] = response.headers[key];
+      }
+
       throw new GraphqlError(requestOptions, {
+        headers,
         data: response.data
       });
     }
@@ -42096,7 +45276,7 @@ module.exports = exports['default'];
 /* 759 */
 /***/ (function(module) {
 
-module.exports = {"_from":"release-please@latest","_id":"release-please@5.6.0","_inBundle":false,"_integrity":"sha512-p/CR4x8PAkMb2ScYwYEKNAsgSsBTeTWyKo95ST0vVwceL0KXBIoDLWJ3PNwIx+vxFe4adBnd28uGU/Bz5l+uLw==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"tag","registry":true,"raw":"release-please@latest","name":"release-please","escapedName":"release-please","rawSpec":"latest","saveSpec":null,"fetchSpec":"latest"},"_requiredBy":["#USER","/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-5.6.0.tgz","_shasum":"5f08831abc8d911e11617c92444f99c2af4ccc41","_spec":"release-please@latest","_where":"/Users/bencoe/oss/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"bundleDependencies":false,"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.0","chalk":"^4.0.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.0.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.16.0","yargs":"^15.0.0"},"deprecated":false,"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/semver":"^7.0.0","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"5.6.0"};
+module.exports = require("events");
 
 /***/ }),
 /* 760 */
@@ -42925,7 +46105,16 @@ PrintVisitor.prototype.HashPair = function (pair) {
 
 /***/ }),
 /* 788 */,
-/* 789 */,
+/* 789 */
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = /[^.[\]]+|\[((?:.)*?)\]/g
+
+
+/***/ }),
 /* 790 */
 /***/ (function(module) {
 
@@ -43160,7 +46349,6 @@ class PackageJson {
         this.changelogEntry = options.changelogEntry;
         this.version = options.version;
         this.packageName = options.packageName;
-        this.skipCi = options.skipCi;
     }
     updateContent(content) {
         const parsed = JSON.parse(content);
@@ -43541,11 +46729,7 @@ const Endpoints = {
     unstarRepoForAuthenticatedUser: ["DELETE /user/starred/{owner}/{repo}"]
   },
   apps: {
-    addRepoToInstallation: ["PUT /user/installations/{installation_id}/repositories/{repository_id}", {
-      mediaType: {
-        previews: ["machine-man"]
-      }
-    }],
+    addRepoToInstallation: ["PUT /user/installations/{installation_id}/repositories/{repository_id}"],
     checkToken: ["POST /applications/{client_id}/token"],
     createContentAttachment: ["POST /content_references/{content_reference_id}/attachments", {
       mediaType: {
@@ -43553,81 +46737,29 @@ const Endpoints = {
       }
     }],
     createFromManifest: ["POST /app-manifests/{code}/conversions"],
-    createInstallationAccessToken: ["POST /app/installations/{installation_id}/access_tokens", {
-      mediaType: {
-        previews: ["machine-man"]
-      }
-    }],
+    createInstallationAccessToken: ["POST /app/installations/{installation_id}/access_tokens"],
     deleteAuthorization: ["DELETE /applications/{client_id}/grant"],
-    deleteInstallation: ["DELETE /app/installations/{installation_id}", {
-      mediaType: {
-        previews: ["machine-man"]
-      }
-    }],
+    deleteInstallation: ["DELETE /app/installations/{installation_id}"],
     deleteToken: ["DELETE /applications/{client_id}/token"],
-    getAuthenticated: ["GET /app", {
-      mediaType: {
-        previews: ["machine-man"]
-      }
-    }],
-    getBySlug: ["GET /apps/{app_slug}", {
-      mediaType: {
-        previews: ["machine-man"]
-      }
-    }],
-    getInstallation: ["GET /app/installations/{installation_id}", {
-      mediaType: {
-        previews: ["machine-man"]
-      }
-    }],
-    getOrgInstallation: ["GET /orgs/{org}/installation", {
-      mediaType: {
-        previews: ["machine-man"]
-      }
-    }],
-    getRepoInstallation: ["GET /repos/{owner}/{repo}/installation", {
-      mediaType: {
-        previews: ["machine-man"]
-      }
-    }],
+    getAuthenticated: ["GET /app"],
+    getBySlug: ["GET /apps/{app_slug}"],
+    getInstallation: ["GET /app/installations/{installation_id}"],
+    getOrgInstallation: ["GET /orgs/{org}/installation"],
+    getRepoInstallation: ["GET /repos/{owner}/{repo}/installation"],
     getSubscriptionPlanForAccount: ["GET /marketplace_listing/accounts/{account_id}"],
     getSubscriptionPlanForAccountStubbed: ["GET /marketplace_listing/stubbed/accounts/{account_id}"],
-    getUserInstallation: ["GET /users/{username}/installation", {
-      mediaType: {
-        previews: ["machine-man"]
-      }
-    }],
+    getUserInstallation: ["GET /users/{username}/installation"],
     listAccountsForPlan: ["GET /marketplace_listing/plans/{plan_id}/accounts"],
     listAccountsForPlanStubbed: ["GET /marketplace_listing/stubbed/plans/{plan_id}/accounts"],
-    listInstallationReposForAuthenticatedUser: ["GET /user/installations/{installation_id}/repositories", {
-      mediaType: {
-        previews: ["machine-man"]
-      }
-    }],
-    listInstallations: ["GET /app/installations", {
-      mediaType: {
-        previews: ["machine-man"]
-      }
-    }],
-    listInstallationsForAuthenticatedUser: ["GET /user/installations", {
-      mediaType: {
-        previews: ["machine-man"]
-      }
-    }],
+    listInstallationReposForAuthenticatedUser: ["GET /user/installations/{installation_id}/repositories"],
+    listInstallations: ["GET /app/installations"],
+    listInstallationsForAuthenticatedUser: ["GET /user/installations"],
     listPlans: ["GET /marketplace_listing/plans"],
     listPlansStubbed: ["GET /marketplace_listing/stubbed/plans"],
-    listReposAccessibleToInstallation: ["GET /installation/repositories", {
-      mediaType: {
-        previews: ["machine-man"]
-      }
-    }],
+    listReposAccessibleToInstallation: ["GET /installation/repositories"],
     listSubscriptionsForAuthenticatedUser: ["GET /user/marketplace_purchases"],
     listSubscriptionsForAuthenticatedUserStubbed: ["GET /user/marketplace_purchases/stubbed"],
-    removeRepoFromInstallation: ["DELETE /user/installations/{installation_id}/repositories/{repository_id}", {
-      mediaType: {
-        previews: ["machine-man"]
-      }
-    }],
+    removeRepoFromInstallation: ["DELETE /user/installations/{installation_id}/repositories/{repository_id}"],
     resetToken: ["PATCH /applications/{client_id}/token"],
     revokeInstallationAccessToken: ["DELETE /installation/token"],
     suspendInstallation: ["PUT /app/installations/{installation_id}/suspended"],
@@ -43942,11 +47074,7 @@ const Endpoints = {
     getMembershipForUser: ["GET /orgs/{org}/memberships/{username}"],
     getWebhook: ["GET /orgs/{org}/hooks/{hook_id}"],
     list: ["GET /organizations"],
-    listAppInstallations: ["GET /orgs/{org}/installations", {
-      mediaType: {
-        previews: ["machine-man"]
-      }
-    }],
+    listAppInstallations: ["GET /orgs/{org}/installations"],
     listBlockedUsers: ["GET /orgs/{org}/blocks"],
     listForAuthenticatedUser: ["GET /user/orgs"],
     listForUser: ["GET /users/{username}/orgs"],
@@ -44559,7 +47687,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "4.1.2";
+const VERSION = "4.1.4";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -44902,7 +48030,24 @@ module.exports = chalk;
 /* 844 */,
 /* 845 */,
 /* 846 */,
-/* 847 */,
+/* 847 */
+/***/ (function(module) {
+
+"use strict";
+
+
+const nullTime = () => ''
+
+const epochTime = () => `,"time":${Date.now()}`
+
+const unixTime = () => `,"time":${Math.round(Date.now() / 1000.0)}`
+
+const isoTime = () => `,"time":"${new Date(Date.now()).toISOString()}"` // using Date.now() for testability
+
+module.exports = { nullTime, epochTime, unixTime, isoTime }
+
+
+/***/ }),
 /* 848 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -45071,7 +48216,7 @@ module.exports.windows = windows;
 const Q = __webpack_require__(416)
 const _ = __webpack_require__(557)
 const conventionalChangelog = __webpack_require__(193)
-const parserOpts = __webpack_require__(239)
+const parserOpts = __webpack_require__(8)
 const recommendedBumpOpts = __webpack_require__(995)
 const writerOpts = __webpack_require__(579)
 
@@ -45109,7 +48254,60 @@ function presetOpts (config) {
 
 /***/ }),
 /* 852 */,
-/* 853 */,
+/* 853 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.fork = void 0;
+const logger_1 = __webpack_require__(148);
+/**
+ * Fork the GitHub owner's repository.
+ * Returns the fork owner and fork repo when the fork creation request to GitHub succeeds.
+ * Otherwise throws error.
+ *
+ * If fork already exists no new fork is created, no error occurs, and the existing Fork data is returned
+ * with the `updated_at` + any historical repo changes.
+ * @param {Octokit} octokit The authenticated octokit instance
+ * @param {RepoDomain} upstream upstream repository information
+ * @returns {Promise<RepoDomain>} the forked repository name, as well as the owner of that fork
+ */
+async function fork(octokit, upstream) {
+    try {
+        const forkedRepo = (await octokit.repos.createFork({
+            owner: upstream.owner,
+            repo: upstream.repo,
+        })).data;
+        const origin = {
+            repo: forkedRepo.name,
+            owner: forkedRepo.owner.login,
+        };
+        logger_1.logger.info(`Create fork request was successful for ${origin.owner}/${origin.repo}`);
+        return origin;
+    }
+    catch (err) {
+        logger_1.logger.error('Error when forking');
+        throw Error(err.toString());
+    }
+}
+exports.fork = fork;
+//# sourceMappingURL=fork-handler.js.map
+
+/***/ }),
 /* 854 */,
 /* 855 */,
 /* 856 */,
@@ -45556,7 +48754,7 @@ var pluginRequestLog = __webpack_require__(916);
 var pluginPaginateRest = __webpack_require__(299);
 var pluginRestEndpointMethods = __webpack_require__(842);
 
-const VERSION = "18.0.3";
+const VERSION = "18.0.5";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.restEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`
@@ -45837,7 +49035,6 @@ class SetupPy {
         this.changelogEntry = options.changelogEntry;
         this.version = options.version;
         this.packageName = options.packageName;
-        this.skipCi = options.skipCi;
     }
     updateContent(content) {
         return content.replace(/version ?= ?["'][0-9]+\.[0-9]+\.[0-9](-\w+)?["']/, `version = "${this.version}"`);
@@ -47805,7 +51002,12 @@ module.exports = inc
 
 
 /***/ }),
-/* 929 */,
+/* 929 */
+/***/ (function(module) {
+
+module.exports = {"_from":"pino@^6.3.2","_id":"pino@6.5.1","_inBundle":false,"_integrity":"sha512-76+RUhQkqjUD4AtQcSfEzh6vlsjXmoWZK5gg+2d70aCLXZTbo4/5js4I9rN1Xk6z1h2/7pnOFX10G4c2T4qNiA==","_location":"/pino","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"pino@^6.3.2","name":"pino","escapedName":"pino","rawSpec":"^6.3.2","saveSpec":null,"fetchSpec":"^6.3.2"},"_requiredBy":["/code-suggester"],"_resolved":"https://registry.npmjs.org/pino/-/pino-6.5.1.tgz","_shasum":"a245adf960a1f3e88e61a339045d509bccbfb7cc","_spec":"pino@^6.3.2","_where":"/Users/bencoe/oss/release-please-action/node_modules/code-suggester","author":{"name":"Matteo Collina","email":"hello@matteocollina.com"},"bin":{"pino":"bin.js"},"browser":"./browser.js","bugs":{"url":"https://github.com/pinojs/pino/issues"},"bundleDependencies":false,"contributors":[{"name":"David Mark Clements","email":"huperekchuno@googlemail.com"},{"name":"James Sumners","email":"james.sumners@gmail.com"},{"name":"Thomas Watson Steen","email":"w@tson.dk","url":"https://twitter.com/wa7son"}],"dependencies":{"fast-redact":"^2.0.0","fast-safe-stringify":"^2.0.7","flatstr":"^1.0.12","pino-std-serializers":"^2.4.2","quick-format-unescaped":"^4.0.1","sonic-boom":"^1.0.2"},"deprecated":false,"description":"super fast, all natural json logger","devDependencies":{"airtap":"3.0.0","benchmark":"^2.1.4","bole":"^4.0.0","bunyan":"^1.8.14","docsify-cli":"^4.4.1","execa":"^4.0.0","fastbench":"^1.0.1","flush-write-stream":"^2.0.0","import-fresh":"^3.2.1","log":"^6.0.0","loglevel":"^1.6.7","pino-pretty":"^4.1.0","pre-commit":"^1.2.2","proxyquire":"^2.1.3","pump":"^3.0.0","semver":"^7.0.0","snazzy":"^8.0.0","split2":"^3.1.1","standard":"^14.3.3","steed":"^1.1.3","strip-ansi":"^6.0.0","tap":"^14.10.8","tape":"^5.0.0","through2":"^4.0.0","winston":"^3.3.3"},"files":["pino.js","bin.js","browser.js","pretty.js","usage.txt","test","docs","example.js","lib"],"homepage":"http://getpino.io","keywords":["fast","logger","stream","json"],"license":"MIT","main":"pino.js","name":"pino","precommit":"test","repository":{"type":"git","url":"git+https://github.com/pinojs/pino.git"},"scripts":{"bench":"node benchmarks/utils/runbench all","bench-basic":"node benchmarks/utils/runbench basic","bench-child":"node benchmarks/utils/runbench child","bench-child-child":"node benchmarks/utils/runbench child-child","bench-child-creation":"node benchmarks/utils/runbench child-creation","bench-deep-object":"node benchmarks/utils/runbench deep-object","bench-formatters":"node benchmarks/utils/runbench formatters","bench-longs-tring":"node benchmarks/utils/runbench long-string","bench-multi-arg":"node benchmarks/utils/runbench multi-arg","bench-object":"node benchmarks/utils/runbench object","browser-test":"airtap --local 8080 test/browser*test.js","cov-ui":"tap --coverage-report=html test/*test.js","docs":"docsify serve","test":"standard | snazzy && tap --100 test/*test.js","update-bench-doc":"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md"},"version":"6.5.1"};
+
+/***/ }),
 /* 930 */,
 /* 931 */,
 /* 932 */,
@@ -47977,14 +51179,140 @@ exports.decode = function (charCode) {
 
 
 /***/ }),
-/* 948 */,
+/* 948 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const { groupRestore, nestedRestore } = __webpack_require__(239)
+
+module.exports = restorer
+
+function restorer ({ secret, wcLen }) {
+  return function compileRestore () {
+    if (this.restore) return
+    const paths = Object.keys(secret)
+      .filter((path) => secret[path].precensored === false)
+    const resetters = resetTmpl(secret, paths)
+    const hasWildcards = wcLen > 0
+    const state = hasWildcards ? { secret, groupRestore, nestedRestore } : { secret }
+    /* eslint-disable-next-line */
+    this.restore = Function(
+      'o',
+      restoreTmpl(resetters, paths, hasWildcards)
+    ).bind(state)
+  }
+}
+
+/**
+ * Mutates the original object to be censored by restoring its original values
+ * prior to censoring.
+ *
+ * @param {object} secret Compiled object describing which target fields should
+ * be censored and the field states.
+ * @param {string[]} paths The list of paths to censor as provided at
+ * initialization time.
+ *
+ * @returns {string} String of JavaScript to be used by `Function()`. The
+ * string compiles to the function that does the work in the description.
+ */
+function resetTmpl (secret, paths) {
+  return paths.map((path) => {
+    const { circle, escPath, leadingBracket } = secret[path]
+    const delim = leadingBracket ? '' : '.'
+    const reset = circle
+      ? `o.${circle} = secret[${escPath}].val`
+      : `o${delim}${path} = secret[${escPath}].val`
+    const clear = `secret[${escPath}].val = undefined`
+    return `
+      if (secret[${escPath}].val !== undefined) {
+        try { ${reset} } catch (e) {}
+        ${clear}
+      }
+    `
+  }).join('')
+}
+
+function restoreTmpl (resetters, paths, hasWildcards) {
+  const dynamicReset = hasWildcards === true ? `
+    const keys = Object.keys(secret)
+    const len = keys.length
+    for (var i = ${paths.length}; i < len; i++) {
+      const k = keys[i]
+      const o = secret[k]
+      if (o.flat === true) this.groupRestore(o)
+      else this.nestedRestore(o)
+      secret[k] = null
+    }
+  ` : ''
+
+  return `
+    const secret = this.secret
+    ${resetters}
+    ${dynamicReset}
+    return o
+  `
+}
+
+
+/***/ }),
 /* 949 */,
 /* 950 */,
 /* 951 */,
 /* 952 */,
 /* 953 */,
 /* 954 */,
-/* 955 */,
+/* 955 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.addPullRequestDefaults = void 0;
+const DEFAULT_BRANCH_NAME = 'code-suggestions';
+const DEFAULT_PRIMARY_BRANCH = 'master';
+/**
+ * Add defaults to GitHub Pull Request options.
+ * Preserves the empty string.
+ * For ESCMAScript, null/undefined values are preserved for required fields.
+ * Recommended with an object validation function to check empty strings and incorrect types.
+ * @param {PullRequestUserOptions} options the user-provided github pull request options
+ * @returns {CreatePullRequest} git hub context with defaults applied
+ */
+function addPullRequestDefaults(options) {
+    const pullRequestSettings = {
+        upstreamOwner: options.upstreamOwner,
+        upstreamRepo: options.upstreamRepo,
+        description: options.description,
+        title: options.title,
+        message: options.message,
+        force: options.force || false,
+        branch: typeof options.branch === 'string' ? options.branch : DEFAULT_BRANCH_NAME,
+        primary: typeof options.primary === 'string'
+            ? options.primary
+            : DEFAULT_PRIMARY_BRANCH,
+        maintainersCanModify: options.maintainersCanModify === false ? false : true,
+    };
+    return pullRequestSettings;
+}
+exports.addPullRequestDefaults = addPullRequestDefaults;
+//# sourceMappingURL=default-options-handler.js.map
+
+/***/ }),
 /* 956 */,
 /* 957 */,
 /* 958 */,
@@ -47996,7 +51324,7 @@ exports.decode = function (charCode) {
 /* 964 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
-const { breakingHeaderPattern } = __webpack_require__(239)()
+const { breakingHeaderPattern } = __webpack_require__(8)()
 
 module.exports = (commit) => {
   const match = commit.header.match(breakingHeaderPattern)
@@ -49174,7 +52502,170 @@ module.exports = {
 /***/ }),
 /* 986 */,
 /* 987 */,
-/* 988 */,
+/* 988 */
+/***/ (function(module) {
+
+function RetryOperation(timeouts, options) {
+  // Compatibility for the old (timeouts, retryForever) signature
+  if (typeof options === 'boolean') {
+    options = { forever: options };
+  }
+
+  this._originalTimeouts = JSON.parse(JSON.stringify(timeouts));
+  this._timeouts = timeouts;
+  this._options = options || {};
+  this._maxRetryTime = options && options.maxRetryTime || Infinity;
+  this._fn = null;
+  this._errors = [];
+  this._attempts = 1;
+  this._operationTimeout = null;
+  this._operationTimeoutCb = null;
+  this._timeout = null;
+  this._operationStart = null;
+
+  if (this._options.forever) {
+    this._cachedTimeouts = this._timeouts.slice(0);
+  }
+}
+module.exports = RetryOperation;
+
+RetryOperation.prototype.reset = function() {
+  this._attempts = 1;
+  this._timeouts = this._originalTimeouts;
+}
+
+RetryOperation.prototype.stop = function() {
+  if (this._timeout) {
+    clearTimeout(this._timeout);
+  }
+
+  this._timeouts       = [];
+  this._cachedTimeouts = null;
+};
+
+RetryOperation.prototype.retry = function(err) {
+  if (this._timeout) {
+    clearTimeout(this._timeout);
+  }
+
+  if (!err) {
+    return false;
+  }
+  var currentTime = new Date().getTime();
+  if (err && currentTime - this._operationStart >= this._maxRetryTime) {
+    this._errors.unshift(new Error('RetryOperation timeout occurred'));
+    return false;
+  }
+
+  this._errors.push(err);
+
+  var timeout = this._timeouts.shift();
+  if (timeout === undefined) {
+    if (this._cachedTimeouts) {
+      // retry forever, only keep last error
+      this._errors.splice(this._errors.length - 1, this._errors.length);
+      this._timeouts = this._cachedTimeouts.slice(0);
+      timeout = this._timeouts.shift();
+    } else {
+      return false;
+    }
+  }
+
+  var self = this;
+  var timer = setTimeout(function() {
+    self._attempts++;
+
+    if (self._operationTimeoutCb) {
+      self._timeout = setTimeout(function() {
+        self._operationTimeoutCb(self._attempts);
+      }, self._operationTimeout);
+
+      if (self._options.unref) {
+          self._timeout.unref();
+      }
+    }
+
+    self._fn(self._attempts);
+  }, timeout);
+
+  if (this._options.unref) {
+      timer.unref();
+  }
+
+  return true;
+};
+
+RetryOperation.prototype.attempt = function(fn, timeoutOps) {
+  this._fn = fn;
+
+  if (timeoutOps) {
+    if (timeoutOps.timeout) {
+      this._operationTimeout = timeoutOps.timeout;
+    }
+    if (timeoutOps.cb) {
+      this._operationTimeoutCb = timeoutOps.cb;
+    }
+  }
+
+  var self = this;
+  if (this._operationTimeoutCb) {
+    this._timeout = setTimeout(function() {
+      self._operationTimeoutCb();
+    }, self._operationTimeout);
+  }
+
+  this._operationStart = new Date().getTime();
+
+  this._fn(this._attempts);
+};
+
+RetryOperation.prototype.try = function(fn) {
+  console.log('Using RetryOperation.try() is deprecated');
+  this.attempt(fn);
+};
+
+RetryOperation.prototype.start = function(fn) {
+  console.log('Using RetryOperation.start() is deprecated');
+  this.attempt(fn);
+};
+
+RetryOperation.prototype.start = RetryOperation.prototype.try;
+
+RetryOperation.prototype.errors = function() {
+  return this._errors;
+};
+
+RetryOperation.prototype.attempts = function() {
+  return this._attempts;
+};
+
+RetryOperation.prototype.mainError = function() {
+  if (this._errors.length === 0) {
+    return null;
+  }
+
+  var counts = {};
+  var mainError = null;
+  var mainErrorCount = 0;
+
+  for (var i = 0; i < this._errors.length; i++) {
+    var error = this._errors[i];
+    var message = error.message;
+    var count = (counts[message] || 0) + 1;
+
+    counts[message] = count;
+
+    if (count >= mainErrorCount) {
+      mainError = error;
+      mainErrorCount = count;
+    }
+  }
+
+  return mainError;
+};
+
+
+/***/ }),
 /* 989 */,
 /* 990 */,
 /* 991 */,
@@ -49188,7 +52679,7 @@ module.exports = {
 
 
 const addBangNotes = __webpack_require__(964)
-const parserOpts = __webpack_require__(239)
+const parserOpts = __webpack_require__(8)
 
 module.exports = function (config) {
   return {
