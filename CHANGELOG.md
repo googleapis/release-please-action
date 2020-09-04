@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.6.3...v2.0.0) (2020-09-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* moves to code-suggester for PR management (#57)
+
+### Features
+
+* moves to code-suggester for PR management ([#57](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/57)) ([1875a0a](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/1875a0accd4910cdeed87ee0d05c376f71b9d155))
+
 ### [1.6.3](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.6.2...v1.6.3) (2020-08-02)
 
 
