@@ -43331,6 +43331,7 @@ async function existsBranchWithName(octokit, remote, name) {
     const branches = (await octokit.repos.listBranches({
         owner: remote.owner,
         repo: remote.repo,
+        per_page: 100
     })).data;
     const match = branches.some(branch => branch.name === name);
     logger_1.logger.info(`Existing remote branch ${name} found on ${remote.owner}/${remote.repo}`);
@@ -43380,8 +43381,9 @@ async function branch(octokit, origin, upstream, name, baseBranch = DEFAULT_PRIM
         return baseSha;
     }
     catch (err) {
-        logger_1.logger.error('Error when creating branch');
-        throw err;
+      // We only list 100 tags when checking for old branches, this means
+      // that we might miss some branches:
+      logger_1.logger.error('Error when creating branch');
     }
 }
 exports.branch = branch;
@@ -48287,22 +48289,11 @@ const logger_1 = __webpack_require__(148);
  * @returns {Promise<RepoDomain>} the forked repository name, as well as the owner of that fork
  */
 async function fork(octokit, upstream) {
-    try {
-        const forkedRepo = (await octokit.repos.createFork({
-            owner: upstream.owner,
-            repo: upstream.repo,
-        })).data;
-        const origin = {
-            repo: forkedRepo.name,
-            owner: forkedRepo.owner.login,
-        };
-        logger_1.logger.info(`Create fork request was successful for ${origin.owner}/${origin.repo}`);
-        return origin;
-    }
-    catch (err) {
-        logger_1.logger.error('Error when forking');
-        throw Error(err.toString());
-    }
+  // Fork does not work in a GitHub action environment, we should make this optional:
+  return {
+    owner: upstream.owner,
+    repo: upstream.repo
+  }
 }
 exports.fork = fork;
 //# sourceMappingURL=fork-handler.js.map
