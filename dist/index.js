@@ -40525,7 +40525,7 @@ class GitHub {
         if (options.octokitAPIs === undefined) {
             this.octokit = new rest_1.Octokit({
                 baseUrl: options.apiUrl,
-                auth: `token: ${this.token}`,
+                auth: this.token,
             });
             const defaults = {
                 baseUrl: this.apiUrl,
