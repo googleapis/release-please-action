@@ -40525,7 +40525,7 @@ class GitHub {
         if (options.octokitAPIs === undefined) {
             this.octokit = new rest_1.Octokit({
                 baseUrl: options.apiUrl,
-                auth: this.token,
+                auth: `token: ${this.token}`,
             });
             const defaults = {
                 baseUrl: this.apiUrl,
@@ -40931,7 +40931,7 @@ class GitHub {
             primary: defaultBranch,
             force: true,
             message: options.title,
-        }, { level: 'silent' });
+        }, { level: 'info' });
         // If a release PR was already open, update the title and body:
         if (openReleasePR) {
             checkpoint_1.checkpoint(`update pull-request #${openReleasePR.number}: ${chalk.yellow(options.title)}`, checkpoint_1.CheckpointType.Success);
