@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.1.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.0.0...v2.1.0) (2020-09-05)
+
+
+### Features
+
+* **build:** document and update to 2.x ([#59](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/59)) ([512c940](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/512c940c3aa1d2569b540b05472636550d772946))
+
+
+### Bug Fixes
+
+* hot fix for permission issues in code suggester ([#61](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/61)) ([1b9bcd5](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/1b9bcd506ca8e69c807f51b7be7433c2b2b6bc96))
+
 ## [2.0.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v1.6.3...v2.0.0) (2020-09-04)
 
 
