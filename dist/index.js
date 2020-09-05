@@ -43331,7 +43331,9 @@ async function existsBranchWithName(octokit, remote, name) {
     const branches = (await octokit.repos.listBranches({
         owner: remote.owner,
         repo: remote.repo,
+        per_page: 100
     })).data;
+    console.info(branches);
     const match = branches.some(branch => branch.name === name);
     logger_1.logger.info(`Existing remote branch ${name} found on ${remote.owner}/${remote.repo}`);
     return match;
@@ -43381,7 +43383,7 @@ async function branch(octokit, origin, upstream, name, baseBranch = DEFAULT_PRIM
     }
     catch (err) {
         logger_1.logger.error('Error when creating branch');
-        throw err;
+        // throw err;
     }
 }
 exports.branch = branch;
