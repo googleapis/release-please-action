@@ -48287,7 +48287,11 @@ const logger_1 = __webpack_require__(148);
  * @returns {Promise<RepoDomain>} the forked repository name, as well as the owner of that fork
  */
 async function fork(octokit, upstream) {
-    try {
+  return {
+    owner: upstream.owner,
+    repo: upstream.repo
+  }
+    /*try {
         const forkedRepo = (await octokit.repos.createFork({
             owner: upstream.owner,
             repo: upstream.repo,
@@ -48302,7 +48306,7 @@ async function fork(octokit, upstream) {
     catch (err) {
         logger_1.logger.error('Error when forking');
         throw Error(err.toString());
-    }
+    }*/
 }
 exports.fork = fork;
 //# sourceMappingURL=fork-handler.js.map
