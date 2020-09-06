@@ -392,7 +392,7 @@ async function createPullRequest(octokit, changes, options, loggerOption) {
         owner: gitHubConfigs.upstreamOwner,
         repo: gitHubConfigs.upstreamRepo,
     };
-    const origin = await handler.fork(octokit, upstream);
+    const origin = options.fork === false ? upstream : await handler.fork(octokit, upstream);
     const originBranch = {
         ...origin,
         branch: gitHubConfigs.branch,
@@ -1867,6 +1867,7 @@ class ReleasePR {
             ? options.lastPackageVersion.replace(/^v/, '')
             : undefined;
         this.gh = this.gitHubInstance(options.octokitAPIs);
+        this.changelogSections = options.changelogSections;
     }
     async run() {
         if (this.snapshot && !this.supportsSnapshots()) {
@@ -4386,7 +4387,7 @@ module.exports = require("vm");
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_from":"release-please@latest","_id":"release-please@6.0.0","_inBundle":false,"_integrity":"sha512-Cu4+GK+1puU1P45gYI4A78AlwtbjydyGW6Ws0Od/hz1ac2KHnp/pguxe2pwQVevp1KZPlTpHo4slvolMKPi8MA==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"tag","registry":true,"raw":"release-please@latest","name":"release-please","escapedName":"release-please","rawSpec":"latest","saveSpec":null,"fetchSpec":"latest"},"_requiredBy":["#USER","/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.0.0.tgz","_shasum":"dfe9bf5765063bddd5f35c582cbf7b5bbb4c104e","_spec":"release-please@latest","_where":"/Users/bencoe/oss/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"bundleDependencies":false,"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.3.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.16.0","yargs":"^15.0.0"},"deprecated":false,"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.0.0"};
+module.exports = {"_from":"release-please@6.1.0-beta.0","_id":"release-please@6.1.0-beta.0","_inBundle":false,"_integrity":"sha512-gwuhF7fuLiipsLghIgzz692vT7P/qsQD+3Sz7JjqMR5i0HvMwKFjhhLAg8Gd2HGH6V8pLlPmsXV+GjFo1LXp+w==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@6.1.0-beta.0","name":"release-please","escapedName":"release-please","rawSpec":"6.1.0-beta.0","saveSpec":null,"fetchSpec":"6.1.0-beta.0"},"_requiredBy":["#USER","/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.1.0-beta.0.tgz","_shasum":"eb0d9e613cb19b87e7e10b7126fb38231c1878a5","_spec":"release-please@6.1.0-beta.0","_where":"/Users/bencoe/oss/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"bundleDependencies":false,"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0-beta.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.16.0","yargs":"^15.0.0"},"deprecated":false,"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.1.0-beta.0"};
 
 /***/ }),
 /* 192 */,
@@ -16438,6 +16439,12 @@ function convertBody(buffer, headers) {
 	// html4
 	if (!res && str) {
 		res = /<meta[\s]+?http-equiv=(['"])content-type\1[\s]+?content=(['"])(.+?)\2/i.exec(str);
+		if (!res) {
+			res = /<meta[\s]+?content=(['"])(.+?)\1[\s]+?http-equiv=(['"])content-type\3/i.exec(str);
+			if (res) {
+				res.pop(); // drop last quote
+			}
+		}
 
 		if (res) {
 			res = /charset=(.*)/i.exec(res.pop());
@@ -17445,7 +17452,7 @@ function fetch(url, opts) {
 				// HTTP fetch step 5.5
 				switch (request.redirect) {
 					case 'error':
-						reject(new FetchError(`redirect mode is set to error: ${request.url}`, 'no-redirect'));
+						reject(new FetchError(`uri requested responds with a redirect, redirect mode is set to error: ${request.url}`, 'no-redirect'));
 						finalize();
 						return;
 					case 'manual':
@@ -17484,7 +17491,8 @@ function fetch(url, opts) {
 							method: request.method,
 							body: request.body,
 							signal: request.signal,
-							timeout: request.timeout
+							timeout: request.timeout,
+							size: request.size
 						};
 
 						// HTTP-redirect fetch step 9
@@ -19298,7 +19306,7 @@ class Python extends release_pr_1.ReleasePR {
             commits,
             githubRepoUrl: this.repoUrl,
             bumpMinorPreMajor: this.bumpMinorPreMajor,
-            changelogSections: CHANGELOG_SECTIONS,
+            changelogSections: this.changelogSections || CHANGELOG_SECTIONS,
         });
         const candidate = await this.coerceReleaseCandidate(cc, latestTag);
         const changelogEntry = await cc.generateChangelogEntry({
@@ -40918,7 +40926,7 @@ class GitHub {
         // pull-request body.
         if (openReleasePR && openReleasePR.body === options.body) {
             checkpoint_1.checkpoint(`PR https://github.com/${this.owner}/${this.repo}/pull/${openReleasePR.number} remained the same`, checkpoint_1.CheckpointType.Failure);
-            return -1;
+            return 0;
         }
         //  Actually update the files for the release:
         const changes = await this.getChangeSet(options.updates, defaultBranch);
@@ -40930,6 +40938,7 @@ class GitHub {
             description: options.body,
             primary: defaultBranch,
             force: true,
+            fork: false,
             message: options.title,
         }, { level: 'silent' });
         // If a release PR was already open, update the title and body:
@@ -41110,6 +41119,7 @@ class Node extends release_pr_1.ReleasePR {
             commits,
             githubRepoUrl: this.repoUrl,
             bumpMinorPreMajor: this.bumpMinorPreMajor,
+            changelogSections: this.changelogSections,
         });
         const candidate = await this.coerceReleaseCandidate(cc, latestTag);
         const changelogEntry = await cc.generateChangelogEntry({
@@ -42565,6 +42575,7 @@ class Simple extends release_pr_1.ReleasePR {
             commits,
             githubRepoUrl: this.repoUrl,
             bumpMinorPreMajor: this.bumpMinorPreMajor,
+            changelogSections: this.changelogSections,
         });
         const candidate = await this.coerceReleaseCandidate(cc, latestTag);
         const changelogEntry = await cc.generateChangelogEntry({
@@ -43328,14 +43339,20 @@ exports.getBranchHead = getBranchHead;
  * @returns {Promise<boolean>} if there is a branch already existing in the remote GitHub repository
  */
 async function existsBranchWithName(octokit, remote, name) {
-    const branches = (await octokit.repos.listBranches({
-        owner: remote.owner,
-        repo: remote.repo,
-        per_page: 100
-    })).data;
-    const match = branches.some(branch => branch.name === name);
-    logger_1.logger.info(`Existing remote branch ${name} found on ${remote.owner}/${remote.repo}`);
-    return match;
+    try {
+        const data = (await octokit.git.getRef({
+            owner: remote.owner,
+            repo: remote.repo,
+            ref: `heads/${name}`,
+        })).data;
+        return data.ref ? true : false;
+    }
+    catch (err) {
+        if (err.status === 404)
+            return false;
+        else
+            throw err;
+    }
 }
 exports.existsBranchWithName = existsBranchWithName;
 /**
@@ -43381,9 +43398,8 @@ async function branch(octokit, origin, upstream, name, baseBranch = DEFAULT_PRIM
         return baseSha;
     }
     catch (err) {
-      // We only list 100 tags when checking for old branches, this means
-      // that we might miss some branches:
-      logger_1.logger.error('Error when creating branch');
+        logger_1.logger.error('Error when creating branch');
+        throw err;
     }
 }
 exports.branch = branch;
@@ -48289,11 +48305,22 @@ const logger_1 = __webpack_require__(148);
  * @returns {Promise<RepoDomain>} the forked repository name, as well as the owner of that fork
  */
 async function fork(octokit, upstream) {
-  // Fork does not work in a GitHub action environment, we should make this optional:
-  return {
-    owner: upstream.owner,
-    repo: upstream.repo
-  }
+    try {
+        const forkedRepo = (await octokit.repos.createFork({
+            owner: upstream.owner,
+            repo: upstream.repo,
+        })).data;
+        const origin = {
+            repo: forkedRepo.name,
+            owner: forkedRepo.owner.login,
+        };
+        logger_1.logger.info(`Create fork request was successful for ${origin.owner}/${origin.repo}`);
+        return origin;
+    }
+    catch (err) {
+        logger_1.logger.error('Error when forking');
+        throw Error(err.toString());
+    }
 }
 exports.fork = fork;
 //# sourceMappingURL=fork-handler.js.map
@@ -51047,6 +51074,7 @@ class TerraformModule extends release_pr_1.ReleasePR {
             commits,
             githubRepoUrl: this.repoUrl,
             bumpMinorPreMajor: this.bumpMinorPreMajor,
+            changelogSections: this.changelogSections,
         });
         const candidate = await this.coerceReleaseCandidate(cc, latestTag);
         const changelogEntry = await cc.generateChangelogEntry({
