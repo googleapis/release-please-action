@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.1.1](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.1.0...v2.1.1) (2020-09-06)
+
+
+### Bug Fixes
+
+* do not try to fork ([#62](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/62)) ([139a5ef](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/139a5efd7c7e8161ddaa5d5f0f3a80be2e2af96a))
+
 ## [2.1.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.0.0...v2.1.0) (2020-09-05)
 
 
