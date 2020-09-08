@@ -11,6 +11,13 @@ async function main () {
   const path = core.getInput('path') ? core.getInput('path') : undefined
   const releaseType = core.getInput('release-type')
   const token = core.getInput('token')
+  const changelogTypes = core.getInput('changelog-types');
+
+  // Parse the changelogTypes if there are any
+  let changelogSections = [];
+  if (changelogTypes) {
+    changelogSections = JSON.parse(changelogTypes);
+  }
 
   // First we check for any merged release PRs (PRs merged with the label
   // "autorelease: pending"):
@@ -40,7 +47,8 @@ async function main () {
     repoUrl: process.env.GITHUB_REPOSITORY,
     token: token,
     label: RELEASE_LABEL,
-    bumpMinorPreMajor
+    bumpMinorPreMajor,
+    changelogSections
   })
   await release.run()
 }
