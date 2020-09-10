@@ -3957,7 +3957,7 @@ module.exports = {
 
 	delete(object, path) {
 		if (!isObj(object) || typeof path !== 'string') {
-			return;
+			return false;
 		}
 
 		const pathArray = getPathSegments(path);
@@ -3967,13 +3967,13 @@ module.exports = {
 
 			if (i === pathArray.length - 1) {
 				delete object[p];
-				return;
+				return true;
 			}
 
 			object = object[p];
 
 			if (!isObj(object)) {
-				return;
+				return false;
 			}
 		}
 	},
@@ -4395,7 +4395,7 @@ module.exports = require("vm");
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@6.1.0-beta.0","/home/lucasholmquist/develop/googlecloudplatform/release-please-action"]],"_from":"release-please@6.1.0-beta.0","_id":"release-please@6.1.0-beta.0","_inBundle":false,"_integrity":"sha512-gwuhF7fuLiipsLghIgzz692vT7P/qsQD+3Sz7JjqMR5i0HvMwKFjhhLAg8Gd2HGH6V8pLlPmsXV+GjFo1LXp+w==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@6.1.0-beta.0","name":"release-please","escapedName":"release-please","rawSpec":"6.1.0-beta.0","saveSpec":null,"fetchSpec":"6.1.0-beta.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.1.0-beta.0.tgz","_spec":"6.1.0-beta.0","_where":"/home/lucasholmquist/develop/googlecloudplatform/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0-beta.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.16.0","yargs":"^15.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.1.0-beta.0"};
+module.exports = {"_from":"release-please@latest","_id":"release-please@6.1.0","_inBundle":false,"_integrity":"sha512-nGe8YZRgpKYrMV90OCgWlXDIN8oCzhd256FXfVbY1lURpp9Ng7wiwPQ53+ilXPzScVIORNMYOnFwjY7k1p1/2g==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"tag","registry":true,"raw":"release-please@latest","name":"release-please","escapedName":"release-please","rawSpec":"latest","saveSpec":null,"fetchSpec":"latest"},"_requiredBy":["#USER","/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.1.0.tgz","_shasum":"a6e2f8ae28e7f32e32dca035546dc6f1f9bea18c","_spec":"release-please@latest","_where":"/Users/bencoe/oss/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"bundleDependencies":false,"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.16.0","yargs":"^15.0.0"},"deprecated":false,"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.1.0"};
 
 /***/ }),
 /* 192 */,
@@ -9216,7 +9216,7 @@ module.exports = eq
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-const VERSION = "2.3.2";
+const VERSION = "2.3.3";
 
 /**
  * Some “list” response that can be paginated have a different response structure
@@ -11659,7 +11659,51 @@ exports.logger = _logger2['default'];
 
 /***/ }),
 /* 355 */,
-/* 356 */,
+/* 356 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+/*!
+ * is-plain-object <https://github.com/jonschlinkert/is-plain-object>
+ *
+ * Copyright (c) 2014-2017, Jon Schlinkert.
+ * Released under the MIT License.
+ */
+
+function isObject(o) {
+  return Object.prototype.toString.call(o) === '[object Object]';
+}
+
+function isPlainObject(o) {
+  var ctor,prot;
+
+  if (isObject(o) === false) return false;
+
+  // If has modified constructor
+  ctor = o.constructor;
+  if (ctor === undefined) return true;
+
+  // If has modified prototype
+  prot = ctor.prototype;
+  if (isObject(prot) === false) return false;
+
+  // If constructor does not have an Object-specific method
+  if (prot.hasOwnProperty('isPrototypeOf') === false) {
+    return false;
+  }
+
+  // Most likely a plain Object
+  return true;
+}
+
+exports.isPlainObject = isPlainObject;
+
+
+/***/ }),
 /* 357 */,
 /* 358 */,
 /* 359 */,
@@ -12287,9 +12331,7 @@ module.exports = {
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
-
-var isPlainObject = _interopDefault(__webpack_require__(696));
+var isPlainObject = __webpack_require__(356);
 var universalUserAgent = __webpack_require__(526);
 
 function lowercaseKeys(object) {
@@ -12306,7 +12348,7 @@ function lowercaseKeys(object) {
 function mergeDeep(defaults, options) {
   const result = Object.assign({}, defaults);
   Object.keys(options).forEach(key => {
-    if (isPlainObject(options[key])) {
+    if (isPlainObject.isPlainObject(options[key])) {
       if (!(key in defaults)) Object.assign(result, {
         [key]: options[key]
       });else result[key] = mergeDeep(defaults[key], options[key]);
@@ -12569,9 +12611,9 @@ function parse(options) {
 
   const omittedParameters = Object.keys(options).filter(option => urlVariableNames.includes(option)).concat("baseUrl");
   const remainingParameters = omit(parameters, omittedParameters);
-  const isBinaryRequset = /application\/octet-stream/i.test(headers.accept);
+  const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
 
-  if (!isBinaryRequset) {
+  if (!isBinaryRequest) {
     if (options.mediaType.format) {
       // e.g. application/vnd.github.v3+json => application/vnd.github.v3.raw
       headers.accept = headers.accept.split(/,/).map(preview => preview.replace(/application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/, `application/vnd$1$2.${options.mediaType.format}`)).join(",");
@@ -12640,7 +12682,7 @@ function withDefaults(oldDefaults, newDefaults) {
   });
 }
 
-const VERSION = "6.0.5";
+const VERSION = "6.0.6";
 
 const userAgent = `octokit-endpoint.js/${VERSION} ${universalUserAgent.getUserAgent()}`; // DEFAULTS has all properties set that EndpointOptions has, except url.
 // So we use RequestParameters and add method as additional required property.
@@ -43461,49 +43503,7 @@ exports.Deprecation = Deprecation;
 /* 693 */,
 /* 694 */,
 /* 695 */,
-/* 696 */
-/***/ (function(module) {
-
-"use strict";
-
-
-/*!
- * is-plain-object <https://github.com/jonschlinkert/is-plain-object>
- *
- * Copyright (c) 2014-2017, Jon Schlinkert.
- * Released under the MIT License.
- */
-
-function isObject(o) {
-  return Object.prototype.toString.call(o) === '[object Object]';
-}
-
-function isPlainObject(o) {
-  var ctor,prot;
-
-  if (isObject(o) === false) return false;
-
-  // If has modified constructor
-  ctor = o.constructor;
-  if (ctor === undefined) return true;
-
-  // If has modified prototype
-  prot = ctor.prototype;
-  if (isObject(prot) === false) return false;
-
-  // If constructor does not have an Object-specific method
-  if (prot.hasOwnProperty('isPrototypeOf') === false) {
-    return false;
-  }
-
-  // Most likely a plain Object
-  return true;
-}
-
-module.exports = isPlainObject;
-
-
-/***/ }),
+/* 696 */,
 /* 697 */,
 /* 698 */,
 /* 699 */,
@@ -44883,7 +44883,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 var request = __webpack_require__(753);
 var universalUserAgent = __webpack_require__(526);
 
-const VERSION = "4.5.4";
+const VERSION = "4.5.5";
 
 class GraphqlError extends Error {
   constructor(request, response) {
@@ -44906,6 +44906,7 @@ class GraphqlError extends Error {
 }
 
 const NON_VARIABLE_OPTIONS = ["method", "baseUrl", "url", "headers", "request", "query", "mediaType"];
+const GHES_V3_SUFFIX_REGEX = /\/api\/v3\/?$/;
 function graphql(request, query, options) {
   options = typeof query === "string" ? options = Object.assign({
     query
@@ -44922,7 +44923,15 @@ function graphql(request, query, options) {
 
     result.variables[key] = options[key];
     return result;
-  }, {});
+  }, {}); // workaround for GitHub Enterprise baseUrl set with /api/v3 suffix
+  // https://github.com/octokit/auth-app.js/issues/111#issuecomment-657610451
+
+  const baseUrl = options.baseUrl || request.endpoint.DEFAULTS.baseUrl;
+
+  if (GHES_V3_SUFFIX_REGEX.test(baseUrl)) {
+    requestOptions.url = baseUrl.replace(GHES_V3_SUFFIX_REGEX, "/api/graphql");
+  }
+
   return request(requestOptions).then(response => {
     if (response.data.errors) {
       const headers = {};
@@ -45061,18 +45070,18 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 
 var endpoint = __webpack_require__(385);
 var universalUserAgent = __webpack_require__(526);
-var isPlainObject = _interopDefault(__webpack_require__(696));
+var isPlainObject = __webpack_require__(356);
 var nodeFetch = _interopDefault(__webpack_require__(454));
 var requestError = __webpack_require__(463);
 
-const VERSION = "5.4.7";
+const VERSION = "5.4.8";
 
 function getBufferResponse(response) {
   return response.arrayBuffer();
 }
 
 function fetchWrapper(requestOptions) {
-  if (isPlainObject(requestOptions.body) || Array.isArray(requestOptions.body)) {
+  if (isPlainObject.isPlainObject(requestOptions.body) || Array.isArray(requestOptions.body)) {
     requestOptions.body = JSON.stringify(requestOptions.body);
   }
 
@@ -51031,7 +51040,7 @@ module.exports = inc
 /* 929 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["pino@6.5.1","/home/lucasholmquist/develop/googlecloudplatform/release-please-action"]],"_from":"pino@6.5.1","_id":"pino@6.5.1","_inBundle":false,"_integrity":"sha512-76+RUhQkqjUD4AtQcSfEzh6vlsjXmoWZK5gg+2d70aCLXZTbo4/5js4I9rN1Xk6z1h2/7pnOFX10G4c2T4qNiA==","_location":"/pino","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"pino@6.5.1","name":"pino","escapedName":"pino","rawSpec":"6.5.1","saveSpec":null,"fetchSpec":"6.5.1"},"_requiredBy":["/code-suggester"],"_resolved":"https://registry.npmjs.org/pino/-/pino-6.5.1.tgz","_spec":"6.5.1","_where":"/home/lucasholmquist/develop/googlecloudplatform/release-please-action","author":{"name":"Matteo Collina","email":"hello@matteocollina.com"},"bin":{"pino":"bin.js"},"browser":"./browser.js","bugs":{"url":"https://github.com/pinojs/pino/issues"},"contributors":[{"name":"David Mark Clements","email":"huperekchuno@googlemail.com"},{"name":"James Sumners","email":"james.sumners@gmail.com"},{"name":"Thomas Watson Steen","email":"w@tson.dk","url":"https://twitter.com/wa7son"}],"dependencies":{"fast-redact":"^2.0.0","fast-safe-stringify":"^2.0.7","flatstr":"^1.0.12","pino-std-serializers":"^2.4.2","quick-format-unescaped":"^4.0.1","sonic-boom":"^1.0.2"},"description":"super fast, all natural json logger","devDependencies":{"airtap":"3.0.0","benchmark":"^2.1.4","bole":"^4.0.0","bunyan":"^1.8.14","docsify-cli":"^4.4.1","execa":"^4.0.0","fastbench":"^1.0.1","flush-write-stream":"^2.0.0","import-fresh":"^3.2.1","log":"^6.0.0","loglevel":"^1.6.7","pino-pretty":"^4.1.0","pre-commit":"^1.2.2","proxyquire":"^2.1.3","pump":"^3.0.0","semver":"^7.0.0","snazzy":"^8.0.0","split2":"^3.1.1","standard":"^14.3.3","steed":"^1.1.3","strip-ansi":"^6.0.0","tap":"^14.10.8","tape":"^5.0.0","through2":"^4.0.0","winston":"^3.3.3"},"files":["pino.js","bin.js","browser.js","pretty.js","usage.txt","test","docs","example.js","lib"],"homepage":"http://getpino.io","keywords":["fast","logger","stream","json"],"license":"MIT","main":"pino.js","name":"pino","precommit":"test","repository":{"type":"git","url":"git+https://github.com/pinojs/pino.git"},"scripts":{"bench":"node benchmarks/utils/runbench all","bench-basic":"node benchmarks/utils/runbench basic","bench-child":"node benchmarks/utils/runbench child","bench-child-child":"node benchmarks/utils/runbench child-child","bench-child-creation":"node benchmarks/utils/runbench child-creation","bench-deep-object":"node benchmarks/utils/runbench deep-object","bench-formatters":"node benchmarks/utils/runbench formatters","bench-longs-tring":"node benchmarks/utils/runbench long-string","bench-multi-arg":"node benchmarks/utils/runbench multi-arg","bench-object":"node benchmarks/utils/runbench object","browser-test":"airtap --local 8080 test/browser*test.js","cov-ui":"tap --coverage-report=html test/*test.js","docs":"docsify serve","test":"standard | snazzy && tap --100 test/*test.js","update-bench-doc":"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md"},"version":"6.5.1"};
+module.exports = {"_from":"pino@^6.3.2","_id":"pino@6.6.0","_inBundle":false,"_integrity":"sha512-rLfJXX8i2P1VNXZY05fDMI/qK1IQSpKnOg5iNY5TRJn+vKhc9hBg1iCiAuOw3hKEAf54MZMlT8P6T+wgYQYpIA==","_location":"/pino","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"pino@^6.3.2","name":"pino","escapedName":"pino","rawSpec":"^6.3.2","saveSpec":null,"fetchSpec":"^6.3.2"},"_requiredBy":["/code-suggester"],"_resolved":"https://registry.npmjs.org/pino/-/pino-6.6.0.tgz","_shasum":"690ca4a98d027b32f2302c3750eced280fbc8dee","_spec":"pino@^6.3.2","_where":"/Users/bencoe/oss/release-please-action/node_modules/code-suggester","author":{"name":"Matteo Collina","email":"hello@matteocollina.com"},"bin":{"pino":"bin.js"},"browser":"./browser.js","bugs":{"url":"https://github.com/pinojs/pino/issues"},"bundleDependencies":false,"contributors":[{"name":"David Mark Clements","email":"huperekchuno@googlemail.com"},{"name":"James Sumners","email":"james.sumners@gmail.com"},{"name":"Thomas Watson Steen","email":"w@tson.dk","url":"https://twitter.com/wa7son"}],"dependencies":{"fast-redact":"^2.0.0","fast-safe-stringify":"^2.0.7","flatstr":"^1.0.12","pino-std-serializers":"^2.4.2","quick-format-unescaped":"^4.0.1","sonic-boom":"^1.0.2"},"deprecated":false,"description":"super fast, all natural json logger","devDependencies":{"airtap":"3.0.0","benchmark":"^2.1.4","bole":"^4.0.0","bunyan":"^1.8.14","docsify-cli":"^4.4.1","execa":"^4.0.0","fastbench":"^1.0.1","flush-write-stream":"^2.0.0","import-fresh":"^3.2.1","log":"^6.0.0","loglevel":"^1.6.7","pino-pretty":"^4.1.0","pre-commit":"^1.2.2","proxyquire":"^2.1.3","pump":"^3.0.0","semver":"^7.0.0","snazzy":"^8.0.0","split2":"^3.1.1","standard":"^14.3.3","steed":"^1.1.3","strip-ansi":"^6.0.0","tap":"^14.10.8","tape":"^5.0.0","through2":"^4.0.0","winston":"^3.3.3"},"files":["pino.js","bin.js","browser.js","pretty.js","usage.txt","test","docs","example.js","lib"],"homepage":"http://getpino.io","keywords":["fast","logger","stream","json"],"license":"MIT","main":"pino.js","name":"pino","precommit":"test","repository":{"type":"git","url":"git+https://github.com/pinojs/pino.git"},"scripts":{"bench":"node benchmarks/utils/runbench all","bench-basic":"node benchmarks/utils/runbench basic","bench-child":"node benchmarks/utils/runbench child","bench-child-child":"node benchmarks/utils/runbench child-child","bench-child-creation":"node benchmarks/utils/runbench child-creation","bench-deep-object":"node benchmarks/utils/runbench deep-object","bench-formatters":"node benchmarks/utils/runbench formatters","bench-longs-tring":"node benchmarks/utils/runbench long-string","bench-multi-arg":"node benchmarks/utils/runbench multi-arg","bench-object":"node benchmarks/utils/runbench object","browser-test":"airtap --local 8080 test/browser*test.js","cov-ui":"tap --coverage-report=html test/*test.js","docs":"docsify serve","test":"standard | snazzy && tap --100 test/*test.js","update-bench-doc":"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md"},"version":"6.6.0"};
 
 /***/ }),
 /* 930 */,
