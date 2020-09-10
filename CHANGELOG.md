@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.2.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.1.1...v2.2.0) (2020-09-10)
+
+
+### Features
+
+*  Add a changelog section type ([#64](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/64)) ([2ca6d30](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/2ca6d30396e3b6b10ca9623ecbc3174b476ec8a2))
+
+
+### Bug Fixes
+
+* **release-please:** release please with code-suggester bug fixes ([#66](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/66)) ([6b79987](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/6b79987e9000e7617d81e9645c8394f27b396a8d))
+
 ### [2.1.1](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.1.0...v2.1.1) (2020-09-06)
 
 
