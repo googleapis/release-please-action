@@ -42,6 +42,7 @@ Automate releases with Conventional Commit Messages.
 | `bump-minor-pre-major` | Should breaking changes before 1.0.0 produce minor bumps?  Default `No` |
 | `--path`          | create a release from a path other than the repository's root |
 | `--monorepo-tags` | add prefix to tags and branches, allowing multiple libraries to be released from the same repository. |
+| `changelog-types` | A JSON formatted String containing to override the outputted changlog sections |
 
 | output | description |
 |:---:|---|
@@ -84,11 +85,33 @@ Release Please assumes you are using [Conventional Commit messages](https://www.
 
 The most important prefixes you should have in mind are:
 
-* `fix:` which represents bug fixes, and correlates to a [SemVer](https://semver.org/) 
+* `fix:` which represents bug fixes, and correlates to a [SemVer](https://semver.org/)
   patch.
 * `feat:` which represents a new feature, and correlates to a SemVer minor.
 * `feat!:`,  or `fix!:`, `refactor!:`, etc., which represent a breaking change
   (indicated by the `!`) and will result in a SemVer major.
+
+### Overriding the Changelog Sections
+
+To output more commit information in the changelog,  a JSON formatted String can be added to the Action using the `changelog-types` input parameter.  This could look something like this:
+
+```yaml
+    on:
+      push:
+        branches:
+          - main
+    name: release-please
+    jobs:
+      release-please:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: GoogleCloudPlatform/release-please-action@v2.2.0
+            with:
+              token: ${{ secrets.GITHUB_TOKEN }}
+              release-type: node
+              package-name: release-please-action
+              changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
+```
 
 ## Automating publication to npm
 

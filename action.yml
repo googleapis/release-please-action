@@ -20,6 +20,9 @@ inputs:
   monorepo-tags:
     description: 'add prefix to tags and branches, allowing multiple libraries to be released from the same repository'
     required: false
+  changelog-types:
+    description: 'changlelog commit types'
+    require: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
