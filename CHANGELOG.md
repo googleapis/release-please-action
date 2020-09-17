@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.4.1](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.4.0...v2.4.1) (2020-09-17)
+
+
+### Bug Fixes
+
+* **build:** document working version of release-please ([60ae28e](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/60ae28e4b20929fc93a249186726c13098fd6019))
+
 ## [2.4.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.3.0...v2.4.0) (2020-09-17)
 
 
