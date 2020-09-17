@@ -2235,46 +2235,51 @@ async function main () {
   const token = core.getInput('token')
   const fork = core.getInput('fork') ? true : undefined
   const changelogTypes = core.getInput('changelog-types')
+  const command = core.getInput('command') ? core.getInput('command') : undefined
 
   // Parse the changelogTypes if there are any
-  let changelogSections = undefined
+  let changelogSections
   if (changelogTypes) {
     changelogSections = JSON.parse(changelogTypes)
   }
 
   // First we check for any merged release PRs (PRs merged with the label
   // "autorelease: pending"):
-  const gr = new GitHubRelease({
-    label: RELEASE_LABEL,
-    repoUrl: process.env.GITHUB_REPOSITORY,
-    packageName,
-    path,
-    token
-  })
-  const releaseCreated = await gr.createRelease()
-  if (releaseCreated) {
-    // eslint-disable-next-line
-    const { upload_url, tag_name } = releaseCreated
-    core.setOutput('release_created', true)
-    core.setOutput('upload_url', upload_url)
-    core.setOutput('tag_name', tag_name)
+  if (!command || command === 'github-release') {
+    const gr = new GitHubRelease({
+      label: RELEASE_LABEL,
+      repoUrl: process.env.GITHUB_REPOSITORY,
+      packageName,
+      path,
+      token
+    })
+    const releaseCreated = await gr.createRelease()
+    if (releaseCreated) {
+      // eslint-disable-next-line
+      const { upload_url, tag_name } = releaseCreated
+      core.setOutput('release_created', true)
+      core.setOutput('upload_url', upload_url)
+      core.setOutput('tag_name', tag_name)
+    }
   }
 
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
-  const release = ReleasePRFactory.buildStatic(releaseType, {
-    monorepoTags,
-    packageName,
-    path,
-    apiUrl: 'https://api.github.com',
-    repoUrl: process.env.GITHUB_REPOSITORY,
-    fork,
-    token: token,
-    label: RELEASE_LABEL,
-    bumpMinorPreMajor,
-    changelogSections
-  })
-  await release.run()
+  if (!command || command === 'release-pr') {
+    const release = ReleasePRFactory.buildStatic(releaseType, {
+      monorepoTags,
+      packageName,
+      path,
+      apiUrl: 'https://api.github.com',
+      repoUrl: process.env.GITHUB_REPOSITORY,
+      fork,
+      token: token,
+      label: RELEASE_LABEL,
+      bumpMinorPreMajor,
+      changelogSections
+    })
+    await release.run()
+  }
 }
 
 main().catch(err => {
