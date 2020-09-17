@@ -13,10 +13,10 @@ async function main () {
   const token = core.getInput('token')
   const fork = core.getInput('fork') ? true : undefined
   const changelogTypes = core.getInput('changelog-types')
-  const command = core.getInput('command') ? core.getInput('command') : undefined;
+  const command = core.getInput('command') ? core.getInput('command') : undefined
 
   // Parse the changelogTypes if there are any
-  let changelogSections = undefined
+  let changelogSections
   if (changelogTypes) {
     changelogSections = JSON.parse(changelogTypes)
   }
