@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.2.0...v2.3.0) (2020-09-17)
+
+
+### Features
+
+* **release-please:** now supports large files; introduces fork option ([#67](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/67)) ([e7d31db](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/e7d31db9262f11895e7938b84f049e2d6a31be4f))
+
 ## [2.2.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.1.1...v2.2.0) (2020-09-10)
 
 
