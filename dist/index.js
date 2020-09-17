@@ -1850,6 +1850,7 @@ class ReleasePR {
     constructor(options) {
         this.bumpMinorPreMajor = options.bumpMinorPreMajor || false;
         this.defaultBranch = options.defaultBranch;
+        this.fork = !!options.fork;
         this.labels = options.label
             ? options.label.split(',')
             : DEFAULT_LABELS.split(',');
@@ -1915,7 +1916,8 @@ class ReleasePR {
     static async lookupPackageName(gh) {
         return Promise.resolve(undefined);
     }
-    async coerceReleaseCandidate(cc, latestTag) {
+    async coerceReleaseCandidate(cc, latestTag, preRelease = false) {
+        var _a, _b;
         const releaseAsRe = /release-as:\s*v?([0-9]+\.[0-9]+\.[0-9a-z]+(-[0-9a-z.]+)?)\s*/i;
         const previousTag = latestTag ? latestTag.name : undefined;
         let version = latestTag ? latestTag.version : this.defaultInitialVersion();
@@ -1932,6 +1934,13 @@ class ReleasePR {
         if (releaseAsCommit) {
             const match = releaseAsCommit.message.match(releaseAsRe);
             version = match[1];
+        }
+        else if (preRelease) {
+            // Handle pre-release format v1.0.0-alpha1, alpha2, etc.
+            const [prefix, suffix] = version.split('-');
+            const match = suffix === null || suffix === void 0 ? void 0 : suffix.match(/(?<type>[^0-9]+)(?<number>[0-9]+)/);
+            const number = Number(((_a = match === null || match === void 0 ? void 0 : match.groups) === null || _a === void 0 ? void 0 : _a.number) || 0) + 1;
+            version = `${prefix}-${((_b = match === null || match === void 0 ? void 0 : match.groups) === null || _b === void 0 ? void 0 : _b.type) || 'alpha'}${number}`;
         }
         else if (latestTag && !this.releaseAs) {
             const bump = await cc.suggestBump(version);
@@ -1990,6 +1999,7 @@ class ReleasePR {
             updates,
             title,
             body,
+            fork: this.fork,
             labels: this.labels,
         });
         // a return of 0 indicates that PR was not updated.
@@ -2223,12 +2233,13 @@ async function main () {
   const path = core.getInput('path') ? core.getInput('path') : undefined
   const releaseType = core.getInput('release-type')
   const token = core.getInput('token')
-  const changelogTypes = core.getInput('changelog-types');
+  const fork = core.getInput('fork') ? true : undefined
+  const changelogTypes = core.getInput('changelog-types')
 
   // Parse the changelogTypes if there are any
-  let changelogSections = [];
+  let changelogSections = []
   if (changelogTypes) {
-    changelogSections = JSON.parse(changelogTypes);
+    changelogSections = JSON.parse(changelogTypes)
   }
 
   // First we check for any merged release PRs (PRs merged with the label
@@ -2257,6 +2268,7 @@ async function main () {
     path,
     apiUrl: 'https://api.github.com',
     repoUrl: process.env.GITHUB_REPOSITORY,
+    fork,
     token: token,
     label: RELEASE_LABEL,
     bumpMinorPreMajor,
@@ -4395,7 +4407,7 @@ module.exports = require("vm");
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_from":"release-please@latest","_id":"release-please@6.1.0","_inBundle":false,"_integrity":"sha512-nGe8YZRgpKYrMV90OCgWlXDIN8oCzhd256FXfVbY1lURpp9Ng7wiwPQ53+ilXPzScVIORNMYOnFwjY7k1p1/2g==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"tag","registry":true,"raw":"release-please@latest","name":"release-please","escapedName":"release-please","rawSpec":"latest","saveSpec":null,"fetchSpec":"latest"},"_requiredBy":["#USER","/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.1.0.tgz","_shasum":"a6e2f8ae28e7f32e32dca035546dc6f1f9bea18c","_spec":"release-please@latest","_where":"/Users/bencoe/oss/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"bundleDependencies":false,"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.16.0","yargs":"^15.0.0"},"deprecated":false,"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.1.0"};
+module.exports = {"_from":"release-please@latest","_id":"release-please@6.2.0","_inBundle":false,"_integrity":"sha512-/vAFQawwh+NTguXcvNbqqbjuzHxIFbqBmJldo7aCaxjALapmHpsEKt1KBX+aH3EC5DKeDcFd5inz9FHhiRdj8A==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"tag","registry":true,"raw":"release-please@latest","name":"release-please","escapedName":"release-please","rawSpec":"latest","saveSpec":null,"fetchSpec":"latest"},"_requiredBy":["#USER","/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.2.0.tgz","_shasum":"07bd5b2d3fc81cc2385b68770a931cc9f4c18950","_spec":"release-please@latest","_where":"/Users/bencoe/oss/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"bundleDependencies":false,"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.16.0","yargs":"^16.0.0"},"deprecated":false,"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.2.0"};
 
 /***/ }),
 /* 192 */,
@@ -9216,7 +9228,7 @@ module.exports = eq
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-const VERSION = "2.3.3";
+const VERSION = "2.4.0";
 
 /**
  * Some “list” response that can be paginated have a different response structure
@@ -12123,6 +12135,8 @@ function prettifierMetaWrapper (pretty, dest, opts) {
 
       if (time.match(/^\d+/)) {
         time = parseInt(time)
+      } else {
+        time = time.slice(1, -1)
       }
 
       var lastObj = this.lastObj
@@ -40833,16 +40847,29 @@ class GitHub {
         }));
         return refResponse.data.object.sha;
     }
-    async latestTag(prefix) {
+    async latestTag(prefix, preRelease = false) {
         const tags = await this.allTags(prefix);
         const versions = Object.keys(tags).filter(t => {
             // remove any pre-releases from the list:
-            return !t.includes('-');
+            return preRelease || !t.includes('-');
         });
         // no tags have been created yet.
         if (versions.length === 0)
             return undefined;
-        versions.sort(semver.rcompare);
+        // We use a slightly modified version of semver's sorting algorithm, which
+        // prefixes the numeric part of a pre-release with '0's, so that
+        // 010 is greater than > 002.
+        versions.sort((v1, v2) => {
+            if (v1.includes('-')) {
+                const [prefix, suffix] = v1.split('-');
+                v1 = prefix + '-' + suffix.replace(/[a-zA-Z.]/, '').padStart(6, '0');
+            }
+            if (v2.includes('-')) {
+                const [prefix, suffix] = v2.split('-');
+                v2 = prefix + '-' + suffix.replace(/[a-zA-Z.]/, '').padStart(6, '0');
+            }
+            return semver.rcompare(v1, v2);
+        });
         return {
             name: tags[versions[0]].name,
             sha: tags[versions[0]].sha,
@@ -40988,9 +41015,9 @@ class GitHub {
             description: options.body,
             primary: defaultBranch,
             force: true,
-            fork: false,
+            fork: options.fork,
             message: options.title,
-        }, { level: 'silent' });
+        }, { level: 'error' });
         // If a release PR was already open, update the title and body:
         if (openReleasePR) {
             checkpoint_1.checkpoint(`update pull-request #${openReleasePR.number}: ${chalk.yellow(options.title)}`, checkpoint_1.CheckpointType.Success);
@@ -41009,7 +41036,6 @@ class GitHub {
         }
     }
     async getChangeSet(updates, defaultBranch) {
-        const refName = `refs/heads/${defaultBranch}`;
         const changes = new Map();
         for (const update of updates) {
             let content;
@@ -41020,12 +41046,8 @@ class GitHub {
                     content = { data: update.contents };
                 }
                 else {
-                    content = await this.request(`GET /repos/:owner/:repo/contents/:path${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, {
-                        owner: this.owner,
-                        repo: this.repo,
-                        path: update.path,
-                        ref: refName,
-                    });
+                    const fileContent = await this.getFileContents(update.path, defaultBranch);
+                    content = { data: fileContent };
                 }
             }
             catch (err) {
@@ -41073,17 +41095,50 @@ class GitHub {
             state: 'closed',
         });
     }
-    async getFileContents(path) {
-        const resp = await this.request(`GET /repos/:owner/:repo/contents/:path${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, {
+    async getFileContentsWithSimpleAPI(path, defaultBranch) {
+        const options = {
             owner: this.owner,
             repo: this.repo,
             path,
+        };
+        if (defaultBranch) {
+            options.ref = `refs/heads/${defaultBranch}`;
+        }
+        const resp = await this.request(`GET /repos/:owner/:repo/contents/:path${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, options);
+        return {
+            parsedContent: Buffer.from(resp.data.content, 'base64').toString('utf8'),
+            content: resp.data.content,
+            sha: resp.data.sha,
+        };
+    }
+    async getFileContentsWithDataAPI(path, defaultBranch) {
+        const repoTree = await this.request(`GET /repos/:owner/:repo/git/trees/:branch${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, {
+            owner: this.owner,
+            repo: this.repo,
+            branch: defaultBranch,
+        });
+        const blobDescriptor = repoTree.data.tree.find((tree) => tree.path === path);
+        const resp = await this.request(`GET /repos/:owner/:repo/git/blobs/:sha${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, {
+            owner: this.owner,
+            repo: this.repo,
+            sha: blobDescriptor.sha,
         });
         return {
             parsedContent: Buffer.from(resp.data.content, 'base64').toString('utf8'),
             content: resp.data.content,
             sha: resp.data.sha,
         };
+    }
+    async getFileContents(path, defaultBranch = undefined) {
+        try {
+            return await this.getFileContentsWithSimpleAPI(path, defaultBranch);
+        }
+        catch (err) {
+            if (err.status === 403) {
+                return await this.getFileContentsWithDataAPI(path, defaultBranch);
+            }
+            throw err;
+        }
     }
     async createRelease(packageName, version, sha, releaseNotes) {
         checkpoint_1.checkpoint(`creating release ${version}`, checkpoint_1.CheckpointType.Success);
@@ -44883,7 +44938,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 var request = __webpack_require__(753);
 var universalUserAgent = __webpack_require__(526);
 
-const VERSION = "4.5.5";
+const VERSION = "4.5.6";
 
 class GraphqlError extends Error {
   constructor(request, response) {
@@ -44908,12 +44963,16 @@ class GraphqlError extends Error {
 const NON_VARIABLE_OPTIONS = ["method", "baseUrl", "url", "headers", "request", "query", "mediaType"];
 const GHES_V3_SUFFIX_REGEX = /\/api\/v3\/?$/;
 function graphql(request, query, options) {
-  options = typeof query === "string" ? options = Object.assign({
+  if (typeof query === "string" && options && "query" in options) {
+    return Promise.reject(new Error(`[@octokit/graphql] "query" cannot be used as variable name`));
+  }
+
+  const parsedOptions = typeof query === "string" ? Object.assign({
     query
-  }, options) : options = query;
-  const requestOptions = Object.keys(options).reduce((result, key) => {
+  }, options) : query;
+  const requestOptions = Object.keys(parsedOptions).reduce((result, key) => {
     if (NON_VARIABLE_OPTIONS.includes(key)) {
-      result[key] = options[key];
+      result[key] = parsedOptions[key];
       return result;
     }
 
@@ -44921,12 +44980,12 @@ function graphql(request, query, options) {
       result.variables = {};
     }
 
-    result.variables[key] = options[key];
+    result.variables[key] = parsedOptions[key];
     return result;
   }, {}); // workaround for GitHub Enterprise baseUrl set with /api/v3 suffix
   // https://github.com/octokit/auth-app.js/issues/111#issuecomment-657610451
 
-  const baseUrl = options.baseUrl || request.endpoint.DEFAULTS.baseUrl;
+  const baseUrl = parsedOptions.baseUrl || request.endpoint.DEFAULTS.baseUrl;
 
   if (GHES_V3_SUFFIX_REGEX.test(baseUrl)) {
     requestOptions.url = baseUrl.replace(GHES_V3_SUFFIX_REGEX, "/api/graphql");
@@ -45074,7 +45133,7 @@ var isPlainObject = __webpack_require__(356);
 var nodeFetch = _interopDefault(__webpack_require__(454));
 var requestError = __webpack_require__(463);
 
-const VERSION = "5.4.8";
+const VERSION = "5.4.9";
 
 function getBufferResponse(response) {
   return response.arrayBuffer();
@@ -46866,8 +46925,15 @@ const Endpoints = {
     }]
   },
   codeScanning: {
-    getAlert: ["GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_id}"],
-    listAlertsForRepo: ["GET /repos/{owner}/{repo}/code-scanning/alerts"]
+    getAlert: ["GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}", {}, {
+      renamedParameters: {
+        alert_id: "alert_number"
+      }
+    }],
+    listAlertsForRepo: ["GET /repos/{owner}/{repo}/code-scanning/alerts"],
+    listRecentAnalyses: ["GET /repos/{owner}/{repo}/code-scanning/analyses"],
+    updateAlert: ["PATCH /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}"],
+    uploadSarif: ["POST /repos/{owner}/{repo}/code-scanning/sarifs"]
   },
   codesOfConduct: {
     getAllCodesOfConduct: ["GET /codes_of_conduct", {
@@ -47722,7 +47788,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "4.1.4";
+const VERSION = "4.2.0";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -48789,7 +48855,7 @@ var pluginRequestLog = __webpack_require__(916);
 var pluginPaginateRest = __webpack_require__(299);
 var pluginRestEndpointMethods = __webpack_require__(842);
 
-const VERSION = "18.0.5";
+const VERSION = "18.0.6";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.restEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`
@@ -51040,7 +51106,7 @@ module.exports = inc
 /* 929 */
 /***/ (function(module) {
 
-module.exports = {"_from":"pino@^6.3.2","_id":"pino@6.6.0","_inBundle":false,"_integrity":"sha512-rLfJXX8i2P1VNXZY05fDMI/qK1IQSpKnOg5iNY5TRJn+vKhc9hBg1iCiAuOw3hKEAf54MZMlT8P6T+wgYQYpIA==","_location":"/pino","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"pino@^6.3.2","name":"pino","escapedName":"pino","rawSpec":"^6.3.2","saveSpec":null,"fetchSpec":"^6.3.2"},"_requiredBy":["/code-suggester"],"_resolved":"https://registry.npmjs.org/pino/-/pino-6.6.0.tgz","_shasum":"690ca4a98d027b32f2302c3750eced280fbc8dee","_spec":"pino@^6.3.2","_where":"/Users/bencoe/oss/release-please-action/node_modules/code-suggester","author":{"name":"Matteo Collina","email":"hello@matteocollina.com"},"bin":{"pino":"bin.js"},"browser":"./browser.js","bugs":{"url":"https://github.com/pinojs/pino/issues"},"bundleDependencies":false,"contributors":[{"name":"David Mark Clements","email":"huperekchuno@googlemail.com"},{"name":"James Sumners","email":"james.sumners@gmail.com"},{"name":"Thomas Watson Steen","email":"w@tson.dk","url":"https://twitter.com/wa7son"}],"dependencies":{"fast-redact":"^2.0.0","fast-safe-stringify":"^2.0.7","flatstr":"^1.0.12","pino-std-serializers":"^2.4.2","quick-format-unescaped":"^4.0.1","sonic-boom":"^1.0.2"},"deprecated":false,"description":"super fast, all natural json logger","devDependencies":{"airtap":"3.0.0","benchmark":"^2.1.4","bole":"^4.0.0","bunyan":"^1.8.14","docsify-cli":"^4.4.1","execa":"^4.0.0","fastbench":"^1.0.1","flush-write-stream":"^2.0.0","import-fresh":"^3.2.1","log":"^6.0.0","loglevel":"^1.6.7","pino-pretty":"^4.1.0","pre-commit":"^1.2.2","proxyquire":"^2.1.3","pump":"^3.0.0","semver":"^7.0.0","snazzy":"^8.0.0","split2":"^3.1.1","standard":"^14.3.3","steed":"^1.1.3","strip-ansi":"^6.0.0","tap":"^14.10.8","tape":"^5.0.0","through2":"^4.0.0","winston":"^3.3.3"},"files":["pino.js","bin.js","browser.js","pretty.js","usage.txt","test","docs","example.js","lib"],"homepage":"http://getpino.io","keywords":["fast","logger","stream","json"],"license":"MIT","main":"pino.js","name":"pino","precommit":"test","repository":{"type":"git","url":"git+https://github.com/pinojs/pino.git"},"scripts":{"bench":"node benchmarks/utils/runbench all","bench-basic":"node benchmarks/utils/runbench basic","bench-child":"node benchmarks/utils/runbench child","bench-child-child":"node benchmarks/utils/runbench child-child","bench-child-creation":"node benchmarks/utils/runbench child-creation","bench-deep-object":"node benchmarks/utils/runbench deep-object","bench-formatters":"node benchmarks/utils/runbench formatters","bench-longs-tring":"node benchmarks/utils/runbench long-string","bench-multi-arg":"node benchmarks/utils/runbench multi-arg","bench-object":"node benchmarks/utils/runbench object","browser-test":"airtap --local 8080 test/browser*test.js","cov-ui":"tap --coverage-report=html test/*test.js","docs":"docsify serve","test":"standard | snazzy && tap --100 test/*test.js","update-bench-doc":"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md"},"version":"6.6.0"};
+module.exports = {"_from":"pino@^6.3.2","_id":"pino@6.6.1","_inBundle":false,"_integrity":"sha512-DOgm7rn6ctBkBYemHXSLj7+j3o3U1q1FWBXbHcprur8mA93QcJSycEkEqhqKiFB9Mx/3Qld2FGr6+9yfQza0kA==","_location":"/pino","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"pino@^6.3.2","name":"pino","escapedName":"pino","rawSpec":"^6.3.2","saveSpec":null,"fetchSpec":"^6.3.2"},"_requiredBy":["/code-suggester"],"_resolved":"https://registry.npmjs.org/pino/-/pino-6.6.1.tgz","_shasum":"3fe8ec300dadb2c30017df39106b056b87dffca8","_spec":"pino@^6.3.2","_where":"/Users/bencoe/oss/release-please-action/node_modules/code-suggester","author":{"name":"Matteo Collina","email":"hello@matteocollina.com"},"bin":{"pino":"bin.js"},"browser":"./browser.js","bugs":{"url":"https://github.com/pinojs/pino/issues"},"bundleDependencies":false,"contributors":[{"name":"David Mark Clements","email":"huperekchuno@googlemail.com"},{"name":"James Sumners","email":"james.sumners@gmail.com"},{"name":"Thomas Watson Steen","email":"w@tson.dk","url":"https://twitter.com/wa7son"}],"dependencies":{"fast-redact":"^2.0.0","fast-safe-stringify":"^2.0.7","flatstr":"^1.0.12","pino-std-serializers":"^2.4.2","quick-format-unescaped":"^4.0.1","sonic-boom":"^1.0.2"},"deprecated":false,"description":"super fast, all natural json logger","devDependencies":{"airtap":"3.0.0","benchmark":"^2.1.4","bole":"^4.0.0","bunyan":"^1.8.14","docsify-cli":"^4.4.1","execa":"^4.0.0","fastbench":"^1.0.1","flush-write-stream":"^2.0.0","import-fresh":"^3.2.1","log":"^6.0.0","loglevel":"^1.6.7","pino-pretty":"^4.1.0","pre-commit":"^1.2.2","proxyquire":"^2.1.3","pump":"^3.0.0","semver":"^7.0.0","snazzy":"^8.0.0","split2":"^3.1.1","standard":"^14.3.3","steed":"^1.1.3","strip-ansi":"^6.0.0","tap":"^14.10.8","tape":"^5.0.0","through2":"^4.0.0","winston":"^3.3.3"},"files":["pino.js","bin.js","browser.js","pretty.js","usage.txt","test","docs","example.js","lib"],"homepage":"http://getpino.io","keywords":["fast","logger","stream","json"],"license":"MIT","main":"pino.js","name":"pino","precommit":"test","repository":{"type":"git","url":"git+https://github.com/pinojs/pino.git"},"scripts":{"bench":"node benchmarks/utils/runbench all","bench-basic":"node benchmarks/utils/runbench basic","bench-child":"node benchmarks/utils/runbench child","bench-child-child":"node benchmarks/utils/runbench child-child","bench-child-creation":"node benchmarks/utils/runbench child-creation","bench-deep-object":"node benchmarks/utils/runbench deep-object","bench-formatters":"node benchmarks/utils/runbench formatters","bench-longs-tring":"node benchmarks/utils/runbench long-string","bench-multi-arg":"node benchmarks/utils/runbench multi-arg","bench-object":"node benchmarks/utils/runbench object","browser-test":"airtap --local 8080 test/browser*test.js","cov-ui":"tap --coverage-report=html test/*test.js","docs":"docsify serve","test":"standard | snazzy && tap --100 test/*test.js","update-bench-doc":"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md"},"version":"6.6.1"};
 
 /***/ }),
 /* 930 */,
