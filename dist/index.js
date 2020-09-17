@@ -2237,7 +2237,7 @@ async function main () {
   const changelogTypes = core.getInput('changelog-types')
 
   // Parse the changelogTypes if there are any
-  let changelogSections = []
+  let changelogSections = undefined
   if (changelogTypes) {
     changelogSections = JSON.parse(changelogTypes)
   }
@@ -41220,7 +41220,6 @@ class Node extends release_pr_1.ReleasePR {
             sha: latestTag ? latestTag.sha : undefined,
             path: this.path,
         });
-        console.info(`SECTIONS ${this.changelogSections}`);
         const cc = new conventional_commits_1.ConventionalCommits({
             commits,
             githubRepoUrl: this.repoUrl,
@@ -41233,8 +41232,6 @@ class Node extends release_pr_1.ReleasePR {
             currentTag: `v${candidate.version}`,
             previousTag: candidate.previousTag,
         });
-        console.info(commits);
-        console.info(`CHANGELOG = ${changelogEntry}`);
         // don't create a release candidate until user facing changes
         // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
         // one line is a good indicator that there were no interesting commits.

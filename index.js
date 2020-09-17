@@ -15,7 +15,7 @@ async function main () {
   const changelogTypes = core.getInput('changelog-types')
 
   // Parse the changelogTypes if there are any
-  let changelogSections = []
+  let changelogSections = undefined
   if (changelogTypes) {
     changelogSections = JSON.parse(changelogTypes)
   }
