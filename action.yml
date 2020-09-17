@@ -5,6 +5,9 @@ inputs:
   token:
     description: 'GitHub token for creating and grooming release PRs, e.g., secrets.GITHUB_TOKEN'
     required: true
+  fork:
+    description: 'should the PR be proposed from a fork (does not work with secrets.GITHUB_TOKEN)'
+    required: false
   package-name:
     description: 'name of the distributions releases are being created for, e.g., "name" in package.json, or "setup.py"'
     required: true

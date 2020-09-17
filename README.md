@@ -20,7 +20,7 @@ Automate releases with Conventional Commit Messages.
       release-please:
         runs-on: ubuntu-latest
         steps:
-          - uses: GoogleCloudPlatform/release-please-action@v2.2.0
+          - uses: GoogleCloudPlatform/release-please-action@v2.3.0
             with:
               token: ${{ secrets.GITHUB_TOKEN }}
               release-type: node
@@ -40,8 +40,8 @@ Automate releases with Conventional Commit Messages.
 | `release-type` | What type of project is this a release for? Reference [Release types supported](#release-types-supported); new types of releases can be [added here](https://github.com/googleapis/release-please/tree/master/src/releasers) |
 | `package-name` | A name for the artifact releases are being created for (this might be the `name` field in a `setup.py` or `package.json`) |
 | `bump-minor-pre-major` | Should breaking changes before 1.0.0 produce minor bumps?  Default `No` |
-| `--path`          | create a release from a path other than the repository's root |
-| `--monorepo-tags` | add prefix to tags and branches, allowing multiple libraries to be released from the same repository. |
+| `path`          | create a release from a path other than the repository's root |
+| `monorepo-tags` | add prefix to tags and branches, allowing multiple libraries to be released from the same repository. |
 | `changelog-types` | A JSON formatted String containing to override the outputted changlog sections |
 
 | output | description |
@@ -49,6 +49,7 @@ Automate releases with Conventional Commit Messages.
 | `release_created` | `true` if the release was created, `false` otherwise |
 | `upload_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `tag_name` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
+| `fork`          | Should the PR be created from a fork (does not work with `secrets.GITHUB_TOKEN`) |
 
 ### Release types supported
 
@@ -105,7 +106,7 @@ To output more commit information in the changelog,  a JSON formatted String can
       release-please:
         runs-on: ubuntu-latest
         steps:
-          - uses: GoogleCloudPlatform/release-please-action@v2.2.0
+          - uses: GoogleCloudPlatform/release-please-action@v2.3.0
             with:
               token: ${{ secrets.GITHUB_TOKEN }}
               release-type: node
@@ -128,7 +129,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2.2.0
+      - uses: GoogleCloudPlatform/release-please-action@v2.3.0
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

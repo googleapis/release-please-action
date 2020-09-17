@@ -11,6 +11,7 @@ async function main () {
   const path = core.getInput('path') ? core.getInput('path') : undefined
   const releaseType = core.getInput('release-type')
   const token = core.getInput('token')
+  const fork = core.getInput('fork') ? true : undefined
   const changelogTypes = core.getInput('changelog-types')
 
   // Parse the changelogTypes if there are any
@@ -45,6 +46,7 @@ async function main () {
     path,
     apiUrl: 'https://api.github.com',
     repoUrl: process.env.GITHUB_REPOSITORY,
+    fork,
     token: token,
     label: RELEASE_LABEL,
     bumpMinorPreMajor,
