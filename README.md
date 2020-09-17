@@ -50,6 +50,7 @@ Automate releases with Conventional Commit Messages.
 | `upload_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `tag_name` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `fork`          | Should the PR be created from a fork (does not work with `secrets.GITHUB_TOKEN`) |
+| `command`          | release-please command to run, either `github-release`, or `release-pr` (_defaults to running both_) |
 
 ### Release types supported
 

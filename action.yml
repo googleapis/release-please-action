@@ -26,6 +26,9 @@ inputs:
   changelog-types:
     description: 'changlelog commit types'
     require: false
+  command:
+    description: 'release-please command to run, either "github-release", or "release-pr" (defaults to running both)'
+    require: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
