@@ -2,14 +2,30 @@ on:
   push:
     branches:
       - main
-name: release-please
+name: release-please-pr
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@31e1a25ccf4f8df92fdb4066e3650a6167e5fe25
+      - uses: GoogleCloudPlatform/release-please-action@2.4.0
         with:
           token: ${{ secrets.RELEASE_PR_TOKEN }}
           release-type: node
           fork: true
           package-name: release-please-action
+          command: release-pr
+on:
+  push:
+    branches:
+      - main
+name: release-please-release
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: GoogleCloudPlatform/release-please-action@2.4.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: node
+          package-name: release-please-action
+          command: github-release
