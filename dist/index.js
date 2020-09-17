@@ -41220,6 +41220,7 @@ class Node extends release_pr_1.ReleasePR {
             sha: latestTag ? latestTag.sha : undefined,
             path: this.path,
         });
+        console.info(`SECTIONS ${this.changelogSections}`);
         const cc = new conventional_commits_1.ConventionalCommits({
             commits,
             githubRepoUrl: this.repoUrl,
