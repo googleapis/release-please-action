@@ -2,9 +2,9 @@ on:
   push:
     branches:
       - main
-name: release-please-pr
+name: release-please
 jobs:
-  release-please:
+  release-please-pr:
     runs-on: ubuntu-latest
     steps:
       - uses: GoogleCloudPlatform/release-please-action@2.4.0
@@ -14,13 +14,7 @@ jobs:
           fork: true
           package-name: release-please-action
           command: release-pr
-on:
-  push:
-    branches:
-      - main
-name: release-please-release
-jobs:
-  release-please:
+  release-please-release:
     runs-on: ubuntu-latest
     steps:
       - uses: GoogleCloudPlatform/release-please-action@2.4.0
