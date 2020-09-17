@@ -11,5 +11,5 @@ jobs:
         with:
           token: ${{ secrets.RELEASE_PR_TOKEN }}
           release-type: node
-	  fork: true
+          fork: true
           package-name: release-please-action
