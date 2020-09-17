@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.4.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.3.0...v2.4.0) (2020-09-17)
+
+
+### Features
+
+* allow github-release/release-pr to be run separately ([#70](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/70)) ([37d423f](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/37d423feba66be7be541aa122419aee5b50fdf98))
+
+
+### Bug Fixes
+
+* default changelog sections to undefined ([31e1a25](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/31e1a25ccf4f8df92fdb4066e3650a6167e5fe25))
+* **build:** release from fork ([f2bda04](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/f2bda04bb55ac6fdaf5e3673a78323966a3768b5))
+
 ## [2.3.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.2.0...v2.3.0) (2020-09-17)
 
 
