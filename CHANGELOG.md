@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.4.2](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.4.1...v2.4.2) (2020-10-01)
+
+
+### Bug Fixes
+
+* **deps:** bump @actions/core from 1.2.4 to 1.2.6 ([#76](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/76)) ([fa86b83](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/fa86b83b5666ef0319c5508ded6b43af2cdf317b))
+
 ### [2.4.1](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.4.0...v2.4.1) (2020-09-17)
 
 
