@@ -24,7 +24,7 @@
   },
   "homepage": "https://github.com/bcoe/release-please-action#readme",
   "dependencies": {
-    "@actions/core": "^1.2.4",
+    "@actions/core": "^1.2.6",
     "release-please": "^6.2.0"
   },
   "devDependencies": {
