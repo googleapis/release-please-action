@@ -44,6 +44,7 @@ async function main () {
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
   if (!command || command === 'release-pr') {
+    console.info(changelogSections)
     const release = ReleasePRFactory.buildStatic(releaseType, {
       monorepoTags,
       packageName,
