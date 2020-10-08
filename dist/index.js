@@ -50,124 +50,661 @@ module.exports =
 /******/ })
 /************************************************************************/
 /******/ ([
-/* 0 */,
-/* 1 */
+/* 0 */
 /***/ (function(__unusedmodule, exports) {
 
-/* -*- Mode: js; js-indent-level: 2; -*- */
-/*
- * Copyright 2011 Mozilla Foundation and contributors
- * Licensed under the New BSD license. See LICENSE or:
- * http://opensource.org/licenses/BSD-3-Clause
- */
+"use strict";
 
-// It turns out that some (most?) JavaScript engines don't self-host
-// `Array.prototype.sort`. This makes sense because C++ will likely remain
-// faster than JS when doing raw CPU-intensive sorting. However, when using a
-// custom comparator function, calling back and forth between the VM's C++ and
-// JIT'd JS is rather slow *and* loses JIT type information, resulting in
-// worse generated code for the comparator function than would be optimal. In
-// fact, when sorting with a comparator, these costs outweigh the benefits of
-// sorting in C++. By using our own JS-implemented Quick Sort (below), we get
-// a ~3500ms mean speed-up in `bench/bench.html`.
-
-/**
- * Swap the elements indexed by `x` and `y` in the array `ary`.
- *
- * @param {Array} ary
- *        The array.
- * @param {Number} x
- *        The index of the first item.
- * @param {Number} y
- *        The index of the second item.
- */
-function swap(ary, x, y) {
-  var temp = ary[x];
-  ary[x] = ary[y];
-  ary[y] = temp;
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.buildSummaryComment = void 0;
+function hunkErrorMessage(hunk) {
+    return `  * lines ${hunk.oldStart}-${hunk.oldEnd}`;
 }
-
-/**
- * Returns a random integer within the range `low .. high` inclusive.
- *
- * @param {Number} low
- *        The lower bound on the range.
- * @param {Number} high
- *        The upper bound on the range.
- */
-function randomIntInRange(low, high) {
-  return Math.round(low + (Math.random() * (high - low)));
+function fileErrorMessage(filename, hunks) {
+    return `* ${filename}\n` + hunks.map(hunkErrorMessage).join('\n');
 }
-
 /**
- * The Quick Sort algorithm.
- *
- * @param {Array} ary
- *        An array to sort.
- * @param {function} comparator
- *        Function to use to compare two items.
- * @param {Number} p
- *        Start index of the array
- * @param {Number} r
- *        End index of the array
+ * Build an error message based on invalid hunks.
+ * Returns an empty string if the provided hunks are empty.
+ * @param invalidHunks a map of filename to hunks that are not suggestable
  */
-function doQuickSort(ary, comparator, p, r) {
-  // If our lower bound is less than our upper bound, we (1) partition the
-  // array into two pieces and (2) recurse on each half. If it is not, this is
-  // the empty array and our base case.
-
-  if (p < r) {
-    // (1) Partitioning.
-    //
-    // The partitioning chooses a pivot between `p` and `r` and moves all
-    // elements that are less than or equal to the pivot to the before it, and
-    // all the elements that are greater than it after it. The effect is that
-    // once partition is done, the pivot is in the exact place it will be when
-    // the array is put in sorted order, and it will not need to be moved
-    // again. This runs in O(n) time.
-
-    // Always choose a random pivot so that an input array which is reverse
-    // sorted does not cause O(n^2) running time.
-    var pivotIndex = randomIntInRange(p, r);
-    var i = p - 1;
-
-    swap(ary, pivotIndex, r);
-    var pivot = ary[r];
-
-    // Immediately after `j` is incremented in this loop, the following hold
-    // true:
-    //
-    //   * Every element in `ary[p .. i]` is less than or equal to the pivot.
-    //
-    //   * Every element in `ary[i+1 .. j-1]` is greater than the pivot.
-    for (var j = p; j < r; j++) {
-      if (comparator(ary[j], pivot) <= 0) {
-        i += 1;
-        swap(ary, i, j);
-      }
+function buildSummaryComment(invalidHunks) {
+    if (invalidHunks.size === 0) {
+        return '';
     }
+    return ('Some suggestions could not be made:\n' +
+        Array.from(invalidHunks, ([filename, hunks]) => fileErrorMessage(filename, hunks)).join('\n'));
+}
+exports.buildSummaryComment = buildSummaryComment;
+//# sourceMappingURL=message-handler.js.map
 
-    swap(ary, i + 1, j);
-    var q = i + 1;
+/***/ }),
+/* 1 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
-    // (2) Recurse on each half.
+"use strict";
+/*istanbul ignore start*/
 
-    doQuickSort(ary, comparator, p, q - 1);
-    doQuickSort(ary, comparator, q + 1, r);
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.calcLineCount = calcLineCount;
+exports.merge = merge;
+
+/*istanbul ignore end*/
+var
+/*istanbul ignore start*/
+_create = __webpack_require__(140)
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_parse = __webpack_require__(86)
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_array = __webpack_require__(168)
+/*istanbul ignore end*/
+;
+
+/*istanbul ignore start*/ function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
+/*istanbul ignore end*/
+function calcLineCount(hunk) {
+  /*istanbul ignore start*/
+  var _calcOldNewLineCount =
+  /*istanbul ignore end*/
+  calcOldNewLineCount(hunk.lines),
+      oldLines = _calcOldNewLineCount.oldLines,
+      newLines = _calcOldNewLineCount.newLines;
+
+  if (oldLines !== undefined) {
+    hunk.oldLines = oldLines;
+  } else {
+    delete hunk.oldLines;
+  }
+
+  if (newLines !== undefined) {
+    hunk.newLines = newLines;
+  } else {
+    delete hunk.newLines;
   }
 }
 
-/**
- * Sort the given array in-place with the given comparator function.
- *
- * @param {Array} ary
- *        An array to sort.
- * @param {function} comparator
- *        Function to use to compare two items.
- */
-exports.quickSort = function (ary, comparator) {
-  doQuickSort(ary, comparator, 0, ary.length - 1);
-};
+function merge(mine, theirs, base) {
+  mine = loadPatch(mine, base);
+  theirs = loadPatch(theirs, base);
+  var ret = {}; // For index we just let it pass through as it doesn't have any necessary meaning.
+  // Leaving sanity checks on this to the API consumer that may know more about the
+  // meaning in their own context.
+
+  if (mine.index || theirs.index) {
+    ret.index = mine.index || theirs.index;
+  }
+
+  if (mine.newFileName || theirs.newFileName) {
+    if (!fileNameChanged(mine)) {
+      // No header or no change in ours, use theirs (and ours if theirs does not exist)
+      ret.oldFileName = theirs.oldFileName || mine.oldFileName;
+      ret.newFileName = theirs.newFileName || mine.newFileName;
+      ret.oldHeader = theirs.oldHeader || mine.oldHeader;
+      ret.newHeader = theirs.newHeader || mine.newHeader;
+    } else if (!fileNameChanged(theirs)) {
+      // No header or no change in theirs, use ours
+      ret.oldFileName = mine.oldFileName;
+      ret.newFileName = mine.newFileName;
+      ret.oldHeader = mine.oldHeader;
+      ret.newHeader = mine.newHeader;
+    } else {
+      // Both changed... figure it out
+      ret.oldFileName = selectField(ret, mine.oldFileName, theirs.oldFileName);
+      ret.newFileName = selectField(ret, mine.newFileName, theirs.newFileName);
+      ret.oldHeader = selectField(ret, mine.oldHeader, theirs.oldHeader);
+      ret.newHeader = selectField(ret, mine.newHeader, theirs.newHeader);
+    }
+  }
+
+  ret.hunks = [];
+  var mineIndex = 0,
+      theirsIndex = 0,
+      mineOffset = 0,
+      theirsOffset = 0;
+
+  while (mineIndex < mine.hunks.length || theirsIndex < theirs.hunks.length) {
+    var mineCurrent = mine.hunks[mineIndex] || {
+      oldStart: Infinity
+    },
+        theirsCurrent = theirs.hunks[theirsIndex] || {
+      oldStart: Infinity
+    };
+
+    if (hunkBefore(mineCurrent, theirsCurrent)) {
+      // This patch does not overlap with any of the others, yay.
+      ret.hunks.push(cloneHunk(mineCurrent, mineOffset));
+      mineIndex++;
+      theirsOffset += mineCurrent.newLines - mineCurrent.oldLines;
+    } else if (hunkBefore(theirsCurrent, mineCurrent)) {
+      // This patch does not overlap with any of the others, yay.
+      ret.hunks.push(cloneHunk(theirsCurrent, theirsOffset));
+      theirsIndex++;
+      mineOffset += theirsCurrent.newLines - theirsCurrent.oldLines;
+    } else {
+      // Overlap, merge as best we can
+      var mergedHunk = {
+        oldStart: Math.min(mineCurrent.oldStart, theirsCurrent.oldStart),
+        oldLines: 0,
+        newStart: Math.min(mineCurrent.newStart + mineOffset, theirsCurrent.oldStart + theirsOffset),
+        newLines: 0,
+        lines: []
+      };
+      mergeLines(mergedHunk, mineCurrent.oldStart, mineCurrent.lines, theirsCurrent.oldStart, theirsCurrent.lines);
+      theirsIndex++;
+      mineIndex++;
+      ret.hunks.push(mergedHunk);
+    }
+  }
+
+  return ret;
+}
+
+function loadPatch(param, base) {
+  if (typeof param === 'string') {
+    if (/^@@/m.test(param) || /^Index:/m.test(param)) {
+      return (
+        /*istanbul ignore start*/
+        (0,
+        /*istanbul ignore end*/
+
+        /*istanbul ignore start*/
+        _parse
+        /*istanbul ignore end*/
+        .
+        /*istanbul ignore start*/
+        parsePatch)
+        /*istanbul ignore end*/
+        (param)[0]
+      );
+    }
+
+    if (!base) {
+      throw new Error('Must provide a base reference or pass in a patch');
+    }
+
+    return (
+      /*istanbul ignore start*/
+      (0,
+      /*istanbul ignore end*/
+
+      /*istanbul ignore start*/
+      _create
+      /*istanbul ignore end*/
+      .
+      /*istanbul ignore start*/
+      structuredPatch)
+      /*istanbul ignore end*/
+      (undefined, undefined, base, param)
+    );
+  }
+
+  return param;
+}
+
+function fileNameChanged(patch) {
+  return patch.newFileName && patch.newFileName !== patch.oldFileName;
+}
+
+function selectField(index, mine, theirs) {
+  if (mine === theirs) {
+    return mine;
+  } else {
+    index.conflict = true;
+    return {
+      mine: mine,
+      theirs: theirs
+    };
+  }
+}
+
+function hunkBefore(test, check) {
+  return test.oldStart < check.oldStart && test.oldStart + test.oldLines < check.oldStart;
+}
+
+function cloneHunk(hunk, offset) {
+  return {
+    oldStart: hunk.oldStart,
+    oldLines: hunk.oldLines,
+    newStart: hunk.newStart + offset,
+    newLines: hunk.newLines,
+    lines: hunk.lines
+  };
+}
+
+function mergeLines(hunk, mineOffset, mineLines, theirOffset, theirLines) {
+  // This will generally result in a conflicted hunk, but there are cases where the context
+  // is the only overlap where we can successfully merge the content here.
+  var mine = {
+    offset: mineOffset,
+    lines: mineLines,
+    index: 0
+  },
+      their = {
+    offset: theirOffset,
+    lines: theirLines,
+    index: 0
+  }; // Handle any leading content
+
+  insertLeading(hunk, mine, their);
+  insertLeading(hunk, their, mine); // Now in the overlap content. Scan through and select the best changes from each.
+
+  while (mine.index < mine.lines.length && their.index < their.lines.length) {
+    var mineCurrent = mine.lines[mine.index],
+        theirCurrent = their.lines[their.index];
+
+    if ((mineCurrent[0] === '-' || mineCurrent[0] === '+') && (theirCurrent[0] === '-' || theirCurrent[0] === '+')) {
+      // Both modified ...
+      mutualChange(hunk, mine, their);
+    } else if (mineCurrent[0] === '+' && theirCurrent[0] === ' ') {
+      /*istanbul ignore start*/
+      var _hunk$lines;
+
+      /*istanbul ignore end*/
+      // Mine inserted
+
+      /*istanbul ignore start*/
+      (_hunk$lines =
+      /*istanbul ignore end*/
+      hunk.lines).push.
+      /*istanbul ignore start*/
+      apply
+      /*istanbul ignore end*/
+      (
+      /*istanbul ignore start*/
+      _hunk$lines
+      /*istanbul ignore end*/
+      ,
+      /*istanbul ignore start*/
+      _toConsumableArray(
+      /*istanbul ignore end*/
+      collectChange(mine)));
+    } else if (theirCurrent[0] === '+' && mineCurrent[0] === ' ') {
+      /*istanbul ignore start*/
+      var _hunk$lines2;
+
+      /*istanbul ignore end*/
+      // Theirs inserted
+
+      /*istanbul ignore start*/
+      (_hunk$lines2 =
+      /*istanbul ignore end*/
+      hunk.lines).push.
+      /*istanbul ignore start*/
+      apply
+      /*istanbul ignore end*/
+      (
+      /*istanbul ignore start*/
+      _hunk$lines2
+      /*istanbul ignore end*/
+      ,
+      /*istanbul ignore start*/
+      _toConsumableArray(
+      /*istanbul ignore end*/
+      collectChange(their)));
+    } else if (mineCurrent[0] === '-' && theirCurrent[0] === ' ') {
+      // Mine removed or edited
+      removal(hunk, mine, their);
+    } else if (theirCurrent[0] === '-' && mineCurrent[0] === ' ') {
+      // Their removed or edited
+      removal(hunk, their, mine, true);
+    } else if (mineCurrent === theirCurrent) {
+      // Context identity
+      hunk.lines.push(mineCurrent);
+      mine.index++;
+      their.index++;
+    } else {
+      // Context mismatch
+      conflict(hunk, collectChange(mine), collectChange(their));
+    }
+  } // Now push anything that may be remaining
+
+
+  insertTrailing(hunk, mine);
+  insertTrailing(hunk, their);
+  calcLineCount(hunk);
+}
+
+function mutualChange(hunk, mine, their) {
+  var myChanges = collectChange(mine),
+      theirChanges = collectChange(their);
+
+  if (allRemoves(myChanges) && allRemoves(theirChanges)) {
+    // Special case for remove changes that are supersets of one another
+    if (
+    /*istanbul ignore start*/
+    (0,
+    /*istanbul ignore end*/
+
+    /*istanbul ignore start*/
+    _array
+    /*istanbul ignore end*/
+    .
+    /*istanbul ignore start*/
+    arrayStartsWith)
+    /*istanbul ignore end*/
+    (myChanges, theirChanges) && skipRemoveSuperset(their, myChanges, myChanges.length - theirChanges.length)) {
+      /*istanbul ignore start*/
+      var _hunk$lines3;
+
+      /*istanbul ignore end*/
+
+      /*istanbul ignore start*/
+      (_hunk$lines3 =
+      /*istanbul ignore end*/
+      hunk.lines).push.
+      /*istanbul ignore start*/
+      apply
+      /*istanbul ignore end*/
+      (
+      /*istanbul ignore start*/
+      _hunk$lines3
+      /*istanbul ignore end*/
+      ,
+      /*istanbul ignore start*/
+      _toConsumableArray(
+      /*istanbul ignore end*/
+      myChanges));
+
+      return;
+    } else if (
+    /*istanbul ignore start*/
+    (0,
+    /*istanbul ignore end*/
+
+    /*istanbul ignore start*/
+    _array
+    /*istanbul ignore end*/
+    .
+    /*istanbul ignore start*/
+    arrayStartsWith)
+    /*istanbul ignore end*/
+    (theirChanges, myChanges) && skipRemoveSuperset(mine, theirChanges, theirChanges.length - myChanges.length)) {
+      /*istanbul ignore start*/
+      var _hunk$lines4;
+
+      /*istanbul ignore end*/
+
+      /*istanbul ignore start*/
+      (_hunk$lines4 =
+      /*istanbul ignore end*/
+      hunk.lines).push.
+      /*istanbul ignore start*/
+      apply
+      /*istanbul ignore end*/
+      (
+      /*istanbul ignore start*/
+      _hunk$lines4
+      /*istanbul ignore end*/
+      ,
+      /*istanbul ignore start*/
+      _toConsumableArray(
+      /*istanbul ignore end*/
+      theirChanges));
+
+      return;
+    }
+  } else if (
+  /*istanbul ignore start*/
+  (0,
+  /*istanbul ignore end*/
+
+  /*istanbul ignore start*/
+  _array
+  /*istanbul ignore end*/
+  .
+  /*istanbul ignore start*/
+  arrayEqual)
+  /*istanbul ignore end*/
+  (myChanges, theirChanges)) {
+    /*istanbul ignore start*/
+    var _hunk$lines5;
+
+    /*istanbul ignore end*/
+
+    /*istanbul ignore start*/
+    (_hunk$lines5 =
+    /*istanbul ignore end*/
+    hunk.lines).push.
+    /*istanbul ignore start*/
+    apply
+    /*istanbul ignore end*/
+    (
+    /*istanbul ignore start*/
+    _hunk$lines5
+    /*istanbul ignore end*/
+    ,
+    /*istanbul ignore start*/
+    _toConsumableArray(
+    /*istanbul ignore end*/
+    myChanges));
+
+    return;
+  }
+
+  conflict(hunk, myChanges, theirChanges);
+}
+
+function removal(hunk, mine, their, swap) {
+  var myChanges = collectChange(mine),
+      theirChanges = collectContext(their, myChanges);
+
+  if (theirChanges.merged) {
+    /*istanbul ignore start*/
+    var _hunk$lines6;
+
+    /*istanbul ignore end*/
+
+    /*istanbul ignore start*/
+    (_hunk$lines6 =
+    /*istanbul ignore end*/
+    hunk.lines).push.
+    /*istanbul ignore start*/
+    apply
+    /*istanbul ignore end*/
+    (
+    /*istanbul ignore start*/
+    _hunk$lines6
+    /*istanbul ignore end*/
+    ,
+    /*istanbul ignore start*/
+    _toConsumableArray(
+    /*istanbul ignore end*/
+    theirChanges.merged));
+  } else {
+    conflict(hunk, swap ? theirChanges : myChanges, swap ? myChanges : theirChanges);
+  }
+}
+
+function conflict(hunk, mine, their) {
+  hunk.conflict = true;
+  hunk.lines.push({
+    conflict: true,
+    mine: mine,
+    theirs: their
+  });
+}
+
+function insertLeading(hunk, insert, their) {
+  while (insert.offset < their.offset && insert.index < insert.lines.length) {
+    var line = insert.lines[insert.index++];
+    hunk.lines.push(line);
+    insert.offset++;
+  }
+}
+
+function insertTrailing(hunk, insert) {
+  while (insert.index < insert.lines.length) {
+    var line = insert.lines[insert.index++];
+    hunk.lines.push(line);
+  }
+}
+
+function collectChange(state) {
+  var ret = [],
+      operation = state.lines[state.index][0];
+
+  while (state.index < state.lines.length) {
+    var line = state.lines[state.index]; // Group additions that are immediately after subtractions and treat them as one "atomic" modify change.
+
+    if (operation === '-' && line[0] === '+') {
+      operation = '+';
+    }
+
+    if (operation === line[0]) {
+      ret.push(line);
+      state.index++;
+    } else {
+      break;
+    }
+  }
+
+  return ret;
+}
+
+function collectContext(state, matchChanges) {
+  var changes = [],
+      merged = [],
+      matchIndex = 0,
+      contextChanges = false,
+      conflicted = false;
+
+  while (matchIndex < matchChanges.length && state.index < state.lines.length) {
+    var change = state.lines[state.index],
+        match = matchChanges[matchIndex]; // Once we've hit our add, then we are done
+
+    if (match[0] === '+') {
+      break;
+    }
+
+    contextChanges = contextChanges || change[0] !== ' ';
+    merged.push(match);
+    matchIndex++; // Consume any additions in the other block as a conflict to attempt
+    // to pull in the remaining context after this
+
+    if (change[0] === '+') {
+      conflicted = true;
+
+      while (change[0] === '+') {
+        changes.push(change);
+        change = state.lines[++state.index];
+      }
+    }
+
+    if (match.substr(1) === change.substr(1)) {
+      changes.push(change);
+      state.index++;
+    } else {
+      conflicted = true;
+    }
+  }
+
+  if ((matchChanges[matchIndex] || '')[0] === '+' && contextChanges) {
+    conflicted = true;
+  }
+
+  if (conflicted) {
+    return changes;
+  }
+
+  while (matchIndex < matchChanges.length) {
+    merged.push(matchChanges[matchIndex++]);
+  }
+
+  return {
+    merged: merged,
+    changes: changes
+  };
+}
+
+function allRemoves(changes) {
+  return changes.reduce(function (prev, change) {
+    return prev && change[0] === '-';
+  }, true);
+}
+
+function skipRemoveSuperset(state, removeChanges, delta) {
+  for (var i = 0; i < delta; i++) {
+    var changeContent = removeChanges[removeChanges.length - delta + i].substr(1);
+
+    if (state.lines[state.index + i] !== ' ' + changeContent) {
+      return false;
+    }
+  }
+
+  state.index += delta;
+  return true;
+}
+
+function calcOldNewLineCount(lines) {
+  var oldLines = 0;
+  var newLines = 0;
+  lines.forEach(function (line) {
+    if (typeof line !== 'string') {
+      var myCount = calcOldNewLineCount(line.mine);
+      var theirCount = calcOldNewLineCount(line.theirs);
+
+      if (oldLines !== undefined) {
+        if (myCount.oldLines === theirCount.oldLines) {
+          oldLines += myCount.oldLines;
+        } else {
+          oldLines = undefined;
+        }
+      }
+
+      if (newLines !== undefined) {
+        if (myCount.newLines === theirCount.newLines) {
+          newLines += myCount.newLines;
+        } else {
+          newLines = undefined;
+        }
+      }
+    } else {
+      if (newLines !== undefined && (line[0] === '+' || line[0] === ' ')) {
+        newLines++;
+      }
+
+      if (oldLines !== undefined && (line[0] === '-' || line[0] === ' ')) {
+        oldLines++;
+      }
+    }
+  });
+  return {
+    oldLines: oldLines,
+    newLines: newLines
+  };
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9wYXRjaC9tZXJnZS5qcyJdLCJuYW1lcyI6WyJjYWxjTGluZUNvdW50IiwiaHVuayIsImNhbGNPbGROZXdMaW5lQ291bnQiLCJsaW5lcyIsIm9sZExpbmVzIiwibmV3TGluZXMiLCJ1bmRlZmluZWQiLCJtZXJnZSIsIm1pbmUiLCJ0aGVpcnMiLCJiYXNlIiwibG9hZFBhdGNoIiwicmV0IiwiaW5kZXgiLCJuZXdGaWxlTmFtZSIsImZpbGVOYW1lQ2hhbmdlZCIsIm9sZEZpbGVOYW1lIiwib2xkSGVhZGVyIiwibmV3SGVhZGVyIiwic2VsZWN0RmllbGQiLCJodW5rcyIsIm1pbmVJbmRleCIsInRoZWlyc0luZGV4IiwibWluZU9mZnNldCIsInRoZWlyc09mZnNldCIsImxlbmd0aCIsIm1pbmVDdXJyZW50Iiwib2xkU3RhcnQiLCJJbmZpbml0eSIsInRoZWlyc0N1cnJlbnQiLCJodW5rQmVmb3JlIiwicHVzaCIsImNsb25lSHVuayIsIm1lcmdlZEh1bmsiLCJNYXRoIiwibWluIiwibmV3U3RhcnQiLCJtZXJnZUxpbmVzIiwicGFyYW0iLCJ0ZXN0IiwicGFyc2VQYXRjaCIsIkVycm9yIiwic3RydWN0dXJlZFBhdGNoIiwicGF0Y2giLCJjb25mbGljdCIsImNoZWNrIiwib2Zmc2V0IiwibWluZUxpbmVzIiwidGhlaXJPZmZzZXQiLCJ0aGVpckxpbmVzIiwidGhlaXIiLCJpbnNlcnRMZWFkaW5nIiwidGhlaXJDdXJyZW50IiwibXV0dWFsQ2hhbmdlIiwiY29sbGVjdENoYW5nZSIsInJlbW92YWwiLCJpbnNlcnRUcmFpbGluZyIsIm15Q2hhbmdlcyIsInRoZWlyQ2hhbmdlcyIsImFsbFJlbW92ZXMiLCJhcnJheVN0YXJ0c1dpdGgiLCJza2lwUmVtb3ZlU3VwZXJzZXQiLCJhcnJheUVxdWFsIiwic3dhcCIsImNvbGxlY3RDb250ZXh0IiwibWVyZ2VkIiwiaW5zZXJ0IiwibGluZSIsInN0YXRlIiwib3BlcmF0aW9uIiwibWF0Y2hDaGFuZ2VzIiwiY2hhbmdlcyIsIm1hdGNoSW5kZXgiLCJjb250ZXh0Q2hhbmdlcyIsImNvbmZsaWN0ZWQiLCJjaGFuZ2UiLCJtYXRjaCIsInN1YnN0ciIsInJlZHVjZSIsInByZXYiLCJyZW1vdmVDaGFuZ2VzIiwiZGVsdGEiLCJpIiwiY2hhbmdlQ29udGVudCIsImZvckVhY2giLCJteUNvdW50IiwidGhlaXJDb3VudCJdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7OztBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7O0FBQ0E7QUFBQTtBQUFBO0FBQUE7QUFBQTs7QUFFQTtBQUFBO0FBQUE7QUFBQTtBQUFBOzs7Ozs7Ozs7OztBQUVPLFNBQVNBLGFBQVQsQ0FBdUJDLElBQXZCLEVBQTZCO0FBQUE7QUFBQTtBQUFBO0FBQ0xDLEVBQUFBLG1CQUFtQixDQUFDRCxJQUFJLENBQUNFLEtBQU4sQ0FEZDtBQUFBLE1BQzNCQyxRQUQyQix3QkFDM0JBLFFBRDJCO0FBQUEsTUFDakJDLFFBRGlCLHdCQUNqQkEsUUFEaUI7O0FBR2xDLE1BQUlELFFBQVEsS0FBS0UsU0FBakIsRUFBNEI7QUFDMUJMLElBQUFBLElBQUksQ0FBQ0csUUFBTCxHQUFnQkEsUUFBaEI7QUFDRCxHQUZELE1BRU87QUFDTCxXQUFPSCxJQUFJLENBQUNHLFFBQVo7QUFDRDs7QUFFRCxNQUFJQyxRQUFRLEtBQUtDLFNBQWpCLEVBQTRCO0FBQzFCTCxJQUFBQSxJQUFJLENBQUNJLFFBQUwsR0FBZ0JBLFFBQWhCO0FBQ0QsR0FGRCxNQUVPO0FBQ0wsV0FBT0osSUFBSSxDQUFDSSxRQUFaO0FBQ0Q7QUFDRjs7QUFFTSxTQUFTRSxLQUFULENBQWVDLElBQWYsRUFBcUJDLE1BQXJCLEVBQTZCQyxJQUE3QixFQUFtQztBQUN4Q0YsRUFBQUEsSUFBSSxHQUFHRyxTQUFTLENBQUNILElBQUQsRUFBT0UsSUFBUCxDQUFoQjtBQUNBRCxFQUFBQSxNQUFNLEdBQUdFLFNBQVMsQ0FBQ0YsTUFBRCxFQUFTQyxJQUFULENBQWxCO0FBRUEsTUFBSUUsR0FBRyxHQUFHLEVBQVYsQ0FKd0MsQ0FN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R0FBWixJQUFtQkEsSUFBSSxDQUFDLENBQUQsQ0FBSixLQUFZLEdBQTFELENBQUosRUFBb0U7QUFDbEUvRCxRQUFBQSxRQUFRO0FBQ1Q7QUFDRjtBQUNGLEdBNUJEO0FBOEJBLFNBQU87QUFBQ0EsSUFBQUEsUUFBUSxFQUFSQSxRQUFEO0FBQVdDLElBQUFBLFFBQVEsRUFBUkE7QUFBWCxHQUFQO0FBQ0QiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQge3N0cnVjdHVyZWRQYXRjaH0gZnJvbSAnLi9jcmVhdGUnO1xuaW1wb3J0IHtwYXJzZVBhdGNofSBmcm9tICcuL3BhcnNlJztcblxuaW1wb3J0IHthcnJheUVxdWFsLCBhcnJheVN0YXJ0c1dpdGh9IGZyb20gJy4uL3V0aWwvYXJyYXknO1xuXG5leHBvcnQgZnVuY3Rpb24gY2FsY0xpbmVDb3VudChodW5rKSB7XG4gIGNvbnN0IHtvbGRMaW5lcywgbmV3TGluZXN9ID0gY2FsY09sZE5ld0xpbmVDb3VudChodW5rLmxpbmVzKTtcblxuICBpZiAob2xkTGluZXMgIT09IHVuZGVmaW5lZCkge1xuICAgIGh1bmsub2xkTGluZXMgPSBvbGRMaW5lcztcbiAgfSBlbHNlIHtcbiAgICBkZWxldGUgaHVuay5vbGRMaW5lcztcbiAgfVxuXG4gIGlmIChuZXdMaW5lcyAhPT0gdW5kZWZpbmVkKSB7XG4gICAgaHVuay5uZXdMaW5lcyA9IG5ld0xpbmVzO1xuICB9IGVsc2Uge1xuICAgIGRlbGV0ZSBodW5rLm5ld0xpbmVzO1xuICB9XG59XG5cbmV4cG9ydCBmdW5jdGlvbiBtZXJnZShtaW5lLCB0aGVpcnMsIGJhc2UpIHtcbiAgbWluZSA9IGxvYWRQYXRjaChtaW5lLCBiYXNlKTtcbiAgdGhlaXJzID0gbG9hZFBhdGNoKHRoZWlycywgYmFzZSk7XG5cbiAgbGV0IHJldCA9IHt9O1xuXG4gIC8vIEZvciBpbmRleCB3ZSBqdXN0IGxldCBpdCBwYXNzIHRocm91Z2ggYXMgaXQgZG9lc24ndCBoYXZlIGFueSBuZWNlc3NhcnkgbWVhbmluZy5cbiAgLy8gTGVhdmluZyBzYW5pdHkgY2hlY2tzIG9uIHRoaXMgdG8gdGhlIEFQSSBjb25zdW1lciB0aGF0IG1heSBrbm93IG1vcmUgYWJvdXQgdGhlXG4gIC8vIG1lYW5pbmcgaW4gdGhlaXIgb3duIGNvbnRleHQuXG4gIGlmIChtaW5lLmluZGV4IHx8IHRoZWlycy5pbmRleCkge1xuICAgIHJldC5pbmRleCA9IG1pbmUuaW5kZXggfHwgdGhlaXJzLmluZGV4O1xuICB9XG5cbiAgaWYgKG1pbmUubmV3RmlsZU5hbWUgfHwgdGhlaXJzLm5ld0ZpbGVOYW1lKSB7XG4gICAgaWYgKCFmaWxlTmFtZUNoYW5nZWQobWluZSkpIHtcbiAgICAgIC8vIE5vIGhlYWRlciBvciBubyBjaGFuZ2UgaW4gb3VycywgdXNlIHRoZWlycyAoYW5kIG91cnMgaWYgdGhlaXJzIGRvZXMgbm90IGV4aXN0KVxuICAgICAgcmV0Lm9sZEZpbGVOYW1lID0gdGhlaXJzLm9sZEZpbGVOYW1lIHx8IG1pbmUub2xkRmlsZU5hbWU7XG4gICAgICByZXQubmV3RmlsZU5hbWUgPSB0aGVpcnMubmV3RmlsZU5hbWUgfHwgbWluZS5uZXdGaWxlTmFtZTtcbiAgICAgIHJldC5vbGRIZWFkZXIgPSB0aGVpcnMub2xkSGVhZGVyIHx8IG1pbmUub2xkSGVhZGVyO1xuICAgICAgcmV0Lm5ld0hlYWRlciA9IHRoZWlycy5uZXdIZWFkZXIgfHwgbWluZS5uZXdIZWFkZXI7XG4gICAgfSBlbHNlIGlmICghZmlsZU5hbWVDaGFuZ2VkKHRoZWlycykpIHtcbiAgICAgIC8vIE5vIGhlYWRlciBvciBubyBjaGFuZ2UgaW4gdGhlaXJzLCB1c2Ugb3Vyc1xuICAgICAgcmV0Lm9sZEZpbGVOYW1lID0gbWluZS5vbGRGaWxlTmFtZTtcbiAgICAgIHJldC5uZXdGaWxlTmFtZSA9IG1pbmUubmV3RmlsZU5hbWU7XG4gICAgICByZXQub2xkSGVhZGVyID0gbWluZS5vbGRIZWFkZXI7XG4gICAgICByZXQubmV3SGVhZGVyID0gbWluZS5uZXdIZWFkZXI7XG4gICAgfSBlbHNlIHtcbiAgICAgIC8vIEJvdGggY2hhbmdlZC4uLiBmaWd1cmUgaXQgb3V0XG4gICAgICByZXQub2xkRmlsZU5hbWUgPSBzZWxlY3RGaWVsZChyZXQsIG1pbmUub2xkRmlsZU5hbWUsIHRoZWlycy5vbGRGaWxlTmFtZSk7XG4gICAgICByZXQubmV3RmlsZU5hbWUgPSBzZWxlY3RGaWVsZChyZXQsIG1pbmUubmV3RmlsZU5hbWUsIHRoZWlycy5uZXdGaWxlTmFtZSk7XG4gICAgICByZXQub2xkSGVhZGVyID0gc2VsZWN0RmllbGQocmV0LCBtaW5lLm9sZEhlYWRlciwgdGhlaXJzLm9sZEhlYWRlcik7XG4gICAgICByZXQubmV3SGVhZGVyID0gc2VsZWN0RmllbGQocmV0LCBtaW5lLm5ld0hlYWRlciwgdGhlaXJzLm5ld0hlYWRlcik7XG4gICAgfVxuICB9XG5cbiAgcmV0Lmh1bmtzID0gW107XG5cbiAgbGV0IG1pbmVJbmRleCA9IDAsXG4gICAgICB0aGVpcnNJbmRleCA9IDAsXG4gICAgICBtaW5lT2Zmc2V0ID0gMCxcbiAgICAgIHRoZWlyc09mZnNldCA9IDA7XG5cbiAgd2hpbGUgKG1pbmVJbmRleCA8IG1pbmUuaHVua3MubGVuZ3RoIHx8IHRoZWlyc0luZGV4IDwgdGhlaXJzLmh1bmtzLmxlbmd0aCkge1xuICAgIGxldCBtaW5lQ3VycmVudCA9IG1pbmUuaHVua3NbbWluZUluZGV4XSB8fCB7b2xkU3RhcnQ6IEluZmluaXR5fSxcbiAgICAgICAgdGhlaXJzQ3VycmVudCA9IHRoZWlycy5odW5rc1t0aGVpcnNJbmRleF0gfHwge29sZFN0YXJ0OiBJbmZpbml0eX07XG5cbiAgICBpZiAoaHVua0JlZm9yZShtaW5lQ3VycmVudCwgdGhlaXJzQ3VycmVudCkpIHtcbiAgICAgIC8vIFRoaXMgcGF0Y2ggZG9lcyBub3Qgb3ZlcmxhcCB3aXRoIGFueSBvZiB0aGUgb3RoZXJzLCB5YXkuXG4gICAgICByZXQuaHVua3MucHVzaChjbG9uZUh1bmsobWluZUN1cnJlbnQsIG1pbmVPZmZzZXQpKTtcbiAgICAgIG1pbmVJbmRleCsrO1xuICAgICAgdGhlaXJzT2Zmc2V0ICs9IG1pbmVDdXJyZW50Lm5ld0xpbmVzIC0gbWluZUN1cnJlbnQub2xkTGluZXM7XG4gICAgfSBlbHNlIGlmIChodW5rQmVmb3JlKHRoZWlyc0N1cnJlbnQsIG1pbmVDdXJyZW50KSkge1xuICAgICAgLy8gVGhpcyBwYXRjaCBkb2VzIG5vdCBvdmVybGFwIHdpdGggYW55IG9mIHRoZSBvdGhlcnMsIHlheS5cbiAgICAgIHJldC5odW5rcy5wdXNoKGNsb25lSHVuayh0aGVpcnNDdXJyZW50LCB0aGVpcnNPZmZzZXQpKTtcbiAgICAgIHRoZWlyc0luZGV4Kys7XG4gICAgICBtaW5lT2Zmc2V0ICs9IHRoZWlyc0N1cnJlbnQubmV3TGluZXMgLSB0aGVpcnNDdXJyZW50Lm9sZExpbmVzO1xuICAgIH0gZWxzZSB7XG4gICAgICAvLyBPdmVybGFwLCBtZXJnZSBhcyBiZXN0IHdlIGNhblxuICAgICAgbGV0IG1lcmdlZEh1bmsgPSB7XG4gICAgICAgIG9sZFN0YXJ0OiBNYXRoLm1pbihtaW5lQ3VycmVudC5vbGRTdGFydCwgdGhlaXJzQ3VycmVudC5vbGRTdGFydCksXG4gICAgICAgIG9sZExpbmVzOiAwLFxuICAgICAgICBuZXdTdGFydDogTWF0aC5taW4obWluZUN1cnJlbnQubmV3U3RhcnQgKyBtaW5lT2Zmc2V0LCB0aGVpcnNDdXJyZW50Lm9sZFN0YXJ0ICsgdGhlaXJzT2Zmc2V0KSxcbiAgICAgICAgbmV3TGluZXM6IDAsXG4gICAgICAgIGxpbmVzOiBbXVxuICAgICAgfTtcbiAgICAgIG1lcmdlTGluZXMobWVyZ2VkSHVuaywgbWluZUN1cnJlbnQub2xkU3RhcnQsIG1pbmVDdXJyZW50LmxpbmVzLCB0aGVpcnNDdXJyZW50Lm9sZFN0YXJ0LCB0aGVpcnNDdXJyZW50LmxpbmVzKTtcbiAgICAgIHRoZWlyc0luZGV4Kys7XG4gICAgICBtaW5lSW5kZXgrKztcblxuICAgICAgcmV0Lmh1bmtzLnB1c2gobWVyZ2VkSHVuayk7XG4gICAgfVxuICB9XG5cbiAgcmV0dXJuIHJldDtcbn1cblxuZnVuY3Rpb24gbG9hZFBhdGNoKHBhcmFtLCBiYXNlKSB7XG4gIGlmICh0eXBlb2YgcGFyYW0gPT09ICdzdHJpbmcnKSB7XG4gICAgaWYgKCgvXkBAL20pLnRlc3QocGFyYW0pIHx8ICgoL15JbmRleDovbSkudGVzdChwYXJhbSkpKSB7XG4gICAgICByZXR1cm4gcGFyc2VQYXRjaChwYXJhbSlbMF07XG4gICAgfVxuXG4gICAgaWYgKCFiYXNlKSB7XG4gICAgICB0aHJvdyBuZXcgRXJyb3IoJ011c3QgcHJvdmlkZSBhIGJhc2UgcmVmZXJlbmNlIG9yIHBhc3MgaW4gYSBwYXRjaCcpO1xuICAgIH1cbiAgICByZXR1cm4gc3RydWN0dXJlZFBhdGNoKHVuZGVmaW5lZCwgdW5kZWZpbmVkLCBiYXNlLCBwYXJhbSk7XG4gIH1cblxuICByZXR1cm4gcGFyYW07XG59XG5cbmZ1bmN0aW9uIGZpbGVOYW1lQ2hhbmdlZChwYXRjaCkge1xuICByZXR1cm4gcGF0Y2gubmV3RmlsZU5hbWUgJiYgcGF0Y2gubmV3RmlsZU5hbWUgIT09IHBhdGNoLm9sZEZpbGVOYW1lO1xufVxuXG5mdW5jdGlvbiBzZWxlY3RGaWVsZChpbmRleCwgbWluZSwgdGhlaXJzKSB7XG4gIGlmIChtaW5lID09PSB0aGVpcnMpIHtcbiAgICByZXR1cm4gbWluZTtcbiAgfSBlbHNlIHtcbiAgICBpbmRleC5jb25mbGljdCA9IHRydWU7XG4gICAgcmV0dXJuIHttaW5lLCB0aGVpcnN9O1xuICB9XG59XG5cbmZ1bmN0aW9uIGh1bmtCZWZvcmUodGVzdCwgY2hlY2spIHtcbiAgcmV0dXJuIHRlc3Qub2xkU3RhcnQgPCBjaGVjay5vbGRTdGFydFxuICAgICYmICh0ZXN0Lm9sZFN0YXJ0ICsgdGVzdC5vbGRMaW5lcykgPCBjaGVjay5vbGRTdGFydDtcbn1cblxuZnVuY3Rpb24gY2xvbmVIdW5rKGh1bmssIG9mZnNldCkge1xuICByZXR1cm4ge1xuICAgIG9sZFN0YXJ0OiBodW5rLm9sZFN0YXJ0LCBvbGRMaW5lczogaHVuay5vbGRMaW5lcyxcbiAgICBuZXdTdGFydDogaHVuay5uZXdTdGFydCArIG9mZnNldCwgbmV3TGluZXM6IGh1bmsubmV3TGluZXMsXG4gICAgbGluZXM6IGh1bmsubGluZXNcbiAgfTtcbn1cblxuZnVuY3Rpb24gbWVyZ2VMaW5lcyhodW5rLCBtaW5lT2Zmc2V0LCBtaW5lTGluZXMsIHRoZWlyT2Zmc2V0LCB0aGVpckxpbmVzKSB7XG4gIC8vIFRoaXMgd2lsbCBnZW5lcmFsbHkgcmVzdWx0IGluIGEgY29uZmxpY3RlZCBodW5rLCBidXQgdGhlcmUgYXJlIGNhc2VzIHdoZXJlIHRoZSBjb250ZXh0XG4gIC8vIGlzIHRoZSBvbmx5IG92ZXJsYXAgd2hlcmUgd2UgY2FuIHN1Y2Nlc3NmdWxseSBtZXJnZSB0aGUgY29udGVudCBoZXJlLlxuICBsZXQgbWluZSA9IHtvZmZzZXQ6IG1pbmVPZmZzZXQsIGxpbmVzOiBtaW5lTGluZXMsIGluZGV4OiAwfSxcbiAgICAgIHRoZWlyID0ge29mZnNldDogdGhlaXJPZmZzZXQsIGxpbmVzOiB0aGVpckxpbmVzLCBpbmRleDogMH07XG5cbiAgLy8gSGFuZGxlIGFueSBsZWFkaW5nIGNvbnRlbnRcbiAgaW5zZXJ0TGVhZGluZyhodW5rLCBtaW5lLCB0aGVpcik7XG4gIGluc2VydExlYWRpbmcoaHVuaywgdGhlaXIsIG1pbmUpO1xuXG4gIC8vIE5vdyBpbiB0aGUgb3ZlcmxhcCBjb250ZW50LiBTY2FuIHRocm91Z2ggYW5kIHNlbGVjdCB0aGUgYmVzdCBjaGFuZ2VzIGZyb20gZWFjaC5cbiAgd2hpbGUgKG1pbmUuaW5kZXggPCBtaW5lLmxpbmVzLmxlbmd0aCAmJiB0aGVpci5pbmRleCA8IHRoZWlyLmxpbmVzLmxlbmd0aCkge1xuICAgIGxldCBtaW5lQ3VycmVudCA9IG1pbmUubGluZXNbbWluZS5pbmRleF0sXG4gICAgICAgIHRoZWlyQ3VycmVudCA9IHRoZWlyLmxpbmVzW3RoZWlyLmluZGV4XTtcblxuICAgIGlmICgobWluZUN1cnJlbnRbMF0gPT09ICctJyB8fCBtaW5lQ3VycmVudFswXSA9PT0gJysnKVxuICAgICAgICAmJiAodGhlaXJDdXJyZW50WzBdID09PSAnLScgfHwgdGhlaXJDdXJyZW50WzBdID09PSAnKycpKSB7XG4gICAgICAvLyBCb3RoIG1vZGlmaWVkIC4uLlxuICAgICAgbXV0dWFsQ2hhbmdlKGh1bmssIG1pbmUsIHRoZWlyKTtcbiAgICB9IGVsc2UgaWYgKG1pbmVDdXJyZW50WzBdID09PSAnKycgJiYgdGhlaXJDdXJyZW50WzBdID09PSAnICcpIHtcbiAgICAgIC8vIE1pbmUgaW5zZXJ0ZWRcbiAgICAgIGh1bmsubGluZXMucHVzaCguLi4gY29sbGVjdENoYW5nZShtaW5lKSk7XG4gICAgfSBlbHNlIGlmICh0aGVpckN1cnJlbnRbMF0gPT09ICcrJyAmJiBtaW5lQ3VycmVudFswXSA9PT0gJyAnKSB7XG4gICAgICAvLyBUaGVpcnMgaW5zZXJ0ZWRcbiAgICAgIGh1bmsubGluZXMucHVzaCguLi4gY29sbGVjdENoYW5nZSh0aGVpcikpO1xuICAgIH0gZWxzZSBpZiAobWluZUN1cnJlbnRbMF0gPT09ICctJyAmJiB0aGVpckN1cnJlbnRbMF0gPT09ICcgJykge1xuICAgICAgLy8gTWluZSByZW1vdmVkIG9yIGVkaXRlZFxuICAgICAgcmVtb3ZhbChodW5rLCBtaW5lLCB0aGVpcik7XG4gICAgfSBlbHNlIGlmICh0aGVpckN1cnJlbnRbMF0gPT09ICctJyAmJiBtaW5lQ3VycmVudFswXSA9PT0gJyAnKSB7XG4gICAgICAvLyBUaGVpciByZW1vdmVkIG9yIGVkaXRlZFxuICAgICAgcmVtb3ZhbChodW5rLCB0aGVpciwgbWluZSwgdHJ1ZSk7XG4gICAgfSBlbHNlIGlmIChtaW5lQ3VycmVudCA9PT0gdGhlaXJDdXJyZW50KSB7XG4gICAgICAvLyBDb250ZXh0IGlkZW50aXR5XG4gICAgICBodW5rLmxpbmVzLnB1c2gobWluZUN1cnJlbnQpO1xuICAgICAgbWluZS5pbmRleCsrO1xuICAgICAgdGhlaXIuaW5kZXgrKztcbiAgICB9IGVsc2Uge1xuICAgICAgLy8gQ29udGV4dCBtaXNtYXRjaFxuICAgICAgY29uZmxpY3QoaHVuaywgY29sbGVjdENoYW5nZShtaW5lKSwgY29sbGVjdENoYW5nZSh0aGVpcikpO1xuICAgIH1cbiAgfVxuXG4gIC8vIE5vdyBwdXNoIGFueXRoaW5nIHRoYXQgbWF5IGJlIHJlbWFpbmluZ1xuICBpbnNlcnRUcmFpbGluZyhodW5rLCBtaW5lKTtcbiAgaW5zZXJ0VHJhaWxpbmcoaHVuaywgdGhlaXIpO1xuXG4gIGNhbGNMaW5lQ291bnQoaHVuayk7XG59XG5cbmZ1bmN0aW9uIG11dHVhbENoYW5nZShodW5rLCBtaW5lLCB0aGVpcikge1xuICBsZXQgbXlDaGFuZ2VzID0gY29sbGVjdENoYW5nZShtaW5lKSxcbiAgICAgIHRoZWlyQ2hhbmdlcyA9IGNvbGxlY3RDaGFuZ2UodGhlaXIpO1xuXG4gIGlmIChhbGxSZW1vdmVzKG15Q2hhbmdlcykgJiYgYWxsUmVtb3Zlcyh0aGVpckNoYW5nZXMpKSB7XG4gICAgLy8gU3BlY2lhbCBjYXNlIGZvciByZW1vdmUgY2hhbmdlcyB0aGF0IGFyZSBzdXBlcnNldHMgb2Ygb25lIGFub3RoZXJcbiAgICBpZiAoYXJyYXlTdGFydHNXaXRoKG15Q2hhbmdlcywgdGhlaXJDaGFuZ2VzKVxuICAgICAgICAmJiBza2lwUmVtb3ZlU3VwZXJzZXQodGhlaXIsIG15Q2hhbmdlcywgbXlDaGFuZ2VzLmxlbmd0aCAtIHRoZWlyQ2hhbmdlcy5sZW5ndGgpKSB7XG4gICAgICBodW5rLmxpbmVzLnB1c2goLi4uIG15Q2hhbmdlcyk7XG4gICAgICByZXR1cm47XG4gICAgfSBlbHNlIGlmIChhcnJheVN0YXJ0c1dpdGgodGhlaXJDaGFuZ2VzLCBteUNoYW5nZXMpXG4gICAgICAgICYmIHNraXBSZW1vdmVTdXBlcnNldChtaW5lLCB0aGVpckNoYW5nZXMsIHRoZWlyQ2hhbmdlcy5sZW5ndGggLSBteUNoYW5nZXMubGVuZ3RoKSkge1xuICAgICAgaHVuay5saW5lcy5wdXNoKC4uLiB0aGVpckNoYW5nZXMpO1xuICAgICAgcmV0dXJuO1xuICAgIH1cbiAgfSBlbHNlIGlmIChhcnJheUVxdWFsKG15Q2hhbmdlcywgdGhlaXJDaGFuZ2VzKSkge1xuICAgIGh1bmsubGluZXMucHVzaCguLi4gbXlDaGFuZ2VzKTtcbiAgICByZXR1cm47XG4gIH1cblxuICBjb25mbGljdChodW5rLCBteUNoYW5nZXMsIHRoZWlyQ2hhbmdlcyk7XG59XG5cbmZ1bmN0aW9uIHJlbW92YWwoaHVuaywgbWluZSwgdGhlaXIsIHN3YXApIHtcbiAgbGV0IG15Q2hhbmdlcyA9IGNvbGxlY3RDaGFuZ2UobWluZSksXG4gICAgICB0aGVpckNoYW5nZXMgPSBjb2xsZWN0Q29udGV4dCh0aGVpciwgbXlDaGFuZ2VzKTtcbiAgaWYgKHRoZWlyQ2hhbmdlcy5tZXJnZWQpIHtcbiAgICBodW5rLmxpbmVzLnB1c2goLi4uIHRoZWlyQ2hhbmdlcy5tZXJnZWQpO1xuICB9IGVsc2Uge1xuICAgIGNvbmZsaWN0KGh1bmssIHN3YXAgPyB0aGVpckNoYW5nZXMgOiBteUNoYW5nZXMsIHN3YXAgPyBteUNoYW5nZXMgOiB0aGVpckNoYW5nZXMpO1xuICB9XG59XG5cbmZ1bmN0aW9uIGNvbmZsaWN0KGh1bmssIG1pbmUsIHRoZWlyKSB7XG4gIGh1bmsuY29uZmxpY3QgPSB0cnVlO1xuICBodW5rLmxpbmVzLnB1c2goe1xuICAgIGNvbmZsaWN0OiB0cnVlLFxuICAgIG1pbmU6IG1pbmUsXG4gICAgdGhlaXJzOiB0aGVpclxuICB9KTtcbn1cblxuZnVuY3Rpb24gaW5zZXJ0TGVhZGluZyhodW5rLCBpbnNlcnQsIHRoZWlyKSB7XG4gIHdoaWxlIChpbnNlcnQub2Zmc2V0IDwgdGhlaXIub2Zmc2V0ICYmIGluc2VydC5pbmRleCA8IGluc2VydC5saW5lcy5sZW5ndGgpIHtcbiAgICBsZXQgbGluZSA9IGluc2VydC5saW5lc1tpbnNlcnQuaW5kZXgrK107XG4gICAgaHVuay5saW5lcy5wdXNoKGxpbmUpO1xuICAgIGluc2VydC5vZmZzZXQrKztcbiAgfVxufVxuZnVuY3Rpb24gaW5zZXJ0VHJhaWxpbmcoaHVuaywgaW5zZXJ0KSB7XG4gIHdoaWxlIChpbnNlcnQuaW5kZXggPCBpbnNlcnQubGluZXMubGVuZ3RoKSB7XG4gICAgbGV0IGxpbmUgPSBpbnNlcnQubGluZXNbaW5zZXJ0LmluZGV4KytdO1xuICAgIGh1bmsubGluZXMucHVzaChsaW5lKTtcbiAgfVxufVxuXG5mdW5jdGlvbiBjb2xsZWN0Q2hhbmdlKHN0YXRlKSB7XG4gIGxldCByZXQgPSBbXSxcbiAgICAgIG9wZXJhdGlvbiA9IHN0YXRlLmxpbmVzW3N0YXRlLmluZGV4XVswXTtcbiAgd2hpbGUgKHN0YXRlLmluZGV4IDwgc3RhdGUubGluZXMubGVuZ3RoKSB7XG4gICAgbGV0IGxpbmUgPSBzdGF0ZS5saW5lc1tzdGF0ZS5pbmRleF07XG5cbiAgICAvLyBHcm91cCBhZGRpdGlvbnMgdGhhdCBhcmUgaW1tZWRpYXRlbHkgYWZ0ZXIgc3VidHJhY3Rpb25zIGFuZCB0cmVhdCB0aGVtIGFzIG9uZSBcImF0b21pY1wiIG1vZGlmeSBjaGFuZ2UuXG4gICAgaWYgKG9wZXJhdGlvbiA9PT0gJy0nICYmIGxpbmVbMF0gPT09ICcrJykge1xuICAgICAgb3BlcmF0aW9uID0gJysnO1xuICAgIH1cblxuICAgIGlmIChvcGVyYXRpb24gPT09IGxpbmVbMF0pIHtcbiAgICAgIHJldC5wdXNoKGxpbmUpO1xuICAgICAgc3RhdGUuaW5kZXgrKztcbiAgICB9IGVsc2Uge1xuICAgICAgYnJlYWs7XG4gICAgfVxuICB9XG5cbiAgcmV0dXJuIHJldDtcbn1cbmZ1bmN0aW9uIGNvbGxlY3RDb250ZXh0KHN0YXRlLCBtYXRjaENoYW5nZXMpIHtcbiAgbGV0IGNoYW5nZXMgPSBbXSxcbiAgICAgIG1lcmdlZCA9IFtdLFxuICAgICAgbWF0Y2hJbmRleCA9IDAsXG4gICAgICBjb250ZXh0Q2hhbmdlcyA9IGZhbHNlLFxuICAgICAgY29uZmxpY3RlZCA9IGZhbHNlO1xuICB3aGlsZSAobWF0Y2hJbmRleCA8IG1hdGNoQ2hhbmdlcy5sZW5ndGhcbiAgICAgICAgJiYgc3RhdGUuaW5kZXggPCBzdGF0ZS5saW5lcy5sZW5ndGgpIHtcbiAgICBsZXQgY2hhbmdlID0gc3RhdGUubGluZXNbc3RhdGUuaW5kZXhdLFxuICAgICAgICBtYXRjaCA9IG1hdGNoQ2hhbmdlc1ttYXRjaEluZGV4XTtcblxuICAgIC8vIE9uY2Ugd2UndmUgaGl0IG91ciBhZGQsIHRoZW4gd2UgYXJlIGRvbmVcbiAgICBpZiAobWF0Y2hbMF0gPT09ICcrJykge1xuICAgICAgYnJlYWs7XG4gICAgfVxuXG4gICAgY29udGV4dENoYW5nZXMgPSBjb250ZXh0Q2hhbmdlcyB8fCBjaGFuZ2VbMF0gIT09ICcgJztcblxuICAgIG1lcmdlZC5wdXNoKG1hdGNoKTtcbiAgICBtYXRjaEluZGV4Kys7XG5cbiAgICAvLyBDb25zdW1lIGFueSBhZGRpdGlvbnMgaW4gdGhlIG90aGVyIGJsb2NrIGFzIGEgY29uZmxpY3QgdG8gYXR0ZW1wdFxuICAgIC8vIHRvIHB1bGwgaW4gdGhlIHJlbWFpbmluZyBjb250ZXh0IGFmdGVyIHRoaXNcbiAgICBpZiAoY2hhbmdlWzBdID09PSAnKycpIHtcbiAgICAgIGNvbmZsaWN0ZWQgPSB0cnVlO1xuXG4gICAgICB3aGlsZSAoY2hhbmdlWzBdID09PSAnKycpIHtcbiAgICAgICAgY2hhbmdlcy5wdXNoKGNoYW5nZSk7XG4gICAgICAgIGNoYW5nZSA9IHN0YXRlLmxpbmVzWysrc3RhdGUuaW5kZXhdO1xuICAgICAgfVxuICAgIH1cblxuICAgIGlmIChtYXRjaC5zdWJzdHIoMSkgPT09IGNoYW5nZS5zdWJzdHIoMSkpIHtcbiAgICAgIGNoYW5nZXMucHVzaChjaGFuZ2UpO1xuICAgICAgc3RhdGUuaW5kZXgrKztcbiAgICB9IGVsc2Uge1xuICAgICAgY29uZmxpY3RlZCA9IHRydWU7XG4gICAgfVxuICB9XG5cbiAgaWYgKChtYXRjaENoYW5nZXNbbWF0Y2hJbmRleF0gfHwgJycpWzBdID09PSAnKydcbiAgICAgICYmIGNvbnRleHRDaGFuZ2VzKSB7XG4gICAgY29uZmxpY3RlZCA9IHRydWU7XG4gIH1cblxuICBpZiAoY29uZmxpY3RlZCkge1xuICAgIHJldHVybiBjaGFuZ2VzO1xuICB9XG5cbiAgd2hpbGUgKG1hdGNoSW5kZXggPCBtYXRjaENoYW5nZXMubGVuZ3RoKSB7XG4gICAgbWVyZ2VkLnB1c2gobWF0Y2hDaGFuZ2VzW21hdGNoSW5kZXgrK10pO1xuICB9XG5cbiAgcmV0dXJuIHtcbiAgICBtZXJnZWQsXG4gICAgY2hhbmdlc1xuICB9O1xufVxuXG5mdW5jdGlvbiBhbGxSZW1vdmVzKGNoYW5nZXMpIHtcbiAgcmV0dXJuIGNoYW5nZXMucmVkdWNlKGZ1bmN0aW9uKHByZXYsIGNoYW5nZSkge1xuICAgIHJldHVybiBwcmV2ICYmIGNoYW5nZVswXSA9PT0gJy0nO1xuICB9LCB0cnVlKTtcbn1cbmZ1bmN0aW9uIHNraXBSZW1vdmVTdXBlcnNldChzdGF0ZSwgcmVtb3ZlQ2hhbmdlcywgZGVsdGEpIHtcbiAgZm9yIChsZXQgaSA9IDA7IGkgPCBkZWx0YTsgaSsrKSB7XG4gICAgbGV0IGNoYW5nZUNvbnRlbnQgPSByZW1vdmVDaGFuZ2VzW3JlbW92ZUNoYW5nZXMubGVuZ3RoIC0gZGVsdGEgKyBpXS5zdWJzdHIoMSk7XG4gICAgaWYgKHN0YXRlLmxpbmVzW3N0YXRlLmluZGV4ICsgaV0gIT09ICcgJyArIGNoYW5nZUNvbnRlbnQpIHtcbiAgICAgIHJldHVybiBmYWxzZTtcbiAgICB9XG4gIH1cblxuICBzdGF0ZS5pbmRleCArPSBkZWx0YTtcbiAgcmV0dXJuIHRydWU7XG59XG5cbmZ1bmN0aW9uIGNhbGNPbGROZXdMaW5lQ291bnQobGluZXMpIHtcbiAgbGV0IG9sZExpbmVzID0gMDtcbiAgbGV0IG5ld0xpbmVzID0gMDtcblxuICBsaW5lcy5mb3JFYWNoKGZ1bmN0aW9uKGxpbmUpIHtcbiAgICBpZiAodHlwZW9mIGxpbmUgIT09ICdzdHJpbmcnKSB7XG4gICAgICBsZXQgbXlDb3VudCA9IGNhbGNPbGROZXdMaW5lQ291bnQobGluZS5taW5lKTtcbiAgICAgIGxldCB0aGVpckNvdW50ID0gY2FsY09sZE5ld0xpbmVDb3VudChsaW5lLnRoZWlycyk7XG5cbiAgICAgIGlmIChvbGRMaW5lcyAhPT0gdW5kZWZpbmVkKSB7XG4gICAgICAgIGlmIChteUNvdW50Lm9sZExpbmVzID09PSB0aGVpckNvdW50Lm9sZExpbmVzKSB7XG4gICAgICAgICAgb2xkTGluZXMgKz0gbXlDb3VudC5vbGRMaW5lcztcbiAgICAgICAgfSBlbHNlIHtcbiAgICAgICAgICBvbGRMaW5lcyA9IHVuZGVmaW5lZDtcbiAgICAgICAgfVxuICAgICAgfVxuXG4gICAgICBpZiAobmV3TGluZXMgIT09IHVuZGVmaW5lZCkge1xuICAgICAgICBpZiAobXlDb3VudC5uZXdMaW5lcyA9PT0gdGhlaXJDb3VudC5uZXdMaW5lcykge1xuICAgICAgICAgIG5ld0xpbmVzICs9IG15Q291bnQubmV3TGluZXM7XG4gICAgICAgIH0gZWxzZSB7XG4gICAgICAgICAgbmV3TGluZXMgPSB1bmRlZmluZWQ7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9IGVsc2Uge1xuICAgICAgaWYgKG5ld0xpbmVzICE9PSB1bmRlZmluZWQgJiYgKGxpbmVbMF0gPT09ICcrJyB8fCBsaW5lWzBdID09PSAnICcpKSB7XG4gICAgICAgIG5ld0xpbmVzKys7XG4gICAgICB9XG4gICAgICBpZiAob2xkTGluZXMgIT09IHVuZGVmaW5lZCAmJiAobGluZVswXSA9PT0gJy0nIHx8IGxpbmVbMF0gPT09ICcgJykpIHtcbiAgICAgICAgb2xkTGluZXMrKztcbiAgICAgIH1cbiAgICB9XG4gIH0pO1xuXG4gIHJldHVybiB7b2xkTGluZXMsIG5ld0xpbmVzfTtcbn1cbiJdfQ==
 
 
 /***/ }),
@@ -349,12 +886,48 @@ exports.VersionTxt = VersionTxt;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseTextFiles = exports.createPullRequest = void 0;
+exports.parseTextFiles = exports.createPullRequest = exports.reviewPullRequest = void 0;
 const handler = __webpack_require__(59);
 const types_1 = __webpack_require__(521);
 const logger_1 = __webpack_require__(148);
 const default_options_handler_1 = __webpack_require__(955);
 const retry = __webpack_require__(523);
+/**
+ * Given a set of suggestions, make all the multiline inline review comments on a given pull request given
+ * that they are in scope of the pull request. Outof scope suggestions are not made.
+ *
+ * In-scope suggestions are specifically: the suggestion for a file must correspond to a file in the remote pull request
+ * and the diff hunk computed for a file's contents must produce a range that is a subset of the pull request's files hunks.
+ *
+ * If a file is too large to load in the review, it is skipped in the suggestion phase.
+ *
+ * If changes are empty then the workflow will not run.
+ * Rethrows an HttpError if Octokit GitHub API returns an error. HttpError Octokit access_token and client_secret headers redact all sensitive information.
+ * @param octokit The authenticated octokit instance, instantiated with an access token having permissiong to create a fork on the target repository.
+ * @param diffContents A set of changes. The changes may be empty.
+ * @param options The configuration for interacting with GitHub provided by the user.
+ * @param loggerOption The logger instance (optional).
+ * @returns the created review's id number, or null if there are no changes to be made.
+ */
+async function reviewPullRequest(octokit, diffContents, options, loggerOption) {
+    logger_1.setupLogger(loggerOption);
+    // if null undefined, or the empty map then no changes have been provided.
+    // Do not execute GitHub workflow
+    if (diffContents === null ||
+        diffContents === undefined ||
+        diffContents.size === 0) {
+        logger_1.logger.info('Empty changes provided. No suggestions to be made. Cancelling workflow.');
+        return null;
+    }
+    const gitHubConfigs = default_options_handler_1.addReviewCommentsDefaults(options);
+    const remote = {
+        owner: gitHubConfigs.owner,
+        repo: gitHubConfigs.repo,
+    };
+    const reviewNumber = await handler.reviewPullRequest(octokit, remote, gitHubConfigs.pullNumber, gitHubConfigs.pageSize, diffContents);
+    return reviewNumber;
+}
+exports.reviewPullRequest = reviewPullRequest;
 /**
  * Make a new GitHub Pull Request with a set of changes applied on top of primary branch HEAD.
  * The changes are committed into a new branch based on the upstream repository options using the authenticated Octokit account.
@@ -376,7 +949,7 @@ const retry = __webpack_require__(523);
  * @param {Changes | null | undefined} changes A set of changes. The changes may be empty
  * @param {CreatePullRequestUserOptions} options The configuration for interacting with GitHub provided by the user.
  * @param {Logger} logger The logger instance (optional).
- * @returns {Promise<number>} a void promise
+ * @returns {Promise<number>} the pull request number. Returns 0 if unsuccessful.
  */
 async function createPullRequest(octokit, changes, options, loggerOption) {
     logger_1.setupLogger(loggerOption);
@@ -451,7 +1024,54 @@ exports.parseTextFiles = parseTextFiles;
 /* 40 */,
 /* 41 */,
 /* 42 */,
-/* 43 */,
+/* 43 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getRawSuggestionHunks = void 0;
+const logger_1 = __webpack_require__(148);
+const diff_utils_1 = __webpack_require__(594);
+/**
+ * Given a map where the key is the file name and the value is the
+ * old content and new content of the file
+ * compute the hunk for each file whose old and new contents differ.
+ * Do not compute the hunk if the old content is the same as the new content.
+ * The hunk list is sorted and each interval is disjoint.
+ * @param {Map<string, FileDiffContent>} diffContents a map of the original file contents and the new file contents
+ * @returns the hunks for each file whose old and new contents differ
+ */
+function getRawSuggestionHunks(diffContents) {
+    const fileHunks = new Map();
+    diffContents.forEach((fileDiffContent, fileName) => {
+        // if identical don't calculate the hunk and continue in the loop
+        if (fileDiffContent.oldContent === fileDiffContent.newContent) {
+            return;
+        }
+        const hunks = diff_utils_1.getSuggestedHunks(fileDiffContent.oldContent, fileDiffContent.newContent);
+        fileHunks.set(fileName, hunks);
+    });
+    logger_1.logger.info('Parsed ranges of old and new patch');
+    return fileHunks;
+}
+exports.getRawSuggestionHunks = getRawSuggestionHunks;
+//# sourceMappingURL=raw-hunk-handler.js.map
+
+/***/ }),
 /* 44 */,
 /* 45 */,
 /* 46 */
@@ -1250,11 +1870,12 @@ class GitHubRelease {
     async createRelease() {
         const gitHubReleasePR = await this.gh.findMergedReleasePR(this.labels);
         if (gitHubReleasePR) {
-            checkpoint_1.checkpoint(`found release branch ${chalk.green(gitHubReleasePR.version)} at ${chalk.green(gitHubReleasePR.sha)}`, checkpoint_1.CheckpointType.Success);
+            const version = `v${gitHubReleasePR.version}`;
+            checkpoint_1.checkpoint(`found release branch ${chalk.green(version)} at ${chalk.green(gitHubReleasePR.sha)}`, checkpoint_1.CheckpointType.Success);
             const changelogContents = (await this.gh.getFileContents(this.addPath(this.changelogPath))).parsedContent;
             const latestReleaseNotes = GitHubRelease.extractLatestReleaseNotes(changelogContents, 
             // For monorepo releases, the library name is prepended to the tag and branch:
-            gitHubReleasePR.version.split('-').pop() || gitHubReleasePR.version);
+            version.split('-').pop() || version);
             checkpoint_1.checkpoint(`found release notes: \n---\n${chalk.grey(latestReleaseNotes)}\n---\n`, checkpoint_1.CheckpointType.Success);
             // Attempt to lookup the package name from a well known location, such
             // as package.json, if none is provided:
@@ -1264,7 +1885,7 @@ class GitHubRelease {
             if (this.packageName === undefined) {
                 throw Error('could not determine package name for release');
             }
-            const release = await this.gh.createRelease(this.packageName, gitHubReleasePR.version, gitHubReleasePR.sha, latestReleaseNotes);
+            const release = await this.gh.createRelease(this.packageName, version, gitHubReleasePR.sha, latestReleaseNotes);
             // Add a label indicating that a release has been created on GitHub,
             // but a publication has not yet occurred.
             await this.gh.addLabels([GITHUB_RELEASE_LABEL], gitHubReleasePR.number);
@@ -1317,6 +1938,19 @@ exports.GitHubRelease = GitHubRelease;
 
 "use strict";
 
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
@@ -1334,6 +1968,7 @@ Object.defineProperty(exports, "branch", { enumerable: true, get: function () { 
 var commit_and_push_handler_1 = __webpack_require__(83);
 Object.defineProperty(exports, "commitAndPush", { enumerable: true, get: function () { return commit_and_push_handler_1.commitAndPush; } });
 __exportStar(__webpack_require__(422), exports);
+__exportStar(__webpack_require__(915), exports);
 //# sourceMappingURL=index.js.map
 
 /***/ }),
@@ -1832,7 +2467,169 @@ exports.commitAndPush = commitAndPush;
 /***/ }),
 /* 84 */,
 /* 85 */,
-/* 86 */,
+/* 86 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.parsePatch = parsePatch;
+
+/*istanbul ignore end*/
+function parsePatch(uniDiff) {
+  /*istanbul ignore start*/
+  var
+  /*istanbul ignore end*/
+  options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var diffstr = uniDiff.split(/\r\n|[\n\v\f\r\x85]/),
+      delimiters = uniDiff.match(/\r\n|[\n\v\f\r\x85]/g) || [],
+      list = [],
+      i = 0;
+
+  function parseIndex() {
+    var index = {};
+    list.push(index); // Parse diff metadata
+
+    while (i < diffstr.length) {
+      var line = diffstr[i]; // File header found, end parsing diff metadata
+
+      if (/^(\-\-\-|\+\+\+|@@)\s/.test(line)) {
+        break;
+      } // Diff index
+
+
+      var header = /^(?:Index:|diff(?: -r \w+)+)\s+(.+?)\s*$/.exec(line);
+
+      if (header) {
+        index.index = header[1];
+      }
+
+      i++;
+    } // Parse file headers if they are defined. Unified diff requires them, but
+    // there's no technical issues to have an isolated hunk without file header
+
+
+    parseFileHeader(index);
+    parseFileHeader(index); // Parse hunks
+
+    index.hunks = [];
+
+    while (i < diffstr.length) {
+      var _line = diffstr[i];
+
+      if (/^(Index:|diff|\-\-\-|\+\+\+)\s/.test(_line)) {
+        break;
+      } else if (/^@@/.test(_line)) {
+        index.hunks.push(parseHunk());
+      } else if (_line && options.strict) {
+        // Ignore unexpected content unless in strict mode
+        throw new Error('Unknown line ' + (i + 1) + ' ' + JSON.stringify(_line));
+      } else {
+        i++;
+      }
+    }
+  } // Parses the --- and +++ headers, if none are found, no lines
+  // are consumed.
+
+
+  function parseFileHeader(index) {
+    var fileHeader = /^(---|\+\+\+)\s+(.*)$/.exec(diffstr[i]);
+
+    if (fileHeader) {
+      var keyPrefix = fileHeader[1] === '---' ? 'old' : 'new';
+      var data = fileHeader[2].split('\t', 2);
+      var fileName = data[0].replace(/\\\\/g, '\\');
+
+      if (/^".*"$/.test(fileName)) {
+        fileName = fileName.substr(1, fileName.length - 2);
+      }
+
+      index[keyPrefix + 'FileName'] = fileName;
+      index[keyPrefix + 'Header'] = (data[1] || '').trim();
+      i++;
+    }
+  } // Parses a hunk
+  // This assumes that we are at the start of a hunk.
+
+
+  function parseHunk() {
+    var chunkHeaderIndex = i,
+        chunkHeaderLine = diffstr[i++],
+        chunkHeader = chunkHeaderLine.split(/@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/);
+    var hunk = {
+      oldStart: +chunkHeader[1],
+      oldLines: +chunkHeader[2] || 1,
+      newStart: +chunkHeader[3],
+      newLines: +chunkHeader[4] || 1,
+      lines: [],
+      linedelimiters: []
+    };
+    var addCount = 0,
+        removeCount = 0;
+
+    for (; i < diffstr.length; i++) {
+      // Lines starting with '---' could be mistaken for the "remove line" operation
+      // But they could be the header for the next file. Therefore prune such cases out.
+      if (diffstr[i].indexOf('--- ') === 0 && i + 2 < diffstr.length && diffstr[i + 1].indexOf('+++ ') === 0 && diffstr[i + 2].indexOf('@@') === 0) {
+        break;
+      }
+
+      var operation = diffstr[i].length == 0 && i != diffstr.length - 1 ? ' ' : diffstr[i][0];
+
+      if (operation === '+' || operation === '-' || operation === ' ' || operation === '\\') {
+        hunk.lines.push(diffstr[i]);
+        hunk.linedelimiters.push(delimiters[i] || '\n');
+
+        if (operation === '+') {
+          addCount++;
+        } else if (operation === '-') {
+          removeCount++;
+        } else if (operation === ' ') {
+          addCount++;
+          removeCount++;
+        }
+      } else {
+        break;
+      }
+    } // Handle the empty block count case
+
+
+    if (!addCount && hunk.newLines === 1) {
+      hunk.newLines = 0;
+    }
+
+    if (!removeCount && hunk.oldLines === 1) {
+      hunk.oldLines = 0;
+    } // Perform optional sanity checking
+
+
+    if (options.strict) {
+      if (addCount !== hunk.newLines) {
+        throw new Error('Added line count did not match for hunk at line ' + (chunkHeaderIndex + 1));
+      }
+
+      if (removeCount !== hunk.oldLines) {
+        throw new Error('Removed line count did not match for hunk at line ' + (chunkHeaderIndex + 1));
+      }
+    }
+
+    return hunk;
+  }
+
+  while (i < diffstr.length) {
+    parseIndex();
+  }
+
+  return list;
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9wYXRjaC9wYXJzZS5qcyJdLCJuYW1lcyI6WyJwYXJzZVBhdGNoIiwidW5pRGlmZiIsIm9wdGlvbnMiLCJkaWZmc3RyIiwic3BsaXQiLCJkZWxpbWl0ZXJzIiwibWF0Y2giLCJsaXN0IiwiaSIsInBhcnNlSW5kZXgiLCJpbmRleCIsInB1c2giLCJsZW5ndGgiLCJsaW5lIiwidGVzdCIsImhlYWRlciIsImV4ZWMiLCJwYXJzZUZpbGVIZWFkZXIiLCJodW5rcyIsInBhcnNlSHVuayIsInN0cmljdCIsIkVycm9yIiwiSlNPTiIsInN0cmluZ2lmeSIsImZpbGVIZWFkZXIiLCJrZXlQcmVmaXgiLCJkYXRhIiwiZmlsZU5hbWUiLCJyZXBsYWNlIiwic3Vic3RyIiwidHJpbSIsImNodW5rSGVhZGVySW5kZXgiLCJjaHVua0hlYWRlckxpbmUiLCJjaHVua0hlYWRlciIsImh1bmsiLCJvbGRTdGFydCIsIm9sZExpbmVzIiwibmV3U3RhcnQiLCJuZXdMaW5lcyIsImxpbmVzIiwibGluZWRlbGltaXRlcnMiLCJhZGRDb3VudCIsInJlbW92ZUNvdW50IiwiaW5kZXhPZiIsIm9wZXJhdGlvbiJdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7O0FBQU8sU0FBU0EsVUFBVCxDQUFvQkMsT0FBcEIsRUFBMkM7QUFBQTtBQUFBO0FBQUE7QUFBZEMsRUFBQUEsT0FBYyx1RUFBSixFQUFJO0FBQ2hELE1BQUlDLE9BQU8sR0FBR0YsT0FBTyxDQUFDRyxLQUFSLENBQWMscUJBQWQsQ0FBZDtBQUFBLE1BQ0lDLFVBQVUsR0FBR0osT0FBTyxDQUFDSyxLQUFSLENBQWMsc0JBQWQsS0FBeUMsRUFEMUQ7QUFBQSxNQUVJQyxJQUFJLEdBQUcsRUFGWDtBQUFBLE1BR0lDLENBQUMsR0FBRyxDQUhSOztBQUtBLFdBQVNDLFVBQVQsR0FBc0I7QUFDcEIsUUFBSUMsS0FBSyxHQUFHLEVBQVo7QUFDQUgsSUFBQUEsSUFBSSxDQUFDSSxJQUFMLENBQVVELEtBQVYsRUFGb0IsQ0FJcEI7O0FB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QVUsc0RBQXNEVSxnQkFBZ0IsR0FBRyxDQUF6RSxDQUFWLENBQU47QUFDRDs7QUFDRCxVQUFJVyxXQUFXLEtBQUtSLElBQUksQ0FBQ0UsUUFBekIsRUFBbUM7QUFDakMsY0FBTSxJQUFJZixLQUFKLENBQVUsd0RBQXdEVSxnQkFBZ0IsR0FBRyxDQUEzRSxDQUFWLENBQU47QUFDRDtBQUNGOztBQUVELFdBQU9HLElBQVA7QUFDRDs7QUFFRCxTQUFPMUIsQ0FBQyxHQUFHTCxPQUFPLENBQUNTLE1BQW5CLEVBQTJCO0FBQ3pCSCxJQUFBQSxVQUFVO0FBQ1g7O0FBRUQsU0FBT0YsSUFBUDtBQUNEIiwic291cmNlc0NvbnRlbnQiOlsiZXhwb3J0IGZ1bmN0aW9uIHBhcnNlUGF0Y2godW5pRGlmZiwgb3B0aW9ucyA9IHt9KSB7XG4gIGxldCBkaWZmc3RyID0gdW5pRGlmZi5zcGxpdCgvXFxyXFxufFtcXG5cXHZcXGZcXHJcXHg4NV0vKSxcbiAgICAgIGRlbGltaXRlcnMgPSB1bmlEaWZmLm1hdGNoKC9cXHJcXG58W1xcblxcdlxcZlxcclxceDg1XS9nKSB8fCBbXSxcbiAgICAgIGxpc3QgPSBbXSxcbiAgICAgIGkgPSAwO1xuXG4gIGZ1bmN0aW9uIHBhcnNlSW5kZXgoKSB7XG4gICAgbGV0IGluZGV4ID0ge307XG4gICAgbGlzdC5wdXNoKGluZGV4KTtcblxuICAgIC8vIFBhcnNlIGRpZmYgbWV0YWRhdGFcbiAgICB3aGlsZSAoaSA8IGRpZmZzdHIubGVuZ3RoKSB7XG4gICAgICBsZXQgbGluZSA9IGRpZmZzdHJbaV07XG5cbiAgICAgIC8vIEZpbGUgaGVhZGVyIGZvdW5kLCBlbmQgcGFyc2luZyBkaWZmIG1ldGFkYXRhXG4gICAgICBpZiAoKC9eKFxcLVxcLVxcLXxcXCtcXCtcXCt8QEApXFxzLykudGVzdChsaW5lKSkge1xuICAgICAgICBicmVhaztcbiAgICAgIH1cblxuICAgICAgLy8gRGlmZiBpbmRleFxuICAgICAgbGV0IGhlYWRlciA9ICgvXig/OkluZGV4OnxkaWZmKD86IC1yIFxcdyspKylcXHMrKC4rPylcXHMqJC8pLmV4ZWMobGluZSk7XG4gICAgICBpZiAoaGVhZGVyKSB7XG4gICAgICAgIGluZGV4LmluZGV4ID0gaGVhZGVyWzFdO1xuICAgICAgfVxuXG4gICAgICBpKys7XG4gICAgfVxuXG4gICAgLy8gUGFyc2UgZmlsZSBoZWFkZXJzIGlmIHRoZXkgYXJlIGRlZmluZWQuIFVuaWZpZWQgZGlmZiByZXF1aXJlcyB0aGVtLCBidXRcbiAgICAvLyB0aGVyZSdzIG5vIHRlY2huaWNhbCBpc3N1ZXMgdG8gaGF2ZSBhbiBpc29sYXRlZCBodW5rIHdpdGhvdXQgZmlsZSBoZWFkZXJcbiAgICBwYXJzZUZpbGVIZWFkZXIoaW5kZXgpO1xuICAgIHBhcnNlRmlsZUhlYWRlcihpbmRleCk7XG5cbiAgICAvLyBQYXJzZSBodW5rc1xuICAgIGluZGV4Lmh1bmtzID0gW107XG5cbiAgICB3aGlsZSAoaSA8IGRpZmZzdHIubGVuZ3RoKSB7XG4gICAgICBsZXQgbGluZSA9IGRpZmZzdHJbaV07XG5cbiAgICAgIGlmICgoL14oSW5kZXg6fGRpZmZ8XFwtXFwtXFwtfFxcK1xcK1xcKylcXHMvKS50ZXN0KGxpbmUpKSB7XG4gICAgICAgIGJyZWFrO1xuICAgICAgfSBlbHNlIGlmICgoL15AQC8pLnRlc3QobGluZSkpIHtcbiAgICAgICAgaW5kZXguaHVua3MucHVzaChwYXJzZUh1bmsoKSk7XG4gICAgICB9IGVsc2UgaWYgKGxpbmUgJiYgb3B0aW9ucy5zdHJpY3QpIHtcbiAgICAgICAgLy8gSWdub3JlIHVuZXhwZWN0ZWQgY29udGVudCB1bmxlc3MgaW4gc3RyaWN0IG1vZGVcbiAgICAgICAgdGhyb3cgbmV3IEVycm9yKCdVbmtub3duIGxpbmUgJyArIChpICsgMSkgKyAnICcgKyBKU09OLnN0cmluZ2lmeShsaW5lKSk7XG4gICAgICB9IGVsc2Uge1xuICAgICAgICBpKys7XG4gICAgICB9XG4gICAgfVxuICB9XG5cbiAgLy8gUGFyc2VzIHRoZSAtLS0gYW5kICsrKyBoZWFkZXJzLCBpZiBub25lIGFyZSBmb3VuZCwgbm8gbGluZXNcbiAgLy8gYXJlIGNvbnN1bWVkLlxuICBmdW5jdGlvbiBwYXJzZUZpbGVIZWFkZXIoaW5kZXgpIHtcbiAgICBjb25zdCBmaWxlSGVhZGVyID0gKC9eKC0tLXxcXCtcXCtcXCspXFxzKyguKikkLykuZXhlYyhkaWZmc3RyW2ldKTtcbiAgICBpZiAoZmlsZUhlYWRlcikge1xuICAgICAgbGV0IGtleVByZWZpeCA9IGZpbGVIZWFkZXJbMV0gPT09ICctLS0nID8gJ29sZCcgOiAnbmV3JztcbiAgICAgIGNvbnN0IGRhdGEgPSBmaWxlSGVhZGVyWzJdLnNwbGl0KCdcXHQnLCAyKTtcbiAgICAgIGxldCBmaWxlTmFtZSA9IGRhdGFbMF0ucmVwbGFjZSgvXFxcXFxcXFwvZywgJ1xcXFwnKTtcbiAgICAgIGlmICgoL15cIi4qXCIkLykudGVzdChmaWxlTmFtZSkpIHtcbiAgICAgICAgZmlsZU5hbWUgPSBmaWxlTmFtZS5zdWJzdHIoMSwgZmlsZU5hbWUubGVuZ3RoIC0gMik7XG4gICAgICB9XG4gICAgICBpbmRleFtrZXlQcmVmaXggKyAnRmlsZU5hbWUnXSA9IGZpbGVOYW1lO1xuICAgICAgaW5kZXhba2V5UHJlZml4ICsgJ0hlYWRlciddID0gKGRhdGFbMV0gfHwgJycpLnRyaW0oKTtcblxuICAgICAgaSsrO1xuICAgIH1cbiAgfVxuXG4gIC8vIFBhcnNlcyBhIGh1bmtcbiAgLy8gVGhpcyBhc3N1bWVzIHRoYXQgd2UgYXJlIGF0IHRoZSBzdGFydCBvZiBhIGh1bmsuXG4gIGZ1bmN0aW9uIHBhcnNlSHVuaygpIHtcbiAgICBsZXQgY2h1bmtIZWFkZXJJbmRleCA9IGksXG4gICAgICAgIGNodW5rSGVhZGVyTGluZSA9IGRpZmZzdHJbaSsrXSxcbiAgICAgICAgY2h1bmtIZWFkZXIgPSBjaHVua0hlYWRlckxpbmUuc3BsaXQoL0BAIC0oXFxkKykoPzosKFxcZCspKT8gXFwrKFxcZCspKD86LChcXGQrKSk/IEBALyk7XG5cbiAgICBsZXQgaHVuayA9IHtcbiAgICAgIG9sZFN0YXJ0OiArY2h1bmtIZWFkZXJbMV0sXG4gICAgICBvbGRMaW5lczogK2NodW5rSGVhZGVyWzJdIHx8IDEsXG4gICAgICBuZXdTdGFydDogK2NodW5rSGVhZGVyWzNdLFxuICAgICAgbmV3TGluZXM6ICtjaHVua0hlYWRlcls0XSB8fCAxLFxuICAgICAgbGluZXM6IFtdLFxuICAgICAgbGluZWRlbGltaXRlcnM6IFtdXG4gICAgfTtcblxuICAgIGxldCBhZGRDb3VudCA9IDAsXG4gICAgICAgIHJlbW92ZUNvdW50ID0gMDtcbiAgICBmb3IgKDsgaSA8IGRpZmZzdHIubGVuZ3RoOyBpKyspIHtcbiAgICAgIC8vIExpbmVzIHN0YXJ0aW5nIHdpdGggJy0tLScgY291bGQgYmUgbWlzdGFrZW4gZm9yIHRoZSBcInJlbW92ZSBsaW5lXCIgb3BlcmF0aW9uXG4gICAgICAvLyBCdXQgdGhleSBjb3VsZCBiZSB0aGUgaGVhZGVyIGZvciB0aGUgbmV4dCBmaWxlLiBUaGVyZWZvcmUgcHJ1bmUgc3VjaCBjYXNlcyBvdXQuXG4gICAgICBpZiAoZGlmZnN0cltpXS5pbmRleE9mKCctLS0gJykgPT09IDBcbiAgICAgICAgICAgICYmIChpICsgMiA8IGRpZmZzdHIubGVuZ3RoKVxuICAgICAgICAgICAgJiYgZGlmZnN0cltpICsgMV0uaW5kZXhPZignKysrICcpID09PSAwXG4gICAgICAgICAgICAmJiBkaWZmc3RyW2kgKyAyXS5pbmRleE9mKCdAQCcpID09PSAwKSB7XG4gICAgICAgICAgYnJlYWs7XG4gICAgICB9XG4gICAgICBsZXQgb3BlcmF0aW9uID0gKGRpZmZzdHJbaV0ubGVuZ3RoID09IDAgJiYgaSAhPSAoZGlmZnN0ci5sZW5ndGggLSAxKSkgPyAnICcgOiBkaWZmc3RyW2ldWzBdO1xuXG4gICAgICBpZiAob3BlcmF0aW9uID09PSAnKycgfHwgb3BlcmF0aW9uID09PSAnLScgfHwgb3BlcmF0aW9uID09PSAnICcgfHwgb3BlcmF0aW9uID09PSAnXFxcXCcpIHtcbiAgICAgICAgaHVuay5saW5lcy5wdXNoKGRpZmZzdHJbaV0pO1xuICAgICAgICBodW5rLmxpbmVkZWxpbWl0ZXJzLnB1c2goZGVsaW1pdGVyc1tpXSB8fCAnXFxuJyk7XG5cbiAgICAgICAgaWYgKG9wZXJhdGlvbiA9PT0gJysnKSB7XG4gICAgICAgICAgYWRkQ291bnQrKztcbiAgICAgICAgfSBlbHNlIGlmIChvcGVyYXRpb24gPT09ICctJykge1xuICAgICAgICAgIHJlbW92ZUNvdW50Kys7XG4gICAgICAgIH0gZWxzZSBpZiAob3BlcmF0aW9uID09PSAnICcpIHtcbiAgICAgICAgICBhZGRDb3VudCsrO1xuICAgICAgICAgIHJlbW92ZUNvdW50Kys7XG4gICAgICAgIH1cbiAgICAgIH0gZWxzZSB7XG4gICAgICAgIGJyZWFrO1xuICAgICAgfVxuICAgIH1cblxuICAgIC8vIEhhbmRsZSB0aGUgZW1wdHkgYmxvY2sgY291bnQgY2FzZVxuICAgIGlmICghYWRkQ291bnQgJiYgaHVuay5uZXdMaW5lcyA9PT0gMSkge1xuICAgICAgaHVuay5uZXdMaW5lcyA9IDA7XG4gICAgfVxuICAgIGlmICghcmVtb3ZlQ291bnQgJiYgaHVuay5vbGRMaW5lcyA9PT0gMSkge1xuICAgICAgaHVuay5vbGRMaW5lcyA9IDA7XG4gICAgfVxuXG4gICAgLy8gUGVyZm9ybSBvcHRpb25hbCBzYW5pdHkgY2hlY2tpbmdcbiAgICBpZiAob3B0aW9ucy5zdHJpY3QpIHtcbiAgICAgIGlmIChhZGRDb3VudCAhPT0gaHVuay5uZXdMaW5lcykge1xuICAgICAgICB0aHJvdyBuZXcgRXJyb3IoJ0FkZGVkIGxpbmUgY291bnQgZGlkIG5vdCBtYXRjaCBmb3IgaHVuayBhdCBsaW5lICcgKyAoY2h1bmtIZWFkZXJJbmRleCArIDEpKTtcbiAgICAgIH1cbiAgICAgIGlmIChyZW1vdmVDb3VudCAhPT0gaHVuay5vbGRMaW5lcykge1xuICAgICAgICB0aHJvdyBuZXcgRXJyb3IoJ1JlbW92ZWQgbGluZSBjb3VudCBkaWQgbm90IG1hdGNoIGZvciBodW5rIGF0IGxpbmUgJyArIChjaHVua0hlYWRlckluZGV4ICsgMSkpO1xuICAgICAgfVxuICAgIH1cblxuICAgIHJldHVybiBodW5rO1xuICB9XG5cbiAgd2hpbGUgKGkgPCBkaWZmc3RyLmxlbmd0aCkge1xuICAgIHBhcnNlSW5kZXgoKTtcbiAgfVxuXG4gIHJldHVybiBsaXN0O1xufVxuIl19
+
+
+/***/ }),
 /* 87 */
 /***/ (function(module) {
 
@@ -1841,7 +2638,54 @@ module.exports = require("os");
 /***/ }),
 /* 88 */,
 /* 89 */,
-/* 90 */,
+/* 90 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.diffCss = diffCss;
+exports.cssDiff = void 0;
+
+/*istanbul ignore end*/
+var
+/*istanbul ignore start*/
+_base = _interopRequireDefault(__webpack_require__(491))
+/*istanbul ignore end*/
+;
+
+/*istanbul ignore start*/ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/*istanbul ignore end*/
+var cssDiff = new
+/*istanbul ignore start*/
+_base
+/*istanbul ignore end*/
+.
+/*istanbul ignore start*/
+default
+/*istanbul ignore end*/
+();
+
+/*istanbul ignore start*/
+exports.cssDiff = cssDiff;
+
+/*istanbul ignore end*/
+cssDiff.tokenize = function (value) {
+  return value.split(/([{}:;,]|\s+)/);
+};
+
+function diffCss(oldStr, newStr, callback) {
+  return cssDiff.diff(oldStr, newStr, callback);
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9kaWZmL2Nzcy5qcyJdLCJuYW1lcyI6WyJjc3NEaWZmIiwiRGlmZiIsInRva2VuaXplIiwidmFsdWUiLCJzcGxpdCIsImRpZmZDc3MiLCJvbGRTdHIiLCJuZXdTdHIiLCJjYWxsYmFjayIsImRpZmYiXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBOzs7OztBQUVPLElBQU1BLE9BQU8sR0FBRztBQUFJQztBQUFBQTtBQUFBQTtBQUFBQTtBQUFBQTtBQUFBQTtBQUFKO0FBQUEsRUFBaEI7Ozs7OztBQUNQRCxPQUFPLENBQUNFLFFBQVIsR0FBbUIsVUFBU0MsS0FBVCxFQUFnQjtBQUNqQyxTQUFPQSxLQUFLLENBQUNDLEtBQU4sQ0FBWSxlQUFaLENBQVA7QUFDRCxDQUZEOztBQUlPLFNBQVNDLE9BQVQsQ0FBaUJDLE1BQWpCLEVBQXlCQyxNQUF6QixFQUFpQ0MsUUFBakMsRUFBMkM7QUFBRSxTQUFPUixPQUFPLENBQUNTLElBQVIsQ0FBYUgsTUFBYixFQUFxQkMsTUFBckIsRUFBNkJDLFFBQTdCLENBQVA7QUFBZ0QiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgRGlmZiBmcm9tICcuL2Jhc2UnO1xuXG5leHBvcnQgY29uc3QgY3NzRGlmZiA9IG5ldyBEaWZmKCk7XG5jc3NEaWZmLnRva2VuaXplID0gZnVuY3Rpb24odmFsdWUpIHtcbiAgcmV0dXJuIHZhbHVlLnNwbGl0KC8oW3t9OjssXXxcXHMrKS8pO1xufTtcblxuZXhwb3J0IGZ1bmN0aW9uIGRpZmZDc3Mob2xkU3RyLCBuZXdTdHIsIGNhbGxiYWNrKSB7IHJldHVybiBjc3NEaWZmLmRpZmYob2xkU3RyLCBuZXdTdHIsIGNhbGxiYWNrKTsgfVxuIl19
+
+
+/***/ }),
 /* 91 */,
 /* 92 */,
 /* 93 */
@@ -3593,7 +4437,260 @@ module.exports = function (str) {
 
 /***/ }),
 /* 139 */,
-/* 140 */,
+/* 140 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.structuredPatch = structuredPatch;
+exports.createTwoFilesPatch = createTwoFilesPatch;
+exports.createPatch = createPatch;
+
+/*istanbul ignore end*/
+var
+/*istanbul ignore start*/
+_line = __webpack_require__(553)
+/*istanbul ignore end*/
+;
+
+/*istanbul ignore start*/ function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
+/*istanbul ignore end*/
+function structuredPatch(oldFileName, newFileName, oldStr, newStr, oldHeader, newHeader, options) {
+  if (!options) {
+    options = {};
+  }
+
+  if (typeof options.context === 'undefined') {
+    options.context = 4;
+  }
+
+  var diff =
+  /*istanbul ignore start*/
+  (0,
+  /*istanbul ignore end*/
+
+  /*istanbul ignore start*/
+  _line
+  /*istanbul ignore end*/
+  .
+  /*istanbul ignore start*/
+  diffLines)
+  /*istanbul ignore end*/
+  (oldStr, newStr, options);
+  diff.push({
+    value: '',
+    lines: []
+  }); // Append an empty value to make cleanup easier
+
+  function contextLines(lines) {
+    return lines.map(function (entry) {
+      return ' ' + entry;
+    });
+  }
+
+  var hunks = [];
+  var oldRangeStart = 0,
+      newRangeStart = 0,
+      curRange = [],
+      oldLine = 1,
+      newLine = 1;
+
+  /*istanbul ignore start*/
+  var _loop = function _loop(
+  /*istanbul ignore end*/
+  i) {
+    var current = diff[i],
+        lines = current.lines || current.value.replace(/\n$/, '').split('\n');
+    current.lines = lines;
+
+    if (current.added || current.removed) {
+      /*istanbul ignore start*/
+      var _curRange;
+
+      /*istanbul ignore end*/
+      // If we have previous context, start with that
+      if (!oldRangeStart) {
+        var prev = diff[i - 1];
+        oldRangeStart = oldLine;
+        newRangeStart = newLine;
+
+        if (prev) {
+          curRange = options.context > 0 ? contextLines(prev.lines.slice(-options.context)) : [];
+          oldRangeStart -= curRange.length;
+          newRangeStart -= curRange.length;
+        }
+      } // Output our changes
+
+
+      /*istanbul ignore start*/
+      (_curRange =
+      /*istanbul ignore end*/
+      curRange).push.
+      /*istanbul ignore start*/
+      apply
+      /*istanbul ignore end*/
+      (
+      /*istanbul ignore start*/
+      _curRange
+      /*istanbul ignore end*/
+      ,
+      /*istanbul ignore start*/
+      _toConsumableArray(
+      /*istanbul ignore end*/
+      lines.map(function (entry) {
+        return (current.added ? '+' : '-') + entry;
+      }))); // Track the updated file position
+
+
+      if (current.added) {
+        newLine += lines.length;
+      } else {
+        oldLine += lines.length;
+      }
+    } else {
+      // Identical context lines. Track line changes
+      if (oldRangeStart) {
+        // Close out any changes that have been output (or join overlapping)
+        if (lines.length <= options.context * 2 && i < diff.length - 2) {
+          /*istanbul ignore start*/
+          var _curRange2;
+
+          /*istanbul ignore end*/
+          // Overlapping
+
+          /*istanbul ignore start*/
+          (_curRange2 =
+          /*istanbul ignore end*/
+          curRange).push.
+          /*istanbul ignore start*/
+          apply
+          /*istanbul ignore end*/
+          (
+          /*istanbul ignore start*/
+          _curRange2
+          /*istanbul ignore end*/
+          ,
+          /*istanbul ignore start*/
+          _toConsumableArray(
+          /*istanbul ignore end*/
+          contextLines(lines)));
+        } else {
+          /*istanbul ignore start*/
+          var _curRange3;
+
+          /*istanbul ignore end*/
+          // end the range and output
+          var contextSize = Math.min(lines.length, options.context);
+
+          /*istanbul ignore start*/
+          (_curRange3 =
+          /*istanbul ignore end*/
+          curRange).push.
+          /*istanbul ignore start*/
+          apply
+          /*istanbul ignore end*/
+          (
+          /*istanbul ignore start*/
+          _curRange3
+          /*istanbul ignore end*/
+          ,
+          /*istanbul ignore start*/
+          _toConsumableArray(
+          /*istanbul ignore end*/
+          contextLines(lines.slice(0, contextSize))));
+
+          var hunk = {
+            oldStart: oldRangeStart,
+            oldLines: oldLine - oldRangeStart + contextSize,
+            newStart: newRangeStart,
+            newLines: newLine - newRangeStart + contextSize,
+            lines: curRange
+          };
+
+          if (i >= diff.length - 2 && lines.length <= options.context) {
+            // EOF is inside this hunk
+            var oldEOFNewline = /\n$/.test(oldStr);
+            var newEOFNewline = /\n$/.test(newStr);
+            var noNlBeforeAdds = lines.length == 0 && curRange.length > hunk.oldLines;
+
+            if (!oldEOFNewline && noNlBeforeAdds) {
+              // special case: old has no eol and no trailing context; no-nl can end up before adds
+              curRange.splice(hunk.oldLines, 0, '\\ No newline at end of file');
+            }
+
+            if (!oldEOFNewline && !noNlBeforeAdds || !newEOFNewline) {
+              curRange.push('\\ No newline at end of file');
+            }
+          }
+
+          hunks.push(hunk);
+          oldRangeStart = 0;
+          newRangeStart = 0;
+          curRange = [];
+        }
+      }
+
+      oldLine += lines.length;
+      newLine += lines.length;
+    }
+  };
+
+  for (var i = 0; i < diff.length; i++) {
+    /*istanbul ignore start*/
+    _loop(
+    /*istanbul ignore end*/
+    i);
+  }
+
+  return {
+    oldFileName: oldFileName,
+    newFileName: newFileName,
+    oldHeader: oldHeader,
+    newHeader: newHeader,
+    hunks: hunks
+  };
+}
+
+function createTwoFilesPatch(oldFileName, newFileName, oldStr, newStr, oldHeader, newHeader, options) {
+  var diff = structuredPatch(oldFileName, newFileName, oldStr, newStr, oldHeader, newHeader, options);
+  var ret = [];
+
+  if (oldFileName == newFileName) {
+    ret.push('Index: ' + oldFileName);
+  }
+
+  ret.push('===================================================================');
+  ret.push('--- ' + diff.oldFileName + (typeof diff.oldHeader === 'undefined' ? '' : '\t' + diff.oldHeader));
+  ret.push('+++ ' + diff.newFileName + (typeof diff.newHeader === 'undefined' ? '' : '\t' + diff.newHeader));
+
+  for (var i = 0; i < diff.hunks.length; i++) {
+    var hunk = diff.hunks[i];
+    ret.push('@@ -' + hunk.oldStart + ',' + hunk.oldLines + ' +' + hunk.newStart + ',' + hunk.newLines + ' @@');
+    ret.push.apply(ret, hunk.lines);
+  }
+
+  return ret.join('\n') + '\n';
+}
+
+function createPatch(fileName, oldStr, newStr, oldHeader, newHeader, options) {
+  return createTwoFilesPatch(fileName, fileName, oldStr, newStr, oldHeader, newHeader, options);
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9wYXRjaC9jcmVhdGUuanMiXSwibmFtZXMiOlsic3RydWN0dXJlZFBhdGNoIiwib2xkRmlsZU5hbWUiLCJuZXdGaWxlTmFtZSIsIm9sZFN0ciIsIm5ld1N0ciIsIm9sZEhlYWRlciIsIm5ld0hlYWRlciIsIm9wdGlvbnMiLCJjb250ZXh0IiwiZGlmZiIsImRpZmZMaW5lcyIsInB1c2giLCJ2YWx1ZSIsImxpbmVzIiwiY29udGV4dExpbmVzIiwibWFwIiwiZW50cnkiLCJodW5rcyIsIm9sZFJhbmdlU3RhcnQiLCJuZXdSYW5nZVN0YXJ0IiwiY3VyUmFuZ2UiLCJvbGRMaW5lIiwibmV3TGluZSIsImkiLCJjdXJyZW50IiwicmVwbGFjZSIsInNwbGl0IiwiYWRkZWQiLCJyZW1vdmVkIiwicHJldiIsInNsaWNlIiwibGVuZ3RoIiwiY29udGV4dFNpemUiLCJNYXRoIiwibWluIiwiaHVuayIsIm9sZFN0YXJ0Iiwib2xkTGluZXMiLCJuZXdTdGFydCIsIm5ld0xpbmVzIiwib2xkRU9GTmV3bGluZSIsInRlc3QiLCJuZXdFT0ZOZXdsaW5lIiwibm9ObEJlZm9yZUFkZHMiLCJzcGxpY2UiLCJjcmVhdGVUd29GaWxlc1BhdGNoIiwicmV0IiwiYXBwbHkiLCJqb2luIiwiY3JlYXRlUGF0Y2giLCJmaWxlTmFtZSJdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBOzs7Ozs7Ozs7OztBQUVPLFNBQVNBLGVBQVQsQ0FBeUJDLFdBQXpCLEVBQXNDQyxXQUF0QyxFQUFtREMsTUFBbkQsRUFBMkRDLE1BQTNELEVBQW1FQyxTQUFuRSxFQUE4RUMsU0FBOUUsRUFBeUZDLE9BQXpGLEVBQWtHO0FBQ3ZHLE1BQUksQ0FBQ0EsT0FBTCxFQUFjO0FBQ1pBLElBQUFBLE9BQU8sR0FBRyxFQUFWO0FBQ0Q7O0FBQ0QsTUFBSSxPQUFPQSxPQUFPLENBQUNDLE9BQWYsS0FBMkIsV0FBL0IsRUFBNEM7QUFDMUNELElBQUFBLE9BQU8sQ0FB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QyxJQUFKLENBQ0UsU0FBU3dCLElBQUksQ0FBQ0MsUUFBZCxHQUF5QixHQUF6QixHQUErQkQsSUFBSSxDQUFDRSxRQUFwQyxHQUNFLElBREYsR0FDU0YsSUFBSSxDQUFDRyxRQURkLEdBQ3lCLEdBRHpCLEdBQytCSCxJQUFJLENBQUNJLFFBRHBDLEdBRUUsS0FISjtBQUtBTyxJQUFBQSxHQUFHLENBQUNuQyxJQUFKLENBQVNvQyxLQUFULENBQWVELEdBQWYsRUFBb0JYLElBQUksQ0FBQ3RCLEtBQXpCO0FBQ0Q7O0FBRUQsU0FBT2lDLEdBQUcsQ0FBQ0UsSUFBSixDQUFTLElBQVQsSUFBaUIsSUFBeEI7QUFDRDs7QUFFTSxTQUFTQyxXQUFULENBQXFCQyxRQUFyQixFQUErQi9DLE1BQS9CLEVBQXVDQyxNQUF2QyxFQUErQ0MsU0FBL0MsRUFBMERDLFNBQTFELEVBQXFFQyxPQUFyRSxFQUE4RTtBQUNuRixTQUFPc0MsbUJBQW1CLENBQUNLLFFBQUQsRUFBV0EsUUFBWCxFQUFxQi9DLE1BQXJCLEVBQTZCQyxNQUE3QixFQUFxQ0MsU0FBckMsRUFBZ0RDLFNBQWhELEVBQTJEQyxPQUEzRCxDQUExQjtBQUNEIiwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHtkaWZmTGluZXN9IGZyb20gJy4uL2RpZmYvbGluZSc7XG5cbmV4cG9ydCBmdW5jdGlvbiBzdHJ1Y3R1cmVkUGF0Y2gob2xkRmlsZU5hbWUsIG5ld0ZpbGVOYW1lLCBvbGRTdHIsIG5ld1N0ciwgb2xkSGVhZGVyLCBuZXdIZWFkZXIsIG9wdGlvbnMpIHtcbiAgaWYgKCFvcHRpb25zKSB7XG4gICAgb3B0aW9ucyA9IHt9O1xuICB9XG4gIGlmICh0eXBlb2Ygb3B0aW9ucy5jb250ZXh0ID09PSAndW5kZWZpbmVkJykge1xuICAgIG9wdGlvbnMuY29udGV4dCA9IDQ7XG4gIH1cblxuICBjb25zdCBkaWZmID0gZGlmZkxpbmVzKG9sZFN0ciwgbmV3U3RyLCBvcHRpb25zKTtcbiAgZGlmZi5wdXNoKHt2YWx1ZTogJycsIGxpbmVzOiBbXX0pOyAvLyBBcHBlbmQgYW4gZW1wdHkgdmFsdWUgdG8gbWFrZSBjbGVhbnVwIGVhc2llclxuXG4gIGZ1bmN0aW9uIGNvbnRleHRMaW5lcyhsaW5lcykge1xuICAgIHJldHVybiBsaW5lcy5tYXAoZnVuY3Rpb24oZW50cnkpIHsgcmV0dXJuICcgJyArIGVudHJ5OyB9KTtcbiAgfVxuXG4gIGxldCBodW5rcyA9IFtdO1xuICBsZXQgb2xkUmFuZ2VTdGFydCA9IDAsIG5ld1JhbmdlU3RhcnQgPSAwLCBjdXJSYW5nZSA9IFtdLFxuICAgICAgb2xkTGluZSA9IDEsIG5ld0xpbmUgPSAxO1xuICBmb3IgKGxldCBpID0gMDsgaSA8IGRpZmYubGVuZ3RoOyBpKyspIHtcbiAgICBjb25zdCBjdXJyZW50ID0gZGlmZltpXSxcbiAgICAgICAgICBsaW5lcyA9IGN1cnJlbnQubGluZXMgfHwgY3VycmVudC52YWx1ZS5yZXBsYWNlKC9cXG4kLywgJycpLnNwbGl0KCdcXG4nKTtcbiAgICBjdXJyZW50LmxpbmVzID0gbGluZXM7XG5cbiAgICBpZiAoY3VycmVudC5hZGRlZCB8fCBjdXJyZW50LnJlbW92ZWQpIHtcbiAgICAgIC8vIElmIHdlIGhhdmUgcHJldmlvdXMgY29udGV4dCwgc3RhcnQgd2l0aCB0aGF0XG4gICAgICBpZiAoIW9sZFJhbmdlU3RhcnQpIHtcbiAgICAgICAgY29uc3QgcHJldiA9IGRpZmZbaSAtIDFdO1xuICAgICAgICBvbGRSYW5nZVN0YXJ0ID0gb2xkTGluZTtcbiAgICAgICAgbmV3UmFuZ2VTdGFydCA9IG5ld0xpbmU7XG5cbiAgICAgICAgaWYgKHByZXYpIHtcbiAgICAgICAgICBjdXJSYW5nZSA9IG9wdGlvbnMuY29udGV4dCA+IDAgPyBjb250ZXh0TGluZXMocHJldi5saW5lcy5zbGljZSgtb3B0aW9ucy5jb250ZXh0KSkgOiBbXTtcbiAgICAgICAgICBvbGRSYW5nZVN0YXJ0IC09IGN1clJhbmdlLmxlbmd0aDtcbiAgICAgICAgICBuZXdSYW5nZVN0YXJ0IC09IGN1clJhbmdlLmxlbmd0aDtcbiAgICAgICAgfVxuICAgICAgfVxuXG4gICAgICAvLyBPdXRwdXQgb3VyIGNoYW5nZXNcbiAgICAgIGN1clJhbmdlLnB1c2goLi4uIGxpbmVzLm1hcChmdW5jdGlvbihlbnRyeSkge1xuICAgICAgICByZXR1cm4gKGN1cnJlbnQuYWRkZWQgPyAnKycgOiAnLScpICsgZW50cnk7XG4gICAgICB9KSk7XG5cbiAgICAgIC8vIFRyYWNrIHRoZSB1cGRhdGVkIGZpbGUgcG9zaXRpb25cbiAgICAgIGlmIChjdXJyZW50LmFkZGVkKSB7XG4gICAgICAgIG5ld0xpbmUgKz0gbGluZXMubGVuZ3RoO1xuICAgICAgfSBlbHNlIHtcbiAgICAgICAgb2xkTGluZSArPSBsaW5lcy5sZW5ndGg7XG4gICAgICB9XG4gICAgfSBlbHNlIHtcbiAgICAgIC8vIElkZW50aWNhbCBjb250ZXh0IGxpbmVzLiBUcmFjayBsaW5lIGNoYW5nZXNcbiAgICAgIGlmIChvbGRSYW5nZVN0YXJ0KSB7XG4gICAgICAgIC8vIENsb3NlIG91dCBhbnkgY2hhbmdlcyB0aGF0IGhhdmUgYmVlbiBvdXRwdXQgKG9yIGpvaW4gb3ZlcmxhcHBpbmcpXG4gICAgICAgIGlmIChsaW5lcy5sZW5ndGggPD0gb3B0aW9ucy5jb250ZXh0ICogMiAmJiBpIDwgZGlmZi5sZW5ndGggLSAyKSB7XG4gICAgICAgICAgLy8gT3ZlcmxhcHBpbmdcbiAgICAgICAgICBjdXJSYW5nZS5wdXNoKC4uLiBjb250ZXh0TGluZXMobGluZXMpKTtcbiAgICAgICAgfSBlbHNlIHtcbiAgICAgICAgICAvLyBlbmQgdGhlIHJhbmdlIGFuZCBvdXRwdXRcbiAgICAgICAgICBsZXQgY29udGV4dFNpemUgPSBNYXRoLm1pbihsaW5lcy5sZW5ndGgsIG9wdGlvbnMuY29udGV4dCk7XG4gICAgICAgICAgY3VyUmFuZ2UucHVzaCguLi4gY29udGV4dExpbmVzKGxpbmVzLnNsaWNlKDAsIGNvbnRleHRTaXplKSkpO1xuXG4gICAgICAgICAgbGV0IGh1bmsgPSB7XG4gICAgICAgICAgICBvbGRTdGFydDogb2xkUmFuZ2VTdGFydCxcbiAgICAgICAgICAgIG9sZExpbmVzOiAob2xkTGluZSAtIG9sZFJhbmdlU3RhcnQgKyBjb250ZXh0U2l6ZSksXG4gICAgICAgICAgICBuZXdTdGFydDogbmV3UmFuZ2VTdGFydCxcbiAgICAgICAgICAgIG5ld0xpbmVzOiAobmV3TGluZSAtIG5ld1JhbmdlU3RhcnQgKyBjb250ZXh0U2l6ZSksXG4gICAgICAgICAgICBsaW5lczogY3VyUmFuZ2VcbiAgICAgICAgICB9O1xuICAgICAgICAgIGlmIChpID49IGRpZmYubGVuZ3RoIC0gMiAmJiBsaW5lcy5sZW5ndGggPD0gb3B0aW9ucy5jb250ZXh0KSB7XG4gICAgICAgICAgICAvLyBFT0YgaXMgaW5zaWRlIHRoaXMgaHVua1xuICAgICAgICAgICAgbGV0IG9sZEVPRk5ld2xpbmUgPSAoKC9cXG4kLykudGVzdChvbGRTdHIpKTtcbiAgICAgICAgICAgIGxldCBuZXdFT0ZOZXdsaW5lID0gKCgvXFxuJC8pLnRlc3QobmV3U3RyKSk7XG4gICAgICAgICAgICBsZXQgbm9ObEJlZm9yZUFkZHMgPSBsaW5lcy5sZW5ndGggPT0gMCAmJiBjdXJSYW5nZS5sZW5ndGggPiBodW5rLm9sZExpbmVzO1xuICAgICAgICAgICAgaWYgKCFvbGRFT0ZOZXdsaW5lICYmIG5vTmxCZWZvcmVBZGRzKSB7XG4gICAgICAgICAgICAgIC8vIHNwZWNpYWwgY2FzZTogb2xkIGhhcyBubyBlb2wgYW5kIG5vIHRyYWlsaW5nIGNvbnRleHQ7IG5vLW5sIGNhbiBlbmQgdXAgYmVmb3JlIGFkZHNcbiAgICAgICAgICAgICAgY3VyUmFuZ2Uuc3BsaWNlKGh1bmsub2xkTGluZXMsIDAsICdcXFxcIE5vIG5ld2xpbmUgYXQgZW5kIG9mIGZpbGUnKTtcbiAgICAgICAgICAgIH1cbiAgICAgICAgICAgIGlmICgoIW9sZEVPRk5ld2xpbmUgJiYgIW5vTmxCZWZvcmVBZGRzKSB8fCAhbmV3RU9GTmV3bGluZSkge1xuICAgICAgICAgICAgICBjdXJSYW5nZS5wdXNoKCdcXFxcIE5vIG5ld2xpbmUgYXQgZW5kIG9mIGZpbGUnKTtcbiAgICAgICAgICAgIH1cbiAgICAgICAgICB9XG4gICAgICAgICAgaHVua3MucHVzaChodW5rKTtcblxuICAgICAgICAgIG9sZFJhbmdlU3RhcnQgPSAwO1xuICAgICAgICAgIG5ld1JhbmdlU3RhcnQgPSAwO1xuICAgICAgICAgIGN1clJhbmdlID0gW107XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICAgIG9sZExpbmUgKz0gbGluZXMubGVuZ3RoO1xuICAgICAgbmV3TGluZSArPSBsaW5lcy5sZW5ndGg7XG4gICAgfVxuICB9XG5cbiAgcmV0dXJuIHtcbiAgICBvbGRGaWxlTmFtZTogb2xkRmlsZU5hbWUsIG5ld0ZpbGVOYW1lOiBuZXdGaWxlTmFtZSxcbiAgICBvbGRIZWFkZXI6IG9sZEhlYWRlciwgbmV3SGVhZGVyOiBuZXdIZWFkZXIsXG4gICAgaHVua3M6IGh1bmtzXG4gIH07XG59XG5cbmV4cG9ydCBmdW5jdGlvbiBjcmVhdGVUd29GaWxlc1BhdGNoKG9sZEZpbGVOYW1lLCBuZXdGaWxlTmFtZSwgb2xkU3RyLCBuZXdTdHIsIG9sZEhlYWRlciwgbmV3SGVhZGVyLCBvcHRpb25zKSB7XG4gIGNvbnN0IGRpZmYgPSBzdHJ1Y3R1cmVkUGF0Y2gob2xkRmlsZU5hbWUsIG5ld0ZpbGVOYW1lLCBvbGRTdHIsIG5ld1N0ciwgb2xkSGVhZGVyLCBuZXdIZWFkZXIsIG9wdGlvbnMpO1xuXG4gIGNvbnN0IHJldCA9IFtdO1xuICBpZiAob2xkRmlsZU5hbWUgPT0gbmV3RmlsZU5hbWUpIHtcbiAgICByZXQucHVzaCgnSW5kZXg6ICcgKyBvbGRGaWxlTmFtZSk7XG4gIH1cbiAgcmV0LnB1c2goJz09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0nKTtcbiAgcmV0LnB1c2goJy0tLSAnICsgZGlmZi5vbGRGaWxlTmFtZSArICh0eXBlb2YgZGlmZi5vbGRIZWFkZXIgPT09ICd1bmRlZmluZWQnID8gJycgOiAnXFx0JyArIGRpZmYub2xkSGVhZGVyKSk7XG4gIHJldC5wdXNoKCcrKysgJyArIGRpZmYubmV3RmlsZU5hbWUgKyAodHlwZW9mIGRpZmYubmV3SGVhZGVyID09PSAndW5kZWZpbmVkJyA/ICcnIDogJ1xcdCcgKyBkaWZmLm5ld0hlYWRlcikpO1xuXG4gIGZvciAobGV0IGkgPSAwOyBpIDwgZGlmZi5odW5rcy5sZW5ndGg7IGkrKykge1xuICAgIGNvbnN0IGh1bmsgPSBkaWZmLmh1bmtzW2ldO1xuICAgIHJldC5wdXNoKFxuICAgICAgJ0BAIC0nICsgaHVuay5vbGRTdGFydCArICcsJyArIGh1bmsub2xkTGluZXNcbiAgICAgICsgJyArJyArIGh1bmsubmV3U3RhcnQgKyAnLCcgKyBodW5rLm5ld0xpbmVzXG4gICAgICArICcgQEAnXG4gICAgKTtcbiAgICByZXQucHVzaC5hcHBseShyZXQsIGh1bmsubGluZXMpO1xuICB9XG5cbiAgcmV0dXJuIHJldC5qb2luKCdcXG4nKSArICdcXG4nO1xufVxuXG5leHBvcnQgZnVuY3Rpb24gY3JlYXRlUGF0Y2goZmlsZU5hbWUsIG9sZFN0ciwgbmV3U3RyLCBvbGRIZWFkZXIsIG5ld0hlYWRlciwgb3B0aW9ucykge1xuICByZXR1cm4gY3JlYXRlVHdvRmlsZXNQYXRjaChmaWxlTmFtZSwgZmlsZU5hbWUsIG9sZFN0ciwgbmV3U3RyLCBvbGRIZWFkZXIsIG5ld0hlYWRlciwgb3B0aW9ucyk7XG59XG4iXX0=
+
+
+/***/ }),
 /* 141 */,
 /* 142 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
@@ -3607,7 +4704,7 @@ var readFileSync = __webpack_require__(747).readFileSync
 var semverValid = __webpack_require__(927).valid
 var through = __webpack_require__(576)
 var util = __webpack_require__(985)
-var _ = __webpack_require__(557)
+var _ = __webpack_require__(288)
 
 function conventionalChangelogWriter (context, options) {
   var savedKeyCommit
@@ -4204,11 +5301,124 @@ module.exports = gte
 
 
 /***/ }),
-/* 168 */,
+/* 168 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.arrayEqual = arrayEqual;
+exports.arrayStartsWith = arrayStartsWith;
+
+/*istanbul ignore end*/
+function arrayEqual(a, b) {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  return arrayStartsWith(a, b);
+}
+
+function arrayStartsWith(array, start) {
+  if (start.length > array.length) {
+    return false;
+  }
+
+  for (var i = 0; i < start.length; i++) {
+    if (start[i] !== array[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy91dGlsL2FycmF5LmpzIl0sIm5hbWVzIjpbImFycmF5RXF1YWwiLCJhIiwiYiIsImxlbmd0aCIsImFycmF5U3RhcnRzV2l0aCIsImFycmF5Iiwic3RhcnQiLCJpIl0sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7O0FBQU8sU0FBU0EsVUFBVCxDQUFvQkMsQ0FBcEIsRUFBdUJDLENBQXZCLEVBQTBCO0FBQy9CLE1BQUlELENBQUMsQ0FBQ0UsTUFBRixLQUFhRCxDQUFDLENBQUNDLE1BQW5CLEVBQTJCO0FBQ3pCLFdBQU8sS0FBUDtBQUNEOztBQUVELFNBQU9DLGVBQWUsQ0FBQ0gsQ0FBRCxFQUFJQyxDQUFKLENBQXRCO0FBQ0Q7O0FBRU0sU0FBU0UsZUFBVCxDQUF5QkMsS0FBekIsRUFBZ0NDLEtBQWhDLEVBQXVDO0FBQzVDLE1BQUlBLEtBQUssQ0FBQ0gsTUFBTixHQUFlRSxLQUFLLENBQUNGLE1BQXpCLEVBQWlDO0FBQy9CLFdBQU8sS0FBUDtBQUNEOztBQUVELE9BQUssSUFBSUksQ0FBQyxHQUFHLENBQWIsRUFBZ0JBLENBQUMsR0FBR0QsS0FBSyxDQUFDSCxNQUExQixFQUFrQ0ksQ0FBQyxFQUFuQyxFQUF1QztBQUNyQyxRQUFJRCxLQUFLLENBQUNDLENBQUQsQ0FBTCxLQUFhRixLQUFLLENBQUNFLENBQUQsQ0FBdEIsRUFBMkI7QUFDekIsYUFBTyxLQUFQO0FBQ0Q7QUFDRjs7QUFFRCxTQUFPLElBQVA7QUFDRCIsInNvdXJjZXNDb250ZW50IjpbImV4cG9ydCBmdW5jdGlvbiBhcnJheUVxdWFsKGEsIGIpIHtcbiAgaWYgKGEubGVuZ3RoICE9PSBiLmxlbmd0aCkge1xuICAgIHJldHVybiBmYWxzZTtcbiAgfVxuXG4gIHJldHVybiBhcnJheVN0YXJ0c1dpdGgoYSwgYik7XG59XG5cbmV4cG9ydCBmdW5jdGlvbiBhcnJheVN0YXJ0c1dpdGgoYXJyYXksIHN0YXJ0KSB7XG4gIGlmIChzdGFydC5sZW5ndGggPiBhcnJheS5sZW5ndGgpIHtcbiAgICByZXR1cm4gZmFsc2U7XG4gIH1cblxuICBmb3IgKGxldCBpID0gMDsgaSA8IHN0YXJ0Lmxlbmd0aDsgaSsrKSB7XG4gICAgaWYgKHN0YXJ0W2ldICE9PSBhcnJheVtpXSkge1xuICAgICAgcmV0dXJuIGZhbHNlO1xuICAgIH1cbiAgfVxuXG4gIHJldHVybiB0cnVlO1xufVxuIl19
+
+
+/***/ }),
 /* 169 */,
 /* 170 */,
 /* 171 */,
-/* 172 */,
+/* 172 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.partitionSuggestedHunksByScope = void 0;
+function partitionFileHunks(pullRequestHunks, suggestedHunks) {
+    // check ranges: the entirety of the old range of the suggested
+    // hunk must fit inside the new range of the valid Hunks
+    let i = 0;
+    let candidateHunk = pullRequestHunks[i];
+    const validFileHunks = [];
+    const invalidFileHunks = [];
+    suggestedHunks.forEach(suggestedHunk => {
+        while (candidateHunk && suggestedHunk.oldStart > candidateHunk.newEnd) {
+            i++;
+            candidateHunk = pullRequestHunks[i];
+        }
+        if (!candidateHunk) {
+            return;
+        }
+        if (suggestedHunk.oldStart >= candidateHunk.newStart &&
+            suggestedHunk.oldEnd <= candidateHunk.newEnd) {
+            validFileHunks.push(suggestedHunk);
+        }
+        else {
+            invalidFileHunks.push(suggestedHunk);
+        }
+    });
+    return { validFileHunks, invalidFileHunks };
+}
+/**
+ * Split suggested hunks into commentable and non-commentable hunks. Compares the new line ranges
+ * from pullRequestHunks against the old line ranges from allSuggestedHunks.
+ * @param pullRequestHunks {Map<string, Hunk[]>} The parsed hunks from that represents the valid lines to comment.
+ * @param allSuggestedHunks {Map<string, Hunk[]>} The hunks that represent suggested changes.
+ * @returns {PartitionedHunks} split hunks
+ */
+function partitionSuggestedHunksByScope(pullRequestHunks, allSuggestedHunks) {
+    const validHunks = new Map();
+    const invalidHunks = new Map();
+    allSuggestedHunks.forEach((suggestedHunks, filename) => {
+        const pullRequestFileHunks = pullRequestHunks.get(filename);
+        if (!pullRequestFileHunks) {
+            // file is not the original PR
+            invalidHunks.set(filename, suggestedHunks);
+            return;
+        }
+        const { validFileHunks, invalidFileHunks } = partitionFileHunks(pullRequestFileHunks, suggestedHunks);
+        if (validFileHunks.length > 0) {
+            validHunks.set(filename, validFileHunks);
+        }
+        if (invalidFileHunks.length > 0) {
+            invalidHunks.set(filename, invalidFileHunks);
+        }
+    });
+    return { validHunks, invalidHunks };
+}
+exports.partitionSuggestedHunksByScope = partitionSuggestedHunksByScope;
+//# sourceMappingURL=scope-handler.js.map
+
+/***/ }),
 /* 173 */,
 /* 174 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
@@ -4470,7 +5680,7 @@ module.exports = require("vm");
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@6.2.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@6.2.0","_id":"release-please@6.2.0","_inBundle":false,"_integrity":"sha512-/vAFQawwh+NTguXcvNbqqbjuzHxIFbqBmJldo7aCaxjALapmHpsEKt1KBX+aH3EC5DKeDcFd5inz9FHhiRdj8A==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@6.2.0","name":"release-please","escapedName":"release-please","rawSpec":"6.2.0","saveSpec":null,"fetchSpec":"6.2.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.2.0.tgz","_spec":"6.2.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.16.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.2.0"};
+module.exports = {"_args":[["release-please@6.4.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@6.4.0","_id":"release-please@6.4.0","_inBundle":false,"_integrity":"sha512-fik+vcRiKbQgd0HJt7gT0H+uCw7rkDbuZmkf48iargQhS/bZmO2gNLJEVeSgndNlGpYgCftar2z2s2rl+D7iBQ==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@6.4.0","name":"release-please","escapedName":"release-please","rawSpec":"6.4.0","saveSpec":null,"fetchSpec":"6.4.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.4.0.tgz","_spec":"6.4.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.17.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.4.0"};
 
 /***/ }),
 /* 192 */,
@@ -4778,7 +5988,7 @@ module.exports = validator
 
 function validator (opts = {}) {
   const {
-    ERR_PATHS_MUST_BE_STRINGS = () => 'fast-redact - Paths must be strings',
+    ERR_PATHS_MUST_BE_STRINGS = () => 'fast-redact - Paths must be (non-empty) strings',
     ERR_INVALID_PATH = (s) => `fast-redact – Invalid path (${s})`
   } = opts
 
@@ -4885,7 +6095,42 @@ function wrapHelper(helper, transformOptionsFn) {
 
 
 /***/ }),
-/* 218 */,
+/* 218 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.VersionPy = void 0;
+class VersionPy {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        return content.replace(/__version__ ?= ?["'][0-9]+\.[0-9]+\.[0-9](-\w+)?["']/, `__version__ = "${this.version}"`);
+    }
+}
+exports.VersionPy = VersionPy;
+//# sourceMappingURL=version-py.js.map
+
+/***/ }),
 /* 219 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -6352,16 +7597,27 @@ function groupRestore ({ keys, values, target }) {
   }
 }
 
-function groupRedact (o, path, censor, isCensorFct) {
+function groupRedact (o, path, censor, isCensorFct, censorFctTakesPath) {
   const target = get(o, path)
   if (target == null) return { keys: null, values: null, target: null, flat: true }
   const keys = Object.keys(target)
-  const length = keys.length
-  const values = new Array(length)
-  for (var i = 0; i < length; i++) {
-    const k = keys[i]
-    values[i] = target[k]
-    target[k] = isCensorFct ? censor(target[k]) : censor
+  const keysLength = keys.length
+  const pathLength = path.length
+  const pathWithKey = censorFctTakesPath ? [...path] : undefined
+  const values = new Array(keysLength)
+
+  for (var i = 0; i < keysLength; i++) {
+    const key = keys[i]
+    values[i] = target[key]
+
+    if (censorFctTakesPath) {
+      pathWithKey[pathLength] = key
+      target[key] = censor(target[key], pathWithKey)
+    } else if (isCensorFct) {
+      target[key] = censor(target[key])
+    } else {
+      target[key] = censor
+    }
   }
   return { keys, values, target, flat: true }
 }
@@ -6374,14 +7630,15 @@ function nestedRestore (arr) {
   }
 }
 
-function nestedRedact (store, o, path, ns, censor, isCensorFct) {
+function nestedRedact (store, o, path, ns, censor, isCensorFct, censorFctTakesPath) {
   const target = get(o, path)
   if (target == null) return
   const keys = Object.keys(target)
-  const length = keys.length
-  for (var i = 0; i < length; i++) {
+  const keysLength = keys.length
+  for (var i = 0; i < keysLength; i++) {
     const key = keys[i]
-    const { value, parent, exists } = specialSet(target, key, ns, censor, isCensorFct)
+    const { value, parent, exists } =
+      specialSet(target, key, path, ns, censor, isCensorFct, censorFctTakesPath)
 
     if (exists === true && parent !== null) {
       store.push({ key: ns[ns.length - 1], target: parent, value })
@@ -6394,10 +7651,11 @@ function has (obj, prop) {
   return Object.prototype.hasOwnProperty.call(obj, prop)
 }
 
-function specialSet (o, k, p, v, f) {
+function specialSet (o, k, path, afterPath, censor, isCensorFct, censorFctTakesPath) {
+  const afterPathLen = afterPath.length
+  const lastPathIndex = afterPathLen - 1
+  const originalKey = k
   var i = -1
-  var l = p.length
-  var li = l - 1
   var n
   var nv
   var ov
@@ -6405,22 +7663,26 @@ function specialSet (o, k, p, v, f) {
   var exists = true
   ov = n = o[k]
   if (typeof n !== 'object') return { value: null, parent: null, exists }
-  while (n != null && ++i < l) {
-    k = p[i]
+  while (n != null && ++i < afterPathLen) {
+    k = afterPath[i]
     oov = ov
     if (!(k in n)) {
       exists = false
       break
     }
     ov = n[k]
-    nv = f ? v(ov) : v
-    nv = (i !== li) ? ov : nv
-    n[k] = (has(n, k) && nv === ov) || (nv === undefined && v !== undefined) ? n[k] : nv
+    nv = (i !== lastPathIndex)
+      ? ov
+      : (isCensorFct
+        ? (censorFctTakesPath ? censor(ov, [...path, originalKey, ...afterPath]) : censor(ov))
+        : censor)
+    n[k] = (has(n, k) && nv === ov) || (nv === undefined && censor !== undefined) ? n[k] : nv
     n = n[k]
     if (typeof n !== 'object') break
   }
   return { value: ov, parent: oov, exists }
 }
+
 function get (o, p) {
   var i = -1
   var l = p.length
@@ -7298,7 +8560,112 @@ module.exports = {
 /* 255 */,
 /* 256 */,
 /* 257 */,
-/* 258 */,
+/* 258 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.makeInlineSuggestions = exports.buildReviewComments = void 0;
+const logger_1 = __webpack_require__(148);
+const message_handler_1 = __webpack_require__(0);
+const COMFORT_PREVIEW_HEADER = 'application/vnd.github.comfort-fade-preview+json';
+/**
+ * Convert the patch suggestions into GitHub parameter objects.
+ * Use this to generate review comments
+ * For information see:
+ * https://developer.github.com/v3/pulls/comments/#create-a-review-comment-for-a-pull-request
+ * @param suggestions
+ */
+function buildReviewComments(suggestions) {
+    const fileComments = [];
+    suggestions.forEach((hunks, fileName) => {
+        hunks.forEach(hunk => {
+            const newContent = hunk.newContent.join('\n');
+            if (hunk.newStart === hunk.newEnd) {
+                const singleComment = {
+                    path: fileName,
+                    body: `\`\`\`suggestion\n${newContent}\n\`\`\``,
+                    line: hunk.newEnd,
+                    side: 'RIGHT',
+                };
+                fileComments.push(singleComment);
+            }
+            else {
+                const comment = {
+                    path: fileName,
+                    body: `\`\`\`suggestion\n${newContent}\n\`\`\``,
+                    start_line: hunk.newStart,
+                    line: hunk.newEnd,
+                    side: 'RIGHT',
+                    start_side: 'RIGHT',
+                };
+                fileComments.push(comment);
+            }
+        });
+    });
+    return fileComments;
+}
+exports.buildReviewComments = buildReviewComments;
+/**
+ * Make a request to GitHub to make review comments
+ * @param octokit an authenticated octokit instance
+ * @param suggestions code suggestions patches
+ * @param remote the repository domain
+ * @param pullNumber the pull request number to make a review on
+ */
+async function makeInlineSuggestions(octokit, suggestions, outOfScopeSuggestions, remote, pullNumber) {
+    const comments = buildReviewComments(suggestions);
+    if (!comments.length) {
+        logger_1.logger.info('No valid suggestions to make');
+    }
+    if (!comments.length && !outOfScopeSuggestions.size) {
+        logger_1.logger.info('No suggestions were generated. Exiting...');
+        return null;
+    }
+    const summaryComment = message_handler_1.buildSummaryComment(outOfScopeSuggestions);
+    if (summaryComment) {
+        logger_1.logger.warn('Some suggestions could not be made');
+    }
+    // apply the suggestions to the latest sha
+    // the latest Pull Request hunk range includes
+    // all previous commit valid hunk ranges
+    const headSha = (await octokit.pulls.get({
+        owner: remote.owner,
+        repo: remote.repo,
+        pull_number: pullNumber,
+    })).data.head.sha;
+    const reviewNumber = (await octokit.pulls.createReview({
+        owner: remote.owner,
+        repo: remote.repo,
+        pull_number: pullNumber,
+        commit_id: headSha,
+        event: 'COMMENT',
+        body: summaryComment,
+        headers: { accept: COMFORT_PREVIEW_HEADER },
+        // Octokit type definitions doesn't support mulitiline comments, but the GitHub API does
+        comments: comments,
+    })).data.id;
+    logger_1.logger.info(`Successfully created a review on pull request: ${pullNumber}.`);
+    return reviewNumber;
+}
+exports.makeInlineSuggestions = makeInlineSuggestions;
+//# sourceMappingURL=upload-comments-handler.js.map
+
+/***/ }),
 /* 259 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -7470,7 +8837,120 @@ exports.Changelog = Changelog;
 //# sourceMappingURL=changelog.js.map
 
 /***/ }),
-/* 262 */,
+/* 262 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.diffWords = diffWords;
+exports.diffWordsWithSpace = diffWordsWithSpace;
+exports.wordDiff = void 0;
+
+/*istanbul ignore end*/
+var
+/*istanbul ignore start*/
+_base = _interopRequireDefault(__webpack_require__(491))
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_params = __webpack_require__(551)
+/*istanbul ignore end*/
+;
+
+/*istanbul ignore start*/ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/*istanbul ignore end*/
+// Based on https://en.wikipedia.org/wiki/Latin_script_in_Unicode
+//
+// Ranges and exceptions:
+// Latin-1 Supplement, 0080–00FF
+//  - U+00D7  × Multiplication sign
+//  - U+00F7  ÷ Division sign
+// Latin Extended-A, 0100–017F
+// Latin Extended-B, 0180–024F
+// IPA Extensions, 0250–02AF
+// Spacing Modifier Letters, 02B0–02FF
+//  - U+02C7  ˇ &#711;  Caron
+//  - U+02D8  ˘ &#728;  Breve
+//  - U+02D9  ˙ &#729;  Dot Above
+//  - U+02DA  ˚ &#730;  Ring Above
+//  - U+02DB  ˛ &#731;  Ogonek
+//  - U+02DC  ˜ &#732;  Small Tilde
+//  - U+02DD  ˝ &#733;  Double Acute Accent
+// Latin Extended Additional, 1E00–1EFF
+var extendedWordChars = /^[A-Za-z\xC0-\u02C6\u02C8-\u02D7\u02DE-\u02FF\u1E00-\u1EFF]+$/;
+var reWhitespace = /\S/;
+var wordDiff = new
+/*istanbul ignore start*/
+_base
+/*istanbul ignore end*/
+.
+/*istanbul ignore start*/
+default
+/*istanbul ignore end*/
+();
+
+/*istanbul ignore start*/
+exports.wordDiff = wordDiff;
+
+/*istanbul ignore end*/
+wordDiff.equals = function (left, right) {
+  if (this.options.ignoreCase) {
+    left = left.toLowerCase();
+    right = right.toLowerCase();
+  }
+
+  return left === right || this.options.ignoreWhitespace && !reWhitespace.test(left) && !reWhitespace.test(right);
+};
+
+wordDiff.tokenize = function (value) {
+  var tokens = value.split(/(\s+|[()[\]{}'"]|\b)/); // Join the boundary splits that we do not consider to be boundaries. This is primarily the extended Latin character set.
+
+  for (var i = 0; i < tokens.length - 1; i++) {
+    // If we have an empty string in the next field and we have only word chars before and after, merge
+    if (!tokens[i + 1] && tokens[i + 2] && extendedWordChars.test(tokens[i]) && extendedWordChars.test(tokens[i + 2])) {
+      tokens[i] += tokens[i + 2];
+      tokens.splice(i + 1, 2);
+      i--;
+    }
+  }
+
+  return tokens;
+};
+
+function diffWords(oldStr, newStr, options) {
+  options =
+  /*istanbul ignore start*/
+  (0,
+  /*istanbul ignore end*/
+
+  /*istanbul ignore start*/
+  _params
+  /*istanbul ignore end*/
+  .
+  /*istanbul ignore start*/
+  generateOptions)
+  /*istanbul ignore end*/
+  (options, {
+    ignoreWhitespace: true
+  });
+  return wordDiff.diff(oldStr, newStr, options);
+}
+
+function diffWordsWithSpace(oldStr, newStr, options) {
+  return wordDiff.diff(oldStr, newStr, options);
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9kaWZmL3dvcmQuanMiXSwibmFtZXMiOlsiZXh0ZW5kZWRXb3JkQ2hhcnMiLCJyZVdoaXRlc3BhY2UiLCJ3b3JkRGlmZiIsIkRpZmYiLCJlcXVhbHMiLCJsZWZ0IiwicmlnaHQiLCJvcHRpb25zIiwiaWdub3JlQ2FzZSIsInRvTG93ZXJDYXNlIiwiaWdub3JlV2hpdGVzcGFjZSIsInRlc3QiLCJ0b2tlbml6ZSIsInZhbHVlIiwidG9rZW5zIiwic3BsaXQiLCJpIiwibGVuZ3RoIiwic3BsaWNlIiwiZGlmZldvcmRzIiwib2xkU3RyIiwibmV3U3RyIiwiZ2VuZXJhdGVPcHRpb25zIiwiZGlmZiIsImRpZmZXb3Jkc1dpdGhTcGFjZSJdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBOztBQUNBO0FBQUE7QUFBQTtBQUFBO0FBQUE7Ozs7O0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0EsSUFBTUEsaUJBQWlCLEdBQUcsK0RBQTFCO0FBRUEsSUFBTUMsWUFBWSxHQUFHLElBQXJCO0FBRU8sSUFBTUMsUUFBUSxHQUFHO0FBQUlDO0FBQUFBO0FBQUFBO0FBQUFBO0FBQUFBO0FBQUFBO0FBQUo7QUFBQSxFQUFqQjs7Ozs7O0FBQ1BELFFBQVEsQ0FBQ0UsTUFBVCxHQUFrQixVQUFTQyxJQUFULEVBQWVDLEtBQWYsRUFBc0I7QUFDdEMsTUFBSSxLQUFLQyxPQUFMLENBQWFDLFVBQWpCLEVBQTZCO0FBQzNCSCxJQUFBQSxJQUFJLEdBQUdBLElBQUksQ0FBQ0ksV0FBTCxFQUFQO0FBQ0FILElBQUFBLEtBQUssR0FBR0EsS0FBSyxDQUFDRyxXQUFOLEVBQVI7QUFDRDs7QUFDRCxTQUFPSixJQUFJLEtBQUtDLEtBQVQsSUFBbUIsS0FBS0MsT0FBTCxDQUFhRyxnQkFBYixJQUFpQyxDQUFDVCxZQUFZLENBQUNVLElBQWIsQ0FBa0JOLElBQWxCLENBQWxDLElBQTZELENBQUNKLFlBQVksQ0FBQ1UsSUFBYixDQUFrQkwsS0FBbEIsQ0FBeEY7QUFDRCxDQU5EOztBQU9BSixRQUFRLENBQUNVLFFBQVQsR0FBb0IsVUFBU0MsS0FBVCxFQUFnQjtBQUNsQyxNQUFJQyxNQUFNLEdBQUdELEtBQUssQ0FBQ0UsS0FBTixDQUFZLHNCQUFaLENBQWIsQ0FEa0MsQ0FHbEM7O0FBQ0EsT0FBSyxJQUFJQyxDQUFDLEdBQUcsQ0FBYixFQUFnQkEsQ0FBQyxHQUFHRixNQUFNLENBQUNHLE1BQVAsR0FBZ0IsQ0FBcEMsRUFBdUNELENBQUMsRUFBeEMsRUFBNEM7QUFDMUM7QUFDQSxRQUFJLENBQUNGLE1BQU0sQ0FBQ0UsQ0FBQyxHQUFHLENBQUwsQ0FBUCxJQUFrQkYsTUFBTSxDQUFDRSxDQUFDLEdBQUcsQ0FBTCxDQUF4QixJQUNLaEIsaUJBQWlCLENBQUNXLElBQWxCLENBQXVCRyxNQUFNLENBQUNFLENBQUQsQ0FBN0IsQ0FETCxJQUVLaEIsaUJBQWlCLENBQUNXLElBQWxCLENBQXVCRyxNQUFNLENBQUNFLENBQUMsR0FBRyxDQUFMLENBQTdCLENBRlQsRUFFZ0Q7QUFDOUNGLE1BQUFBLE1BQU0sQ0FBQ0UsQ0FBRCxDQUFOLElBQWFGLE1BQU0sQ0FBQ0UsQ0FBQyxHQUFHLENBQUwsQ0FBbkI7QUFDQUYsTUFBQUEsTUFBTSxDQUFDSSxNQUFQLENBQWNGLENBQUMsR0FBRyxDQUFsQixFQUFxQixDQUFyQjtBQUNBQSxNQUFBQSxDQUFDO0FBQ0Y7QUFDRjs7QUFFRCxTQUFPRixNQUFQO0FBQ0QsQ0FoQkQ7O0FBa0JPLFNBQVNLLFNBQVQsQ0FBbUJDLE1BQW5CLEVBQTJCQyxNQUEzQixFQUFtQ2QsT0FBbkMsRUFBNEM7QUFDakRBLEVBQUFBLE9BQU87QUFBRztBQUFBO0FBQUE7O0FBQUFlO0FBQUFBO0FBQUFBO0FBQUFBO0FBQUFBO0FBQUFBO0FBQUE7QUFBQSxHQUFnQmYsT0FBaEIsRUFBeUI7QUFBQ0csSUFBQUEsZ0JBQWdCLEVBQUU7QUFBbkIsR0FBekIsQ0FBVjtBQUNBLFNBQU9SLFFBQVEsQ0FBQ3FCLElBQVQsQ0FBY0gsTUFBZCxFQUFzQkMsTUFBdEIsRUFBOEJkLE9BQTlCLENBQVA7QUFDRDs7QUFFTSxTQUFTaUIsa0JBQVQsQ0FBNEJKLE1BQTVCLEVBQW9DQyxNQUFwQyxFQUE0Q2QsT0FBNUMsRUFBcUQ7QUFDMUQsU0FBT0wsUUFBUSxDQUFDcUIsSUFBVCxDQUFjSCxNQUFkLEVBQXNCQyxNQUF0QixFQUE4QmQsT0FBOUIsQ0FBUDtBQUNEIiwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IERpZmYgZnJvbSAnLi9iYXNlJztcbmltcG9ydCB7Z2VuZXJhdGVPcHRpb25zfSBmcm9tICcuLi91dGlsL3BhcmFtcyc7XG5cbi8vIEJhc2VkIG9uIGh0dHBzOi8vZW4ud2lraXBlZGlhLm9yZy93aWtpL0xhdGluX3NjcmlwdF9pbl9Vbmljb2RlXG4vL1xuLy8gUmFuZ2VzIGFuZCBleGNlcHRpb25zOlxuLy8gTGF0aW4tMSBTdXBwbGVtZW50LCAwMDgw4oCTMDBGRlxuLy8gIC0gVSswMEQ3ICDDlyBNdWx0aXBsaWNhdGlvbiBzaWduXG4vLyAgLSBVKzAwRjcgIMO3IERpdmlzaW9uIHNpZ25cbi8vIExhdGluIEV4dGVuZGVkLUEsIDAxMDDigJMwMTdGXG4vLyBMYXRpbiBFeHRlbmRlZC1CLCAwMTgw4oCTMDI0RlxuLy8gSVBBIEV4dGVuc2lvbnMsIDAyNTDigJMwMkFGXG4vLyBTcGFjaW5nIE1vZGlmaWVyIExldHRlcnMsIDAyQjDigJMwMkZGXG4vLyAgLSBVKzAyQzcgIMuHICYjNzExOyAgQ2Fyb25cbi8vICAtIFUrMDJEOCAgy5ggJiM3Mjg7ICBCcmV2ZVxuLy8gIC0gVSswMkQ5ICDLmSAmIzcyOTsgIERvdCBBYm92ZVxuLy8gIC0gVSswMkRBICDLmiAmIzczMDsgIFJpbmcgQWJvdmVcbi8vICAtIFUrMDJEQiAgy5sgJiM3MzE7ICBPZ29uZWtcbi8vICAtIFUrMDJEQyAgy5wgJiM3MzI7ICBTbWFsbCBUaWxkZVxuLy8gIC0gVSswMkREICDLnSAmIzczMzsgIERvdWJsZSBBY3V0ZSBBY2NlbnRcbi8vIExhdGluIEV4dGVuZGVkIEFkZGl0aW9uYWwsIDFFMDDigJMxRUZGXG5jb25zdCBleHRlbmRlZFdvcmRDaGFycyA9IC9eW2EtekEtWlxcdXtDMH0tXFx1e0ZGfVxcdXtEOH0tXFx1e0Y2fVxcdXtGOH0tXFx1ezJDNn1cXHV7MkM4fS1cXHV7MkQ3fVxcdXsyREV9LVxcdXsyRkZ9XFx1ezFFMDB9LVxcdXsxRUZGfV0rJC91O1xuXG5jb25zdCByZVdoaXRlc3BhY2UgPSAvXFxTLztcblxuZXhwb3J0IGNvbnN0IHdvcmREaWZmID0gbmV3IERpZmYoKTtcbndvcmREaWZmLmVxdWFscyA9IGZ1bmN0aW9uKGxlZnQsIHJpZ2h0KSB7XG4gIGlmICh0aGlzLm9wdGlvbnMuaWdub3JlQ2FzZSkge1xuICAgIGxlZnQgPSBsZWZ0LnRvTG93ZXJDYXNlKCk7XG4gICAgcmlnaHQgPSByaWdodC50b0xvd2VyQ2FzZSgpO1xuICB9XG4gIHJldHVybiBsZWZ0ID09PSByaWdodCB8fCAodGhpcy5vcHRpb25zLmlnbm9yZVdoaXRlc3BhY2UgJiYgIXJlV2hpdGVzcGFjZS50ZXN0KGxlZnQpICYmICFyZVdoaXRlc3BhY2UudGVzdChyaWdodCkpO1xufTtcbndvcmREaWZmLnRva2VuaXplID0gZnVuY3Rpb24odmFsdWUpIHtcbiAgbGV0IHRva2VucyA9IHZhbHVlLnNwbGl0KC8oXFxzK3xbKClbXFxde30nXCJdfFxcYikvKTtcblxuICAvLyBKb2luIHRoZSBib3VuZGFyeSBzcGxpdHMgdGhhdCB3ZSBkbyBub3QgY29uc2lkZXIgdG8gYmUgYm91bmRhcmllcy4gVGhpcyBpcyBwcmltYXJpbHkgdGhlIGV4dGVuZGVkIExhdGluIGNoYXJhY3RlciBzZXQuXG4gIGZvciAobGV0IGkgPSAwOyBpIDwgdG9rZW5zLmxlbmd0aCAtIDE7IGkrKykge1xuICAgIC8vIElmIHdlIGhhdmUgYW4gZW1wdHkgc3RyaW5nIGluIHRoZSBuZXh0IGZpZWxkIGFuZCB3ZSBoYXZlIG9ubHkgd29yZCBjaGFycyBiZWZvcmUgYW5kIGFmdGVyLCBtZXJnZVxuICAgIGlmICghdG9rZW5zW2kgKyAxXSAmJiB0b2tlbnNbaSArIDJdXG4gICAgICAgICAgJiYgZXh0ZW5kZWRXb3JkQ2hhcnMudGVzdCh0b2tlbnNbaV0pXG4gICAgICAgICAgJiYgZXh0ZW5kZWRXb3JkQ2hhcnMudGVzdCh0b2tlbnNbaSArIDJdKSkge1xuICAgICAgdG9rZW5zW2ldICs9IHRva2Vuc1tpICsgMl07XG4gICAgICB0b2tlbnMuc3BsaWNlKGkgKyAxLCAyKTtcbiAgICAgIGktLTtcbiAgICB9XG4gIH1cblxuICByZXR1cm4gdG9rZW5zO1xufTtcblxuZXhwb3J0IGZ1bmN0aW9uIGRpZmZXb3JkcyhvbGRTdHIsIG5ld1N0ciwgb3B0aW9ucykge1xuICBvcHRpb25zID0gZ2VuZXJhdGVPcHRpb25zKG9wdGlvbnMsIHtpZ25vcmVXaGl0ZXNwYWNlOiB0cnVlfSk7XG4gIHJldHVybiB3b3JkRGlmZi5kaWZmKG9sZFN0ciwgbmV3U3RyLCBvcHRpb25zKTtcbn1cblxuZXhwb3J0IGZ1bmN0aW9uIGRpZmZXb3Jkc1dpdGhTcGFjZShvbGRTdHIsIG5ld1N0ciwgb3B0aW9ucykge1xuICByZXR1cm4gd29yZERpZmYuZGlmZihvbGRTdHIsIG5ld1N0ciwgb3B0aW9ucyk7XG59XG4iXX0=
+
+
+/***/ }),
 /* 263 */,
 /* 264 */,
 /* 265 */,
@@ -7706,7 +9186,7 @@ var util = __webpack_require__(338);
 var binarySearch = __webpack_require__(972);
 var ArraySet = __webpack_require__(969).ArraySet;
 var base64VLQ = __webpack_require__(277);
-var quickSort = __webpack_require__(1).quickSort;
+var quickSort = __webpack_require__(930).quickSort;
 
 function SourceMapConsumer(aSourceMap, aSourceMapURL) {
   var sourceMap = aSourceMap;
@@ -9071,13 +10551,25 @@ function redaction (opts, serialize) {
     [redactFmtSym]: fastRedact({ paths, censor, serialize, strict })
   }
 
-  const topCensor = (...args) =>
-    typeof censor === 'function' ? serialize(censor(...args)) : serialize(censor)
+  const topCensor = (...args) => {
+    return typeof censor === 'function' ? serialize(censor(...args)) : serialize(censor)
+  }
 
   return [...Object.keys(shape), ...Object.getOwnPropertySymbols(shape)].reduce((o, k) => {
     // top level key:
-    if (shape[k] === null) o[k] = topCensor
-    else o[k] = fastRedact({ paths: shape[k], censor, serialize, strict })
+    if (shape[k] === null) {
+      o[k] = (value) => topCensor(value, [k])
+    } else {
+      const wrappedCensor = typeof censor === 'function' ? (value, path) => {
+        return censor(value, [k, ...path])
+      } : censor
+      o[k] = fastRedact({
+        paths: shape[k],
+        censor: wrappedCensor,
+        serialize,
+        strict
+      })
+    }
     return o
   }, result)
 }
@@ -9259,10372 +10751,7 @@ function eos(stream, opts, callback) {
 module.exports = eos;
 
 /***/ }),
-/* 288 */,
-/* 289 */,
-/* 290 */,
-/* 291 */,
-/* 292 */,
-/* 293 */
-/***/ (function(module) {
-
-module.exports = require("buffer");
-
-/***/ }),
-/* 294 */,
-/* 295 */,
-/* 296 */,
-/* 297 */,
-/* 298 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-const compare = __webpack_require__(874)
-const eq = (a, b, loose) => compare(a, b, loose) === 0
-module.exports = eq
-
-
-/***/ }),
-/* 299 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-const VERSION = "2.4.0";
-
-/**
- * Some “list” response that can be paginated have a different response structure
- *
- * They have a `total_count` key in the response (search also has `incomplete_results`,
- * /installation/repositories also has `repository_selection`), as well as a key with
- * the list of the items which name varies from endpoint to endpoint.
- *
- * Octokit normalizes these responses so that paginated results are always returned following
- * the same structure. One challenge is that if the list response has only one page, no Link
- * header is provided, so this header alone is not sufficient to check wether a response is
- * paginated or not.
- *
- * We check if a "total_count" key is present in the response data, but also make sure that
- * a "url" property is not, as the "Get the combined status for a specific ref" endpoint would
- * otherwise match: https://developer.github.com/v3/repos/statuses/#get-the-combined-status-for-a-specific-ref
- */
-function normalizePaginatedListResponse(response) {
-  const responseNeedsNormalization = "total_count" in response.data && !("url" in response.data);
-  if (!responseNeedsNormalization) return response; // keep the additional properties intact as there is currently no other way
-  // to retrieve the same information.
-
-  const incompleteResults = response.data.incomplete_results;
-  const repositorySelection = response.data.repository_selection;
-  const totalCount = response.data.total_count;
-  delete response.data.incomplete_results;
-  delete response.data.repository_selection;
-  delete response.data.total_count;
-  const namespaceKey = Object.keys(response.data)[0];
-  const data = response.data[namespaceKey];
-  response.data = data;
-
-  if (typeof incompleteResults !== "undefined") {
-    response.data.incomplete_results = incompleteResults;
-  }
-
-  if (typeof repositorySelection !== "undefined") {
-    response.data.repository_selection = repositorySelection;
-  }
-
-  response.data.total_count = totalCount;
-  return response;
-}
-
-function iterator(octokit, route, parameters) {
-  const options = typeof route === "function" ? route.endpoint(parameters) : octokit.request.endpoint(route, parameters);
-  const requestMethod = typeof route === "function" ? route : octokit.request;
-  const method = options.method;
-  const headers = options.headers;
-  let url = options.url;
-  return {
-    [Symbol.asyncIterator]: () => ({
-      next() {
-        if (!url) {
-          return Promise.resolve({
-            done: true
-          });
-        }
-
-        return requestMethod({
-          method,
-          url,
-          headers
-        }).then(normalizePaginatedListResponse).then(response => {
-          // `response.headers.link` format:
-          // '<https://api.github.com/users/aseemk/followers?page=2>; rel="next", <https://api.github.com/users/aseemk/followers?page=2>; rel="last"'
-          // sets `url` to undefined if "next" URL is not present or `link` header is not set
-          url = ((response.headers.link || "").match(/<([^>]+)>;\s*rel="next"/) || [])[1];
-          return {
-            value: response
-          };
-        });
-      }
-
-    })
-  };
-}
-
-function paginate(octokit, route, parameters, mapFn) {
-  if (typeof parameters === "function") {
-    mapFn = parameters;
-    parameters = undefined;
-  }
-
-  return gather(octokit, [], iterator(octokit, route, parameters)[Symbol.asyncIterator](), mapFn);
-}
-
-function gather(octokit, results, iterator, mapFn) {
-  return iterator.next().then(result => {
-    if (result.done) {
-      return results;
-    }
-
-    let earlyExit = false;
-
-    function done() {
-      earlyExit = true;
-    }
-
-    results = results.concat(mapFn ? mapFn(result.value, done) : result.value.data);
-
-    if (earlyExit) {
-      return results;
-    }
-
-    return gather(octokit, results, iterator, mapFn);
-  });
-}
-
-/**
- * @param octokit Octokit instance
- * @param options Options passed to Octokit constructor
- */
-
-function paginateRest(octokit) {
-  return {
-    paginate: Object.assign(paginate.bind(null, octokit), {
-      iterator: iterator.bind(null, octokit)
-    })
-  };
-}
-paginateRest.VERSION = VERSION;
-
-exports.paginateRest = paginateRest;
-//# sourceMappingURL=index.js.map
-
-
-/***/ }),
-/* 300 */,
-/* 301 */,
-/* 302 */,
-/* 303 */,
-/* 304 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-
-var isMatch = __webpack_require__(561)
-var modifyValues = __webpack_require__(513)
-
-function modifyValue (val) {
-  if (typeof val === 'string') {
-    return val.trim()
-  }
-
-  return val
-}
-
-function conventionalCommitsFilter (commits) {
-  if (!Array.isArray(commits)) {
-    throw new TypeError('Expected an array')
-  }
-
-  var ret = []
-  var ignores = []
-  var remove = []
-  commits.forEach(function (commit) {
-    if (commit.revert) {
-      ignores.push(commit)
-    }
-
-    ret.push(commit)
-  })
-
-  // Filter out reverted commits
-  ret = ret.filter(function (commit) {
-    var ignoreThis = false
-
-    commit = commit.raw ? modifyValues(commit.raw, modifyValue) : modifyValues(commit, modifyValue)
-
-    ignores.some(function (ignoreCommit) {
-      var ignore = modifyValues(ignoreCommit.revert, modifyValue)
-
-      ignoreThis = isMatch(commit, ignore)
-
-      if (ignoreThis) {
-        remove.push(ignoreCommit.hash)
-      }
-
-      return ignoreThis
-    })
-
-    return !ignoreThis
-  })
-
-  // Filter out the commits that reverted something otherwise keep the revert commits
-  ret = ret.filter(function (commit) {
-    return remove.indexOf(commit.hash) !== 0
-  })
-
-  return ret
-}
-
-module.exports = conventionalCommitsFilter
-
-
-/***/ }),
-/* 305 */,
-/* 306 */,
-/* 307 */
-/***/ (function(module) {
-
-"use strict";
-
-
-module.exports = {
-  mapHttpRequest,
-  reqSerializer
-}
-
-var rawSymbol = Symbol('pino-raw-req-ref')
-var pinoReqProto = Object.create({}, {
-  id: {
-    enumerable: true,
-    writable: true,
-    value: ''
-  },
-  method: {
-    enumerable: true,
-    writable: true,
-    value: ''
-  },
-  url: {
-    enumerable: true,
-    writable: true,
-    value: ''
-  },
-  headers: {
-    enumerable: true,
-    writable: true,
-    value: {}
-  },
-  remoteAddress: {
-    enumerable: true,
-    writable: true,
-    value: ''
-  },
-  remotePort: {
-    enumerable: true,
-    writable: true,
-    value: ''
-  },
-  raw: {
-    enumerable: false,
-    get: function () {
-      return this[rawSymbol]
-    },
-    set: function (val) {
-      this[rawSymbol] = val
-    }
-  }
-})
-Object.defineProperty(pinoReqProto, rawSymbol, {
-  writable: true,
-  value: {}
-})
-
-function reqSerializer (req) {
-  // req.info is for hapi compat.
-  var connection = req.info || req.connection
-  const _req = Object.create(pinoReqProto)
-  _req.id = (typeof req.id === 'function' ? req.id() : (req.id || (req.info ? req.info.id : undefined)))
-  _req.method = req.method
-  // req.originalUrl is for expressjs compat.
-  if (req.originalUrl) {
-    _req.url = req.originalUrl
-  } else {
-    // req.url.path is  for hapi compat.
-    _req.url = req.path || (req.url ? (req.url.path || req.url) : undefined)
-  }
-  _req.headers = req.headers
-  _req.remoteAddress = connection && connection.remoteAddress
-  _req.remotePort = connection && connection.remotePort
-  // req.raw is  for hapi compat/equivalence
-  _req.raw = req.raw || req
-  return _req
-}
-
-function mapHttpRequest (req) {
-  return {
-    req: reqSerializer(req)
-  }
-}
-
-
-/***/ }),
-/* 308 */,
-/* 309 */
-/***/ (function(module) {
-
-module.exports = eval("require")("pino-pretty");
-
-
-/***/ }),
-/* 310 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-const Range = __webpack_require__(124)
-const satisfies = (version, range, options) => {
-  try {
-    range = new Range(range, options)
-  } catch (er) {
-    return false
-  }
-  return range.test(version)
-}
-module.exports = satisfies
-
-
-/***/ }),
-/* 311 */
-/***/ (function(module, exports) {
-
-"use strict";
-
-
-exports.__esModule = true;
-var errorProps = ['description', 'fileName', 'lineNumber', 'endLineNumber', 'message', 'name', 'number', 'stack'];
-
-function Exception(message, node) {
-  var loc = node && node.loc,
-      line = undefined,
-      endLineNumber = undefined,
-      column = undefined,
-      endColumn = undefined;
-
-  if (loc) {
-    line = loc.start.line;
-    endLineNumber = loc.end.line;
-    column = loc.start.column;
-    endColumn = loc.end.column;
-
-    message += ' - ' + line + ':' + column;
-  }
-
-  var tmp = Error.prototype.constructor.call(this, message);
-
-  // Unfortunately errors are not enumerable in Chrome (at least), so `for prop in tmp` doesn't work.
-  for (var idx = 0; idx < errorProps.length; idx++) {
-    this[errorProps[idx]] = tmp[errorProps[idx]];
-  }
-
-  /* istanbul ignore else */
-  if (Error.captureStackTrace) {
-    Error.captureStackTrace(this, Exception);
-  }
-
-  try {
-    if (loc) {
-      this.lineNumber = line;
-      this.endLineNumber = endLineNumber;
-
-      // Work around issue under safari where we can't directly set the column value
-      /* istanbul ignore next */
-      if (Object.defineProperty) {
-        Object.defineProperty(this, 'column', {
-          value: column,
-          enumerable: true
-        });
-        Object.defineProperty(this, 'endColumn', {
-          value: endColumn,
-          enumerable: true
-        });
-      } else {
-        this.column = column;
-        this.endColumn = endColumn;
-      }
-    }
-  } catch (nop) {
-    /* Ignore if the browser is very particular */
-  }
-}
-
-Exception.prototype = new Error();
-
-exports['default'] = Exception;
-module.exports = exports['default'];
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2V4Y2VwdGlvbi5qcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7QUFBQSxJQUFNLFVBQVUsR0FBRyxDQUNqQixhQUFhLEVBQ2IsVUFBVSxFQUNWLFlBQVksRUFDWixlQUFlLEVBQ2YsU0FBUyxFQUNULE1BQU0sRUFDTixRQUFRLEVBQ1IsT0FBTyxDQUNSLENBQUM7O0FBRUYsU0FBUyxTQUFTLENBQUMsT0FBTyxFQUFFLElBQUksRUFBRTtBQUNoQyxNQUFJLEdBQUcsR0FBRyxJQUFJLElBQUksSUFBSSxDQUFDLEdBQUc7TUFDeEIsSUFBSSxZQUFBO01BQ0osYUFBYSxZQUFBO01BQ2IsTUFBTSxZQUFBO01BQ04sU0FBUyxZQUFBLENBQUM7O0FBRVosTUFBSSxHQUFHLEVBQUU7QUFDUCxRQUFJLEdBQUcsR0FBRyxDQUFDLEtBQUssQ0FBQyxJQUFJLENBQUM7QUFDdEIsaUJBQWEsR0FBRyxHQUFHLENBQUMsR0FBRyxDQUFDLElBQUksQ0FBQztBQUM3QixVQUFNLEdBQUcsR0FBRyxDQUFDLEtBQUssQ0FBQyxNQUFNLENBQUM7QUFDMUIsYUFBUyxHQUFHLEdBQUcsQ0FBQyxHQUFHLENBQUMsTUFBTSxDQUFDOztBQUUzQixXQUFPLElBQUksS0FBSyxHQUFHLElBQUksR0FBRyxHQUFHLEdBQUcsTUFBTSxDQUFDO0dBQ3hDOztBQUVELE1BQUksR0FBRyxHQUFHLEtBQUssQ0FBQyxTQUFTLENBQUMsV0FBVyxDQUFDLElBQUksQ0FBQyxJQUFJLEVBQUUsT0FBTyxDQUFDLENBQUM7OztBQUcxRCxPQUFLLElBQUksR0FBRyxHQUFHLENBQUMsRUFBRSxHQUFHLEdBQUcsVUFBVSxDQUFDLE1BQU0sRUFBRSxHQUFHLEVBQUUsRUFBRTtBQUNoRCxRQUFJLENBQUMsVUFBVSxDQUFDLEdBQUcsQ0FBQyxDQUFDLEdBQUcsR0FBRyxDQUFDLFVBQVUsQ0FBQyxHQUFHLENBQUMsQ0FBQyxDQUFDO0dBQzlDOzs7QUFHRCxNQUFJLEtBQUssQ0FBQyxpQkFBaUIsRUFBRTtBQUMzQixTQUFLLENBQUMsaUJBQWlCLENBQUMsSUFBSSxFQUFFLFNBQVMsQ0FBQyxDQUFDO0dBQzFDOztBQUVELE1BQUk7QUFDRixRQUFJLEdBQUcsRUFBRTtBQUNQLFVBQUksQ0FBQyxVQUFVLEdBQUcsSUFBSSxDQUFDO0FBQ3ZCLFVBQUksQ0FBQyxhQUFhLEdBQUcsYUFBYSxDQUFDOzs7O0FBSW5DLFVBQUksTUFBTSxDQUFDLGNBQWMsRUFBRTtBQUN6QixjQUFNLENBQUMsY0FBYyxDQUFDLElBQUksRUFBRSxRQUFRLEVBQUU7QUFDcEMsZUFBSyxFQUFFLE1BQU07QUFDYixvQkFBVSxFQUFFLElBQUk7U0FDakIsQ0FBQyxDQUFDO0FBQ0gsY0FBTSxDQUFDLGNBQWMsQ0FBQyxJQUFJLEVBQUUsV0FBVyxFQUFFO0FBQ3ZDLGVBQUssRUFBRSxTQUFTO0FBQ2hCLG9CQUFVLEVBQUUsSUFBSTtTQUNqQixDQUFDLENBQUM7T0FDSixNQUFNO0FBQ0wsWUFBSSxDQUFDLE1BQU0sR0FBRyxNQUFNLENBQUM7QUFDckIsWUFBSSxDQUFDLFNBQVMsR0FBRyxTQUFTLENBQUM7T0FDNUI7S0FDRjtHQUNGLENBQUMsT0FBTyxHQUFHLEVBQUU7O0dBRWI7Q0FDRjs7QUFFRCxTQUFTLENBQUMsU0FBUyxHQUFHLElBQUksS0FBSyxFQUFFLENBQUM7O3FCQUVuQixTQUFTIiwiZmlsZSI6ImV4Y2VwdGlvbi5qcyIsInNvdXJjZXNDb250ZW50IjpbImNvbnN0IGVycm9yUHJvcHMgPSBbXG4gICdkZXNjcmlwdGlvbicsXG4gICdmaWxlTmFtZScsXG4gICdsaW5lTnVtYmVyJyxcbiAgJ2VuZExpbmVOdW1iZXInLFxuICAnbWVzc2FnZScsXG4gICduYW1lJyxcbiAgJ251bWJlcicsXG4gICdzdGFjaydcbl07XG5cbmZ1bmN0aW9uIEV4Y2VwdGlvbihtZXNzYWdlLCBub2RlKSB7XG4gIGxldCBsb2MgPSBub2RlICYmIG5vZGUubG9jLFxuICAgIGxpbmUsXG4gICAgZW5kTGluZU51bWJlcixcbiAgICBjb2x1bW4sXG4gICAgZW5kQ29sdW1uO1xuXG4gIGlmIChsb2MpIHtcbiAgICBsaW5lID0gbG9jLnN0YXJ0LmxpbmU7XG4gICAgZW5kTGluZU51bWJlciA9IGxvYy5lbmQubGluZTtcbiAgICBjb2x1bW4gPSBsb2Muc3RhcnQuY29sdW1uO1xuICAgIGVuZENvbHVtbiA9IGxvYy5lbmQuY29sdW1uO1xuXG4gICAgbWVzc2FnZSArPSAnIC0gJyArIGxpbmUgKyAnOicgKyBjb2x1bW47XG4gIH1cblxuICBsZXQgdG1wID0gRXJyb3IucHJvdG90eXBlLmNvbnN0cnVjdG9yLmNhbGwodGhpcywgbWVzc2FnZSk7XG5cbiAgLy8gVW5mb3J0dW5hdGVseSBlcnJvcnMgYXJlIG5vdCBlbnVtZXJhYmxlIGluIENocm9tZSAoYXQgbGVhc3QpLCBzbyBgZm9yIHByb3AgaW4gdG1wYCBkb2Vzbid0IHdvcmsuXG4gIGZvciAobGV0IGlkeCA9IDA7IGlkeCA8IGVycm9yUHJvcHMubGVuZ3RoOyBpZHgrKykge1xuICAgIHRoaXNbZXJyb3JQcm9wc1tpZHhdXSA9IHRtcFtlcnJvclByb3BzW2lkeF1dO1xuICB9XG5cbiAgLyogaXN0YW5idWwgaWdub3JlIGVsc2UgKi9cbiAgaWYgKEVycm9yLmNhcHR1cmVTdGFja1RyYWNlKSB7XG4gICAgRXJyb3IuY2FwdHVyZVN0YWNrVHJhY2UodGhpcywgRXhjZXB0aW9uKTtcbiAgfVxuXG4gIHRyeSB7XG4gICAgaWYgKGxvYykge1xuICAgICAgdGhpcy5saW5lTnVtYmVyID0gbGluZTtcbiAgICAgIHRoaXMuZW5kTGluZU51bWJlciA9IGVuZExpbmVOdW1iZXI7XG5cbiAgICAgIC8vIFdvcmsgYXJvdW5kIGlzc3VlIHVuZGVyIHNhZmFyaSB3aGVyZSB3ZSBjYW4ndCBkaXJlY3RseSBzZXQgdGhlIGNvbHVtbiB2YWx1ZVxuICAgICAgLyogaXN0YW5idWwgaWdub3JlIG5leHQgKi9cbiAgICAgIGlmIChPYmplY3QuZGVmaW5lUHJvcGVydHkpIHtcbiAgICAgICAgT2JqZWN0LmRlZmluZVByb3BlcnR5KHRoaXMsICdjb2x1bW4nLCB7XG4gICAgICAgICAgdmFsdWU6IGNvbHVtbixcbiAgICAgICAgICBlbnVtZXJhYmxlOiB0cnVlXG4gICAgICAgIH0pO1xuICAgICAgICBPYmplY3QuZGVmaW5lUHJvcGVydHkodGhpcywgJ2VuZENvbHVtbicsIHtcbiAgICAgICAgICB2YWx1ZTogZW5kQ29sdW1uLFxuICAgICAgICAgIGVudW1lcmFibGU6IHRydWVcbiAgICAgICAgfSk7XG4gICAgICB9IGVsc2Uge1xuICAgICAgICB0aGlzLmNvbHVtbiA9IGNvbHVtbjtcbiAgICAgICAgdGhpcy5lbmRDb2x1bW4gPSBlbmRDb2x1bW47XG4gICAgICB9XG4gICAgfVxuICB9IGNhdGNoIChub3ApIHtcbiAgICAvKiBJZ25vcmUgaWYgdGhlIGJyb3dzZXIgaXMgdmVyeSBwYXJ0aWN1bGFyICovXG4gIH1cbn1cblxuRXhjZXB0aW9uLnByb3RvdHlwZSA9IG5ldyBFcnJvcigpO1xuXG5leHBvcnQgZGVmYXVsdCBFeGNlcHRpb247XG4iXX0=
-
-
-/***/ }),
-/* 312 */,
-/* 313 */,
-/* 314 */,
-/* 315 */
-/***/ (function(module) {
-
-if (typeof Object.create === 'function') {
-  // implementation from standard node.js 'util' module
-  module.exports = function inherits(ctor, superCtor) {
-    if (superCtor) {
-      ctor.super_ = superCtor
-      ctor.prototype = Object.create(superCtor.prototype, {
-        constructor: {
-          value: ctor,
-          enumerable: false,
-          writable: true,
-          configurable: true
-        }
-      })
-    }
-  };
-} else {
-  // old school shim for old browsers
-  module.exports = function inherits(ctor, superCtor) {
-    if (superCtor) {
-      ctor.super_ = superCtor
-      var TempCtor = function () {}
-      TempCtor.prototype = superCtor.prototype
-      ctor.prototype = new TempCtor()
-      ctor.prototype.constructor = ctor
-    }
-  }
-}
-
-
-/***/ }),
-/* 316 */,
-/* 317 */
-/***/ (function(__unusedmodule, exports) {
-
-var undefined = (void 0); // Paranoia
-
-// Beyond this value, index getters/setters (i.e. array[0], array[1]) are so slow to
-// create, and consume so much memory, that the browser appears frozen.
-var MAX_ARRAY_LENGTH = 1e5;
-
-// Approximations of internal ECMAScript conversion functions
-var ECMAScript = (function() {
-  // Stash a copy in case other scripts modify these
-  var opts = Object.prototype.toString,
-      ophop = Object.prototype.hasOwnProperty;
-
-  return {
-    // Class returns internal [[Class]] property, used to avoid cross-frame instanceof issues:
-    Class: function(v) { return opts.call(v).replace(/^\[object *|\]$/g, ''); },
-    HasProperty: function(o, p) { return p in o; },
-    HasOwnProperty: function(o, p) { return ophop.call(o, p); },
-    IsCallable: function(o) { return typeof o === 'function'; },
-    ToInt32: function(v) { return v >> 0; },
-    ToUint32: function(v) { return v >>> 0; }
-  };
-}());
-
-// Snapshot intrinsics
-var LN2 = Math.LN2,
-    abs = Math.abs,
-    floor = Math.floor,
-    log = Math.log,
-    min = Math.min,
-    pow = Math.pow,
-    round = Math.round;
-
-// ES5: lock down object properties
-function configureProperties(obj) {
-  if (getOwnPropNames && defineProp) {
-    var props = getOwnPropNames(obj), i;
-    for (i = 0; i < props.length; i += 1) {
-      defineProp(obj, props[i], {
-        value: obj[props[i]],
-        writable: false,
-        enumerable: false,
-        configurable: false
-      });
-    }
-  }
-}
-
-// emulate ES5 getter/setter API using legacy APIs
-// http://blogs.msdn.com/b/ie/archive/2010/09/07/transitioning-existing-code-to-the-es5-getter-setter-apis.aspx
-// (second clause tests for Object.defineProperty() in IE<9 that only supports extending DOM prototypes, but
-// note that IE<9 does not support __defineGetter__ or __defineSetter__ so it just renders the method harmless)
-var defineProp
-if (Object.defineProperty && (function() {
-      try {
-        Object.defineProperty({}, 'x', {});
-        return true;
-      } catch (e) {
-        return false;
-      }
-    })()) {
-  defineProp = Object.defineProperty;
-} else {
-  defineProp = function(o, p, desc) {
-    if (!o === Object(o)) throw new TypeError("Object.defineProperty called on non-object");
-    if (ECMAScript.HasProperty(desc, 'get') && Object.prototype.__defineGetter__) { Object.prototype.__defineGetter__.call(o, p, desc.get); }
-    if (ECMAScript.HasProperty(desc, 'set') && Object.prototype.__defineSetter__) { Object.prototype.__defineSetter__.call(o, p, desc.set); }
-    if (ECMAScript.HasProperty(desc, 'value')) { o[p] = desc.value; }
-    return o;
-  };
-}
-
-var getOwnPropNames = Object.getOwnPropertyNames || function (o) {
-  if (o !== Object(o)) throw new TypeError("Object.getOwnPropertyNames called on non-object");
-  var props = [], p;
-  for (p in o) {
-    if (ECMAScript.HasOwnProperty(o, p)) {
-      props.push(p);
-    }
-  }
-  return props;
-};
-
-// ES5: Make obj[index] an alias for obj._getter(index)/obj._setter(index, value)
-// for index in 0 ... obj.length
-function makeArrayAccessors(obj) {
-  if (!defineProp) { return; }
-
-  if (obj.length > MAX_ARRAY_LENGTH) throw new RangeError("Array too large for polyfill");
-
-  function makeArrayAccessor(index) {
-    defineProp(obj, index, {
-      'get': function() { return obj._getter(index); },
-      'set': function(v) { obj._setter(index, v); },
-      enumerable: true,
-      configurable: false
-    });
-  }
-
-  var i;
-  for (i = 0; i < obj.length; i += 1) {
-    makeArrayAccessor(i);
-  }
-}
-
-// Internal conversion functions:
-//    pack<Type>()   - take a number (interpreted as Type), output a byte array
-//    unpack<Type>() - take a byte array, output a Type-like number
-
-function as_signed(value, bits) { var s = 32 - bits; return (value << s) >> s; }
-function as_unsigned(value, bits) { var s = 32 - bits; return (value << s) >>> s; }
-
-function packI8(n) { return [n & 0xff]; }
-function unpackI8(bytes) { return as_signed(bytes[0], 8); }
-
-function packU8(n) { return [n & 0xff]; }
-function unpackU8(bytes) { return as_unsigned(bytes[0], 8); }
-
-function packU8Clamped(n) { n = round(Number(n)); return [n < 0 ? 0 : n > 0xff ? 0xff : n & 0xff]; }
-
-function packI16(n) { return [(n >> 8) & 0xff, n & 0xff]; }
-function unpackI16(bytes) { return as_signed(bytes[0] << 8 | bytes[1], 16); }
-
-function packU16(n) { return [(n >> 8) & 0xff, n & 0xff]; }
-function unpackU16(bytes) { return as_unsigned(bytes[0] << 8 | bytes[1], 16); }
-
-function packI32(n) { return [(n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff]; }
-function unpackI32(bytes) { return as_signed(bytes[0] << 24 | bytes[1] << 16 | bytes[2] << 8 | bytes[3], 32); }
-
-function packU32(n) { return [(n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff]; }
-function unpackU32(bytes) { return as_unsigned(bytes[0] << 24 | bytes[1] << 16 | bytes[2] << 8 | bytes[3], 32); }
-
-function packIEEE754(v, ebits, fbits) {
-
-  var bias = (1 << (ebits - 1)) - 1,
-      s, e, f, ln,
-      i, bits, str, bytes;
-
-  function roundToEven(n) {
-    var w = floor(n), f = n - w;
-    if (f < 0.5)
-      return w;
-    if (f > 0.5)
-      return w + 1;
-    return w % 2 ? w + 1 : w;
-  }
-
-  // Compute sign, exponent, fraction
-  if (v !== v) {
-    // NaN
-    // http://dev.w3.org/2006/webapi/WebIDL/#es-type-mapping
-    e = (1 << ebits) - 1; f = pow(2, fbits - 1); s = 0;
-  } else if (v === Infinity || v === -Infinity) {
-    e = (1 << ebits) - 1; f = 0; s = (v < 0) ? 1 : 0;
-  } else if (v === 0) {
-    e = 0; f = 0; s = (1 / v === -Infinity) ? 1 : 0;
-  } else {
-    s = v < 0;
-    v = abs(v);
-
-    if (v >= pow(2, 1 - bias)) {
-      e = min(floor(log(v) / LN2), 1023);
-      f = roundToEven(v / pow(2, e) * pow(2, fbits));
-      if (f / pow(2, fbits) >= 2) {
-        e = e + 1;
-        f = 1;
-      }
-      if (e > bias) {
-        // Overflow
-        e = (1 << ebits) - 1;
-        f = 0;
-      } else {
-        // Normalized
-        e = e + bias;
-        f = f - pow(2, fbits);
-      }
-    } else {
-      // Denormalized
-      e = 0;
-      f = roundToEven(v / pow(2, 1 - bias - fbits));
-    }
-  }
-
-  // Pack sign, exponent, fraction
-  bits = [];
-  for (i = fbits; i; i -= 1) { bits.push(f % 2 ? 1 : 0); f = floor(f / 2); }
-  for (i = ebits; i; i -= 1) { bits.push(e % 2 ? 1 : 0); e = floor(e / 2); }
-  bits.push(s ? 1 : 0);
-  bits.reverse();
-  str = bits.join('');
-
-  // Bits to bytes
-  bytes = [];
-  while (str.length) {
-    bytes.push(parseInt(str.substring(0, 8), 2));
-    str = str.substring(8);
-  }
-  return bytes;
-}
-
-function unpackIEEE754(bytes, ebits, fbits) {
-
-  // Bytes to bits
-  var bits = [], i, j, b, str,
-      bias, s, e, f;
-
-  for (i = bytes.length; i; i -= 1) {
-    b = bytes[i - 1];
-    for (j = 8; j; j -= 1) {
-      bits.push(b % 2 ? 1 : 0); b = b >> 1;
-    }
-  }
-  bits.reverse();
-  str = bits.join('');
-
-  // Unpack sign, exponent, fraction
-  bias = (1 << (ebits - 1)) - 1;
-  s = parseInt(str.substring(0, 1), 2) ? -1 : 1;
-  e = parseInt(str.substring(1, 1 + ebits), 2);
-  f = parseInt(str.substring(1 + ebits), 2);
-
-  // Produce number
-  if (e === (1 << ebits) - 1) {
-    return f !== 0 ? NaN : s * Infinity;
-  } else if (e > 0) {
-    // Normalized
-    return s * pow(2, e - bias) * (1 + f / pow(2, fbits));
-  } else if (f !== 0) {
-    // Denormalized
-    return s * pow(2, -(bias - 1)) * (f / pow(2, fbits));
-  } else {
-    return s < 0 ? -0 : 0;
-  }
-}
-
-function unpackF64(b) { return unpackIEEE754(b, 11, 52); }
-function packF64(v) { return packIEEE754(v, 11, 52); }
-function unpackF32(b) { return unpackIEEE754(b, 8, 23); }
-function packF32(v) { return packIEEE754(v, 8, 23); }
-
-
-//
-// 3 The ArrayBuffer Type
-//
-
-(function() {
-
-  /** @constructor */
-  var ArrayBuffer = function ArrayBuffer(length) {
-    length = ECMAScript.ToInt32(length);
-    if (length < 0) throw new RangeError('ArrayBuffer size is not a small enough positive integer');
-
-    this.byteLength = length;
-    this._bytes = [];
-    this._bytes.length = length;
-
-    var i;
-    for (i = 0; i < this.byteLength; i += 1) {
-      this._bytes[i] = 0;
-    }
-
-    configureProperties(this);
-  };
-
-  exports.ArrayBuffer = exports.ArrayBuffer || ArrayBuffer;
-
-  //
-  // 4 The ArrayBufferView Type
-  //
-
-  // NOTE: this constructor is not exported
-  /** @constructor */
-  var ArrayBufferView = function ArrayBufferView() {
-    //this.buffer = null;
-    //this.byteOffset = 0;
-    //this.byteLength = 0;
-  };
-
-  //
-  // 5 The Typed Array View Types
-  //
-
-  function makeConstructor(bytesPerElement, pack, unpack) {
-    // Each TypedArray type requires a distinct constructor instance with
-    // identical logic, which this produces.
-
-    var ctor;
-    ctor = function(buffer, byteOffset, length) {
-      var array, sequence, i, s;
-
-      if (!arguments.length || typeof arguments[0] === 'number') {
-        // Constructor(unsigned long length)
-        this.length = ECMAScript.ToInt32(arguments[0]);
-        if (length < 0) throw new RangeError('ArrayBufferView size is not a small enough positive integer');
-
-        this.byteLength = this.length * this.BYTES_PER_ELEMENT;
-        this.buffer = new ArrayBuffer(this.byteLength);
-        this.byteOffset = 0;
-      } else if (typeof arguments[0] === 'object' && arguments[0].constructor === ctor) {
-        // Constructor(TypedArray array)
-        array = arguments[0];
-
-        this.length = array.length;
-        this.byteLength = this.length * this.BYTES_PER_ELEMENT;
-        this.buffer = new ArrayBuffer(this.byteLength);
-        this.byteOffset = 0;
-
-        for (i = 0; i < this.length; i += 1) {
-          this._setter(i, array._getter(i));
-        }
-      } else if (typeof arguments[0] === 'object' &&
-                 !(arguments[0] instanceof ArrayBuffer || ECMAScript.Class(arguments[0]) === 'ArrayBuffer')) {
-        // Constructor(sequence<type> array)
-        sequence = arguments[0];
-
-        this.length = ECMAScript.ToUint32(sequence.length);
-        this.byteLength = this.length * this.BYTES_PER_ELEMENT;
-        this.buffer = new ArrayBuffer(this.byteLength);
-        this.byteOffset = 0;
-
-        for (i = 0; i < this.length; i += 1) {
-          s = sequence[i];
-          this._setter(i, Number(s));
-        }
-      } else if (typeof arguments[0] === 'object' &&
-                 (arguments[0] instanceof ArrayBuffer || ECMAScript.Class(arguments[0]) === 'ArrayBuffer')) {
-        // Constructor(ArrayBuffer buffer,
-        //             optional unsigned long byteOffset, optional unsigned long length)
-        this.buffer = buffer;
-
-        this.byteOffset = ECMAScript.ToUint32(byteOffset);
-        if (this.byteOffset > this.buffer.byteLength) {
-          throw new RangeError("byteOffset out of range");
-        }
-
-        if (this.byteOffset % this.BYTES_PER_ELEMENT) {
-          // The given byteOffset must be a multiple of the element
-          // size of the specific type, otherwise an exception is raised.
-          throw new RangeError("ArrayBuffer length minus the byteOffset is not a multiple of the element size.");
-        }
-
-        if (arguments.length < 3) {
-          this.byteLength = this.buffer.byteLength - this.byteOffset;
-
-          if (this.byteLength % this.BYTES_PER_ELEMENT) {
-            throw new RangeError("length of buffer minus byteOffset not a multiple of the element size");
-          }
-          this.length = this.byteLength / this.BYTES_PER_ELEMENT;
-        } else {
-          this.length = ECMAScript.ToUint32(length);
-          this.byteLength = this.length * this.BYTES_PER_ELEMENT;
-        }
-
-        if ((this.byteOffset + this.byteLength) > this.buffer.byteLength) {
-          throw new RangeError("byteOffset and length reference an area beyond the end of the buffer");
-        }
-      } else {
-        throw new TypeError("Unexpected argument type(s)");
-      }
-
-      this.constructor = ctor;
-
-      configureProperties(this);
-      makeArrayAccessors(this);
-    };
-
-    ctor.prototype = new ArrayBufferView();
-    ctor.prototype.BYTES_PER_ELEMENT = bytesPerElement;
-    ctor.prototype._pack = pack;
-    ctor.prototype._unpack = unpack;
-    ctor.BYTES_PER_ELEMENT = bytesPerElement;
-
-    // getter type (unsigned long index);
-    ctor.prototype._getter = function(index) {
-      if (arguments.length < 1) throw new SyntaxError("Not enough arguments");
-
-      index = ECMAScript.ToUint32(index);
-      if (index >= this.length) {
-        return undefined;
-      }
-
-      var bytes = [], i, o;
-      for (i = 0, o = this.byteOffset + index * this.BYTES_PER_ELEMENT;
-           i < this.BYTES_PER_ELEMENT;
-           i += 1, o += 1) {
-        bytes.push(this.buffer._bytes[o]);
-      }
-      return this._unpack(bytes);
-    };
-
-    // NONSTANDARD: convenience alias for getter: type get(unsigned long index);
-    ctor.prototype.get = ctor.prototype._getter;
-
-    // setter void (unsigned long index, type value);
-    ctor.prototype._setter = function(index, value) {
-      if (arguments.length < 2) throw new SyntaxError("Not enough arguments");
-
-      index = ECMAScript.ToUint32(index);
-      if (index >= this.length) {
-        return undefined;
-      }
-
-      var bytes = this._pack(value), i, o;
-      for (i = 0, o = this.byteOffset + index * this.BYTES_PER_ELEMENT;
-           i < this.BYTES_PER_ELEMENT;
-           i += 1, o += 1) {
-        this.buffer._bytes[o] = bytes[i];
-      }
-    };
-
-    // void set(TypedArray array, optional unsigned long offset);
-    // void set(sequence<type> array, optional unsigned long offset);
-    ctor.prototype.set = function(index, value) {
-      if (arguments.length < 1) throw new SyntaxError("Not enough arguments");
-      var array, sequence, offset, len,
-          i, s, d,
-          byteOffset, byteLength, tmp;
-
-      if (typeof arguments[0] === 'object' && arguments[0].constructor === this.constructor) {
-        // void set(TypedArray array, optional unsigned long offset);
-        array = arguments[0];
-        offset = ECMAScript.ToUint32(arguments[1]);
-
-        if (offset + array.length > this.length) {
-          throw new RangeError("Offset plus length of array is out of range");
-        }
-
-        byteOffset = this.byteOffset + offset * this.BYTES_PER_ELEMENT;
-        byteLength = array.length * this.BYTES_PER_ELEMENT;
-
-        if (array.buffer === this.buffer) {
-          tmp = [];
-          for (i = 0, s = array.byteOffset; i < byteLength; i += 1, s += 1) {
-            tmp[i] = array.buffer._bytes[s];
-          }
-          for (i = 0, d = byteOffset; i < byteLength; i += 1, d += 1) {
-            this.buffer._bytes[d] = tmp[i];
-          }
-        } else {
-          for (i = 0, s = array.byteOffset, d = byteOffset;
-               i < byteLength; i += 1, s += 1, d += 1) {
-            this.buffer._bytes[d] = array.buffer._bytes[s];
-          }
-        }
-      } else if (typeof arguments[0] === 'object' && typeof arguments[0].length !== 'undefined') {
-        // void set(sequence<type> array, optional unsigned long offset);
-        sequence = arguments[0];
-        len = ECMAScript.ToUint32(sequence.length);
-        offset = ECMAScript.ToUint32(arguments[1]);
-
-        if (offset + len > this.length) {
-          throw new RangeError("Offset plus length of array is out of range");
-        }
-
-        for (i = 0; i < len; i += 1) {
-          s = sequence[i];
-          this._setter(offset + i, Number(s));
-        }
-      } else {
-        throw new TypeError("Unexpected argument type(s)");
-      }
-    };
-
-    // TypedArray subarray(long begin, optional long end);
-    ctor.prototype.subarray = function(start, end) {
-      function clamp(v, min, max) { return v < min ? min : v > max ? max : v; }
-
-      start = ECMAScript.ToInt32(start);
-      end = ECMAScript.ToInt32(end);
-
-      if (arguments.length < 1) { start = 0; }
-      if (arguments.length < 2) { end = this.length; }
-
-      if (start < 0) { start = this.length + start; }
-      if (end < 0) { end = this.length + end; }
-
-      start = clamp(start, 0, this.length);
-      end = clamp(end, 0, this.length);
-
-      var len = end - start;
-      if (len < 0) {
-        len = 0;
-      }
-
-      return new this.constructor(
-        this.buffer, this.byteOffset + start * this.BYTES_PER_ELEMENT, len);
-    };
-
-    return ctor;
-  }
-
-  var Int8Array = makeConstructor(1, packI8, unpackI8);
-  var Uint8Array = makeConstructor(1, packU8, unpackU8);
-  var Uint8ClampedArray = makeConstructor(1, packU8Clamped, unpackU8);
-  var Int16Array = makeConstructor(2, packI16, unpackI16);
-  var Uint16Array = makeConstructor(2, packU16, unpackU16);
-  var Int32Array = makeConstructor(4, packI32, unpackI32);
-  var Uint32Array = makeConstructor(4, packU32, unpackU32);
-  var Float32Array = makeConstructor(4, packF32, unpackF32);
-  var Float64Array = makeConstructor(8, packF64, unpackF64);
-
-  exports.Int8Array = exports.Int8Array || Int8Array;
-  exports.Uint8Array = exports.Uint8Array || Uint8Array;
-  exports.Uint8ClampedArray = exports.Uint8ClampedArray || Uint8ClampedArray;
-  exports.Int16Array = exports.Int16Array || Int16Array;
-  exports.Uint16Array = exports.Uint16Array || Uint16Array;
-  exports.Int32Array = exports.Int32Array || Int32Array;
-  exports.Uint32Array = exports.Uint32Array || Uint32Array;
-  exports.Float32Array = exports.Float32Array || Float32Array;
-  exports.Float64Array = exports.Float64Array || Float64Array;
-}());
-
-//
-// 6 The DataView View Type
-//
-
-(function() {
-  function r(array, index) {
-    return ECMAScript.IsCallable(array.get) ? array.get(index) : array[index];
-  }
-
-  var IS_BIG_ENDIAN = (function() {
-    var u16array = new(exports.Uint16Array)([0x1234]),
-        u8array = new(exports.Uint8Array)(u16array.buffer);
-    return r(u8array, 0) === 0x12;
-  }());
-
-  // Constructor(ArrayBuffer buffer,
-  //             optional unsigned long byteOffset,
-  //             optional unsigned long byteLength)
-  /** @constructor */
-  var DataView = function DataView(buffer, byteOffset, byteLength) {
-    if (arguments.length === 0) {
-      buffer = new exports.ArrayBuffer(0);
-    } else if (!(buffer instanceof exports.ArrayBuffer || ECMAScript.Class(buffer) === 'ArrayBuffer')) {
-      throw new TypeError("TypeError");
-    }
-
-    this.buffer = buffer || new exports.ArrayBuffer(0);
-
-    this.byteOffset = ECMAScript.ToUint32(byteOffset);
-    if (this.byteOffset > this.buffer.byteLength) {
-      throw new RangeError("byteOffset out of range");
-    }
-
-    if (arguments.length < 3) {
-      this.byteLength = this.buffer.byteLength - this.byteOffset;
-    } else {
-      this.byteLength = ECMAScript.ToUint32(byteLength);
-    }
-
-    if ((this.byteOffset + this.byteLength) > this.buffer.byteLength) {
-      throw new RangeError("byteOffset and length reference an area beyond the end of the buffer");
-    }
-
-    configureProperties(this);
-  };
-
-  function makeGetter(arrayType) {
-    return function(byteOffset, littleEndian) {
-
-      byteOffset = ECMAScript.ToUint32(byteOffset);
-
-      if (byteOffset + arrayType.BYTES_PER_ELEMENT > this.byteLength) {
-        throw new RangeError("Array index out of range");
-      }
-      byteOffset += this.byteOffset;
-
-      var uint8Array = new exports.Uint8Array(this.buffer, byteOffset, arrayType.BYTES_PER_ELEMENT),
-          bytes = [], i;
-      for (i = 0; i < arrayType.BYTES_PER_ELEMENT; i += 1) {
-        bytes.push(r(uint8Array, i));
-      }
-
-      if (Boolean(littleEndian) === Boolean(IS_BIG_ENDIAN)) {
-        bytes.reverse();
-      }
-
-      return r(new arrayType(new exports.Uint8Array(bytes).buffer), 0);
-    };
-  }
-
-  DataView.prototype.getUint8 = makeGetter(exports.Uint8Array);
-  DataView.prototype.getInt8 = makeGetter(exports.Int8Array);
-  DataView.prototype.getUint16 = makeGetter(exports.Uint16Array);
-  DataView.prototype.getInt16 = makeGetter(exports.Int16Array);
-  DataView.prototype.getUint32 = makeGetter(exports.Uint32Array);
-  DataView.prototype.getInt32 = makeGetter(exports.Int32Array);
-  DataView.prototype.getFloat32 = makeGetter(exports.Float32Array);
-  DataView.prototype.getFloat64 = makeGetter(exports.Float64Array);
-
-  function makeSetter(arrayType) {
-    return function(byteOffset, value, littleEndian) {
-
-      byteOffset = ECMAScript.ToUint32(byteOffset);
-      if (byteOffset + arrayType.BYTES_PER_ELEMENT > this.byteLength) {
-        throw new RangeError("Array index out of range");
-      }
-
-      // Get bytes
-      var typeArray = new arrayType([value]),
-          byteArray = new exports.Uint8Array(typeArray.buffer),
-          bytes = [], i, byteView;
-
-      for (i = 0; i < arrayType.BYTES_PER_ELEMENT; i += 1) {
-        bytes.push(r(byteArray, i));
-      }
-
-      // Flip if necessary
-      if (Boolean(littleEndian) === Boolean(IS_BIG_ENDIAN)) {
-        bytes.reverse();
-      }
-
-      // Write them
-      byteView = new exports.Uint8Array(this.buffer, byteOffset, arrayType.BYTES_PER_ELEMENT);
-      byteView.set(bytes);
-    };
-  }
-
-  DataView.prototype.setUint8 = makeSetter(exports.Uint8Array);
-  DataView.prototype.setInt8 = makeSetter(exports.Int8Array);
-  DataView.prototype.setUint16 = makeSetter(exports.Uint16Array);
-  DataView.prototype.setInt16 = makeSetter(exports.Int16Array);
-  DataView.prototype.setUint32 = makeSetter(exports.Uint32Array);
-  DataView.prototype.setInt32 = makeSetter(exports.Int32Array);
-  DataView.prototype.setFloat32 = makeSetter(exports.Float32Array);
-  DataView.prototype.setFloat64 = makeSetter(exports.Float64Array);
-
-  exports.DataView = exports.DataView || DataView;
-
-}());
-
-
-/***/ }),
-/* 318 */,
-/* 319 */,
-/* 320 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-var trimOffNewlines = __webpack_require__(582)
-var _ = __webpack_require__(557)
-
-var CATCH_ALL = /()(.+)/gi
-var SCISSOR = '# ------------------------ >8 ------------------------'
-
-function append (src, line) {
-  if (src) {
-    src += '\n' + line
-  } else {
-    src = line
-  }
-
-  return src
-}
-
-function getCommentFilter (char) {
-  return function (line) {
-    return line.charAt(0) !== char
-  }
-}
-
-function truncateToScissor (lines) {
-  var scissorIndex = lines.indexOf(SCISSOR)
-
-  if (scissorIndex === -1) {
-    return lines
-  }
-
-  return lines.slice(0, scissorIndex)
-}
-
-function getReferences (input, regex) {
-  var references = []
-  var referenceSentences
-  var referenceMatch
-
-  var reApplicable = input.match(regex.references) !== null
-    ? regex.references
-    : CATCH_ALL
-
-  while ((referenceSentences = reApplicable.exec(input))) {
-    var action = referenceSentences[1] || null
-    var sentence = referenceSentences[2]
-
-    while ((referenceMatch = regex.referenceParts.exec(sentence))) {
-      var owner = null
-      var repository = referenceMatch[1] || ''
-      var ownerRepo = repository.split('/')
-
-      if (ownerRepo.length > 1) {
-        owner = ownerRepo.shift()
-        repository = ownerRepo.join('/')
-      }
-
-      var reference = {
-        action: action,
-        owner: owner,
-        repository: repository || null,
-        issue: referenceMatch[3],
-        raw: referenceMatch[0],
-        prefix: referenceMatch[2]
-      }
-
-      references.push(reference)
-    }
-  }
-
-  return references
-}
-
-function passTrough () {
-  return true
-}
-
-function parser (raw, options, regex) {
-  if (!raw || !raw.trim()) {
-    throw new TypeError('Expected a raw commit')
-  }
-
-  if (_.isEmpty(options)) {
-    throw new TypeError('Expected options')
-  }
-
-  if (_.isEmpty(regex)) {
-    throw new TypeError('Expected regex')
-  }
-
-  var headerMatch
-  var mergeMatch
-  var currentProcessedField
-  var mentionsMatch
-  var revertMatch
-  var otherFields = {}
-  var commentFilter = typeof options.commentChar === 'string'
-    ? getCommentFilter(options.commentChar)
-    : passTrough
-
-  var rawLines = trimOffNewlines(raw).split(/\r?\n/)
-  var lines = truncateToScissor(rawLines).filter(commentFilter)
-
-  var continueNote = false
-  var isBody = true
-  var headerCorrespondence = _.map(options.headerCorrespondence, function (part) {
-    return part.trim()
-  })
-  var revertCorrespondence = _.map(options.revertCorrespondence, function (field) {
-    return field.trim()
-  })
-  var mergeCorrespondence = _.map(options.mergeCorrespondence, function (field) {
-    return field.trim()
-  })
-
-  var body = null
-  var footer = null
-  var header = null
-  var mentions = []
-  var merge = null
-  var notes = []
-  var references = []
-  var revert = null
-
-  if (lines.length === 0) {
-    return {
-      body: body,
-      footer: footer,
-      header: header,
-      mentions: mentions,
-      merge: merge,
-      notes: notes,
-      references: references,
-      revert: revert,
-      scope: null,
-      subject: null,
-      type: null
-    }
-  }
-
-  // msg parts
-  merge = lines.shift()
-  var mergeParts = {}
-  var headerParts = {}
-  body = ''
-  footer = ''
-
-  mergeMatch = merge.match(options.mergePattern)
-  if (mergeMatch && options.mergePattern) {
-    merge = mergeMatch[0]
-
-    header = lines.shift()
-    while (!header.trim()) {
-      header = lines.shift()
-    }
-
-    _.forEach(mergeCorrespondence, function (partName, index) {
-      var partValue = mergeMatch[index + 1] || null
-      mergeParts[partName] = partValue
-    })
-  } else {
-    header = merge
-    merge = null
-
-    _.forEach(mergeCorrespondence, function (partName) {
-      mergeParts[partName] = null
-    })
-  }
-
-  headerMatch = header.match(options.headerPattern)
-  if (headerMatch) {
-    _.forEach(headerCorrespondence, function (partName, index) {
-      var partValue = headerMatch[index + 1] || null
-      headerParts[partName] = partValue
-    })
-  } else {
-    _.forEach(headerCorrespondence, function (partName) {
-      headerParts[partName] = null
-    })
-  }
-
-  Array.prototype.push.apply(references, getReferences(header, {
-    references: regex.references,
-    referenceParts: regex.referenceParts
-  }))
-
-  // body or footer
-  _.forEach(lines, function (line) {
-    if (options.fieldPattern) {
-      var fieldMatch = options.fieldPattern.exec(line)
-
-      if (fieldMatch) {
-        currentProcessedField = fieldMatch[1]
-
-        return
-      }
-
-      if (currentProcessedField) {
-        otherFields[currentProcessedField] = append(otherFields[currentProcessedField], line)
-
-        return
-      }
-    }
-
-    var referenceMatched
-
-    // this is a new important note
-    var notesMatch = line.match(regex.notes)
-    if (notesMatch) {
-      continueNote = true
-      isBody = false
-      footer = append(footer, line)
-
-      var note = {
-        title: notesMatch[1],
-        text: notesMatch[2]
-      }
-
-      notes.push(note)
-
-      return
-    }
-
-    var lineReferences = getReferences(line, {
-      references: regex.references,
-      referenceParts: regex.referenceParts
-    })
-
-    if (lineReferences.length > 0) {
-      isBody = false
-      referenceMatched = true
-      continueNote = false
-    }
-
-    Array.prototype.push.apply(references, lineReferences)
-
-    if (referenceMatched) {
-      footer = append(footer, line)
-
-      return
-    }
-
-    if (continueNote) {
-      notes[notes.length - 1].text = append(notes[notes.length - 1].text, line)
-      footer = append(footer, line)
-
-      return
-    }
-
-    if (isBody) {
-      body = append(body, line)
-    } else {
-      footer = append(footer, line)
-    }
-  })
-
-  if (options.breakingHeaderPattern && notes.length === 0) {
-    var breakingHeader = header.match(options.breakingHeaderPattern)
-    if (breakingHeader) {
-      const noteText = breakingHeader[3] // the description of the change.
-      notes.push({
-        title: 'BREAKING CHANGE',
-        text: noteText
-      })
-    }
-  }
-
-  while ((mentionsMatch = regex.mentions.exec(raw))) {
-    mentions.push(mentionsMatch[1])
-  }
-
-  // does this commit revert any other commit?
-  revertMatch = raw.match(options.revertPattern)
-  if (revertMatch) {
-    revert = {}
-    _.forEach(revertCorrespondence, function (partName, index) {
-      var partValue = revertMatch[index + 1] || null
-      revert[partName] = partValue
-    })
-  } else {
-    revert = null
-  }
-
-  _.map(notes, function (note) {
-    note.text = trimOffNewlines(note.text)
-
-    return note
-  })
-
-  var msg = _.merge(headerParts, mergeParts, {
-    merge: merge,
-    header: header,
-    body: body ? trimOffNewlines(body) : null,
-    footer: footer ? trimOffNewlines(footer) : null,
-    notes: notes,
-    references: references,
-    mentions: mentions,
-    revert: revert
-  }, otherFields)
-
-  return msg
-}
-
-module.exports = parser
-
-
-/***/ }),
-/* 321 */
-/***/ (function(module) {
-
-"use strict";
-
-function tryStringify (o) {
-  try { return JSON.stringify(o) } catch(e) { return '"[Circular]"' }
-}
-
-module.exports = format
-
-function format(f, args, opts) {
-  var ss = (opts && opts.stringify) || tryStringify
-  var offset = 1
-  if (typeof f === 'object' && f !== null) {
-    var len = args.length + offset
-    if (len === 1) return f
-    var objects = new Array(len)
-    objects[0] = ss(f)
-    for (var index = 1; index < len; index++) {
-      objects[index] = ss(args[index])
-    }
-    return objects.join(' ')
-  }
-  if (typeof f !== 'string') {
-    return f
-  }
-  var argLen = args.length
-  if (argLen === 0) return f
-  var x = ''
-  var str = ''
-  var a = 1 - offset
-  var lastPos = -1
-  var flen = (f && f.length) || 0
-  for (var i = 0; i < flen;) {
-    if (f.charCodeAt(i) === 37 && i + 1 < flen) {
-      lastPos = lastPos > -1 ? lastPos : 0
-      switch (f.charCodeAt(i + 1)) {
-        case 100: // 'd'
-          if (a >= argLen)
-            break
-          if (lastPos < i)
-            str += f.slice(lastPos, i)
-          if (args[a] == null)  break
-          str += Number(args[a])
-          lastPos = i = i + 2
-          break
-        case 79: // 'O'
-        case 111: // 'o'
-        case 106: // 'j'
-          if (a >= argLen)
-            break
-          if (lastPos < i)
-            str += f.slice(lastPos, i)
-          if (args[a] === undefined) break
-          var type = typeof args[a]
-          if (type === 'string') {
-            str += '\'' + args[a] + '\''
-            lastPos = i + 2
-            i++
-            break
-          }
-          if (type === 'function') {
-            str += args[a].name || '<anonymous>'
-            lastPos = i + 2
-            i++
-            break
-          }
-          str += ss(args[a])
-          lastPos = i + 2
-          i++
-          break
-        case 115: // 's'
-          if (a >= argLen)
-            break
-          if (lastPos < i)
-            str += f.slice(lastPos, i)
-          str += String(args[a])
-          lastPos = i + 2
-          i++
-          break
-        case 37: // '%'
-          if (lastPos < i)
-            str += f.slice(lastPos, i)
-          str += '%'
-          lastPos = i + 2
-          i++
-          break
-      }
-      ++a
-    }
-    ++i
-  }
-  if (lastPos === -1)
-    return f
-  else if (lastPos < flen) {
-    str += f.slice(lastPos)
-  }
-
-  return str
-}
-
-
-/***/ }),
-/* 322 */,
-/* 323 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-const outside = __webpack_require__(462)
-// Determine if version is less than all the versions possible in the range
-const ltr = (version, range, options) => outside(version, range, '<', options)
-module.exports = ltr
-
-
-/***/ }),
-/* 324 */,
-/* 325 */,
-/* 326 */,
-/* 327 */,
-/* 328 */,
-/* 329 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-
-var errSerializer = __webpack_require__(621)
-var reqSerializers = __webpack_require__(307)
-var resSerializers = __webpack_require__(578)
-
-module.exports = {
-  err: errSerializer,
-  mapHttpRequest: reqSerializers.mapHttpRequest,
-  mapHttpResponse: resSerializers.mapHttpResponse,
-  req: reqSerializers.reqSerializer,
-  res: resSerializers.resSerializer,
-
-  wrapErrorSerializer: function wrapErrorSerializer (customSerializer) {
-    if (customSerializer === errSerializer) return customSerializer
-    return function wrapErrSerializer (err) {
-      return customSerializer(errSerializer(err))
-    }
-  },
-
-  wrapRequestSerializer: function wrapRequestSerializer (customSerializer) {
-    if (customSerializer === reqSerializers.reqSerializer) return customSerializer
-    return function wrappedReqSerializer (req) {
-      return customSerializer(reqSerializers.reqSerializer(req))
-    }
-  },
-
-  wrapResponseSerializer: function wrapResponseSerializer (customSerializer) {
-    if (customSerializer === resSerializers.resSerializer) return customSerializer
-    return function wrappedResSerializer (res) {
-      return customSerializer(resSerializers.resSerializer(res))
-    }
-  }
-}
-
-
-/***/ }),
-/* 330 */,
-/* 331 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-
-const { version } = __webpack_require__(929)
-
-module.exports = { version }
-
-
-/***/ }),
-/* 332 */,
-/* 333 */,
-/* 334 */,
-/* 335 */,
-/* 336 */,
-/* 337 */,
-/* 338 */
-/***/ (function(__unusedmodule, exports) {
-
-/* -*- Mode: js; js-indent-level: 2; -*- */
-/*
- * Copyright 2011 Mozilla Foundation and contributors
- * Licensed under the New BSD license. See LICENSE or:
- * http://opensource.org/licenses/BSD-3-Clause
- */
-
-/**
- * This is a helper function for getting values from parameter/options
- * objects.
- *
- * @param args The object we are extracting values from
- * @param name The name of the property we are getting.
- * @param defaultValue An optional value to return if the property is missing
- * from the object. If this is not specified and the property is missing, an
- * error will be thrown.
- */
-function getArg(aArgs, aName, aDefaultValue) {
-  if (aName in aArgs) {
-    return aArgs[aName];
-  } else if (arguments.length === 3) {
-    return aDefaultValue;
-  } else {
-    throw new Error('"' + aName + '" is a required argument.');
-  }
-}
-exports.getArg = getArg;
-
-var urlRegexp = /^(?:([\w+\-.]+):)?\/\/(?:(\w+:\w+)@)?([\w.-]*)(?::(\d+))?(.*)$/;
-var dataUrlRegexp = /^data:.+\,.+$/;
-
-function urlParse(aUrl) {
-  var match = aUrl.match(urlRegexp);
-  if (!match) {
-    return null;
-  }
-  return {
-    scheme: match[1],
-    auth: match[2],
-    host: match[3],
-    port: match[4],
-    path: match[5]
-  };
-}
-exports.urlParse = urlParse;
-
-function urlGenerate(aParsedUrl) {
-  var url = '';
-  if (aParsedUrl.scheme) {
-    url += aParsedUrl.scheme + ':';
-  }
-  url += '//';
-  if (aParsedUrl.auth) {
-    url += aParsedUrl.auth + '@';
-  }
-  if (aParsedUrl.host) {
-    url += aParsedUrl.host;
-  }
-  if (aParsedUrl.port) {
-    url += ":" + aParsedUrl.port
-  }
-  if (aParsedUrl.path) {
-    url += aParsedUrl.path;
-  }
-  return url;
-}
-exports.urlGenerate = urlGenerate;
-
-/**
- * Normalizes a path, or the path portion of a URL:
- *
- * - Replaces consecutive slashes with one slash.
- * - Removes unnecessary '.' parts.
- * - Removes unnecessary '<dir>/..' parts.
- *
- * Based on code in the Node.js 'path' core module.
- *
- * @param aPath The path or url to normalize.
- */
-function normalize(aPath) {
-  var path = aPath;
-  var url = urlParse(aPath);
-  if (url) {
-    if (!url.path) {
-      return aPath;
-    }
-    path = url.path;
-  }
-  var isAbsolute = exports.isAbsolute(path);
-
-  var parts = path.split(/\/+/);
-  for (var part, up = 0, i = parts.length - 1; i >= 0; i--) {
-    part = parts[i];
-    if (part === '.') {
-      parts.splice(i, 1);
-    } else if (part === '..') {
-      up++;
-    } else if (up > 0) {
-      if (part === '') {
-        // The first part is blank if the path is absolute. Trying to go
-        // above the root is a no-op. Therefore we can remove all '..' parts
-        // directly after the root.
-        parts.splice(i + 1, up);
-        up = 0;
-      } else {
-        parts.splice(i, 2);
-        up--;
-      }
-    }
-  }
-  path = parts.join('/');
-
-  if (path === '') {
-    path = isAbsolute ? '/' : '.';
-  }
-
-  if (url) {
-    url.path = path;
-    return urlGenerate(url);
-  }
-  return path;
-}
-exports.normalize = normalize;
-
-/**
- * Joins two paths/URLs.
- *
- * @param aRoot The root path or URL.
- * @param aPath The path or URL to be joined with the root.
- *
- * - If aPath is a URL or a data URI, aPath is returned, unless aPath is a
- *   scheme-relative URL: Then the scheme of aRoot, if any, is prepended
- *   first.
- * - Otherwise aPath is a path. If aRoot is a URL, then its path portion
- *   is updated with the result and aRoot is returned. Otherwise the result
- *   is returned.
- *   - If aPath is absolute, the result is aPath.
- *   - Otherwise the two paths are joined with a slash.
- * - Joining for example 'http://' and 'www.example.com' is also supported.
- */
-function join(aRoot, aPath) {
-  if (aRoot === "") {
-    aRoot = ".";
-  }
-  if (aPath === "") {
-    aPath = ".";
-  }
-  var aPathUrl = urlParse(aPath);
-  var aRootUrl = urlParse(aRoot);
-  if (aRootUrl) {
-    aRoot = aRootUrl.path || '/';
-  }
-
-  // `join(foo, '//www.example.org')`
-  if (aPathUrl && !aPathUrl.scheme) {
-    if (aRootUrl) {
-      aPathUrl.scheme = aRootUrl.scheme;
-    }
-    return urlGenerate(aPathUrl);
-  }
-
-  if (aPathUrl || aPath.match(dataUrlRegexp)) {
-    return aPath;
-  }
-
-  // `join('http://', 'www.example.com')`
-  if (aRootUrl && !aRootUrl.host && !aRootUrl.path) {
-    aRootUrl.host = aPath;
-    return urlGenerate(aRootUrl);
-  }
-
-  var joined = aPath.charAt(0) === '/'
-    ? aPath
-    : normalize(aRoot.replace(/\/+$/, '') + '/' + aPath);
-
-  if (aRootUrl) {
-    aRootUrl.path = joined;
-    return urlGenerate(aRootUrl);
-  }
-  return joined;
-}
-exports.join = join;
-
-exports.isAbsolute = function (aPath) {
-  return aPath.charAt(0) === '/' || urlRegexp.test(aPath);
-};
-
-/**
- * Make a path relative to a URL or another path.
- *
- * @param aRoot The root path or URL.
- * @param aPath The path or URL to be made relative to aRoot.
- */
-function relative(aRoot, aPath) {
-  if (aRoot === "") {
-    aRoot = ".";
-  }
-
-  aRoot = aRoot.replace(/\/$/, '');
-
-  // It is possible for the path to be above the root. In this case, simply
-  // checking whether the root is a prefix of the path won't work. Instead, we
-  // need to remove components from the root one by one, until either we find
-  // a prefix that fits, or we run out of components to remove.
-  var level = 0;
-  while (aPath.indexOf(aRoot + '/') !== 0) {
-    var index = aRoot.lastIndexOf("/");
-    if (index < 0) {
-      return aPath;
-    }
-
-    // If the only part of the root that is left is the scheme (i.e. http://,
-    // file:///, etc.), one or more slashes (/), or simply nothing at all, we
-    // have exhausted all components, so the path is not relative to the root.
-    aRoot = aRoot.slice(0, index);
-    if (aRoot.match(/^([^\/]+:\/)?\/*$/)) {
-      return aPath;
-    }
-
-    ++level;
-  }
-
-  // Make sure we add a "../" for each component we removed from the root.
-  return Array(level + 1).join("../") + aPath.substr(aRoot.length + 1);
-}
-exports.relative = relative;
-
-var supportsNullProto = (function () {
-  var obj = Object.create(null);
-  return !('__proto__' in obj);
-}());
-
-function identity (s) {
-  return s;
-}
-
-/**
- * Because behavior goes wacky when you set `__proto__` on objects, we
- * have to prefix all the strings in our set with an arbitrary character.
- *
- * See https://github.com/mozilla/source-map/pull/31 and
- * https://github.com/mozilla/source-map/issues/30
- *
- * @param String aStr
- */
-function toSetString(aStr) {
-  if (isProtoString(aStr)) {
-    return '$' + aStr;
-  }
-
-  return aStr;
-}
-exports.toSetString = supportsNullProto ? identity : toSetString;
-
-function fromSetString(aStr) {
-  if (isProtoString(aStr)) {
-    return aStr.slice(1);
-  }
-
-  return aStr;
-}
-exports.fromSetString = supportsNullProto ? identity : fromSetString;
-
-function isProtoString(s) {
-  if (!s) {
-    return false;
-  }
-
-  var length = s.length;
-
-  if (length < 9 /* "__proto__".length */) {
-    return false;
-  }
-
-  if (s.charCodeAt(length - 1) !== 95  /* '_' */ ||
-      s.charCodeAt(length - 2) !== 95  /* '_' */ ||
-      s.charCodeAt(length - 3) !== 111 /* 'o' */ ||
-      s.charCodeAt(length - 4) !== 116 /* 't' */ ||
-      s.charCodeAt(length - 5) !== 111 /* 'o' */ ||
-      s.charCodeAt(length - 6) !== 114 /* 'r' */ ||
-      s.charCodeAt(length - 7) !== 112 /* 'p' */ ||
-      s.charCodeAt(length - 8) !== 95  /* '_' */ ||
-      s.charCodeAt(length - 9) !== 95  /* '_' */) {
-    return false;
-  }
-
-  for (var i = length - 10; i >= 0; i--) {
-    if (s.charCodeAt(i) !== 36 /* '$' */) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-/**
- * Comparator between two mappings where the original positions are compared.
- *
- * Optionally pass in `true` as `onlyCompareGenerated` to consider two
- * mappings with the same original source/line/column, but different generated
- * line and column the same. Useful when searching for a mapping with a
- * stubbed out mapping.
- */
-function compareByOriginalPositions(mappingA, mappingB, onlyCompareOriginal) {
-  var cmp = strcmp(mappingA.source, mappingB.source);
-  if (cmp !== 0) {
-    return cmp;
-  }
-
-  cmp = mappingA.originalLine - mappingB.originalLine;
-  if (cmp !== 0) {
-    return cmp;
-  }
-
-  cmp = mappingA.originalColumn - mappingB.originalColumn;
-  if (cmp !== 0 || onlyCompareOriginal) {
-    return cmp;
-  }
-
-  cmp = mappingA.generatedColumn - mappingB.generatedColumn;
-  if (cmp !== 0) {
-    return cmp;
-  }
-
-  cmp = mappingA.generatedLine - mappingB.generatedLine;
-  if (cmp !== 0) {
-    return cmp;
-  }
-
-  return strcmp(mappingA.name, mappingB.name);
-}
-exports.compareByOriginalPositions = compareByOriginalPositions;
-
-/**
- * Comparator between two mappings with deflated source and name indices where
- * the generated positions are compared.
- *
- * Optionally pass in `true` as `onlyCompareGenerated` to consider two
- * mappings with the same generated line and column, but different
- * source/name/original line and column the same. Useful when searching for a
- * mapping with a stubbed out mapping.
- */
-function compareByGeneratedPositionsDeflated(mappingA, mappingB, onlyCompareGenerated) {
-  var cmp = mappingA.generatedLine - mappingB.generatedLine;
-  if (cmp !== 0) {
-    return cmp;
-  }
-
-  cmp = mappingA.generatedColumn - mappingB.generatedColumn;
-  if (cmp !== 0 || onlyCompareGenerated) {
-    return cmp;
-  }
-
-  cmp = strcmp(mappingA.source, mappingB.source);
-  if (cmp !== 0) {
-    return cmp;
-  }
-
-  cmp = mappingA.originalLine - mappingB.originalLine;
-  if (cmp !== 0) {
-    return cmp;
-  }
-
-  cmp = mappingA.originalColumn - mappingB.originalColumn;
-  if (cmp !== 0) {
-    return cmp;
-  }
-
-  return strcmp(mappingA.name, mappingB.name);
-}
-exports.compareByGeneratedPositionsDeflated = compareByGeneratedPositionsDeflated;
-
-function strcmp(aStr1, aStr2) {
-  if (aStr1 === aStr2) {
-    return 0;
-  }
-
-  if (aStr1 === null) {
-    return 1; // aStr2 !== null
-  }
-
-  if (aStr2 === null) {
-    return -1; // aStr1 !== null
-  }
-
-  if (aStr1 > aStr2) {
-    return 1;
-  }
-
-  return -1;
-}
-
-/**
- * Comparator between two mappings with inflated source and name strings where
- * the generated positions are compared.
- */
-function compareByGeneratedPositionsInflated(mappingA, mappingB) {
-  var cmp = mappingA.generatedLine - mappingB.generatedLine;
-  if (cmp !== 0) {
-    return cmp;
-  }
-
-  cmp = mappingA.generatedColumn - mappingB.generatedColumn;
-  if (cmp !== 0) {
-    return cmp;
-  }
-
-  cmp = strcmp(mappingA.source, mappingB.source);
-  if (cmp !== 0) {
-    return cmp;
-  }
-
-  cmp = mappingA.originalLine - mappingB.originalLine;
-  if (cmp !== 0) {
-    return cmp;
-  }
-
-  cmp = mappingA.originalColumn - mappingB.originalColumn;
-  if (cmp !== 0) {
-    return cmp;
-  }
-
-  return strcmp(mappingA.name, mappingB.name);
-}
-exports.compareByGeneratedPositionsInflated = compareByGeneratedPositionsInflated;
-
-/**
- * Strip any JSON XSSI avoidance prefix from the string (as documented
- * in the source maps specification), and then parse the string as
- * JSON.
- */
-function parseSourceMapInput(str) {
-  return JSON.parse(str.replace(/^\)]}'[^\n]*\n/, ''));
-}
-exports.parseSourceMapInput = parseSourceMapInput;
-
-/**
- * Compute the URL of a source given the the source root, the source's
- * URL, and the source map's URL.
- */
-function computeSourceURL(sourceRoot, sourceURL, sourceMapURL) {
-  sourceURL = sourceURL || '';
-
-  if (sourceRoot) {
-    // This follows what Chrome does.
-    if (sourceRoot[sourceRoot.length - 1] !== '/' && sourceURL[0] !== '/') {
-      sourceRoot += '/';
-    }
-    // The spec says:
-    //   Line 4: An optional source root, useful for relocating source
-    //   files on a server or removing repeated values in the
-    //   “sources” entry.  This value is prepended to the individual
-    //   entries in the “source” field.
-    sourceURL = sourceRoot + sourceURL;
-  }
-
-  // Historically, SourceMapConsumer did not take the sourceMapURL as
-  // a parameter.  This mode is still somewhat supported, which is why
-  // this code block is conditional.  However, it's preferable to pass
-  // the source map URL to SourceMapConsumer, so that this function
-  // can implement the source URL resolution algorithm as outlined in
-  // the spec.  This block is basically the equivalent of:
-  //    new URL(sourceURL, sourceMapURL).toString()
-  // ... except it avoids using URL, which wasn't available in the
-  // older releases of node still supported by this library.
-  //
-  // The spec says:
-  //   If the sources are not absolute URLs after prepending of the
-  //   “sourceRoot”, the sources are resolved relative to the
-  //   SourceMap (like resolving script src in a html document).
-  if (sourceMapURL) {
-    var parsed = urlParse(sourceMapURL);
-    if (!parsed) {
-      throw new Error("sourceMapURL could not be parsed");
-    }
-    if (parsed.path) {
-      // Strip the last path component, but keep the "/".
-      var index = parsed.path.lastIndexOf('/');
-      if (index >= 0) {
-        parsed.path = parsed.path.substring(0, index + 1);
-      }
-    }
-    sourceURL = join(urlGenerate(parsed), sourceURL);
-  }
-
-  return normalize(sourceURL);
-}
-exports.computeSourceURL = computeSourceURL;
-
-
-/***/ }),
-/* 339 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* global define */
-
-
-exports.__esModule = true;
-
-var _utils = __webpack_require__(423);
-
-var SourceNode = undefined;
-
-try {
-  /* istanbul ignore next */
-  if (typeof define !== 'function' || !define.amd) {
-    // We don't support this in AMD environments. For these environments, we asusme that
-    // they are running on the browser and thus have no need for the source-map library.
-    var SourceMap = __webpack_require__(94);
-    SourceNode = SourceMap.SourceNode;
-  }
-} catch (err) {}
-/* NOP */
-
-/* istanbul ignore if: tested but not covered in istanbul due to dist build  */
-if (!SourceNode) {
-  SourceNode = function (line, column, srcFile, chunks) {
-    this.src = '';
-    if (chunks) {
-      this.add(chunks);
-    }
-  };
-  /* istanbul ignore next */
-  SourceNode.prototype = {
-    add: function add(chunks) {
-      if (_utils.isArray(chunks)) {
-        chunks = chunks.join('');
-      }
-      this.src += chunks;
-    },
-    prepend: function prepend(chunks) {
-      if (_utils.isArray(chunks)) {
-        chunks = chunks.join('');
-      }
-      this.src = chunks + this.src;
-    },
-    toStringWithSourceMap: function toStringWithSourceMap() {
-      return { code: this.toString() };
-    },
-    toString: function toString() {
-      return this.src;
-    }
-  };
-}
-
-function castChunk(chunk, codeGen, loc) {
-  if (_utils.isArray(chunk)) {
-    var ret = [];
-
-    for (var i = 0, len = chunk.length; i < len; i++) {
-      ret.push(codeGen.wrap(chunk[i], loc));
-    }
-    return ret;
-  } else if (typeof chunk === 'boolean' || typeof chunk === 'number') {
-    // Handle primitives that the SourceNode will throw up on
-    return chunk + '';
-  }
-  return chunk;
-}
-
-function CodeGen(srcFile) {
-  this.srcFile = srcFile;
-  this.source = [];
-}
-
-CodeGen.prototype = {
-  isEmpty: function isEmpty() {
-    return !this.source.length;
-  },
-  prepend: function prepend(source, loc) {
-    this.source.unshift(this.wrap(source, loc));
-  },
-  push: function push(source, loc) {
-    this.source.push(this.wrap(source, loc));
-  },
-
-  merge: function merge() {
-    var source = this.empty();
-    this.each(function (line) {
-      source.add(['  ', line, '\n']);
-    });
-    return source;
-  },
-
-  each: function each(iter) {
-    for (var i = 0, len = this.source.length; i < len; i++) {
-      iter(this.source[i]);
-    }
-  },
-
-  empty: function empty() {
-    var loc = this.currentLocation || { start: {} };
-    return new SourceNode(loc.start.line, loc.start.column, this.srcFile);
-  },
-  wrap: function wrap(chunk) {
-    var loc = arguments.length <= 1 || arguments[1] === undefined ? this.currentLocation || { start: {} } : arguments[1];
-
-    if (chunk instanceof SourceNode) {
-      return chunk;
-    }
-
-    chunk = castChunk(chunk, this, loc);
-
-    return new SourceNode(loc.start.line, loc.start.column, this.srcFile, chunk);
-  },
-
-  functionCall: function functionCall(fn, type, params) {
-    params = this.generateList(params);
-    return this.wrap([fn, type ? '.' + type + '(' : '(', params, ')']);
-  },
-
-  quotedString: function quotedString(str) {
-    return '"' + (str + '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\u2028/g, '\\u2028') // Per Ecma-262 7.3 + 7.8.4
-    .replace(/\u2029/g, '\\u2029') + '"';
-  },
-
-  objectLiteral: function objectLiteral(obj) {
-    // istanbul ignore next
-
-    var _this = this;
-
-    var pairs = [];
-
-    Object.keys(obj).forEach(function (key) {
-      var value = castChunk(obj[key], _this);
-      if (value !== 'undefined') {
-        pairs.push([_this.quotedString(key), ':', value]);
-      }
-    });
-
-    var ret = this.generateList(pairs);
-    ret.prepend('{');
-    ret.add('}');
-    return ret;
-  },
-
-  generateList: function generateList(entries) {
-    var ret = this.empty();
-
-    for (var i = 0, len = entries.length; i < len; i++) {
-      if (i) {
-        ret.add(',');
-      }
-
-      ret.add(castChunk(entries[i], this));
-    }
-
-    return ret;
-  },
-
-  generateArray: function generateArray(entries) {
-    var ret = this.generateList(entries);
-    ret.prepend('[');
-    ret.add(']');
-
-    return ret;
-  }
-};
-
-exports['default'] = CodeGen;
-module.exports = exports['default'];
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2NvbXBpbGVyL2NvZGUtZ2VuLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7O3FCQUN3QixVQUFVOztBQUVsQyxJQUFJLFVBQVUsWUFBQSxDQUFDOztBQUVmLElBQUk7O0FBRUYsTUFBSSxPQUFPLE1BQU0sS0FBSyxVQUFVLElBQUksQ0FBQyxNQUFNLENBQUMsR0FBRyxFQUFFOzs7QUFHL0MsUUFBSSxTQUFTLEdBQUcsT0FBTyxDQUFDLFlBQVksQ0FBQyxDQUFDO0FBQ3RDLGNBQVUsR0FBRyxTQUFTLENBQUMsVUFBVSxDQUFDO0dBQ25DO0NBQ0YsQ0FBQyxPQUFPLEdBQUcsRUFBRSxFQUViOzs7O0FBQUEsQUFHRCxJQUFJLENBQUMsVUFBVSxFQUFFO0FBQ2YsWUFBVSxHQUFHLFVBQVMsSUFBSSxFQUFFLE1BQU0sRUFBRSxPQUFPLEVBQUUsTUFBTSxFQUFFO0FBQ25ELFFBQUksQ0FBQyxHQUFHLEdBQUcsRUFBRSxDQUFDO0FBQ2QsUUFBSSxNQUFNLEVBQUU7QUFDVixVQUFJLENBQUMsR0FBRyxDQUFDLE1BQU0sQ0FBQyxDQUFDO0tBQ2xCO0dBQ0YsQ0FBQzs7QUFFRixZQUFVLENBQUMsU0FBUyxHQUFHO0FBQ3JCLE9BQUcsRUFBRSxhQUFTLE1BQU0sRUFBRTtBQUNwQixVQUFJLGVBQVEsTUFBTSxDQUFDLEVBQUU7QUFDbkIsY0FBTSxHQUFHLE1BQU0sQ0FBQyxJQUFJLENBQUMsRUFBRSxDQUFDLENBQUM7T0FDMUI7QUFDRCxVQUFJLENBQUMsR0FBRyxJQUFJLE1BQU0sQ0FBQztLQUNwQjtBQUNELFdBQU8sRUFBRSxpQkFBUyxNQUFNLEVBQUU7QUFDeEIsVUFBSSxlQUFRLE1BQU0sQ0FBQyxFQUFFO0FBQ25CLGNBQU0sR0FBRyxNQUFNLENBQUMsSUFBSSxDQUFDLEVBQUUsQ0FBQyxDQUFDO09BQzFCO0FBQ0QsVUFBSSxDQUFDLEdBQUcsR0FBRyxNQUFNLEdBQUcsSUFBSSxDQUFDLEdBQUcsQ0FBQztL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QUcsQ0FBQyxDQUFDO0FBQ2pCLE9BQUcsQ0FBQyxHQUFHLENBQUMsR0FBRyxDQUFDLENBQUM7O0FBRWIsV0FBTyxHQUFHLENBQUM7R0FDWjtDQUNGLENBQUM7O3FCQUVhLE9BQU8iLCJmaWxlIjoiY29kZS1nZW4uanMiLCJzb3VyY2VzQ29udGVudCI6WyIvKiBnbG9iYWwgZGVmaW5lICovXG5pbXBvcnQgeyBpc0FycmF5IH0gZnJvbSAnLi4vdXRpbHMnO1xuXG5sZXQgU291cmNlTm9kZTtcblxudHJ5IHtcbiAgLyogaXN0YW5idWwgaWdub3JlIG5leHQgKi9cbiAgaWYgKHR5cGVvZiBkZWZpbmUgIT09ICdmdW5jdGlvbicgfHwgIWRlZmluZS5hbWQpIHtcbiAgICAvLyBXZSBkb24ndCBzdXBwb3J0IHRoaXMgaW4gQU1EIGVudmlyb25tZW50cy4gRm9yIHRoZXNlIGVudmlyb25tZW50cywgd2UgYXN1c21lIHRoYXRcbiAgICAvLyB0aGV5IGFyZSBydW5uaW5nIG9uIHRoZSBicm93c2VyIGFuZCB0aHVzIGhhdmUgbm8gbmVlZCBmb3IgdGhlIHNvdXJjZS1tYXAgbGlicmFyeS5cbiAgICBsZXQgU291cmNlTWFwID0gcmVxdWlyZSgnc291cmNlLW1hcCcpO1xuICAgIFNvdXJjZU5vZGUgPSBTb3VyY2VNYXAuU291cmNlTm9kZTtcbiAgfVxufSBjYXRjaCAoZXJyKSB7XG4gIC8qIE5PUCAqL1xufVxuXG4vKiBpc3RhbmJ1bCBpZ25vcmUgaWY6IHRlc3RlZCBidXQgbm90IGNvdmVyZWQgaW4gaXN0YW5idWwgZHVlIHRvIGRpc3QgYnVpbGQgICovXG5pZiAoIVNvdXJjZU5vZGUpIHtcbiAgU291cmNlTm9kZSA9IGZ1bmN0aW9uKGxpbmUsIGNvbHVtbiwgc3JjRmlsZSwgY2h1bmtzKSB7XG4gICAgdGhpcy5zcmMgPSAnJztcbiAgICBpZiAoY2h1bmtzKSB7XG4gICAgICB0aGlzLmFkZChjaHVua3MpO1xuICAgIH1cbiAgfTtcbiAgLyogaXN0YW5idWwgaWdub3JlIG5leHQgKi9cbiAgU291cmNlTm9kZS5wcm90b3R5cGUgPSB7XG4gICAgYWRkOiBmdW5jdGlvbihjaHVua3MpIHtcbiAgICAgIGlmIChpc0FycmF5KGNodW5rcykpIHtcbiAgICAgICAgY2h1bmtzID0gY2h1bmtzLmpvaW4oJycpO1xuICAgICAgfVxuICAgICAgdGhpcy5zcmMgKz0gY2h1bmtzO1xuICAgIH0sXG4gICAgcHJlcGVuZDogZnVuY3Rpb24oY2h1bmtzKSB7XG4gICAgICBpZiAoaXNBcnJheShjaHVua3MpKSB7XG4gICAgICAgIGNodW5rcyA9IGNodW5rcy5qb2luKCcnKTtcbiAgICAgIH1cbiAgICAgIHRoaXMuc3JjID0gY2h1bmtzICsgdGhpcy5zcmM7XG4gICAgfSxcbiAgICB0b1N0cmluZ1dpdGhTb3VyY2VNYXA6IGZ1bmN0aW9uKCkge1xuICAgICAgcmV0dXJuIHsgY29kZTogdGhpcy50b1N0cmluZygpIH07XG4gICAgfSxcbiAgICB0b1N0cmluZzogZnVuY3Rpb24oKSB7XG4gICAgICByZXR1cm4gdGhpcy5zcmM7XG4gICAgfVxuICB9O1xufVxuXG5mdW5jdGlvbiBjYXN0Q2h1bmsoY2h1bmssIGNvZGVHZW4sIGxvYykge1xuICBpZiAoaXNBcnJheShjaHVuaykpIHtcbiAgICBsZXQgcmV0ID0gW107XG5cbiAgICBmb3IgKGxldCBpID0gMCwgbGVuID0gY2h1bmsubGVuZ3RoOyBpIDwgbGVuOyBpKyspIHtcbiAgICAgIHJldC5wdXNoKGNvZGVHZW4ud3JhcChjaHVua1tpXSwgbG9jKSk7XG4gICAgfVxuICAgIHJldHVybiByZXQ7XG4gIH0gZWxzZSBpZiAodHlwZW9mIGNodW5rID09PSAnYm9vbGVhbicgfHwgdHlwZW9mIGNodW5rID09PSAnbnVtYmVyJykge1xuICAgIC8vIEhhbmRsZSBwcmltaXRpdmVzIHRoYXQgdGhlIFNvdXJjZU5vZGUgd2lsbCB0aHJvdyB1cCBvblxuICAgIHJldHVybiBjaHVuayArICcnO1xuICB9XG4gIHJldHVybiBjaHVuaztcbn1cblxuZnVuY3Rpb24gQ29kZUdlbihzcmNGaWxlKSB7XG4gIHRoaXMuc3JjRmlsZSA9IHNyY0ZpbGU7XG4gIHRoaXMuc291cmNlID0gW107XG59XG5cbkNvZGVHZW4ucHJvdG90eXBlID0ge1xuICBpc0VtcHR5KCkge1xuICAgIHJldHVybiAhdGhpcy5zb3VyY2UubGVuZ3RoO1xuICB9LFxuICBwcmVwZW5kOiBmdW5jdGlvbihzb3VyY2UsIGxvYykge1xuICAgIHRoaXMuc291cmNlLnVuc2hpZnQodGhpcy53cmFwKHNvdXJjZSwgbG9jKSk7XG4gIH0sXG4gIHB1c2g6IGZ1bmN0aW9uKHNvdXJjZSwgbG9jKSB7XG4gICAgdGhpcy5zb3VyY2UucHVzaCh0aGlzLndyYXAoc291cmNlLCBsb2MpKTtcbiAgfSxcblxuICBtZXJnZTogZnVuY3Rpb24oKSB7XG4gICAgbGV0IHNvdXJjZSA9IHRoaXMuZW1wdHkoKTtcbiAgICB0aGlzLmVhY2goZnVuY3Rpb24obGluZSkge1xuICAgICAgc291cmNlLmFkZChbJyAgJywgbGluZSwgJ1xcbiddKTtcbiAgICB9KTtcbiAgICByZXR1cm4gc291cmNlO1xuICB9LFxuXG4gIGVhY2g6IGZ1bmN0aW9uKGl0ZXIpIHtcbiAgICBmb3IgKGxldCBpID0gMCwgbGVuID0gdGhpcy5zb3VyY2UubGVuZ3RoOyBpIDwgbGVuOyBpKyspIHtcbiAgICAgIGl0ZXIodGhpcy5zb3VyY2VbaV0pO1xuICAgIH1cbiAgfSxcblxuICBlbXB0eTogZnVuY3Rpb24oKSB7XG4gICAgbGV0IGxvYyA9IHRoaXMuY3VycmVudExvY2F0aW9uIHx8IHsgc3RhcnQ6IHt9IH07XG4gICAgcmV0dXJuIG5ldyBTb3VyY2VOb2RlKGxvYy5zdGFydC5saW5lLCBsb2Muc3RhcnQuY29sdW1uLCB0aGlzLnNyY0ZpbGUpO1xuICB9LFxuICB3cmFwOiBmdW5jdGlvbihjaHVuaywgbG9jID0gdGhpcy5jdXJyZW50TG9jYXRpb24gfHwgeyBzdGFydDoge30gfSkge1xuICAgIGlmIChjaHVuayBpbnN0YW5jZW9mIFNvdXJjZU5vZGUpIHtcbiAgICAgIHJldHVybiBjaHVuaztcbiAgICB9XG5cbiAgICBjaHVuayA9IGNhc3RDaHVuayhjaHVuaywgdGhpcywgbG9jKTtcblxuICAgIHJldHVybiBuZXcgU291cmNlTm9kZShcbiAgICAgIGxvYy5zdGFydC5saW5lLFxuICAgICAgbG9jLnN0YXJ0LmNvbHVtbixcbiAgICAgIHRoaXMuc3JjRmlsZSxcbiAgICAgIGNodW5rXG4gICAgKTtcbiAgfSxcblxuICBmdW5jdGlvbkNhbGw6IGZ1bmN0aW9uKGZuLCB0eXBlLCBwYXJhbXMpIHtcbiAgICBwYXJhbXMgPSB0aGlzLmdlbmVyYXRlTGlzdChwYXJhbXMpO1xuICAgIHJldHVybiB0aGlzLndyYXAoW2ZuLCB0eXBlID8gJy4nICsgdHlwZSArICcoJyA6ICcoJywgcGFyYW1zLCAnKSddKTtcbiAgfSxcblxuICBxdW90ZWRTdHJpbmc6IGZ1bmN0aW9uKHN0cikge1xuICAgIHJldHVybiAoXG4gICAgICAnXCInICtcbiAgICAgIChzdHIgKyAnJylcbiAgICAgICAgLnJlcGxhY2UoL1xcXFwvZywgJ1xcXFxcXFxcJylcbiAgICAgICAgLnJlcGxhY2UoL1wiL2csICdcXFxcXCInKVxuICAgICAgICAucmVwbGFjZSgvXFxuL2csICdcXFxcbicpXG4gICAgICAgIC5yZXBsYWNlKC9cXHIvZywgJ1xcXFxyJylcbiAgICAgICAgLnJlcGxhY2UoL1xcdTIwMjgvZywgJ1xcXFx1MjAyOCcpIC8vIFBlciBFY21hLTI2MiA3LjMgKyA3LjguNFxuICAgICAgICAucmVwbGFjZSgvXFx1MjAyOS9nLCAnXFxcXHUyMDI5JykgK1xuICAgICAgJ1wiJ1xuICAgICk7XG4gIH0sXG5cbiAgb2JqZWN0TGl0ZXJhbDogZnVuY3Rpb24ob2JqKSB7XG4gICAgbGV0IHBhaXJzID0gW107XG5cbiAgICBPYmplY3Qua2V5cyhvYmopLmZvckVhY2goa2V5ID0+IHtcbiAgICAgIGxldCB2YWx1ZSA9IGNhc3RDaHVuayhvYmpba2V5XSwgdGhpcyk7XG4gICAgICBpZiAodmFsdWUgIT09ICd1bmRlZmluZWQnKSB7XG4gICAgICAgIHBhaXJzLnB1c2goW3RoaXMucXVvdGVkU3RyaW5nKGtleSksICc6JywgdmFsdWVdKTtcbiAgICAgIH1cbiAgICB9KTtcblxuICAgIGxldCByZXQgPSB0aGlzLmdlbmVyYXRlTGlzdChwYWlycyk7XG4gICAgcmV0LnByZXBlbmQoJ3snKTtcbiAgICByZXQuYWRkKCd9Jyk7XG4gICAgcmV0dXJuIHJldDtcbiAgfSxcblxuICBnZW5lcmF0ZUxpc3Q6IGZ1bmN0aW9uKGVudHJpZXMpIHtcbiAgICBsZXQgcmV0ID0gdGhpcy5lbXB0eSgpO1xuXG4gICAgZm9yIChsZXQgaSA9IDAsIGxlbiA9IGVudHJpZXMubGVuZ3RoOyBpIDwgbGVuOyBpKyspIHtcbiAgICAgIGlmIChpKSB7XG4gICAgICAgIHJldC5hZGQoJywnKTtcbiAgICAgIH1cblxuICAgICAgcmV0LmFkZChjYXN0Q2h1bmsoZW50cmllc1tpXSwgdGhpcykpO1xuICAgIH1cblxuICAgIHJldHVybiByZXQ7XG4gIH0sXG5cbiAgZ2VuZXJhdGVBcnJheTogZnVuY3Rpb24oZW50cmllcykge1xuICAgIGxldCByZXQgPSB0aGlzLmdlbmVyYXRlTGlzdChlbnRyaWVzKTtcbiAgICByZXQucHJlcGVuZCgnWycpO1xuICAgIHJldC5hZGQoJ10nKTtcblxuICAgIHJldHVybiByZXQ7XG4gIH1cbn07XG5cbmV4cG9ydCBkZWZhdWx0IENvZGVHZW47XG4iXX0=
-
-
-/***/ }),
-/* 340 */,
-/* 341 */,
-/* 342 */,
-/* 343 */,
-/* 344 */,
-/* 345 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-var parse = __webpack_require__(835).parse
-
-module.exports = function (string) {
-  // user/repo#version
-  var m = /^([\w-.]+)\/([\w-.]+)((?:#|@).+)?$/.exec(string)
-  if (m) return format(m)
-
-  string = string.replace('//www.', '//')
-  // normalize git@ and https:git@ urls
-  string = string.replace(/^git@/, 'https://')
-  string = string.replace(/^https:git@/, 'https://')
-  string = string.replace('.com:', '.com/')
-
-  if (!~string.indexOf('://')) {
-    return false
-  }
-  var url = parse(string)
-
-  var path = url.pathname.replace(/\.git$/, '')
-
-  // https://www.npmjs.org/doc/json.html#Git-URLs-as-Dependencies
-  var m = /^\/([\w-.]+)\/([\w-.]+)$/.exec(path)
-  if (m) return m.slice(1, 3).concat((url.hash || '').slice(1))
-
-  // archive link
-  // https://developer.github.com/v3/repos/contents/#get-archive-link
-  var m = /^\/repos\/([\w-.]+)\/([\w-.]+)\/(?:tarball|zipball)(\/.+)?$/.exec(path)
-  if (m) return format(m)
-
-  // codeload link
-  // https://developer.github.com/v3/repos/contents/#response-4
-  var m = /^\/([\w-.]+)\/([\w-.]+)\/(?:legacy\.(?:zip|tar\.gz))(\/.+)?$/.exec(path)
-  if (m) return format(m)
-
-  // tarball link
-  // https://github.com/LearnBoost/socket.io-client/blob/master/package.json#L14
-  var m = /^\/([\w-]+)\/([\w-.]+)\/archive\/(.+)\.tar\.gz?$/.exec(path)
-  if (m) return m.slice(1, 4)
-
-  // https://docs.gitlab.com/ce/user/group/subgroups/
-  if (~url.host.indexOf('gitlab')) {
-    var m = /^\/((?:[\w-.]+\/)+)([\w-.]+)$/.exec(path)
-    if (m) {
-      m = m.slice(1, 3);
-      // remove slash at the end
-      m[0] = m[0].slice(0, -1);
-      return m.concat((url.hash || '').slice(1));
-    }
-  }
-
-  return false
-}
-
-function format(m) {
-  var version = (m[3] || '').slice(1)
-  if (/^['"]/.test(version)) version = version.slice(1, -1)
-  return [m[1], m[2], version]
-}
-
-
-/***/ }),
-/* 346 */,
-/* 347 */,
-/* 348 */,
-/* 349 */,
-/* 350 */,
-/* 351 */,
-/* 352 */
-/***/ (function(module, exports) {
-
-"use strict";
-
-
-exports.__esModule = true;
-
-exports['default'] = function (Handlebars) {
-  /* istanbul ignore next */
-  var root = typeof global !== 'undefined' ? global : window,
-      $Handlebars = root.Handlebars;
-  /* istanbul ignore next */
-  Handlebars.noConflict = function () {
-    if (root.Handlebars === Handlebars) {
-      root.Handlebars = $Handlebars;
-    }
-    return Handlebars;
-  };
-};
-
-module.exports = exports['default'];
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL25vLWNvbmZsaWN0LmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7cUJBQWUsVUFBUyxVQUFVLEVBQUU7O0FBRWxDLE1BQUksSUFBSSxHQUFHLE9BQU8sTUFBTSxLQUFLLFdBQVcsR0FBRyxNQUFNLEdBQUcsTUFBTTtNQUN4RCxXQUFXLEdBQUcsSUFBSSxDQUFDLFVBQVUsQ0FBQzs7QUFFaEMsWUFBVSxDQUFDLFVBQVUsR0FBRyxZQUFXO0FBQ2pDLFFBQUksSUFBSSxDQUFDLFVBQVUsS0FBSyxVQUFVLEVBQUU7QUFDbEMsVUFBSSxDQUFDLFVBQVUsR0FBRyxXQUFXLENBQUM7S0FDL0I7QUFDRCxXQUFPLFVBQVUsQ0FBQztHQUNuQixDQUFDO0NBQ0giLCJmaWxlIjoibm8tY29uZmxpY3QuanMiLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgZGVmYXVsdCBmdW5jdGlvbihIYW5kbGViYXJzKSB7XG4gIC8qIGlzdGFuYnVsIGlnbm9yZSBuZXh0ICovXG4gIGxldCByb290ID0gdHlwZW9mIGdsb2JhbCAhPT0gJ3VuZGVmaW5lZCcgPyBnbG9iYWwgOiB3aW5kb3csXG4gICAgJEhhbmRsZWJhcnMgPSByb290LkhhbmRsZWJhcnM7XG4gIC8qIGlzdGFuYnVsIGlnbm9yZSBuZXh0ICovXG4gIEhhbmRsZWJhcnMubm9Db25mbGljdCA9IGZ1bmN0aW9uKCkge1xuICAgIGlmIChyb290LkhhbmRsZWJhcnMgPT09IEhhbmRsZWJhcnMpIHtcbiAgICAgIHJvb3QuSGFuZGxlYmFycyA9ICRIYW5kbGViYXJzO1xuICAgIH1cbiAgICByZXR1cm4gSGFuZGxlYmFycztcbiAgfTtcbn1cbiJdfQ==
-
-
-/***/ }),
-/* 353 */,
-/* 354 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-
-exports.__esModule = true;
-exports.HandlebarsEnvironment = HandlebarsEnvironment;
-// istanbul ignore next
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var _utils = __webpack_require__(423);
-
-var _exception = __webpack_require__(311);
-
-var _exception2 = _interopRequireDefault(_exception);
-
-var _helpers = __webpack_require__(269);
-
-var _decorators = __webpack_require__(125);
-
-var _logger = __webpack_require__(979);
-
-var _logger2 = _interopRequireDefault(_logger);
-
-var _internalProtoAccess = __webpack_require__(476);
-
-var VERSION = '4.7.6';
-exports.VERSION = VERSION;
-var COMPILER_REVISION = 8;
-exports.COMPILER_REVISION = COMPILER_REVISION;
-var LAST_COMPATIBLE_COMPILER_REVISION = 7;
-
-exports.LAST_COMPATIBLE_COMPILER_REVISION = LAST_COMPATIBLE_COMPILER_REVISION;
-var REVISION_CHANGES = {
-  1: '<= 1.0.rc.2', // 1.0.rc.2 is actually rev2 but doesn't report it
-  2: '== 1.0.0-rc.3',
-  3: '== 1.0.0-rc.4',
-  4: '== 1.x.x',
-  5: '== 2.0.0-alpha.x',
-  6: '>= 2.0.0-beta.1',
-  7: '>= 4.0.0 <4.3.0',
-  8: '>= 4.3.0'
-};
-
-exports.REVISION_CHANGES = REVISION_CHANGES;
-var objectType = '[object Object]';
-
-function HandlebarsEnvironment(helpers, partials, decorators) {
-  this.helpers = helpers || {};
-  this.partials = partials || {};
-  this.decorators = decorators || {};
-
-  _helpers.registerDefaultHelpers(this);
-  _decorators.registerDefaultDecorators(this);
-}
-
-HandlebarsEnvironment.prototype = {
-  constructor: HandlebarsEnvironment,
-
-  logger: _logger2['default'],
-  log: _logger2['default'].log,
-
-  registerHelper: function registerHelper(name, fn) {
-    if (_utils.toString.call(name) === objectType) {
-      if (fn) {
-        throw new _exception2['default']('Arg not supported with multiple helpers');
-      }
-      _utils.extend(this.helpers, name);
-    } else {
-      this.helpers[name] = fn;
-    }
-  },
-  unregisterHelper: function unregisterHelper(name) {
-    delete this.helpers[name];
-  },
-
-  registerPartial: function registerPartial(name, partial) {
-    if (_utils.toString.call(name) === objectType) {
-      _utils.extend(this.partials, name);
-    } else {
-      if (typeof partial === 'undefined') {
-        throw new _exception2['default']('Attempting to register a partial called "' + name + '" as undefined');
-      }
-      this.partials[name] = partial;
-    }
-  },
-  unregisterPartial: function unregisterPartial(name) {
-    delete this.partials[name];
-  },
-
-  registerDecorator: function registerDecorator(name, fn) {
-    if (_utils.toString.call(name) === objectType) {
-      if (fn) {
-        throw new _exception2['default']('Arg not supported with multiple decorators');
-      }
-      _utils.extend(this.decorators, name);
-    } else {
-      this.decorators[name] = fn;
-    }
-  },
-  unregisterDecorator: function unregisterDecorator(name) {
-    delete this.decorators[name];
-  },
-  /**
-   * Reset the memory of illegal property accesses that have already been logged.
-   * @deprecated should only be used in handlebars test-cases
-   */
-  resetLoggedPropertyAccesses: function resetLoggedPropertyAccesses() {
-    _internalProtoAccess.resetLoggedProperties();
-  }
-};
-
-var log = _logger2['default'].log;
-
-exports.log = log;
-exports.createFrame = _utils.createFrame;
-exports.logger = _logger2['default'];
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2Jhc2UuanMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7cUJBQThDLFNBQVM7O3lCQUNqQyxhQUFhOzs7O3VCQUNJLFdBQVc7OzBCQUNSLGNBQWM7O3NCQUNyQyxVQUFVOzs7O21DQUNTLHlCQUF5Qjs7QUFFeEQsSUFBTSxPQUFPLEdBQUcsT0FBTyxDQUFDOztBQUN4QixJQUFNLGlCQUFpQixHQUFHLENBQUMsQ0FBQzs7QUFDNUIsSUFBTSxpQ0FBaUMsR0FBRyxDQUFDLENBQUM7OztBQUU1QyxJQUFNLGdCQUFnQixHQUFHO0FBQzlCLEdBQUMsRUFBRSxhQUFhO0FBQ2hCLEdBQUMsRUFBRSxlQUFlO0FBQ2xCLEdBQUMsRUFBRSxlQUFlO0FBQ2xCLEdBQUMsRUFBRSxVQUFVO0FBQ2IsR0FBQyxFQUFFLGtCQUFrQjtBQUNyQixHQUFDLEVBQUUsaUJBQWlCO0FBQ3BCLEdBQUMsRUFBRSxpQkFBaUI7QUFDcEIsR0FBQyxFQUFFLFVBQVU7Q0FDZCxDQUFDOzs7QUFFRixJQUFNLFVBQVUsR0FBRyxpQkFBaUIsQ0FBQzs7QUFFOUIsU0FBUyxxQkFBcUIsQ0FBQyxPQUFPLEVBQUUsUUFBUSxFQUFFLFVBQVUsRUFBRTtBQUNuRSxNQUFJLENBQUMsT0FBTyxHQUFHLE9BQU8sSUFBSSxFQUFFLENBQUM7QUFDN0IsTUFBSSxDQUFDLFFBQVEsR0FBRyxRQUFRLElBQUksRUFBRSxDQUFDO0FBQy9CLE1BQUksQ0FBQyxVQUFVLEdBQUcsVUFBVSxJQUFJLEVBQUUsQ0FBQzs7QUFFbkMsa0NBQXVCLElBQUksQ0FBQyxDQUFDO0FBQzdCLHdDQUEwQixJQUFJLENBQUMsQ0FBQztDQUNqQzs7QUFFRCxxQkFBcUIsQ0FBQyxTQUFTLEdBQUc7QUFDaEMsYUFBVyxFQUFFLHFCQUFxQjs7QUFFbEMsUUFBTSxxQkFBUTtBQUNkLEtBQUcsRUFBRSxvQkFBTyxHQUFHOztBQUVmLGdCQUFjLEVBQUUsd0JBQVMsSUFBSSxFQUFFLEVBQUUsRUFBRTtBQUNqQyxRQUFJLGdCQUFTLElBQUksQ0FBQyxJQUFJLENBQUMsS0FBSyxVQUFVLEVBQUU7QUFDdEMsVUFBSSxFQUFFLEVBQUU7QUFDTixjQUFNLDJCQUFjLHlDQUF5QyxDQUFDLENBQUM7T0FDaEU7QUFDRCxvQkFBTyxJQUFJLENBQUMsT0FBTyxFQUFFLElBQUksQ0FBQyxDQUFDO0tBQzVCLE1BQU07QUFDTCxVQUFJLENBQUMsT0FBTyxDQUFDLElBQUksQ0FBQyxHQUFHLEVBQUUsQ0FBQztLQUN6QjtHQUNGO0FBQ0Qsa0JBQWdCLEVBQUUsMEJBQVMsSUFBSSxFQUFFO0FBQy9CLFdBQU8sSUFBSSxDQUFDLE9BQU8sQ0FBQyxJQUFJLENBQUMsQ0FBQztHQUMzQjs7QUFFRCxpQkFBZSxFQUFFLHlCQUFTLElBQUksRUFBRSxPQUFPLEVBQUU7QUFDdkMsUUFBSSxnQkFBUyxJQUFJLENBQUMsSUFBSSxDQUFDLEtBQUssVUFBVSxFQUFFO0FBQ3RDLG9CQUFPLElBQUksQ0FBQyxRQUFRLEVBQUUsSUFBSSxDQUFDLENBQUM7S0FDN0IsTUFBTTtBQUNMLFVBQUksT0FBTyxPQUFPLEtBQUssV0FBVyxFQUFFO0FBQ2xDLGNBQU0seUVBQ3dDLElBQUksb0JBQ2pELENBQUM7T0FDSDtBQUNELFVBQUksQ0FBQyxRQUFRLENBQUMsSUFBSSxDQUFDLEdBQUcsT0FBTyxDQUFDO0tBQy9CO0dBQ0Y7QUFDRCxtQkFBaUIsRUFBRSwyQkFBUyxJQUFJLEVBQUU7QUFDaEMsV0FBTyxJQUFJLENBQUMsUUFBUSxDQUFDLElBQUksQ0FBQyxDQUFDO0dBQzVCOztBQUVELG1CQUFpQixFQUFFLDJCQUFTLElBQUksRUFBRSxFQUFFLEVBQUU7QUFDcEMsUUFBSSxnQkFBUyxJQUFJLENBQUMsSUFBSSxDQUFDLEtBQUssVUFBVSxFQUFFO0FBQ3RDLFVBQUksRUFBRSxFQUFFO0FBQ04sY0FBTSwyQkFBYyw0Q0FBNEMsQ0FBQyxDQUFDO09BQ25FO0FBQ0Qsb0JBQU8sSUFBSSxDQUFDLFVBQVUsRUFBRSxJQUFJLENBQUMsQ0FBQztLQUMvQixNQUFNO0FBQ0wsVUFBSSxDQUFDLFVBQVUsQ0FBQyxJQUFJLENBQUMsR0FBRyxFQUFFLENBQUM7S0FDNUI7R0FDRjtBQUNELHFCQUFtQixFQUFFLDZCQUFTLElBQUksRUFBRTtBQUNsQyxXQUFPLElBQUksQ0FBQyxVQUFVLENBQUMsSUFBSSxDQUFDLENBQUM7R0FDOUI7Ozs7O0FBS0QsNkJBQTJCLEVBQUEsdUNBQUc7QUFDNUIsZ0RBQXVCLENBQUM7R0FDekI7Q0FDRixDQUFDOztBQUVLLElBQUksR0FBRyxHQUFHLG9CQUFPLEdBQUcsQ0FBQzs7O1FBRW5CLFdBQVc7UUFBRSxNQUFNIiwiZmlsZSI6ImJhc2UuanMiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBjcmVhdGVGcmFtZSwgZXh0ZW5kLCB0b1N0cmluZyB9IGZyb20gJy4vdXRpbHMnO1xuaW1wb3J0IEV4Y2VwdGlvbiBmcm9tICcuL2V4Y2VwdGlvbic7XG5pbXBvcnQgeyByZWdpc3RlckRlZmF1bHRIZWxwZXJzIH0gZnJvbSAnLi9oZWxwZXJzJztcbmltcG9ydCB7IHJlZ2lzdGVyRGVmYXVsdERlY29yYXRvcnMgfSBmcm9tICcuL2RlY29yYXRvcnMnO1xuaW1wb3J0IGxvZ2dlciBmcm9tICcuL2xvZ2dlcic7XG5pbXBvcnQgeyByZXNldExvZ2dlZFByb3BlcnRpZXMgfSBmcm9tICcuL2ludGVybmFsL3Byb3RvLWFjY2Vzcyc7XG5cbmV4cG9ydCBjb25zdCBWRVJTSU9OID0gJzQuNy42JztcbmV4cG9ydCBjb25zdCBDT01QSUxFUl9SRVZJU0lPTiA9IDg7XG5leHBvcnQgY29uc3QgTEFTVF9DT01QQVRJQkxFX0NPTVBJTEVSX1JFVklTSU9OID0gNztcblxuZXhwb3J0IGNvbnN0IFJFVklTSU9OX0NIQU5HRVMgPSB7XG4gIDE6ICc8PSAxLjAucmMuMicsIC8vIDEuMC5yYy4yIGlzIGFjdHVhbGx5IHJldjIgYnV0IGRvZXNuJ3QgcmVwb3J0IGl0XG4gIDI6ICc9PSAxLjAuMC1yYy4zJyxcbiAgMzogJz09IDEuMC4wLXJjLjQnLFxuICA0OiAnPT0gMS54LngnLFxuICA1OiAnPT0gMi4wLjAtYWxwaGEueCcsXG4gIDY6ICc+PSAyLjAuMC1iZXRhLjEnLFxuICA3OiAnPj0gNC4wLjAgPDQuMy4wJyxcbiAgODogJz49IDQuMy4wJ1xufTtcblxuY29uc3Qgb2JqZWN0VHlwZSA9ICdbb2JqZWN0IE9iamVjdF0nO1xuXG5leHBvcnQgZnVuY3Rpb24gSGFuZGxlYmFyc0Vudmlyb25tZW50KGhlbHBlcnMsIHBhcnRpYWxzLCBkZWNvcmF0b3JzKSB7XG4gIHRoaXMuaGVscGVycyA9IGhlbHBlcnMgfHwge307XG4gIHRoaXMucGFydGlhbHMgPSBwYXJ0aWFscyB8fCB7fTtcbiAgdGhpcy5kZWNvcmF0b3JzID0gZGVjb3JhdG9ycyB8fCB7fTtcblxuICByZWdpc3RlckRlZmF1bHRIZWxwZXJzKHRoaXMpO1xuICByZWdpc3RlckRlZmF1bHREZWNvcmF0b3JzKHRoaXMpO1xufVxuXG5IYW5kbGViYXJzRW52aXJvbm1lbnQucHJvdG90eXBlID0ge1xuICBjb25zdHJ1Y3RvcjogSGFuZGxlYmFyc0Vudmlyb25tZW50LFxuXG4gIGxvZ2dlcjogbG9nZ2VyLFxuICBsb2c6IGxvZ2dlci5sb2csXG5cbiAgcmVnaXN0ZXJIZWxwZXI6IGZ1bmN0aW9uKG5hbWUsIGZuKSB7XG4gICAgaWYgKHRvU3RyaW5nLmNhbGwobmFtZSkgPT09IG9iamVjdFR5cGUpIHtcbiAgICAgIGlmIChmbikge1xuICAgICAgICB0aHJvdyBuZXcgRXhjZXB0aW9uKCdBcmcgbm90IHN1cHBvcnRlZCB3aXRoIG11bHRpcGxlIGhlbHBlcnMnKTtcbiAgICAgIH1cbiAgICAgIGV4dGVuZCh0aGlzLmhlbHBlcnMsIG5hbWUpO1xuICAgIH0gZWxzZSB7XG4gICAgICB0aGlzLmhlbHBlcnNbbmFtZV0gPSBmbjtcbiAgICB9XG4gIH0sXG4gIHVucmVnaXN0ZXJIZWxwZXI6IGZ1bmN0aW9uKG5hbWUpIHtcbiAgICBkZWxldGUgdGhpcy5oZWxwZXJzW25hbWVdO1xuICB9LFxuXG4gIHJlZ2lzdGVyUGFydGlhbDogZnVuY3Rpb24obmFtZSwgcGFydGlhbCkge1xuICAgIGlmICh0b1N0cmluZy5jYWxsKG5hbWUpID09PSBvYmplY3RUeXBlKSB7XG4gICAgICBleHRlbmQodGhpcy5wYXJ0aWFscywgbmFtZSk7XG4gICAgfSBlbHNlIHtcbiAgICAgIGlmICh0eXBlb2YgcGFydGlhbCA9PT0gJ3VuZGVmaW5lZCcpIHtcbiAgICAgICAgdGhyb3cgbmV3IEV4Y2VwdGlvbihcbiAgICAgICAgICBgQXR0ZW1wdGluZyB0byByZWdpc3RlciBhIHBhcnRpYWwgY2FsbGVkIFwiJHtuYW1lfVwiIGFzIHVuZGVmaW5lZGBcbiAgICAgICAgKTtcbiAgICAgIH1cbiAgICAgIHRoaXMucGFydGlhbHNbbmFtZV0gPSBwYXJ0aWFsO1xuICAgIH1cbiAgfSxcbiAgdW5yZWdpc3RlclBhcnRpYWw6IGZ1bmN0aW9uKG5hbWUpIHtcbiAgICBkZWxldGUgdGhpcy5wYXJ0aWFsc1tuYW1lXTtcbiAgfSxcblxuICByZWdpc3RlckRlY29yYXRvcjogZnVuY3Rpb24obmFtZSwgZm4pIHtcbiAgICBpZiAodG9TdHJpbmcuY2FsbChuYW1lKSA9PT0gb2JqZWN0VHlwZSkge1xuICAgICAgaWYgKGZuKSB7XG4gICAgICAgIHRocm93IG5ldyBFeGNlcHRpb24oJ0FyZyBub3Qgc3VwcG9ydGVkIHdpdGggbXVsdGlwbGUgZGVjb3JhdG9ycycpO1xuICAgICAgfVxuICAgICAgZXh0ZW5kKHRoaXMuZGVjb3JhdG9ycywgbmFtZSk7XG4gICAgfSBlbHNlIHtcbiAgICAgIHRoaXMuZGVjb3JhdG9yc1tuYW1lXSA9IGZuO1xuICAgIH1cbiAgfSxcbiAgdW5yZWdpc3RlckRlY29yYXRvcjogZnVuY3Rpb24obmFtZSkge1xuICAgIGRlbGV0ZSB0aGlzLmRlY29yYXRvcnNbbmFtZV07XG4gIH0sXG4gIC8qKlxuICAgKiBSZXNldCB0aGUgbWVtb3J5IG9mIGlsbGVnYWwgcHJvcGVydHkgYWNjZXNzZXMgdGhhdCBoYXZlIGFscmVhZHkgYmVlbiBsb2dnZWQuXG4gICAqIEBkZXByZWNhdGVkIHNob3VsZCBvbmx5IGJlIHVzZWQgaW4gaGFuZGxlYmFycyB0ZXN0LWNhc2VzXG4gICAqL1xuICByZXNldExvZ2dlZFByb3BlcnR5QWNjZXNzZXMoKSB7XG4gICAgcmVzZXRMb2dnZWRQcm9wZXJ0aWVzKCk7XG4gIH1cbn07XG5cbmV4cG9ydCBsZXQgbG9nID0gbG9nZ2VyLmxvZztcblxuZXhwb3J0IHsgY3JlYXRlRnJhbWUsIGxvZ2dlciB9O1xuIl19
-
-
-/***/ }),
-/* 355 */,
-/* 356 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-/*!
- * is-plain-object <https://github.com/jonschlinkert/is-plain-object>
- *
- * Copyright (c) 2014-2017, Jon Schlinkert.
- * Released under the MIT License.
- */
-
-function isObject(o) {
-  return Object.prototype.toString.call(o) === '[object Object]';
-}
-
-function isPlainObject(o) {
-  var ctor,prot;
-
-  if (isObject(o) === false) return false;
-
-  // If has modified constructor
-  ctor = o.constructor;
-  if (ctor === undefined) return true;
-
-  // If has modified prototype
-  prot = ctor.prototype;
-  if (isObject(prot) === false) return false;
-
-  // If constructor does not have an Object-specific method
-  if (prot.hasOwnProperty('isPrototypeOf') === false) {
-    return false;
-  }
-
-  // Most likely a plain Object
-  return true;
-}
-
-exports.isPlainObject = isPlainObject;
-
-
-/***/ }),
-/* 357 */,
-/* 358 */,
-/* 359 */,
-/* 360 */,
-/* 361 */,
-/* 362 */,
-/* 363 */,
-/* 364 */
-/***/ (function(module) {
-
-"use strict";
-
-
-module.exports = (flag, argv = process.argv) => {
-	const prefix = flag.startsWith('-') ? '' : (flag.length === 1 ? '-' : '--');
-	const position = argv.indexOf(prefix + flag);
-	const terminatorPosition = argv.indexOf('--');
-	return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
-};
-
-
-/***/ }),
-/* 365 */,
-/* 366 */,
-/* 367 */,
-/* 368 */,
-/* 369 */,
-/* 370 */,
-/* 371 */,
-/* 372 */,
-/* 373 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-var RetryOperation = __webpack_require__(988);
-
-exports.operation = function(options) {
-  var timeouts = exports.timeouts(options);
-  return new RetryOperation(timeouts, {
-      forever: options && options.forever,
-      unref: options && options.unref,
-      maxRetryTime: options && options.maxRetryTime
-  });
-};
-
-exports.timeouts = function(options) {
-  if (options instanceof Array) {
-    return [].concat(options);
-  }
-
-  var opts = {
-    retries: 10,
-    factor: 2,
-    minTimeout: 1 * 1000,
-    maxTimeout: Infinity,
-    randomize: false
-  };
-  for (var key in options) {
-    opts[key] = options[key];
-  }
-
-  if (opts.minTimeout > opts.maxTimeout) {
-    throw new Error('minTimeout is greater than maxTimeout');
-  }
-
-  var timeouts = [];
-  for (var i = 0; i < opts.retries; i++) {
-    timeouts.push(this.createTimeout(i, opts));
-  }
-
-  if (options && options.forever && !timeouts.length) {
-    timeouts.push(this.createTimeout(i, opts));
-  }
-
-  // sort the array numerically ascending
-  timeouts.sort(function(a,b) {
-    return a - b;
-  });
-
-  return timeouts;
-};
-
-exports.createTimeout = function(attempt, opts) {
-  var random = (opts.randomize)
-    ? (Math.random() + 1)
-    : 1;
-
-  var timeout = Math.round(random * opts.minTimeout * Math.pow(opts.factor, attempt));
-  timeout = Math.min(timeout, opts.maxTimeout);
-
-  return timeout;
-};
-
-exports.wrap = function(obj, options, methods) {
-  if (options instanceof Array) {
-    methods = options;
-    options = null;
-  }
-
-  if (!methods) {
-    methods = [];
-    for (var key in obj) {
-      if (typeof obj[key] === 'function') {
-        methods.push(key);
-      }
-    }
-  }
-
-  for (var i = 0; i < methods.length; i++) {
-    var method   = methods[i];
-    var original = obj[method];
-
-    obj[method] = function retryWrapper(original) {
-      var op       = exports.operation(options);
-      var args     = Array.prototype.slice.call(arguments, 1);
-      var callback = args.pop();
-
-      args.push(function(err) {
-        if (op.retry(err)) {
-          return;
-        }
-        if (err) {
-          arguments[0] = op.mainError();
-        }
-        callback.apply(this, arguments);
-      });
-
-      op.attempt(function() {
-        original.apply(obj, args);
-      });
-    }.bind(obj, original);
-    obj[method].options = options;
-  }
-};
-
-
-/***/ }),
-/* 374 */,
-/* 375 */,
-/* 376 */,
-/* 377 */,
-/* 378 */,
-/* 379 */,
-/* 380 */
-/***/ (function(module, exports) {
-
-"use strict";
-
-
-exports.__esModule = true;
-
-exports['default'] = function (instance) {
-  instance.registerHelper('log', function () /* message, options */{
-    var args = [undefined],
-        options = arguments[arguments.length - 1];
-    for (var i = 0; i < arguments.length - 1; i++) {
-      args.push(arguments[i]);
-    }
-
-    var level = 1;
-    if (options.hash.level != null) {
-      level = options.hash.level;
-    } else if (options.data && options.data.level != null) {
-      level = options.data.level;
-    }
-    args[0] = level;
-
-    instance.log.apply(instance, args);
-  });
-};
-
-module.exports = exports['default'];
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2hlbHBlcnMvbG9nLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7cUJBQWUsVUFBUyxRQUFRLEVBQUU7QUFDaEMsVUFBUSxDQUFDLGNBQWMsQ0FBQyxLQUFLLEVBQUUsa0NBQWlDO0FBQzlELFFBQUksSUFBSSxHQUFHLENBQUMsU0FBUyxDQUFDO1FBQ3BCLE9BQU8sR0FBRyxTQUFTLENBQUMsU0FBUyxDQUFDLE1BQU0sR0FBRyxDQUFDLENBQUMsQ0FBQztBQUM1QyxTQUFLLElBQUksQ0FBQyxHQUFHLENBQUMsRUFBRSxDQUFDLEdBQUcsU0FBUyxDQUFDLE1BQU0sR0FBRyxDQUFDLEVBQUUsQ0FBQyxFQUFFLEVBQUU7QUFDN0MsVUFBSSxDQUFDLElBQUksQ0FBQyxTQUFTLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQztLQUN6Qjs7QUFFRCxRQUFJLEtBQUssR0FBRyxDQUFDLENBQUM7QUFDZCxRQUFJLE9BQU8sQ0FBQyxJQUFJLENBQUMsS0FBSyxJQUFJLElBQUksRUFBRTtBQUM5QixXQUFLLEdBQUcsT0FBTyxDQUFDLElBQUksQ0FBQyxLQUFLLENBQUM7S0FDNUIsTUFBTSxJQUFJLE9BQU8sQ0FBQyxJQUFJLElBQUksT0FBTyxDQUFDLElBQUksQ0FBQyxLQUFLLElBQUksSUFBSSxFQUFFO0FBQ3JELFdBQUssR0FBRyxPQUFPLENBQUMsSUFBSSxDQUFDLEtBQUssQ0FBQztLQUM1QjtBQUNELFFBQUksQ0FBQyxDQUFDLENBQUMsR0FBRyxLQUFLLENBQUM7O0FBRWhCLFlBQVEsQ0FBQyxHQUFHLE1BQUEsQ0FBWixRQUFRLEVBQVEsSUFBSSxDQUFDLENBQUM7R0FDdkIsQ0FBQyxDQUFDO0NBQ0oiLCJmaWxlIjoibG9nLmpzIiwic291cmNlc0NvbnRlbnQiOlsiZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24oaW5zdGFuY2UpIHtcbiAgaW5zdGFuY2UucmVnaXN0ZXJIZWxwZXIoJ2xvZycsIGZ1bmN0aW9uKC8qIG1lc3NhZ2UsIG9wdGlvbnMgKi8pIHtcbiAgICBsZXQgYXJncyA9IFt1bmRlZmluZWRdLFxuICAgICAgb3B0aW9ucyA9IGFyZ3VtZW50c1thcmd1bWVudHMubGVuZ3RoIC0gMV07XG4gICAgZm9yIChsZXQgaSA9IDA7IGkgPCBhcmd1bWVudHMubGVuZ3RoIC0gMTsgaSsrKSB7XG4gICAgICBhcmdzLnB1c2goYXJndW1lbnRzW2ldKTtcbiAgICB9XG5cbiAgICBsZXQgbGV2ZWwgPSAxO1xuICAgIGlmIChvcHRpb25zLmhhc2gubGV2ZWwgIT0gbnVsbCkge1xuICAgICAgbGV2ZWwgPSBvcHRpb25zLmhhc2gubGV2ZWw7XG4gICAgfSBlbHNlIGlmIChvcHRpb25zLmRhdGEgJiYgb3B0aW9ucy5kYXRhLmxldmVsICE9IG51bGwpIHtcbiAgICAgIGxldmVsID0gb3B0aW9ucy5kYXRhLmxldmVsO1xuICAgIH1cbiAgICBhcmdzWzBdID0gbGV2ZWw7XG5cbiAgICBpbnN0YW5jZS5sb2coLi4uYXJncyk7XG4gIH0pO1xufVxuIl19
-
-
-/***/ }),
-/* 381 */,
-/* 382 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-
-/* eslint no-prototype-builtins: 0 */
-
-const format = __webpack_require__(321)
-const { mapHttpRequest, mapHttpResponse } = __webpack_require__(329)
-const SonicBoom = __webpack_require__(450)
-const stringifySafe = __webpack_require__(97)
-const {
-  lsCacheSym,
-  chindingsSym,
-  parsedChindingsSym,
-  writeSym,
-  serializersSym,
-  formatOptsSym,
-  endSym,
-  stringifiersSym,
-  stringifySym,
-  wildcardFirstSym,
-  needsMetadataGsym,
-  redactFmtSym,
-  streamSym,
-  nestedKeySym,
-  formattersSym,
-  messageKeySym
-} = __webpack_require__(230)
-
-function noop () {}
-
-function genLog (level, hook) {
-  if (!hook) return LOG
-
-  return function hookWrappedLog (...args) {
-    hook.call(this, args, LOG)
-  }
-
-  function LOG (o, ...n) {
-    if (typeof o === 'object') {
-      var msg = o
-      if (o !== null) {
-        if (o.method && o.headers && o.socket) {
-          o = mapHttpRequest(o)
-        } else if (typeof o.setHeader === 'function') {
-          o = mapHttpResponse(o)
-        }
-      }
-      if (this[nestedKeySym]) o = { [this[nestedKeySym]]: o }
-      var formatParams
-      if (msg === null && n.length === 0) {
-        formatParams = [null]
-      } else {
-        msg = n.shift()
-        formatParams = n
-      }
-      this[writeSym](o, format(msg, formatParams, this[formatOptsSym]), level)
-    } else {
-      this[writeSym](null, format(o, n, this[formatOptsSym]), level)
-    }
-  }
-}
-
-// magically escape strings for json
-// relying on their charCodeAt
-// everything below 32 needs JSON.stringify()
-// 34 and 92 happens all the time, so we
-// have a fast case for them
-function asString (str) {
-  var result = ''
-  var last = 0
-  var found = false
-  var point = 255
-  const l = str.length
-  if (l > 100) {
-    return JSON.stringify(str)
-  }
-  for (var i = 0; i < l && point >= 32; i++) {
-    point = str.charCodeAt(i)
-    if (point === 34 || point === 92) {
-      result += str.slice(last, i) + '\\'
-      last = i
-      found = true
-    }
-  }
-  if (!found) {
-    result = str
-  } else {
-    result += str.slice(last)
-  }
-  return point < 32 ? JSON.stringify(str) : '"' + result + '"'
-}
-
-function asJson (obj, msg, num, time) {
-  const stringify = this[stringifySym]
-  const stringifiers = this[stringifiersSym]
-  const end = this[endSym]
-  const chindings = this[chindingsSym]
-  const serializers = this[serializersSym]
-  const formatters = this[formattersSym]
-  const messageKey = this[messageKeySym]
-  var data = this[lsCacheSym][num] + time
-
-  // we need the child bindings added to the output first so instance logged
-  // objects can take precedence when JSON.parse-ing the resulting log line
-  data = data + chindings
-
-  var value
-  var notHasOwnProperty = obj.hasOwnProperty === undefined
-  if (formatters.log) {
-    obj = formatters.log(obj)
-  }
-  if (msg !== undefined) {
-    obj[messageKey] = msg
-  }
-  const wildcardStringifier = stringifiers[wildcardFirstSym]
-  for (var key in obj) {
-    value = obj[key]
-    if ((notHasOwnProperty || obj.hasOwnProperty(key)) && value !== undefined) {
-      value = serializers[key] ? serializers[key](value) : value
-
-      const stringifier = stringifiers[key] || wildcardStringifier
-
-      switch (typeof value) {
-        case 'undefined':
-        case 'function':
-          continue
-        case 'number':
-          /* eslint no-fallthrough: "off" */
-          if (Number.isFinite(value) === false) {
-            value = null
-          }
-        // this case explicitly falls through to the next one
-        case 'boolean':
-          if (stringifier) value = stringifier(value)
-          break
-        case 'string':
-          value = (stringifier || asString)(value)
-          break
-        default:
-          value = (stringifier || stringify)(value)
-      }
-      if (value === undefined) continue
-      data += ',"' + key + '":' + value
-    }
-  }
-
-  return data + end
-}
-
-function asChindings (instance, bindings) {
-  var key
-  var value
-  var data = instance[chindingsSym]
-  const stringify = instance[stringifySym]
-  const stringifiers = instance[stringifiersSym]
-  const wildcardStringifier = stringifiers[wildcardFirstSym]
-  const serializers = instance[serializersSym]
-  const formatter = instance[formattersSym].bindings
-  bindings = formatter(bindings)
-
-  for (key in bindings) {
-    value = bindings[key]
-    const valid = key !== 'level' &&
-      key !== 'serializers' &&
-      key !== 'formatters' &&
-      key !== 'customLevels' &&
-      bindings.hasOwnProperty(key) &&
-      value !== undefined
-    if (valid === true) {
-      value = serializers[key] ? serializers[key](value) : value
-      value = (stringifiers[key] || wildcardStringifier || stringify)(value)
-      if (value === undefined) continue
-      data += ',"' + key + '":' + value
-    }
-  }
-  return data
-}
-
-function getPrettyStream (opts, prettifier, dest, instance) {
-  if (prettifier && typeof prettifier === 'function') {
-    prettifier = prettifier.bind(instance)
-    return prettifierMetaWrapper(prettifier(opts), dest, opts)
-  }
-  try {
-    var prettyFactory = __webpack_require__(309)
-    prettyFactory.asMetaWrapper = prettifierMetaWrapper
-    return prettifierMetaWrapper(prettyFactory(opts), dest, opts)
-  } catch (e) {
-    throw Error('Missing `pino-pretty` module: `pino-pretty` must be installed separately')
-  }
-}
-
-function prettifierMetaWrapper (pretty, dest, opts) {
-  opts = Object.assign({ suppressFlushSyncWarning: false }, opts)
-  var warned = false
-  return {
-    [needsMetadataGsym]: true,
-    lastLevel: 0,
-    lastMsg: null,
-    lastObj: null,
-    lastLogger: null,
-    flushSync () {
-      if (opts.suppressFlushSyncWarning || warned) {
-        return
-      }
-      warned = true
-      setMetadataProps(dest, this)
-      dest.write(pretty(Object.assign({
-        level: 40, // warn
-        msg: 'pino.final with prettyPrint does not support flushing',
-        time: Date.now()
-      }, this.chindings())))
-    },
-    chindings () {
-      const lastLogger = this.lastLogger
-      var chindings = null
-
-      // protection against flushSync being called before logging
-      // anything
-      if (!lastLogger) {
-        return null
-      }
-
-      if (lastLogger.hasOwnProperty(parsedChindingsSym)) {
-        chindings = lastLogger[parsedChindingsSym]
-      } else {
-        chindings = JSON.parse('{' + lastLogger[chindingsSym].substr(1) + '}')
-        lastLogger[parsedChindingsSym] = chindings
-      }
-
-      return chindings
-    },
-    write (chunk) {
-      const lastLogger = this.lastLogger
-      const chindings = this.chindings()
-
-      var time = this.lastTime
-
-      if (time.match(/^\d+/)) {
-        time = parseInt(time)
-      } else {
-        time = time.slice(1, -1)
-      }
-
-      var lastObj = this.lastObj
-      var lastMsg = this.lastMsg
-      var errorProps = null
-
-      const formatters = lastLogger[formattersSym]
-      const formattedObj = formatters.log ? formatters.log(lastObj) : lastObj
-
-      const messageKey = lastLogger[messageKeySym]
-      if (lastMsg && formattedObj && !formattedObj.hasOwnProperty(messageKey)) {
-        formattedObj[messageKey] = lastMsg
-      }
-
-      const obj = Object.assign({
-        level: this.lastLevel,
-        time
-      }, formattedObj, errorProps)
-
-      const serializers = lastLogger[serializersSym]
-      const keys = Object.keys(serializers)
-      var key
-
-      for (var i = 0; i < keys.length; i++) {
-        key = keys[i]
-        if (obj[key] !== undefined) {
-          obj[key] = serializers[key](obj[key])
-        }
-      }
-
-      for (key in chindings) {
-        if (!obj.hasOwnProperty(key)) {
-          obj[key] = chindings[key]
-        }
-      }
-
-      const stringifiers = lastLogger[stringifiersSym]
-      const redact = stringifiers[redactFmtSym]
-
-      const formatted = pretty(typeof redact === 'function' ? redact(obj) : obj)
-      if (formatted === undefined) return
-
-      setMetadataProps(dest, this)
-      dest.write(formatted)
-    }
-  }
-}
-
-function hasBeenTampered (stream) {
-  return stream.write !== stream.constructor.prototype.write
-}
-
-function buildSafeSonicBoom (opts) {
-  const stream = new SonicBoom(opts)
-  stream.on('error', filterBrokenPipe)
-  return stream
-
-  function filterBrokenPipe (err) {
-    // TODO verify on Windows
-    if (err.code === 'EPIPE') {
-      // If we get EPIPE, we should stop logging here
-      // however we have no control to the consumer of
-      // SonicBoom, so we just overwrite the write method
-      stream.write = noop
-      stream.end = noop
-      stream.flushSync = noop
-      stream.destroy = noop
-      return
-    }
-    stream.removeListener('error', filterBrokenPipe)
-    stream.emit('error', err)
-  }
-}
-
-function createArgsNormalizer (defaultOptions) {
-  return function normalizeArgs (instance, opts = {}, stream) {
-    // support stream as a string
-    if (typeof opts === 'string') {
-      stream = buildSafeSonicBoom({ dest: opts, sync: true })
-      opts = {}
-    } else if (typeof stream === 'string') {
-      stream = buildSafeSonicBoom({ dest: stream, sync: true })
-    } else if (opts instanceof SonicBoom || opts.writable || opts._writableState) {
-      stream = opts
-      opts = null
-    }
-    opts = Object.assign({}, defaultOptions, opts)
-    if ('extreme' in opts) {
-      throw Error('The extreme option has been removed, use pino.destination({ sync: false }) instead')
-    }
-    if ('onTerminated' in opts) {
-      throw Error('The onTerminated option has been removed, use pino.final instead')
-    }
-    if ('changeLevelName' in opts) {
-      process.emitWarning(
-        'The changeLevelName option is deprecated and will be removed in v7. Use levelKey instead.',
-        { code: 'changeLevelName_deprecation' }
-      )
-      opts.levelKey = opts.changeLevelName
-      delete opts.changeLevelName
-    }
-    const { enabled, prettyPrint, prettifier, messageKey } = opts
-    if (enabled === false) opts.level = 'silent'
-    stream = stream || process.stdout
-    if (stream === process.stdout && stream.fd >= 0 && !hasBeenTampered(stream)) {
-      stream = buildSafeSonicBoom({ fd: stream.fd, sync: true })
-    }
-    if (prettyPrint) {
-      const prettyOpts = Object.assign({ messageKey }, prettyPrint)
-      stream = getPrettyStream(prettyOpts, prettifier, stream, instance)
-    }
-    return { opts, stream }
-  }
-}
-
-function final (logger, handler) {
-  if (typeof logger === 'undefined' || typeof logger.child !== 'function') {
-    throw Error('expected a pino logger instance')
-  }
-  const hasHandler = (typeof handler !== 'undefined')
-  if (hasHandler && typeof handler !== 'function') {
-    throw Error('if supplied, the handler parameter should be a function')
-  }
-  const stream = logger[streamSym]
-  if (typeof stream.flushSync !== 'function') {
-    throw Error('final requires a stream that has a flushSync method, such as pino.destination')
-  }
-
-  const finalLogger = new Proxy(logger, {
-    get: (logger, key) => {
-      if (key in logger.levels.values) {
-        return (...args) => {
-          logger[key](...args)
-          stream.flushSync()
-        }
-      }
-      return logger[key]
-    }
-  })
-
-  if (!hasHandler) {
-    return finalLogger
-  }
-
-  return (err = null, ...args) => {
-    try {
-      stream.flushSync()
-    } catch (e) {
-      // it's too late to wait for the stream to be ready
-      // because this is a final tick scenario.
-      // in practice there shouldn't be a situation where it isn't
-      // however, swallow the error just in case (and for easier testing)
-    }
-    return handler(err, finalLogger, ...args)
-  }
-}
-
-function stringify (obj) {
-  try {
-    return JSON.stringify(obj)
-  } catch (_) {
-    return stringifySafe(obj)
-  }
-}
-
-function buildFormatters (level, bindings, log) {
-  return {
-    level,
-    bindings,
-    log
-  }
-}
-
-function setMetadataProps (dest, that) {
-  if (dest[needsMetadataGsym] === true) {
-    dest.lastLevel = that.lastLevel
-    dest.lastMsg = that.lastMsg
-    dest.lastObj = that.lastObj
-    dest.lastTime = that.lastTime
-    dest.lastLogger = that.lastLogger
-  }
-}
-
-module.exports = {
-  noop,
-  buildSafeSonicBoom,
-  getPrettyStream,
-  asChindings,
-  asJson,
-  genLog,
-  createArgsNormalizer,
-  final,
-  stringify,
-  buildFormatters
-}
-
-
-/***/ }),
-/* 383 */,
-/* 384 */,
-/* 385 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-var isPlainObject = __webpack_require__(356);
-var universalUserAgent = __webpack_require__(526);
-
-function lowercaseKeys(object) {
-  if (!object) {
-    return {};
-  }
-
-  return Object.keys(object).reduce((newObj, key) => {
-    newObj[key.toLowerCase()] = object[key];
-    return newObj;
-  }, {});
-}
-
-function mergeDeep(defaults, options) {
-  const result = Object.assign({}, defaults);
-  Object.keys(options).forEach(key => {
-    if (isPlainObject.isPlainObject(options[key])) {
-      if (!(key in defaults)) Object.assign(result, {
-        [key]: options[key]
-      });else result[key] = mergeDeep(defaults[key], options[key]);
-    } else {
-      Object.assign(result, {
-        [key]: options[key]
-      });
-    }
-  });
-  return result;
-}
-
-function merge(defaults, route, options) {
-  if (typeof route === "string") {
-    let [method, url] = route.split(" ");
-    options = Object.assign(url ? {
-      method,
-      url
-    } : {
-      url: method
-    }, options);
-  } else {
-    options = Object.assign({}, route);
-  } // lowercase header names before merging with defaults to avoid duplicates
-
-
-  options.headers = lowercaseKeys(options.headers);
-  const mergedOptions = mergeDeep(defaults || {}, options); // mediaType.previews arrays are merged, instead of overwritten
-
-  if (defaults && defaults.mediaType.previews.length) {
-    mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(preview => !mergedOptions.mediaType.previews.includes(preview)).concat(mergedOptions.mediaType.previews);
-  }
-
-  mergedOptions.mediaType.previews = mergedOptions.mediaType.previews.map(preview => preview.replace(/-preview/, ""));
-  return mergedOptions;
-}
-
-function addQueryParameters(url, parameters) {
-  const separator = /\?/.test(url) ? "&" : "?";
-  const names = Object.keys(parameters);
-
-  if (names.length === 0) {
-    return url;
-  }
-
-  return url + separator + names.map(name => {
-    if (name === "q") {
-      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
-    }
-
-    return `${name}=${encodeURIComponent(parameters[name])}`;
-  }).join("&");
-}
-
-const urlVariableRegex = /\{[^}]+\}/g;
-
-function removeNonChars(variableName) {
-  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
-}
-
-function extractUrlVariableNames(url) {
-  const matches = url.match(urlVariableRegex);
-
-  if (!matches) {
-    return [];
-  }
-
-  return matches.map(removeNonChars).reduce((a, b) => a.concat(b), []);
-}
-
-function omit(object, keysToOmit) {
-  return Object.keys(object).filter(option => !keysToOmit.includes(option)).reduce((obj, key) => {
-    obj[key] = object[key];
-    return obj;
-  }, {});
-}
-
-// Based on https://github.com/bramstein/url-template, licensed under BSD
-// TODO: create separate package.
-//
-// Copyright (c) 2012-2014, Bram Stein
-// All rights reserved.
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  1. Redistributions of source code must retain the above copyright
-//     notice, this list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright
-//     notice, this list of conditions and the following disclaimer in the
-//     documentation and/or other materials provided with the distribution.
-//  3. The name of the author may not be used to endorse or promote products
-//     derived from this software without specific prior written permission.
-// THIS SOFTWARE IS PROVIDED BY THE AUTHOR "AS IS" AND ANY EXPRESS OR IMPLIED
-// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
-// EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-// EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-/* istanbul ignore file */
-function encodeReserved(str) {
-  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function (part) {
-    if (!/%[0-9A-Fa-f]/.test(part)) {
-      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
-    }
-
-    return part;
-  }).join("");
-}
-
-function encodeUnreserved(str) {
-  return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
-    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
-  });
-}
-
-function encodeValue(operator, value, key) {
-  value = operator === "+" || operator === "#" ? encodeReserved(value) : encodeUnreserved(value);
-
-  if (key) {
-    return encodeUnreserved(key) + "=" + value;
-  } else {
-    return value;
-  }
-}
-
-function isDefined(value) {
-  return value !== undefined && value !== null;
-}
-
-function isKeyOperator(operator) {
-  return operator === ";" || operator === "&" || operator === "?";
-}
-
-function getValues(context, operator, key, modifier) {
-  var value = context[key],
-      result = [];
-
-  if (isDefined(value) && value !== "") {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      value = value.toString();
-
-      if (modifier && modifier !== "*") {
-        value = value.substring(0, parseInt(modifier, 10));
-      }
-
-      result.push(encodeValue(operator, value, isKeyOperator(operator) ? key : ""));
-    } else {
-      if (modifier === "*") {
-        if (Array.isArray(value)) {
-          value.filter(isDefined).forEach(function (value) {
-            result.push(encodeValue(operator, value, isKeyOperator(operator) ? key : ""));
-          });
-        } else {
-          Object.keys(value).forEach(function (k) {
-            if (isDefined(value[k])) {
-              result.push(encodeValue(operator, value[k], k));
-            }
-          });
-        }
-      } else {
-        const tmp = [];
-
-        if (Array.isArray(value)) {
-          value.filter(isDefined).forEach(function (value) {
-            tmp.push(encodeValue(operator, value));
-          });
-        } else {
-          Object.keys(value).forEach(function (k) {
-            if (isDefined(value[k])) {
-              tmp.push(encodeUnreserved(k));
-              tmp.push(encodeValue(operator, value[k].toString()));
-            }
-          });
-        }
-
-        if (isKeyOperator(operator)) {
-          result.push(encodeUnreserved(key) + "=" + tmp.join(","));
-        } else if (tmp.length !== 0) {
-          result.push(tmp.join(","));
-        }
-      }
-    }
-  } else {
-    if (operator === ";") {
-      if (isDefined(value)) {
-        result.push(encodeUnreserved(key));
-      }
-    } else if (value === "" && (operator === "&" || operator === "?")) {
-      result.push(encodeUnreserved(key) + "=");
-    } else if (value === "") {
-      result.push("");
-    }
-  }
-
-  return result;
-}
-
-function parseUrl(template) {
-  return {
-    expand: expand.bind(null, template)
-  };
-}
-
-function expand(template, context) {
-  var operators = ["+", "#", ".", "/", ";", "?", "&"];
-  return template.replace(/\{([^\{\}]+)\}|([^\{\}]+)/g, function (_, expression, literal) {
-    if (expression) {
-      let operator = "";
-      const values = [];
-
-      if (operators.indexOf(expression.charAt(0)) !== -1) {
-        operator = expression.charAt(0);
-        expression = expression.substr(1);
-      }
-
-      expression.split(/,/g).forEach(function (variable) {
-        var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-        values.push(getValues(context, operator, tmp[1], tmp[2] || tmp[3]));
-      });
-
-      if (operator && operator !== "+") {
-        var separator = ",";
-
-        if (operator === "?") {
-          separator = "&";
-        } else if (operator !== "#") {
-          separator = operator;
-        }
-
-        return (values.length !== 0 ? operator : "") + values.join(separator);
-      } else {
-        return values.join(",");
-      }
-    } else {
-      return encodeReserved(literal);
-    }
-  });
-}
-
-function parse(options) {
-  // https://fetch.spec.whatwg.org/#methods
-  let method = options.method.toUpperCase(); // replace :varname with {varname} to make it RFC 6570 compatible
-
-  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{+$1}");
-  let headers = Object.assign({}, options.headers);
-  let body;
-  let parameters = omit(options, ["method", "baseUrl", "url", "headers", "request", "mediaType"]); // extract variable names from URL to calculate remaining variables later
-
-  const urlVariableNames = extractUrlVariableNames(url);
-  url = parseUrl(url).expand(parameters);
-
-  if (!/^http/.test(url)) {
-    url = options.baseUrl + url;
-  }
-
-  const omittedParameters = Object.keys(options).filter(option => urlVariableNames.includes(option)).concat("baseUrl");
-  const remainingParameters = omit(parameters, omittedParameters);
-  const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
-
-  if (!isBinaryRequest) {
-    if (options.mediaType.format) {
-      // e.g. application/vnd.github.v3+json => application/vnd.github.v3.raw
-      headers.accept = headers.accept.split(/,/).map(preview => preview.replace(/application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/, `application/vnd$1$2.${options.mediaType.format}`)).join(",");
-    }
-
-    if (options.mediaType.previews.length) {
-      const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
-      headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map(preview => {
-        const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
-        return `application/vnd.github.${preview}-preview${format}`;
-      }).join(",");
-    }
-  } // for GET/HEAD requests, set URL query parameters from remaining parameters
-  // for PATCH/POST/PUT/DELETE requests, set request body from remaining parameters
-
-
-  if (["GET", "HEAD"].includes(method)) {
-    url = addQueryParameters(url, remainingParameters);
-  } else {
-    if ("data" in remainingParameters) {
-      body = remainingParameters.data;
-    } else {
-      if (Object.keys(remainingParameters).length) {
-        body = remainingParameters;
-      } else {
-        headers["content-length"] = 0;
-      }
-    }
-  } // default content-type for JSON if body is set
-
-
-  if (!headers["content-type"] && typeof body !== "undefined") {
-    headers["content-type"] = "application/json; charset=utf-8";
-  } // GitHub expects 'content-length: 0' header for PUT/PATCH requests without body.
-  // fetch does not allow to set `content-length` header, but we can set body to an empty string
-
-
-  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
-    body = "";
-  } // Only return body/request keys if present
-
-
-  return Object.assign({
-    method,
-    url,
-    headers
-  }, typeof body !== "undefined" ? {
-    body
-  } : null, options.request ? {
-    request: options.request
-  } : null);
-}
-
-function endpointWithDefaults(defaults, route, options) {
-  return parse(merge(defaults, route, options));
-}
-
-function withDefaults(oldDefaults, newDefaults) {
-  const DEFAULTS = merge(oldDefaults, newDefaults);
-  const endpoint = endpointWithDefaults.bind(null, DEFAULTS);
-  return Object.assign(endpoint, {
-    DEFAULTS,
-    defaults: withDefaults.bind(null, DEFAULTS),
-    merge: merge.bind(null, DEFAULTS),
-    parse
-  });
-}
-
-const VERSION = "6.0.6";
-
-const userAgent = `octokit-endpoint.js/${VERSION} ${universalUserAgent.getUserAgent()}`; // DEFAULTS has all properties set that EndpointOptions has, except url.
-// So we use RequestParameters and add method as additional required property.
-
-const DEFAULTS = {
-  method: "GET",
-  baseUrl: "https://api.github.com",
-  headers: {
-    accept: "application/vnd.github.v3+json",
-    "user-agent": userAgent
-  },
-  mediaType: {
-    format: "",
-    previews: []
-  }
-};
-
-const endpoint = withDefaults(null, DEFAULTS);
-
-exports.endpoint = endpoint;
-//# sourceMappingURL=index.js.map
-
-
-/***/ }),
-/* 386 */,
-/* 387 */,
-/* 388 */,
-/* 389 */,
-/* 390 */,
-/* 391 */,
-/* 392 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-
-/* eslint no-prototype-builtins: 0 */
-
-const { EventEmitter } = __webpack_require__(759)
-const SonicBoom = __webpack_require__(450)
-const flatstr = __webpack_require__(649)
-const {
-  lsCacheSym,
-  levelValSym,
-  setLevelSym,
-  getLevelSym,
-  chindingsSym,
-  parsedChindingsSym,
-  mixinSym,
-  asJsonSym,
-  writeSym,
-  timeSym,
-  timeSliceIndexSym,
-  streamSym,
-  serializersSym,
-  formattersSym,
-  useOnlyCustomLevelsSym,
-  needsMetadataGsym
-} = __webpack_require__(230)
-const {
-  getLevel,
-  setLevel,
-  isLevelEnabled,
-  mappings,
-  initialLsCache,
-  genLsCache,
-  assertNoLevelCollisions
-} = __webpack_require__(136)
-const {
-  asChindings,
-  asJson,
-  buildFormatters
-} = __webpack_require__(382)
-const {
-  version
-} = __webpack_require__(331)
-
-// note: use of class is satirical
-// https://github.com/pinojs/pino/pull/433#pullrequestreview-127703127
-const constructor = class Pino {}
-const prototype = {
-  constructor,
-  child,
-  bindings,
-  setBindings,
-  flush,
-  isLevelEnabled,
-  version,
-  get level () { return this[getLevelSym]() },
-  set level (lvl) { this[setLevelSym](lvl) },
-  get levelVal () { return this[levelValSym] },
-  set levelVal (n) { throw Error('levelVal is read-only') },
-  [lsCacheSym]: initialLsCache,
-  [writeSym]: write,
-  [asJsonSym]: asJson,
-  [getLevelSym]: getLevel,
-  [setLevelSym]: setLevel
-}
-
-Object.setPrototypeOf(prototype, EventEmitter.prototype)
-
-// exporting and consuming the prototype object using factory pattern fixes scoping issues with getters when serializing
-module.exports = function () {
-  return Object.create(prototype)
-}
-
-const resetChildingsFormatter = bindings => bindings
-function child (bindings) {
-  if (!bindings) {
-    throw Error('missing bindings for child Pino')
-  }
-  const serializers = this[serializersSym]
-  const formatters = this[formattersSym]
-  const instance = Object.create(this)
-  if (bindings.hasOwnProperty('serializers') === true) {
-    instance[serializersSym] = Object.create(null)
-
-    for (var k in serializers) {
-      instance[serializersSym][k] = serializers[k]
-    }
-    const parentSymbols = Object.getOwnPropertySymbols(serializers)
-    for (var i = 0; i < parentSymbols.length; i++) {
-      const ks = parentSymbols[i]
-      instance[serializersSym][ks] = serializers[ks]
-    }
-
-    for (var bk in bindings.serializers) {
-      instance[serializersSym][bk] = bindings.serializers[bk]
-    }
-    const bindingsSymbols = Object.getOwnPropertySymbols(bindings.serializers)
-    for (var bi = 0; bi < bindingsSymbols.length; bi++) {
-      const bks = bindingsSymbols[bi]
-      instance[serializersSym][bks] = bindings.serializers[bks]
-    }
-  } else instance[serializersSym] = serializers
-  if (bindings.hasOwnProperty('formatters')) {
-    const { level, bindings: chindings, log } = bindings.formatters
-    instance[formattersSym] = buildFormatters(
-      level || formatters.level,
-      chindings || resetChildingsFormatter,
-      log || formatters.log
-    )
-  } else {
-    instance[formattersSym] = buildFormatters(
-      formatters.level,
-      resetChildingsFormatter,
-      formatters.log
-    )
-  }
-  if (bindings.hasOwnProperty('customLevels') === true) {
-    assertNoLevelCollisions(this.levels, bindings.customLevels)
-    instance.levels = mappings(bindings.customLevels, instance[useOnlyCustomLevelsSym])
-    genLsCache(instance)
-  }
-  instance[chindingsSym] = asChindings(instance, bindings)
-  const childLevel = bindings.level || this.level
-  instance[setLevelSym](childLevel)
-
-  return instance
-}
-
-function bindings () {
-  const chindings = this[chindingsSym]
-  var chindingsJson = `{${chindings.substr(1)}}` // at least contains ,"pid":7068,"hostname":"myMac"
-  var bindingsFromJson = JSON.parse(chindingsJson)
-  delete bindingsFromJson.pid
-  delete bindingsFromJson.hostname
-  return bindingsFromJson
-}
-
-function setBindings (newBindings) {
-  const chindings = asChindings(this, newBindings)
-  this[chindingsSym] = chindings
-  delete this[parsedChindingsSym]
-}
-
-function write (_obj, msg, num) {
-  const t = this[timeSym]()
-  const mixin = this[mixinSym]
-  const objError = _obj instanceof Error
-  var obj
-
-  if (_obj === undefined || _obj === null) {
-    obj = mixin ? mixin() : {}
-  } else {
-    obj = Object.assign(mixin ? mixin() : {}, _obj)
-    if (!msg && objError) {
-      msg = _obj.message
-    }
-
-    if (objError) {
-      obj.stack = _obj.stack
-      if (!obj.type) {
-        obj.type = 'Error'
-      }
-    }
-  }
-
-  const s = this[asJsonSym](obj, msg, num, t)
-
-  const stream = this[streamSym]
-  if (stream[needsMetadataGsym] === true) {
-    stream.lastLevel = num
-    stream.lastObj = obj
-    stream.lastMsg = msg
-    stream.lastTime = t.slice(this[timeSliceIndexSym])
-    stream.lastLogger = this // for child loggers
-  }
-  if (stream instanceof SonicBoom) stream.write(s)
-  else stream.write(flatstr(s))
-}
-
-function flush () {
-  const stream = this[streamSym]
-  if ('flush' in stream) stream.flush()
-}
-
-
-/***/ }),
-/* 393 */,
-/* 394 */,
-/* 395 */,
-/* 396 */,
-/* 397 */,
-/* 398 */,
-/* 399 */,
-/* 400 */,
-/* 401 */,
-/* 402 */,
-/* 403 */,
-/* 404 */,
-/* 405 */,
-/* 406 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-exports.__esModule = true;
-// istanbul ignore next
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var _handlebarsRuntime = __webpack_require__(131);
-
-var _handlebarsRuntime2 = _interopRequireDefault(_handlebarsRuntime);
-
-// Compiler imports
-
-var _handlebarsCompilerAst = __webpack_require__(154);
-
-var _handlebarsCompilerAst2 = _interopRequireDefault(_handlebarsCompilerAst);
-
-var _handlebarsCompilerBase = __webpack_require__(52);
-
-var _handlebarsCompilerCompiler = __webpack_require__(773);
-
-var _handlebarsCompilerJavascriptCompiler = __webpack_require__(632);
-
-var _handlebarsCompilerJavascriptCompiler2 = _interopRequireDefault(_handlebarsCompilerJavascriptCompiler);
-
-var _handlebarsCompilerVisitor = __webpack_require__(268);
-
-var _handlebarsCompilerVisitor2 = _interopRequireDefault(_handlebarsCompilerVisitor);
-
-var _handlebarsNoConflict = __webpack_require__(352);
-
-var _handlebarsNoConflict2 = _interopRequireDefault(_handlebarsNoConflict);
-
-var _create = _handlebarsRuntime2['default'].create;
-function create() {
-  var hb = _create();
-
-  hb.compile = function (input, options) {
-    return _handlebarsCompilerCompiler.compile(input, options, hb);
-  };
-  hb.precompile = function (input, options) {
-    return _handlebarsCompilerCompiler.precompile(input, options, hb);
-  };
-
-  hb.AST = _handlebarsCompilerAst2['default'];
-  hb.Compiler = _handlebarsCompilerCompiler.Compiler;
-  hb.JavaScriptCompiler = _handlebarsCompilerJavascriptCompiler2['default'];
-  hb.Parser = _handlebarsCompilerBase.parser;
-  hb.parse = _handlebarsCompilerBase.parse;
-  hb.parseWithoutProcessing = _handlebarsCompilerBase.parseWithoutProcessing;
-
-  return hb;
-}
-
-var inst = create();
-inst.create = create;
-
-_handlebarsNoConflict2['default'](inst);
-
-inst.Visitor = _handlebarsCompilerVisitor2['default'];
-
-inst['default'] = inst;
-
-exports['default'] = inst;
-module.exports = exports['default'];
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL2xpYi9oYW5kbGViYXJzLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7Ozs7aUNBQW9CLHNCQUFzQjs7Ozs7O3FDQUcxQiwyQkFBMkI7Ozs7c0NBS3BDLDRCQUE0Qjs7MENBQ1csZ0NBQWdDOztvREFDL0MsMkNBQTJDOzs7O3lDQUN0RCwrQkFBK0I7Ozs7b0NBRTVCLDBCQUEwQjs7OztBQUVqRCxJQUFJLE9BQU8sR0FBRywrQkFBUSxNQUFNLENBQUM7QUFDN0IsU0FBUyxNQUFNLEdBQUc7QUFDaEIsTUFBSSxFQUFFLEdBQUcsT0FBTyxFQUFFLENBQUM7O0FBRW5CLElBQUUsQ0FBQyxPQUFPLEdBQUcsVUFBUyxLQUFLLEVBQUUsT0FBTyxFQUFFO0FBQ3BDLFdBQU8sb0NBQVEsS0FBSyxFQUFFLE9BQU8sRUFBRSxFQUFFLENBQUMsQ0FBQztHQUNwQyxDQUFDO0FBQ0YsSUFBRSxDQUFDLFVBQVUsR0FBRyxVQUFTLEtBQUssRUFBRSxPQUFPLEVBQUU7QUFDdkMsV0FBTyx1Q0FBVyxLQUFLLEVBQUUsT0FBTyxFQUFFLEVBQUUsQ0FBQyxDQUFDO0dBQ3ZDLENBQUM7O0FBRUYsSUFBRSxDQUFDLEdBQUcscUNBQU0sQ0FBQztBQUNiLElBQUUsQ0FBQyxRQUFRLHVDQUFXLENBQUM7QUFDdkIsSUFBRSxDQUFDLGtCQUFrQixvREFBcUIsQ0FBQztBQUMzQyxJQUFFLENBQUMsTUFBTSxpQ0FBUyxDQUFDO0FBQ25CLElBQUUsQ0FBQyxLQUFLLGdDQUFRLENBQUM7QUFDakIsSUFBRSxDQUFDLHNCQUFzQixpREFBeUIsQ0FBQzs7QUFFbkQsU0FBTyxFQUFFLENBQUM7Q0FDWDs7QUFFRCxJQUFJLElBQUksR0FBRyxNQUFNLEVBQUUsQ0FBQztBQUNwQixJQUFJLENBQUMsTUFBTSxHQUFHLE1BQU0sQ0FBQzs7QUFFckIsa0NBQVcsSUFBSSxDQUFDLENBQUM7O0FBRWpCLElBQUksQ0FBQyxPQUFPLHlDQUFVLENBQUM7O0FBRXZCLElBQUksQ0FBQyxTQUFTLENBQUMsR0FBRyxJQUFJLENBQUM7O3FCQUVSLElBQUkiLCJmaWxlIjoiaGFuZGxlYmFycy5qcyIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCBydW50aW1lIGZyb20gJy4vaGFuZGxlYmFycy5ydW50aW1lJztcblxuLy8gQ29tcGlsZXIgaW1wb3J0c1xuaW1wb3J0IEFTVCBmcm9tICcuL2hhbmRsZWJhcnMvY29tcGlsZXIvYXN0JztcbmltcG9ydCB7XG4gIHBhcnNlciBhcyBQYXJzZXIsXG4gIHBhcnNlLFxuICBwYXJzZVdpdGhvdXRQcm9jZXNzaW5nXG59IGZyb20gJy4vaGFuZGxlYmFycy9jb21waWxlci9iYXNlJztcbmltcG9ydCB7IENvbXBpbGVyLCBjb21waWxlLCBwcmVjb21waWxlIH0gZnJvbSAnLi9oYW5kbGViYXJzL2NvbXBpbGVyL2NvbXBpbGVyJztcbmltcG9ydCBKYXZhU2NyaXB0Q29tcGlsZXIgZnJvbSAnLi9oYW5kbGViYXJzL2NvbXBpbGVyL2phdmFzY3JpcHQtY29tcGlsZXInO1xuaW1wb3J0IFZpc2l0b3IgZnJvbSAnLi9oYW5kbGViYXJzL2NvbXBpbGVyL3Zpc2l0b3InO1xuXG5pbXBvcnQgbm9Db25mbGljdCBmcm9tICcuL2hhbmRsZWJhcnMvbm8tY29uZmxpY3QnO1xuXG5sZXQgX2NyZWF0ZSA9IHJ1bnRpbWUuY3JlYXRlO1xuZnVuY3Rpb24gY3JlYXRlKCkge1xuICBsZXQgaGIgPSBfY3JlYXRlKCk7XG5cbiAgaGIuY29tcGlsZSA9IGZ1bmN0aW9uKGlucHV0LCBvcHRpb25zKSB7XG4gICAgcmV0dXJuIGNvbXBpbGUoaW5wdXQsIG9wdGlvbnMsIGhiKTtcbiAgfTtcbiAgaGIucHJlY29tcGlsZSA9IGZ1bmN0aW9uKGlucHV0LCBvcHRpb25zKSB7XG4gICAgcmV0dXJuIHByZWNvbXBpbGUoaW5wdXQsIG9wdGlvbnMsIGhiKTtcbiAgfTtcblxuICBoYi5BU1QgPSBBU1Q7XG4gIGhiLkNvbXBpbGVyID0gQ29tcGlsZXI7XG4gIGhiLkphdmFTY3JpcHRDb21waWxlciA9IEphdmFTY3JpcHRDb21waWxlcjtcbiAgaGIuUGFyc2VyID0gUGFyc2VyO1xuICBoYi5wYXJzZSA9IHBhcnNlO1xuICBoYi5wYXJzZVdpdGhvdXRQcm9jZXNzaW5nID0gcGFyc2VXaXRob3V0UHJvY2Vzc2luZztcblxuICByZXR1cm4gaGI7XG59XG5cbmxldCBpbnN0ID0gY3JlYXRlKCk7XG5pbnN0LmNyZWF0ZSA9IGNyZWF0ZTtcblxubm9Db25mbGljdChpbnN0KTtcblxuaW5zdC5WaXNpdG9yID0gVmlzaXRvcjtcblxuaW5zdFsnZGVmYXVsdCddID0gaW5zdDtcblxuZXhwb3J0IGRlZmF1bHQgaW5zdDtcbiJdfQ==
-
-
-/***/ }),
-/* 407 */,
-/* 408 */,
-/* 409 */,
-/* 410 */,
-/* 411 */,
-/* 412 */,
-/* 413 */
-/***/ (function(module) {
-
-module.exports = require("stream");
-
-/***/ }),
-/* 414 */,
-/* 415 */,
-/* 416 */
-/***/ (function(module) {
-
-// vim:ts=4:sts=4:sw=4:
-/*!
- *
- * Copyright 2009-2017 Kris Kowal under the terms of the MIT
- * license found at https://github.com/kriskowal/q/blob/v1/LICENSE
- *
- * With parts by Tyler Close
- * Copyright 2007-2009 Tyler Close under the terms of the MIT X license found
- * at http://www.opensource.org/licenses/mit-license.html
- * Forked at ref_send.js version: 2009-05-11
- *
- * With parts by Mark Miller
- * Copyright (C) 2011 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
-(function (definition) {
-    "use strict";
-
-    // This file will function properly as a <script> tag, or a module
-    // using CommonJS and NodeJS or RequireJS module formats.  In
-    // Common/Node/RequireJS, the module exports the Q API and when
-    // executed as a simple <script>, it creates a Q global instead.
-
-    // Montage Require
-    if (typeof bootstrap === "function") {
-        bootstrap("promise", definition);
-
-    // CommonJS
-    } else if (true) {
-        module.exports = definition();
-
-    // RequireJS
-    } else { var previousQ, global; }
-
-})(function () {
-"use strict";
-
-var hasStacks = false;
-try {
-    throw new Error();
-} catch (e) {
-    hasStacks = !!e.stack;
-}
-
-// All code after this point will be filtered from stack traces reported
-// by Q.
-var qStartingLine = captureLine();
-var qFileName;
-
-// shims
-
-// used for fallback in "allResolved"
-var noop = function () {};
-
-// Use the fastest possible means to execute a task in a future turn
-// of the event loop.
-var nextTick =(function () {
-    // linked list of tasks (single, with head node)
-    var head = {task: void 0, next: null};
-    var tail = head;
-    var flushing = false;
-    var requestTick = void 0;
-    var isNodeJS = false;
-    // queue for late tasks, used by unhandled rejection tracking
-    var laterQueue = [];
-
-    function flush() {
-        /* jshint loopfunc: true */
-        var task, domain;
-
-        while (head.next) {
-            head = head.next;
-            task = head.task;
-            head.task = void 0;
-            domain = head.domain;
-
-            if (domain) {
-                head.domain = void 0;
-                domain.enter();
-            }
-            runSingle(task, domain);
-
-        }
-        while (laterQueue.length) {
-            task = laterQueue.pop();
-            runSingle(task);
-        }
-        flushing = false;
-    }
-    // runs a single function in the async queue
-    function runSingle(task, domain) {
-        try {
-            task();
-
-        } catch (e) {
-            if (isNodeJS) {
-                // In node, uncaught exceptions are considered fatal errors.
-                // Re-throw them synchronously to interrupt flushing!
-
-                // Ensure continuation if the uncaught exception is suppressed
-                // listening "uncaughtException" events (as domains does).
-                // Continue in next event to avoid tick recursion.
-                if (domain) {
-                    domain.exit();
-                }
-                setTimeout(flush, 0);
-                if (domain) {
-                    domain.enter();
-                }
-
-                throw e;
-
-            } else {
-                // In browsers, uncaught exceptions are not fatal.
-                // Re-throw them asynchronously to avoid slow-downs.
-                setTimeout(function () {
-                    throw e;
-                }, 0);
-            }
-        }
-
-        if (domain) {
-            domain.exit();
-        }
-    }
-
-    nextTick = function (task) {
-        tail = tail.next = {
-            task: task,
-            domain: isNodeJS && process.domain,
-            next: null
-        };
-
-        if (!flushing) {
-            flushing = true;
-            requestTick();
-        }
-    };
-
-    if (typeof process === "object" &&
-        process.toString() === "[object process]" && process.nextTick) {
-        // Ensure Q is in a real Node environment, with a `process.nextTick`.
-        // To see through fake Node environments:
-        // * Mocha test runner - exposes a `process` global without a `nextTick`
-        // * Browserify - exposes a `process.nexTick` function that uses
-        //   `setTimeout`. In this case `setImmediate` is preferred because
-        //    it is faster. Browserify's `process.toString()` yields
-        //   "[object Object]", while in a real Node environment
-        //   `process.toString()` yields "[object process]".
-        isNodeJS = true;
-
-        requestTick = function () {
-            process.nextTick(flush);
-        };
-
-    } else if (typeof setImmediate === "function") {
-        // In IE10, Node.js 0.9+, or https://github.com/NobleJS/setImmediate
-        if (typeof window !== "undefined") {
-            requestTick = setImmediate.bind(window, flush);
-        } else {
-            requestTick = function () {
-                setImmediate(flush);
-            };
-        }
-
-    } else if (typeof MessageChannel !== "undefined") {
-        // modern browsers
-        // http://www.nonblocking.io/2011/06/windownexttick.html
-        var channel = new MessageChannel();
-        // At least Safari Version 6.0.5 (8536.30.1) intermittently cannot create
-        // working message ports the first time a page loads.
-        channel.port1.onmessage = function () {
-            requestTick = requestPortTick;
-            channel.port1.onmessage = flush;
-            flush();
-        };
-        var requestPortTick = function () {
-            // Opera requires us to provide a message payload, regardless of
-            // whether we use it.
-            channel.port2.postMessage(0);
-        };
-        requestTick = function () {
-            setTimeout(flush, 0);
-            requestPortTick();
-        };
-
-    } else {
-        // old browsers
-        requestTick = function () {
-            setTimeout(flush, 0);
-        };
-    }
-    // runs a task after all other tasks have been run
-    // this is useful for unhandled rejection tracking that needs to happen
-    // after all `then`d tasks have been run.
-    nextTick.runAfter = function (task) {
-        laterQueue.push(task);
-        if (!flushing) {
-            flushing = true;
-            requestTick();
-        }
-    };
-    return nextTick;
-})();
-
-// Attempt to make generics safe in the face of downstream
-// modifications.
-// There is no situation where this is necessary.
-// If you need a security guarantee, these primordials need to be
-// deeply frozen anyway, and if you don’t need a security guarantee,
-// this is just plain paranoid.
-// However, this **might** have the nice side-effect of reducing the size of
-// the minified code by reducing x.call() to merely x()
-// See Mark Miller’s explanation of what this does.
-// http://wiki.ecmascript.org/doku.php?id=conventions:safe_meta_programming
-var call = Function.call;
-function uncurryThis(f) {
-    return function () {
-        return call.apply(f, arguments);
-    };
-}
-// This is equivalent, but slower:
-// uncurryThis = Function_bind.bind(Function_bind.call);
-// http://jsperf.com/uncurrythis
-
-var array_slice = uncurryThis(Array.prototype.slice);
-
-var array_reduce = uncurryThis(
-    Array.prototype.reduce || function (callback, basis) {
-        var index = 0,
-            length = this.length;
-        // concerning the initial value, if one is not provided
-        if (arguments.length === 1) {
-            // seek to the first value in the array, accounting
-            // for the possibility that is is a sparse array
-            do {
-                if (index in this) {
-                    basis = this[index++];
-                    break;
-                }
-                if (++index >= length) {
-                    throw new TypeError();
-                }
-            } while (1);
-        }
-        // reduce
-        for (; index < length; index++) {
-            // account for the possibility that the array is sparse
-            if (index in this) {
-                basis = callback(basis, this[index], index);
-            }
-        }
-        return basis;
-    }
-);
-
-var array_indexOf = uncurryThis(
-    Array.prototype.indexOf || function (value) {
-        // not a very good shim, but good enough for our one use of it
-        for (var i = 0; i < this.length; i++) {
-            if (this[i] === value) {
-                return i;
-            }
-        }
-        return -1;
-    }
-);
-
-var array_map = uncurryThis(
-    Array.prototype.map || function (callback, thisp) {
-        var self = this;
-        var collect = [];
-        array_reduce(self, function (undefined, value, index) {
-            collect.push(callback.call(thisp, value, index, self));
-        }, void 0);
-        return collect;
-    }
-);
-
-var object_create = Object.create || function (prototype) {
-    function Type() { }
-    Type.prototype = prototype;
-    return new Type();
-};
-
-var object_defineProperty = Object.defineProperty || function (obj, prop, descriptor) {
-    obj[prop] = descriptor.value;
-    return obj;
-};
-
-var object_hasOwnProperty = uncurryThis(Object.prototype.hasOwnProperty);
-
-var object_keys = Object.keys || function (object) {
-    var keys = [];
-    for (var key in object) {
-        if (object_hasOwnProperty(object, key)) {
-            keys.push(key);
-        }
-    }
-    return keys;
-};
-
-var object_toString = uncurryThis(Object.prototype.toString);
-
-function isObject(value) {
-    return value === Object(value);
-}
-
-// generator related shims
-
-// FIXME: Remove this function once ES6 generators are in SpiderMonkey.
-function isStopIteration(exception) {
-    return (
-        object_toString(exception) === "[object StopIteration]" ||
-        exception instanceof QReturnValue
-    );
-}
-
-// FIXME: Remove this helper and Q.return once ES6 generators are in
-// SpiderMonkey.
-var QReturnValue;
-if (typeof ReturnValue !== "undefined") {
-    QReturnValue = ReturnValue;
-} else {
-    QReturnValue = function (value) {
-        this.value = value;
-    };
-}
-
-// long stack traces
-
-var STACK_JUMP_SEPARATOR = "From previous event:";
-
-function makeStackTraceLong(error, promise) {
-    // If possible, transform the error stack trace by removing Node and Q
-    // cruft, then concatenating with the stack trace of `promise`. See #57.
-    if (hasStacks &&
-        promise.stack &&
-        typeof error === "object" &&
-        error !== null &&
-        error.stack
-    ) {
-        var stacks = [];
-        for (var p = promise; !!p; p = p.source) {
-            if (p.stack && (!error.__minimumStackCounter__ || error.__minimumStackCounter__ > p.stackCounter)) {
-                object_defineProperty(error, "__minimumStackCounter__", {value: p.stackCounter, configurable: true});
-                stacks.unshift(p.stack);
-            }
-        }
-        stacks.unshift(error.stack);
-
-        var concatedStacks = stacks.join("\n" + STACK_JUMP_SEPARATOR + "\n");
-        var stack = filterStackString(concatedStacks);
-        object_defineProperty(error, "stack", {value: stack, configurable: true});
-    }
-}
-
-function filterStackString(stackString) {
-    var lines = stackString.split("\n");
-    var desiredLines = [];
-    for (var i = 0; i < lines.length; ++i) {
-        var line = lines[i];
-
-        if (!isInternalFrame(line) && !isNodeFrame(line) && line) {
-            desiredLines.push(line);
-        }
-    }
-    return desiredLines.join("\n");
-}
-
-function isNodeFrame(stackLine) {
-    return stackLine.indexOf("(module.js:") !== -1 ||
-           stackLine.indexOf("(node.js:") !== -1;
-}
-
-function getFileNameAndLineNumber(stackLine) {
-    // Named functions: "at functionName (filename:lineNumber:columnNumber)"
-    // In IE10 function name can have spaces ("Anonymous function") O_o
-    var attempt1 = /at .+ \((.+):(\d+):(?:\d+)\)$/.exec(stackLine);
-    if (attempt1) {
-        return [attempt1[1], Number(attempt1[2])];
-    }
-
-    // Anonymous functions: "at filename:lineNumber:columnNumber"
-    var attempt2 = /at ([^ ]+):(\d+):(?:\d+)$/.exec(stackLine);
-    if (attempt2) {
-        return [attempt2[1], Number(attempt2[2])];
-    }
-
-    // Firefox style: "function@filename:lineNumber or @filename:lineNumber"
-    var attempt3 = /.*@(.+):(\d+)$/.exec(stackLine);
-    if (attempt3) {
-        return [attempt3[1], Number(attempt3[2])];
-    }
-}
-
-function isInternalFrame(stackLine) {
-    var fileNameAndLineNumber = getFileNameAndLineNumber(stackLine);
-
-    if (!fileNameAndLineNumber) {
-        return false;
-    }
-
-    var fileName = fileNameAndLineNumber[0];
-    var lineNumber = fileNameAndLineNumber[1];
-
-    return fileName === qFileName &&
-        lineNumber >= qStartingLine &&
-        lineNumber <= qEndingLine;
-}
-
-// discover own file name and line number range for filtering stack
-// traces
-function captureLine() {
-    if (!hasStacks) {
-        return;
-    }
-
-    try {
-        throw new Error();
-    } catch (e) {
-        var lines = e.stack.split("\n");
-        var firstLine = lines[0].indexOf("@") > 0 ? lines[1] : lines[2];
-        var fileNameAndLineNumber = getFileNameAndLineNumber(firstLine);
-        if (!fileNameAndLineNumber) {
-            return;
-        }
-
-        qFileName = fileNameAndLineNumber[0];
-        return fileNameAndLineNumber[1];
-    }
-}
-
-function deprecate(callback, name, alternative) {
-    return function () {
-        if (typeof console !== "undefined" &&
-            typeof console.warn === "function") {
-            console.warn(name + " is deprecated, use " + alternative +
-                         " instead.", new Error("").stack);
-        }
-        return callback.apply(callback, arguments);
-    };
-}
-
-// end of shims
-// beginning of real work
-
-/**
- * Constructs a promise for an immediate reference, passes promises through, or
- * coerces promises from different systems.
- * @param value immediate reference or promise
- */
-function Q(value) {
-    // If the object is already a Promise, return it directly.  This enables
-    // the resolve function to both be used to created references from objects,
-    // but to tolerably coerce non-promises to promises.
-    if (value instanceof Promise) {
-        return value;
-    }
-
-    // assimilate thenables
-    if (isPromiseAlike(value)) {
-        return coerce(value);
-    } else {
-        return fulfill(value);
-    }
-}
-Q.resolve = Q;
-
-/**
- * Performs a task in a future turn of the event loop.
- * @param {Function} task
- */
-Q.nextTick = nextTick;
-
-/**
- * Controls whether or not long stack traces will be on
- */
-Q.longStackSupport = false;
-
-/**
- * The counter is used to determine the stopping point for building
- * long stack traces. In makeStackTraceLong we walk backwards through
- * the linked list of promises, only stacks which were created before
- * the rejection are concatenated.
- */
-var longStackCounter = 1;
-
-// enable long stacks if Q_DEBUG is set
-if (typeof process === "object" && process && process.env && process.env.Q_DEBUG) {
-    Q.longStackSupport = true;
-}
-
-/**
- * Constructs a {promise, resolve, reject} object.
- *
- * `resolve` is a callback to invoke with a more resolved value for the
- * promise. To fulfill the promise, invoke `resolve` with any value that is
- * not a thenable. To reject the promise, invoke `resolve` with a rejected
- * thenable, or invoke `reject` with the reason directly. To resolve the
- * promise to another thenable, thus putting it in the same state, invoke
- * `resolve` with that other thenable.
- */
-Q.defer = defer;
-function defer() {
-    // if "messages" is an "Array", that indicates that the promise has not yet
-    // been resolved.  If it is "undefined", it has been resolved.  Each
-    // element of the messages array is itself an array of complete arguments to
-    // forward to the resolved promise.  We coerce the resolution value to a
-    // promise using the `resolve` function because it handles both fully
-    // non-thenable values and other thenables gracefully.
-    var messages = [], progressListeners = [], resolvedPromise;
-
-    var deferred = object_create(defer.prototype);
-    var promise = object_create(Promise.prototype);
-
-    promise.promiseDispatch = function (resolve, op, operands) {
-        var args = array_slice(arguments);
-        if (messages) {
-            messages.push(args);
-            if (op === "when" && operands[1]) { // progress operand
-                progressListeners.push(operands[1]);
-            }
-        } else {
-            Q.nextTick(function () {
-                resolvedPromise.promiseDispatch.apply(resolvedPromise, args);
-            });
-        }
-    };
-
-    // XXX deprecated
-    promise.valueOf = function () {
-        if (messages) {
-            return promise;
-        }
-        var nearerValue = nearer(resolvedPromise);
-        if (isPromise(nearerValue)) {
-            resolvedPromise = nearerValue; // shorten chain
-        }
-        return nearerValue;
-    };
-
-    promise.inspect = function () {
-        if (!resolvedPromise) {
-            return { state: "pending" };
-        }
-        return resolvedPromise.inspect();
-    };
-
-    if (Q.longStackSupport && hasStacks) {
-        try {
-            throw new Error();
-        } catch (e) {
-            // NOTE: don't try to use `Error.captureStackTrace` or transfer the
-            // accessor around; that causes memory leaks as per GH-111. Just
-            // reify the stack trace as a string ASAP.
-            //
-            // At the same time, cut off the first line; it's always just
-            // "[object Promise]\n", as per the `toString`.
-            promise.stack = e.stack.substring(e.stack.indexOf("\n") + 1);
-            promise.stackCounter = longStackCounter++;
-        }
-    }
-
-    // NOTE: we do the checks for `resolvedPromise` in each method, instead of
-    // consolidating them into `become`, since otherwise we'd create new
-    // promises with the lines `become(whatever(value))`. See e.g. GH-252.
-
-    function become(newPromise) {
-        resolvedPromise = newPromise;
-
-        if (Q.longStackSupport && hasStacks) {
-            // Only hold a reference to the new promise if long stacks
-            // are enabled to reduce memory usage
-            promise.source = newPromise;
-        }
-
-        array_reduce(messages, function (undefined, message) {
-            Q.nextTick(function () {
-                newPromise.promiseDispatch.apply(newPromise, message);
-            });
-        }, void 0);
-
-        messages = void 0;
-        progressListeners = void 0;
-    }
-
-    deferred.promise = promise;
-    deferred.resolve = function (value) {
-        if (resolvedPromise) {
-            return;
-        }
-
-        become(Q(value));
-    };
-
-    deferred.fulfill = function (value) {
-        if (resolvedPromise) {
-            return;
-        }
-
-        become(fulfill(value));
-    };
-    deferred.reject = function (reason) {
-        if (resolvedPromise) {
-            return;
-        }
-
-        become(reject(reason));
-    };
-    deferred.notify = function (progress) {
-        if (resolvedPromise) {
-            return;
-        }
-
-        array_reduce(progressListeners, function (undefined, progressListener) {
-            Q.nextTick(function () {
-                progressListener(progress);
-            });
-        }, void 0);
-    };
-
-    return deferred;
-}
-
-/**
- * Creates a Node-style callback that will resolve or reject the deferred
- * promise.
- * @returns a nodeback
- */
-defer.prototype.makeNodeResolver = function () {
-    var self = this;
-    return function (error, value) {
-        if (error) {
-            self.reject(error);
-        } else if (arguments.length > 2) {
-            self.resolve(array_slice(arguments, 1));
-        } else {
-            self.resolve(value);
-        }
-    };
-};
-
-/**
- * @param resolver {Function} a function that returns nothing and accepts
- * the resolve, reject, and notify functions for a deferred.
- * @returns a promise that may be resolved with the given resolve and reject
- * functions, or rejected by a thrown exception in resolver
- */
-Q.Promise = promise; // ES6
-Q.promise = promise;
-function promise(resolver) {
-    if (typeof resolver !== "function") {
-        throw new TypeError("resolver must be a function.");
-    }
-    var deferred = defer();
-    try {
-        resolver(deferred.resolve, deferred.reject, deferred.notify);
-    } catch (reason) {
-        deferred.reject(reason);
-    }
-    return deferred.promise;
-}
-
-promise.race = race; // ES6
-promise.all = all; // ES6
-promise.reject = reject; // ES6
-promise.resolve = Q; // ES6
-
-// XXX experimental.  This method is a way to denote that a local value is
-// serializable and should be immediately dispatched to a remote upon request,
-// instead of passing a reference.
-Q.passByCopy = function (object) {
-    //freeze(object);
-    //passByCopies.set(object, true);
-    return object;
-};
-
-Promise.prototype.passByCopy = function () {
-    //freeze(object);
-    //passByCopies.set(object, true);
-    return this;
-};
-
-/**
- * If two promises eventually fulfill to the same value, promises that value,
- * but otherwise rejects.
- * @param x {Any*}
- * @param y {Any*}
- * @returns {Any*} a promise for x and y if they are the same, but a rejection
- * otherwise.
- *
- */
-Q.join = function (x, y) {
-    return Q(x).join(y);
-};
-
-Promise.prototype.join = function (that) {
-    return Q([this, that]).spread(function (x, y) {
-        if (x === y) {
-            // TODO: "===" should be Object.is or equiv
-            return x;
-        } else {
-            throw new Error("Q can't join: not the same: " + x + " " + y);
-        }
-    });
-};
-
-/**
- * Returns a promise for the first of an array of promises to become settled.
- * @param answers {Array[Any*]} promises to race
- * @returns {Any*} the first promise to be settled
- */
-Q.race = race;
-function race(answerPs) {
-    return promise(function (resolve, reject) {
-        // Switch to this once we can assume at least ES5
-        // answerPs.forEach(function (answerP) {
-        //     Q(answerP).then(resolve, reject);
-        // });
-        // Use this in the meantime
-        for (var i = 0, len = answerPs.length; i < len; i++) {
-            Q(answerPs[i]).then(resolve, reject);
-        }
-    });
-}
-
-Promise.prototype.race = function () {
-    return this.then(Q.race);
-};
-
-/**
- * Constructs a Promise with a promise descriptor object and optional fallback
- * function.  The descriptor contains methods like when(rejected), get(name),
- * set(name, value), post(name, args), and delete(name), which all
- * return either a value, a promise for a value, or a rejection.  The fallback
- * accepts the operation name, a resolver, and any further arguments that would
- * have been forwarded to the appropriate method above had a method been
- * provided with the proper name.  The API makes no guarantees about the nature
- * of the returned object, apart from that it is usable whereever promises are
- * bought and sold.
- */
-Q.makePromise = Promise;
-function Promise(descriptor, fallback, inspect) {
-    if (fallback === void 0) {
-        fallback = function (op) {
-            return reject(new Error(
-                "Promise does not support operation: " + op
-            ));
-        };
-    }
-    if (inspect === void 0) {
-        inspect = function () {
-            return {state: "unknown"};
-        };
-    }
-
-    var promise = object_create(Promise.prototype);
-
-    promise.promiseDispatch = function (resolve, op, args) {
-        var result;
-        try {
-            if (descriptor[op]) {
-                result = descriptor[op].apply(promise, args);
-            } else {
-                result = fallback.call(promise, op, args);
-            }
-        } catch (exception) {
-            result = reject(exception);
-        }
-        if (resolve) {
-            resolve(result);
-        }
-    };
-
-    promise.inspect = inspect;
-
-    // XXX deprecated `valueOf` and `exception` support
-    if (inspect) {
-        var inspected = inspect();
-        if (inspected.state === "rejected") {
-            promise.exception = inspected.reason;
-        }
-
-        promise.valueOf = function () {
-            var inspected = inspect();
-            if (inspected.state === "pending" ||
-                inspected.state === "rejected") {
-                return promise;
-            }
-            return inspected.value;
-        };
-    }
-
-    return promise;
-}
-
-Promise.prototype.toString = function () {
-    return "[object Promise]";
-};
-
-Promise.prototype.then = function (fulfilled, rejected, progressed) {
-    var self = this;
-    var deferred = defer();
-    var done = false;   // ensure the untrusted promise makes at most a
-                        // single call to one of the callbacks
-
-    function _fulfilled(value) {
-        try {
-            return typeof fulfilled === "function" ? fulfilled(value) : value;
-        } catch (exception) {
-            return reject(exception);
-        }
-    }
-
-    function _rejected(exception) {
-        if (typeof rejected === "function") {
-            makeStackTraceLong(exception, self);
-            try {
-                return rejected(exception);
-            } catch (newException) {
-                return reject(newException);
-            }
-        }
-        return reject(exception);
-    }
-
-    function _progressed(value) {
-        return typeof progressed === "function" ? progressed(value) : value;
-    }
-
-    Q.nextTick(function () {
-        self.promiseDispatch(function (value) {
-            if (done) {
-                return;
-            }
-            done = true;
-
-            deferred.resolve(_fulfilled(value));
-        }, "when", [function (exception) {
-            if (done) {
-                return;
-            }
-            done = true;
-
-            deferred.resolve(_rejected(exception));
-        }]);
-    });
-
-    // Progress propagator need to be attached in the current tick.
-    self.promiseDispatch(void 0, "when", [void 0, function (value) {
-        var newValue;
-        var threw = false;
-        try {
-            newValue = _progressed(value);
-        } catch (e) {
-            threw = true;
-            if (Q.onerror) {
-                Q.onerror(e);
-            } else {
-                throw e;
-            }
-        }
-
-        if (!threw) {
-            deferred.notify(newValue);
-        }
-    }]);
-
-    return deferred.promise;
-};
-
-Q.tap = function (promise, callback) {
-    return Q(promise).tap(callback);
-};
-
-/**
- * Works almost like "finally", but not called for rejections.
- * Original resolution value is passed through callback unaffected.
- * Callback may return a promise that will be awaited for.
- * @param {Function} callback
- * @returns {Q.Promise}
- * @example
- * doSomething()
- *   .then(...)
- *   .tap(console.log)
- *   .then(...);
- */
-Promise.prototype.tap = function (callback) {
-    callback = Q(callback);
-
-    return this.then(function (value) {
-        return callback.fcall(value).thenResolve(value);
-    });
-};
-
-/**
- * Registers an observer on a promise.
- *
- * Guarantees:
- *
- * 1. that fulfilled and rejected will be called only once.
- * 2. that either the fulfilled callback or the rejected callback will be
- *    called, but not both.
- * 3. that fulfilled and rejected will not be called in this turn.
- *
- * @param value      promise or immediate reference to observe
- * @param fulfilled  function to be called with the fulfilled value
- * @param rejected   function to be called with the rejection exception
- * @param progressed function to be called on any progress notifications
- * @return promise for the return value from the invoked callback
- */
-Q.when = when;
-function when(value, fulfilled, rejected, progressed) {
-    return Q(value).then(fulfilled, rejected, progressed);
-}
-
-Promise.prototype.thenResolve = function (value) {
-    return this.then(function () { return value; });
-};
-
-Q.thenResolve = function (promise, value) {
-    return Q(promise).thenResolve(value);
-};
-
-Promise.prototype.thenReject = function (reason) {
-    return this.then(function () { throw reason; });
-};
-
-Q.thenReject = function (promise, reason) {
-    return Q(promise).thenReject(reason);
-};
-
-/**
- * If an object is not a promise, it is as "near" as possible.
- * If a promise is rejected, it is as "near" as possible too.
- * If it’s a fulfilled promise, the fulfillment value is nearer.
- * If it’s a deferred promise and the deferred has been resolved, the
- * resolution is "nearer".
- * @param object
- * @returns most resolved (nearest) form of the object
- */
-
-// XXX should we re-do this?
-Q.nearer = nearer;
-function nearer(value) {
-    if (isPromise(value)) {
-        var inspected = value.inspect();
-        if (inspected.state === "fulfilled") {
-            return inspected.value;
-        }
-    }
-    return value;
-}
-
-/**
- * @returns whether the given object is a promise.
- * Otherwise it is a fulfilled value.
- */
-Q.isPromise = isPromise;
-function isPromise(object) {
-    return object instanceof Promise;
-}
-
-Q.isPromiseAlike = isPromiseAlike;
-function isPromiseAlike(object) {
-    return isObject(object) && typeof object.then === "function";
-}
-
-/**
- * @returns whether the given object is a pending promise, meaning not
- * fulfilled or rejected.
- */
-Q.isPending = isPending;
-function isPending(object) {
-    return isPromise(object) && object.inspect().state === "pending";
-}
-
-Promise.prototype.isPending = function () {
-    return this.inspect().state === "pending";
-};
-
-/**
- * @returns whether the given object is a value or fulfilled
- * promise.
- */
-Q.isFulfilled = isFulfilled;
-function isFulfilled(object) {
-    return !isPromise(object) || object.inspect().state === "fulfilled";
-}
-
-Promise.prototype.isFulfilled = function () {
-    return this.inspect().state === "fulfilled";
-};
-
-/**
- * @returns whether the given object is a rejected promise.
- */
-Q.isRejected = isRejected;
-function isRejected(object) {
-    return isPromise(object) && object.inspect().state === "rejected";
-}
-
-Promise.prototype.isRejected = function () {
-    return this.inspect().state === "rejected";
-};
-
-//// BEGIN UNHANDLED REJECTION TRACKING
-
-// This promise library consumes exceptions thrown in handlers so they can be
-// handled by a subsequent promise.  The exceptions get added to this array when
-// they are created, and removed when they are handled.  Note that in ES6 or
-// shimmed environments, this would naturally be a `Set`.
-var unhandledReasons = [];
-var unhandledRejections = [];
-var reportedUnhandledRejections = [];
-var trackUnhandledRejections = true;
-
-function resetUnhandledRejections() {
-    unhandledReasons.length = 0;
-    unhandledRejections.length = 0;
-
-    if (!trackUnhandledRejections) {
-        trackUnhandledRejections = true;
-    }
-}
-
-function trackRejection(promise, reason) {
-    if (!trackUnhandledRejections) {
-        return;
-    }
-    if (typeof process === "object" && typeof process.emit === "function") {
-        Q.nextTick.runAfter(function () {
-            if (array_indexOf(unhandledRejections, promise) !== -1) {
-                process.emit("unhandledRejection", reason, promise);
-                reportedUnhandledRejections.push(promise);
-            }
-        });
-    }
-
-    unhandledRejections.push(promise);
-    if (reason && typeof reason.stack !== "undefined") {
-        unhandledReasons.push(reason.stack);
-    } else {
-        unhandledReasons.push("(no stack) " + reason);
-    }
-}
-
-function untrackRejection(promise) {
-    if (!trackUnhandledRejections) {
-        return;
-    }
-
-    var at = array_indexOf(unhandledRejections, promise);
-    if (at !== -1) {
-        if (typeof process === "object" && typeof process.emit === "function") {
-            Q.nextTick.runAfter(function () {
-                var atReport = array_indexOf(reportedUnhandledRejections, promise);
-                if (atReport !== -1) {
-                    process.emit("rejectionHandled", unhandledReasons[at], promise);
-                    reportedUnhandledRejections.splice(atReport, 1);
-                }
-            });
-        }
-        unhandledRejections.splice(at, 1);
-        unhandledReasons.splice(at, 1);
-    }
-}
-
-Q.resetUnhandledRejections = resetUnhandledRejections;
-
-Q.getUnhandledReasons = function () {
-    // Make a copy so that consumers can't interfere with our internal state.
-    return unhandledReasons.slice();
-};
-
-Q.stopUnhandledRejectionTracking = function () {
-    resetUnhandledRejections();
-    trackUnhandledRejections = false;
-};
-
-resetUnhandledRejections();
-
-//// END UNHANDLED REJECTION TRACKING
-
-/**
- * Constructs a rejected promise.
- * @param reason value describing the failure
- */
-Q.reject = reject;
-function reject(reason) {
-    var rejection = Promise({
-        "when": function (rejected) {
-            // note that the error has been handled
-            if (rejected) {
-                untrackRejection(this);
-            }
-            return rejected ? rejected(reason) : this;
-        }
-    }, function fallback() {
-        return this;
-    }, function inspect() {
-        return { state: "rejected", reason: reason };
-    });
-
-    // Note that the reason has not been handled.
-    trackRejection(rejection, reason);
-
-    return rejection;
-}
-
-/**
- * Constructs a fulfilled promise for an immediate reference.
- * @param value immediate reference
- */
-Q.fulfill = fulfill;
-function fulfill(value) {
-    return Promise({
-        "when": function () {
-            return value;
-        },
-        "get": function (name) {
-            return value[name];
-        },
-        "set": function (name, rhs) {
-            value[name] = rhs;
-        },
-        "delete": function (name) {
-            delete value[name];
-        },
-        "post": function (name, args) {
-            // Mark Miller proposes that post with no name should apply a
-            // promised function.
-            if (name === null || name === void 0) {
-                return value.apply(void 0, args);
-            } else {
-                return value[name].apply(value, args);
-            }
-        },
-        "apply": function (thisp, args) {
-            return value.apply(thisp, args);
-        },
-        "keys": function () {
-            return object_keys(value);
-        }
-    }, void 0, function inspect() {
-        return { state: "fulfilled", value: value };
-    });
-}
-
-/**
- * Converts thenables to Q promises.
- * @param promise thenable promise
- * @returns a Q promise
- */
-function coerce(promise) {
-    var deferred = defer();
-    Q.nextTick(function () {
-        try {
-            promise.then(deferred.resolve, deferred.reject, deferred.notify);
-        } catch (exception) {
-            deferred.reject(exception);
-        }
-    });
-    return deferred.promise;
-}
-
-/**
- * Annotates an object such that it will never be
- * transferred away from this process over any promise
- * communication channel.
- * @param object
- * @returns promise a wrapping of that object that
- * additionally responds to the "isDef" message
- * without a rejection.
- */
-Q.master = master;
-function master(object) {
-    return Promise({
-        "isDef": function () {}
-    }, function fallback(op, args) {
-        return dispatch(object, op, args);
-    }, function () {
-        return Q(object).inspect();
-    });
-}
-
-/**
- * Spreads the values of a promised array of arguments into the
- * fulfillment callback.
- * @param fulfilled callback that receives variadic arguments from the
- * promised array
- * @param rejected callback that receives the exception if the promise
- * is rejected.
- * @returns a promise for the return value or thrown exception of
- * either callback.
- */
-Q.spread = spread;
-function spread(value, fulfilled, rejected) {
-    return Q(value).spread(fulfilled, rejected);
-}
-
-Promise.prototype.spread = function (fulfilled, rejected) {
-    return this.all().then(function (array) {
-        return fulfilled.apply(void 0, array);
-    }, rejected);
-};
-
-/**
- * The async function is a decorator for generator functions, turning
- * them into asynchronous generators.  Although generators are only part
- * of the newest ECMAScript 6 drafts, this code does not cause syntax
- * errors in older engines.  This code should continue to work and will
- * in fact improve over time as the language improves.
- *
- * ES6 generators are currently part of V8 version 3.19 with the
- * --harmony-generators runtime flag enabled.  SpiderMonkey has had them
- * for longer, but under an older Python-inspired form.  This function
- * works on both kinds of generators.
- *
- * Decorates a generator function such that:
- *  - it may yield promises
- *  - execution will continue when that promise is fulfilled
- *  - the value of the yield expression will be the fulfilled value
- *  - it returns a promise for the return value (when the generator
- *    stops iterating)
- *  - the decorated function returns a promise for the return value
- *    of the generator or the first rejected promise among those
- *    yielded.
- *  - if an error is thrown in the generator, it propagates through
- *    every following yield until it is caught, or until it escapes
- *    the generator function altogether, and is translated into a
- *    rejection for the promise returned by the decorated generator.
- */
-Q.async = async;
-function async(makeGenerator) {
-    return function () {
-        // when verb is "send", arg is a value
-        // when verb is "throw", arg is an exception
-        function continuer(verb, arg) {
-            var result;
-
-            // Until V8 3.19 / Chromium 29 is released, SpiderMonkey is the only
-            // engine that has a deployed base of browsers that support generators.
-            // However, SM's generators use the Python-inspired semantics of
-            // outdated ES6 drafts.  We would like to support ES6, but we'd also
-            // like to make it possible to use generators in deployed browsers, so
-            // we also support Python-style generators.  At some point we can remove
-            // this block.
-
-            if (typeof StopIteration === "undefined") {
-                // ES6 Generators
-                try {
-                    result = generator[verb](arg);
-                } catch (exception) {
-                    return reject(exception);
-                }
-                if (result.done) {
-                    return Q(result.value);
-                } else {
-                    return when(result.value, callback, errback);
-                }
-            } else {
-                // SpiderMonkey Generators
-                // FIXME: Remove this case when SM does ES6 generators.
-                try {
-                    result = generator[verb](arg);
-                } catch (exception) {
-                    if (isStopIteration(exception)) {
-                        return Q(exception.value);
-                    } else {
-                        return reject(exception);
-                    }
-                }
-                return when(result, callback, errback);
-            }
-        }
-        var generator = makeGenerator.apply(this, arguments);
-        var callback = continuer.bind(continuer, "next");
-        var errback = continuer.bind(continuer, "throw");
-        return callback();
-    };
-}
-
-/**
- * The spawn function is a small wrapper around async that immediately
- * calls the generator and also ends the promise chain, so that any
- * unhandled errors are thrown instead of forwarded to the error
- * handler. This is useful because it's extremely common to run
- * generators at the top-level to work with libraries.
- */
-Q.spawn = spawn;
-function spawn(makeGenerator) {
-    Q.done(Q.async(makeGenerator)());
-}
-
-// FIXME: Remove this interface once ES6 generators are in SpiderMonkey.
-/**
- * Throws a ReturnValue exception to stop an asynchronous generator.
- *
- * This interface is a stop-gap measure to support generator return
- * values in older Firefox/SpiderMonkey.  In browsers that support ES6
- * generators like Chromium 29, just use "return" in your generator
- * functions.
- *
- * @param value the return value for the surrounding generator
- * @throws ReturnValue exception with the value.
- * @example
- * // ES6 style
- * Q.async(function* () {
- *      var foo = yield getFooPromise();
- *      var bar = yield getBarPromise();
- *      return foo + bar;
- * })
- * // Older SpiderMonkey style
- * Q.async(function () {
- *      var foo = yield getFooPromise();
- *      var bar = yield getBarPromise();
- *      Q.return(foo + bar);
- * })
- */
-Q["return"] = _return;
-function _return(value) {
-    throw new QReturnValue(value);
-}
-
-/**
- * The promised function decorator ensures that any promise arguments
- * are settled and passed as values (`this` is also settled and passed
- * as a value).  It will also ensure that the result of a function is
- * always a promise.
- *
- * @example
- * var add = Q.promised(function (a, b) {
- *     return a + b;
- * });
- * add(Q(a), Q(B));
- *
- * @param {function} callback The function to decorate
- * @returns {function} a function that has been decorated.
- */
-Q.promised = promised;
-function promised(callback) {
-    return function () {
-        return spread([this, all(arguments)], function (self, args) {
-            return callback.apply(self, args);
-        });
-    };
-}
-
-/**
- * sends a message to a value in a future turn
- * @param object* the recipient
- * @param op the name of the message operation, e.g., "when",
- * @param args further arguments to be forwarded to the operation
- * @returns result {Promise} a promise for the result of the operation
- */
-Q.dispatch = dispatch;
-function dispatch(object, op, args) {
-    return Q(object).dispatch(op, args);
-}
-
-Promise.prototype.dispatch = function (op, args) {
-    var self = this;
-    var deferred = defer();
-    Q.nextTick(function () {
-        self.promiseDispatch(deferred.resolve, op, args);
-    });
-    return deferred.promise;
-};
-
-/**
- * Gets the value of a property in a future turn.
- * @param object    promise or immediate reference for target object
- * @param name      name of property to get
- * @return promise for the property value
- */
-Q.get = function (object, key) {
-    return Q(object).dispatch("get", [key]);
-};
-
-Promise.prototype.get = function (key) {
-    return this.dispatch("get", [key]);
-};
-
-/**
- * Sets the value of a property in a future turn.
- * @param object    promise or immediate reference for object object
- * @param name      name of property to set
- * @param value     new value of property
- * @return promise for the return value
- */
-Q.set = function (object, key, value) {
-    return Q(object).dispatch("set", [key, value]);
-};
-
-Promise.prototype.set = function (key, value) {
-    return this.dispatch("set", [key, value]);
-};
-
-/**
- * Deletes a property in a future turn.
- * @param object    promise or immediate reference for target object
- * @param name      name of property to delete
- * @return promise for the return value
- */
-Q.del = // XXX legacy
-Q["delete"] = function (object, key) {
-    return Q(object).dispatch("delete", [key]);
-};
-
-Promise.prototype.del = // XXX legacy
-Promise.prototype["delete"] = function (key) {
-    return this.dispatch("delete", [key]);
-};
-
-/**
- * Invokes a method in a future turn.
- * @param object    promise or immediate reference for target object
- * @param name      name of method to invoke
- * @param value     a value to post, typically an array of
- *                  invocation arguments for promises that
- *                  are ultimately backed with `resolve` values,
- *                  as opposed to those backed with URLs
- *                  wherein the posted value can be any
- *                  JSON serializable object.
- * @return promise for the return value
- */
-// bound locally because it is used by other methods
-Q.mapply = // XXX As proposed by "Redsandro"
-Q.post = function (object, name, args) {
-    return Q(object).dispatch("post", [name, args]);
-};
-
-Promise.prototype.mapply = // XXX As proposed by "Redsandro"
-Promise.prototype.post = function (name, args) {
-    return this.dispatch("post", [name, args]);
-};
-
-/**
- * Invokes a method in a future turn.
- * @param object    promise or immediate reference for target object
- * @param name      name of method to invoke
- * @param ...args   array of invocation arguments
- * @return promise for the return value
- */
-Q.send = // XXX Mark Miller's proposed parlance
-Q.mcall = // XXX As proposed by "Redsandro"
-Q.invoke = function (object, name /*...args*/) {
-    return Q(object).dispatch("post", [name, array_slice(arguments, 2)]);
-};
-
-Promise.prototype.send = // XXX Mark Miller's proposed parlance
-Promise.prototype.mcall = // XXX As proposed by "Redsandro"
-Promise.prototype.invoke = function (name /*...args*/) {
-    return this.dispatch("post", [name, array_slice(arguments, 1)]);
-};
-
-/**
- * Applies the promised function in a future turn.
- * @param object    promise or immediate reference for target function
- * @param args      array of application arguments
- */
-Q.fapply = function (object, args) {
-    return Q(object).dispatch("apply", [void 0, args]);
-};
-
-Promise.prototype.fapply = function (args) {
-    return this.dispatch("apply", [void 0, args]);
-};
-
-/**
- * Calls the promised function in a future turn.
- * @param object    promise or immediate reference for target function
- * @param ...args   array of application arguments
- */
-Q["try"] =
-Q.fcall = function (object /* ...args*/) {
-    return Q(object).dispatch("apply", [void 0, array_slice(arguments, 1)]);
-};
-
-Promise.prototype.fcall = function (/*...args*/) {
-    return this.dispatch("apply", [void 0, array_slice(arguments)]);
-};
-
-/**
- * Binds the promised function, transforming return values into a fulfilled
- * promise and thrown errors into a rejected one.
- * @param object    promise or immediate reference for target function
- * @param ...args   array of application arguments
- */
-Q.fbind = function (object /*...args*/) {
-    var promise = Q(object);
-    var args = array_slice(arguments, 1);
-    return function fbound() {
-        return promise.dispatch("apply", [
-            this,
-            args.concat(array_slice(arguments))
-        ]);
-    };
-};
-Promise.prototype.fbind = function (/*...args*/) {
-    var promise = this;
-    var args = array_slice(arguments);
-    return function fbound() {
-        return promise.dispatch("apply", [
-            this,
-            args.concat(array_slice(arguments))
-        ]);
-    };
-};
-
-/**
- * Requests the names of the owned properties of a promised
- * object in a future turn.
- * @param object    promise or immediate reference for target object
- * @return promise for the keys of the eventually settled object
- */
-Q.keys = function (object) {
-    return Q(object).dispatch("keys", []);
-};
-
-Promise.prototype.keys = function () {
-    return this.dispatch("keys", []);
-};
-
-/**
- * Turns an array of promises into a promise for an array.  If any of
- * the promises gets rejected, the whole array is rejected immediately.
- * @param {Array*} an array (or promise for an array) of values (or
- * promises for values)
- * @returns a promise for an array of the corresponding values
- */
-// By Mark Miller
-// http://wiki.ecmascript.org/doku.php?id=strawman:concurrency&rev=1308776521#allfulfilled
-Q.all = all;
-function all(promises) {
-    return when(promises, function (promises) {
-        var pendingCount = 0;
-        var deferred = defer();
-        array_reduce(promises, function (undefined, promise, index) {
-            var snapshot;
-            if (
-                isPromise(promise) &&
-                (snapshot = promise.inspect()).state === "fulfilled"
-            ) {
-                promises[index] = snapshot.value;
-            } else {
-                ++pendingCount;
-                when(
-                    promise,
-                    function (value) {
-                        promises[index] = value;
-                        if (--pendingCount === 0) {
-                            deferred.resolve(promises);
-                        }
-                    },
-                    deferred.reject,
-                    function (progress) {
-                        deferred.notify({ index: index, value: progress });
-                    }
-                );
-            }
-        }, void 0);
-        if (pendingCount === 0) {
-            deferred.resolve(promises);
-        }
-        return deferred.promise;
-    });
-}
-
-Promise.prototype.all = function () {
-    return all(this);
-};
-
-/**
- * Returns the first resolved promise of an array. Prior rejected promises are
- * ignored.  Rejects only if all promises are rejected.
- * @param {Array*} an array containing values or promises for values
- * @returns a promise fulfilled with the value of the first resolved promise,
- * or a rejected promise if all promises are rejected.
- */
-Q.any = any;
-
-function any(promises) {
-    if (promises.length === 0) {
-        return Q.resolve();
-    }
-
-    var deferred = Q.defer();
-    var pendingCount = 0;
-    array_reduce(promises, function (prev, current, index) {
-        var promise = promises[index];
-
-        pendingCount++;
-
-        when(promise, onFulfilled, onRejected, onProgress);
-        function onFulfilled(result) {
-            deferred.resolve(result);
-        }
-        function onRejected(err) {
-            pendingCount--;
-            if (pendingCount === 0) {
-                var rejection = err || new Error("" + err);
-
-                rejection.message = ("Q can't get fulfillment value from any promise, all " +
-                    "promises were rejected. Last error message: " + rejection.message);
-
-                deferred.reject(rejection);
-            }
-        }
-        function onProgress(progress) {
-            deferred.notify({
-                index: index,
-                value: progress
-            });
-        }
-    }, undefined);
-
-    return deferred.promise;
-}
-
-Promise.prototype.any = function () {
-    return any(this);
-};
-
-/**
- * Waits for all promises to be settled, either fulfilled or
- * rejected.  This is distinct from `all` since that would stop
- * waiting at the first rejection.  The promise returned by
- * `allResolved` will never be rejected.
- * @param promises a promise for an array (or an array) of promises
- * (or values)
- * @return a promise for an array of promises
- */
-Q.allResolved = deprecate(allResolved, "allResolved", "allSettled");
-function allResolved(promises) {
-    return when(promises, function (promises) {
-        promises = array_map(promises, Q);
-        return when(all(array_map(promises, function (promise) {
-            return when(promise, noop, noop);
-        })), function () {
-            return promises;
-        });
-    });
-}
-
-Promise.prototype.allResolved = function () {
-    return allResolved(this);
-};
-
-/**
- * @see Promise#allSettled
- */
-Q.allSettled = allSettled;
-function allSettled(promises) {
-    return Q(promises).allSettled();
-}
-
-/**
- * Turns an array of promises into a promise for an array of their states (as
- * returned by `inspect`) when they have all settled.
- * @param {Array[Any*]} values an array (or promise for an array) of values (or
- * promises for values)
- * @returns {Array[State]} an array of states for the respective values.
- */
-Promise.prototype.allSettled = function () {
-    return this.then(function (promises) {
-        return all(array_map(promises, function (promise) {
-            promise = Q(promise);
-            function regardless() {
-                return promise.inspect();
-            }
-            return promise.then(regardless, regardless);
-        }));
-    });
-};
-
-/**
- * Captures the failure of a promise, giving an oportunity to recover
- * with a callback.  If the given promise is fulfilled, the returned
- * promise is fulfilled.
- * @param {Any*} promise for something
- * @param {Function} callback to fulfill the returned promise if the
- * given promise is rejected
- * @returns a promise for the return value of the callback
- */
-Q.fail = // XXX legacy
-Q["catch"] = function (object, rejected) {
-    return Q(object).then(void 0, rejected);
-};
-
-Promise.prototype.fail = // XXX legacy
-Promise.prototype["catch"] = function (rejected) {
-    return this.then(void 0, rejected);
-};
-
-/**
- * Attaches a listener that can respond to progress notifications from a
- * promise's originating deferred. This listener receives the exact arguments
- * passed to ``deferred.notify``.
- * @param {Any*} promise for something
- * @param {Function} callback to receive any progress notifications
- * @returns the given promise, unchanged
- */
-Q.progress = progress;
-function progress(object, progressed) {
-    return Q(object).then(void 0, void 0, progressed);
-}
-
-Promise.prototype.progress = function (progressed) {
-    return this.then(void 0, void 0, progressed);
-};
-
-/**
- * Provides an opportunity to observe the settling of a promise,
- * regardless of whether the promise is fulfilled or rejected.  Forwards
- * the resolution to the returned promise when the callback is done.
- * The callback can return a promise to defer completion.
- * @param {Any*} promise
- * @param {Function} callback to observe the resolution of the given
- * promise, takes no arguments.
- * @returns a promise for the resolution of the given promise when
- * ``fin`` is done.
- */
-Q.fin = // XXX legacy
-Q["finally"] = function (object, callback) {
-    return Q(object)["finally"](callback);
-};
-
-Promise.prototype.fin = // XXX legacy
-Promise.prototype["finally"] = function (callback) {
-    if (!callback || typeof callback.apply !== "function") {
-        throw new Error("Q can't apply finally callback");
-    }
-    callback = Q(callback);
-    return this.then(function (value) {
-        return callback.fcall().then(function () {
-            return value;
-        });
-    }, function (reason) {
-        // TODO attempt to recycle the rejection with "this".
-        return callback.fcall().then(function () {
-            throw reason;
-        });
-    });
-};
-
-/**
- * Terminates a chain of promises, forcing rejections to be
- * thrown as exceptions.
- * @param {Any*} promise at the end of a chain of promises
- * @returns nothing
- */
-Q.done = function (object, fulfilled, rejected, progress) {
-    return Q(object).done(fulfilled, rejected, progress);
-};
-
-Promise.prototype.done = function (fulfilled, rejected, progress) {
-    var onUnhandledError = function (error) {
-        // forward to a future turn so that ``when``
-        // does not catch it and turn it into a rejection.
-        Q.nextTick(function () {
-            makeStackTraceLong(error, promise);
-            if (Q.onerror) {
-                Q.onerror(error);
-            } else {
-                throw error;
-            }
-        });
-    };
-
-    // Avoid unnecessary `nextTick`ing via an unnecessary `when`.
-    var promise = fulfilled || rejected || progress ?
-        this.then(fulfilled, rejected, progress) :
-        this;
-
-    if (typeof process === "object" && process && process.domain) {
-        onUnhandledError = process.domain.bind(onUnhandledError);
-    }
-
-    promise.then(void 0, onUnhandledError);
-};
-
-/**
- * Causes a promise to be rejected if it does not get fulfilled before
- * some milliseconds time out.
- * @param {Any*} promise
- * @param {Number} milliseconds timeout
- * @param {Any*} custom error message or Error object (optional)
- * @returns a promise for the resolution of the given promise if it is
- * fulfilled before the timeout, otherwise rejected.
- */
-Q.timeout = function (object, ms, error) {
-    return Q(object).timeout(ms, error);
-};
-
-Promise.prototype.timeout = function (ms, error) {
-    var deferred = defer();
-    var timeoutId = setTimeout(function () {
-        if (!error || "string" === typeof error) {
-            error = new Error(error || "Timed out after " + ms + " ms");
-            error.code = "ETIMEDOUT";
-        }
-        deferred.reject(error);
-    }, ms);
-
-    this.then(function (value) {
-        clearTimeout(timeoutId);
-        deferred.resolve(value);
-    }, function (exception) {
-        clearTimeout(timeoutId);
-        deferred.reject(exception);
-    }, deferred.notify);
-
-    return deferred.promise;
-};
-
-/**
- * Returns a promise for the given value (or promised value), some
- * milliseconds after it resolved. Passes rejections immediately.
- * @param {Any*} promise
- * @param {Number} milliseconds
- * @returns a promise for the resolution of the given promise after milliseconds
- * time has elapsed since the resolution of the given promise.
- * If the given promise rejects, that is passed immediately.
- */
-Q.delay = function (object, timeout) {
-    if (timeout === void 0) {
-        timeout = object;
-        object = void 0;
-    }
-    return Q(object).delay(timeout);
-};
-
-Promise.prototype.delay = function (timeout) {
-    return this.then(function (value) {
-        var deferred = defer();
-        setTimeout(function () {
-            deferred.resolve(value);
-        }, timeout);
-        return deferred.promise;
-    });
-};
-
-/**
- * Passes a continuation to a Node function, which is called with the given
- * arguments provided as an array, and returns a promise.
- *
- *      Q.nfapply(FS.readFile, [__filename])
- *      .then(function (content) {
- *      })
- *
- */
-Q.nfapply = function (callback, args) {
-    return Q(callback).nfapply(args);
-};
-
-Promise.prototype.nfapply = function (args) {
-    var deferred = defer();
-    var nodeArgs = array_slice(args);
-    nodeArgs.push(deferred.makeNodeResolver());
-    this.fapply(nodeArgs).fail(deferred.reject);
-    return deferred.promise;
-};
-
-/**
- * Passes a continuation to a Node function, which is called with the given
- * arguments provided individually, and returns a promise.
- * @example
- * Q.nfcall(FS.readFile, __filename)
- * .then(function (content) {
- * })
- *
- */
-Q.nfcall = function (callback /*...args*/) {
-    var args = array_slice(arguments, 1);
-    return Q(callback).nfapply(args);
-};
-
-Promise.prototype.nfcall = function (/*...args*/) {
-    var nodeArgs = array_slice(arguments);
-    var deferred = defer();
-    nodeArgs.push(deferred.makeNodeResolver());
-    this.fapply(nodeArgs).fail(deferred.reject);
-    return deferred.promise;
-};
-
-/**
- * Wraps a NodeJS continuation passing function and returns an equivalent
- * version that returns a promise.
- * @example
- * Q.nfbind(FS.readFile, __filename)("utf-8")
- * .then(console.log)
- * .done()
- */
-Q.nfbind =
-Q.denodeify = function (callback /*...args*/) {
-    if (callback === undefined) {
-        throw new Error("Q can't wrap an undefined function");
-    }
-    var baseArgs = array_slice(arguments, 1);
-    return function () {
-        var nodeArgs = baseArgs.concat(array_slice(arguments));
-        var deferred = defer();
-        nodeArgs.push(deferred.makeNodeResolver());
-        Q(callback).fapply(nodeArgs).fail(deferred.reject);
-        return deferred.promise;
-    };
-};
-
-Promise.prototype.nfbind =
-Promise.prototype.denodeify = function (/*...args*/) {
-    var args = array_slice(arguments);
-    args.unshift(this);
-    return Q.denodeify.apply(void 0, args);
-};
-
-Q.nbind = function (callback, thisp /*...args*/) {
-    var baseArgs = array_slice(arguments, 2);
-    return function () {
-        var nodeArgs = baseArgs.concat(array_slice(arguments));
-        var deferred = defer();
-        nodeArgs.push(deferred.makeNodeResolver());
-        function bound() {
-            return callback.apply(thisp, arguments);
-        }
-        Q(bound).fapply(nodeArgs).fail(deferred.reject);
-        return deferred.promise;
-    };
-};
-
-Promise.prototype.nbind = function (/*thisp, ...args*/) {
-    var args = array_slice(arguments, 0);
-    args.unshift(this);
-    return Q.nbind.apply(void 0, args);
-};
-
-/**
- * Calls a method of a Node-style object that accepts a Node-style
- * callback with a given array of arguments, plus a provided callback.
- * @param object an object that has the named method
- * @param {String} name name of the method of object
- * @param {Array} args arguments to pass to the method; the callback
- * will be provided by Q and appended to these arguments.
- * @returns a promise for the value or error
- */
-Q.nmapply = // XXX As proposed by "Redsandro"
-Q.npost = function (object, name, args) {
-    return Q(object).npost(name, args);
-};
-
-Promise.prototype.nmapply = // XXX As proposed by "Redsandro"
-Promise.prototype.npost = function (name, args) {
-    var nodeArgs = array_slice(args || []);
-    var deferred = defer();
-    nodeArgs.push(deferred.makeNodeResolver());
-    this.dispatch("post", [name, nodeArgs]).fail(deferred.reject);
-    return deferred.promise;
-};
-
-/**
- * Calls a method of a Node-style object that accepts a Node-style
- * callback, forwarding the given variadic arguments, plus a provided
- * callback argument.
- * @param object an object that has the named method
- * @param {String} name name of the method of object
- * @param ...args arguments to pass to the method; the callback will
- * be provided by Q and appended to these arguments.
- * @returns a promise for the value or error
- */
-Q.nsend = // XXX Based on Mark Miller's proposed "send"
-Q.nmcall = // XXX Based on "Redsandro's" proposal
-Q.ninvoke = function (object, name /*...args*/) {
-    var nodeArgs = array_slice(arguments, 2);
-    var deferred = defer();
-    nodeArgs.push(deferred.makeNodeResolver());
-    Q(object).dispatch("post", [name, nodeArgs]).fail(deferred.reject);
-    return deferred.promise;
-};
-
-Promise.prototype.nsend = // XXX Based on Mark Miller's proposed "send"
-Promise.prototype.nmcall = // XXX Based on "Redsandro's" proposal
-Promise.prototype.ninvoke = function (name /*...args*/) {
-    var nodeArgs = array_slice(arguments, 1);
-    var deferred = defer();
-    nodeArgs.push(deferred.makeNodeResolver());
-    this.dispatch("post", [name, nodeArgs]).fail(deferred.reject);
-    return deferred.promise;
-};
-
-/**
- * If a function would like to support both Node continuation-passing-style and
- * promise-returning-style, it can end its internal promise chain with
- * `nodeify(nodeback)`, forwarding the optional nodeback argument.  If the user
- * elects to use a nodeback, the result will be sent there.  If they do not
- * pass a nodeback, they will receive the result promise.
- * @param object a result (or a promise for a result)
- * @param {Function} nodeback a Node.js-style callback
- * @returns either the promise or nothing
- */
-Q.nodeify = nodeify;
-function nodeify(object, nodeback) {
-    return Q(object).nodeify(nodeback);
-}
-
-Promise.prototype.nodeify = function (nodeback) {
-    if (nodeback) {
-        this.then(function (value) {
-            Q.nextTick(function () {
-                nodeback(null, value);
-            });
-        }, function (error) {
-            Q.nextTick(function () {
-                nodeback(error);
-            });
-        });
-    } else {
-        return this;
-    }
-};
-
-Q.noConflict = function() {
-    throw new Error("Q.noConflict only works when Q is used as a global");
-};
-
-// All code before this point will be filtered from stack traces.
-var qEndingLine = captureLine();
-
-return Q;
-
-});
-
-
-/***/ }),
-/* 417 */,
-/* 418 */,
-/* 419 */,
-/* 420 */,
-/* 421 */,
-/* 422 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.openPullRequest = void 0;
-const logger_1 = __webpack_require__(148);
-const DEFAULT_PRIMARY = 'master';
-/**
- * Create a GitHub PR on the upstream organization's repo
- * Throws an error if the GitHub API fails
- * @param {Octokit} octokit The authenticated octokit instance
- * @param {RepoDomain} upstream The upstream repository
- * @param {BranchDomain} origin The remote origin information that contains the origin branch
- * @param {Description} description The pull request title and detailed description
- * @param {boolean} maintainersCanModify Whether or not maintainers can modify the pull request. Default is true
- * @param {string} upstreamPrimary The upstream repository's primary branch. Default is master.
- * @returns {Promise<void>}
- */
-async function openPullRequest(octokit, upstream, origin, description, maintainersCanModify = true, upstreamPrimary = DEFAULT_PRIMARY) {
-    const head = `${origin.owner}:${origin.branch}`;
-    const existingPullRequest = (await octokit.pulls.list({
-        owner: upstream.owner,
-        repo: origin.repo,
-        head,
-    })).data.find(pr => pr.head.label === head);
-    if (existingPullRequest) {
-        logger_1.logger.info(`Found existing pull request for reference ${origin.owner}:${origin.branch}. Skipping creating a new pull request.`);
-        return existingPullRequest.number;
-    }
-    const pullResponseData = (await octokit.pulls.create({
-        owner: upstream.owner,
-        repo: origin.repo,
-        title: description.title,
-        head: `${origin.owner}:${origin.branch}`,
-        base: upstreamPrimary,
-        body: description.body,
-        maintainer_can_modify: maintainersCanModify,
-    })).data;
-    logger_1.logger.info(`Successfully opened pull request available at url: ${pullResponseData.url}.`);
-    return pullResponseData.number;
-}
-exports.openPullRequest = openPullRequest;
-//# sourceMappingURL=pull-request-handler.js.map
-
-/***/ }),
-/* 423 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-
-exports.__esModule = true;
-exports.extend = extend;
-exports.indexOf = indexOf;
-exports.escapeExpression = escapeExpression;
-exports.isEmpty = isEmpty;
-exports.createFrame = createFrame;
-exports.blockParams = blockParams;
-exports.appendContextPath = appendContextPath;
-var escape = {
-  '&': '&amp;',
-  '<': '&lt;',
-  '>': '&gt;',
-  '"': '&quot;',
-  "'": '&#x27;',
-  '`': '&#x60;',
-  '=': '&#x3D;'
-};
-
-var badChars = /[&<>"'`=]/g,
-    possible = /[&<>"'`=]/;
-
-function escapeChar(chr) {
-  return escape[chr];
-}
-
-function extend(obj /* , ...source */) {
-  for (var i = 1; i < arguments.length; i++) {
-    for (var key in arguments[i]) {
-      if (Object.prototype.hasOwnProperty.call(arguments[i], key)) {
-        obj[key] = arguments[i][key];
-      }
-    }
-  }
-
-  return obj;
-}
-
-var toString = Object.prototype.toString;
-
-exports.toString = toString;
-// Sourced from lodash
-// https://github.com/bestiejs/lodash/blob/master/LICENSE.txt
-/* eslint-disable func-style */
-var isFunction = function isFunction(value) {
-  return typeof value === 'function';
-};
-// fallback for older versions of Chrome and Safari
-/* istanbul ignore next */
-if (isFunction(/x/)) {
-  exports.isFunction = isFunction = function (value) {
-    return typeof value === 'function' && toString.call(value) === '[object Function]';
-  };
-}
-exports.isFunction = isFunction;
-
-/* eslint-enable func-style */
-
-/* istanbul ignore next */
-var isArray = Array.isArray || function (value) {
-  return value && typeof value === 'object' ? toString.call(value) === '[object Array]' : false;
-};
-
-exports.isArray = isArray;
-// Older IE versions do not directly support indexOf so we must implement our own, sadly.
-
-function indexOf(array, value) {
-  for (var i = 0, len = array.length; i < len; i++) {
-    if (array[i] === value) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-function escapeExpression(string) {
-  if (typeof string !== 'string') {
-    // don't escape SafeStrings, since they're already safe
-    if (string && string.toHTML) {
-      return string.toHTML();
-    } else if (string == null) {
-      return '';
-    } else if (!string) {
-      return string + '';
-    }
-
-    // Force a string conversion as this will be done by the append regardless and
-    // the regex test will do this transparently behind the scenes, causing issues if
-    // an object's to string has escaped characters in it.
-    string = '' + string;
-  }
-
-  if (!possible.test(string)) {
-    return string;
-  }
-  return string.replace(badChars, escapeChar);
-}
-
-function isEmpty(value) {
-  if (!value && value !== 0) {
-    return true;
-  } else if (isArray(value) && value.length === 0) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-function createFrame(object) {
-  var frame = extend({}, object);
-  frame._parent = object;
-  return frame;
-}
-
-function blockParams(params, ids) {
-  params.path = ids;
-  return params;
-}
-
-function appendContextPath(contextPath, id) {
-  return (contextPath ? contextPath + '.' : '') + id;
-}
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL3V0aWxzLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7QUFBQSxJQUFNLE1BQU0sR0FBRztBQUNiLEtBQUcsRUFBRSxPQUFPO0FBQ1osS0FBRyxFQUFFLE1BQU07QUFDWCxLQUFHLEVBQUUsTUFBTTtBQUNYLEtBQUcsRUFBRSxRQUFRO0FBQ2IsS0FBRyxFQUFFLFFBQVE7QUFDYixLQUFHLEVBQUUsUUFBUTtBQUNiLEtBQUcsRUFBRSxRQUFRO0NBQ2QsQ0FBQzs7QUFFRixJQUFNLFFBQVEsR0FBRyxZQUFZO0lBQzNCLFFBQVEsR0FBRyxXQUFXLENBQUM7O0FBRXpCLFNBQVMsVUFBVSxDQUFDLEdBQUcsRUFBRTtBQUN2QixTQUFPLE1BQU0sQ0FBQyxHQUFHLENBQUMsQ0FBQztDQUNwQjs7QUFFTSxTQUFTLE1BQU0sQ0FBQyxHQUFHLG9CQUFvQjtBQUM1QyxPQUFLLElBQUksQ0FBQyxHQUFHLENBQUMsRUFBRSxDQUFDLEdBQUcsU0FBUyxDQUFDLE1BQU0sRUFBRSxDQUFDLEVBQUUsRUFBRTtBQUN6QyxTQUFLLElBQUksR0FBRyxJQUFJLFNBQVMsQ0FBQyxDQUFDLENBQUMsRUFBRTtBQUM1QixVQUFJLE1BQU0sQ0FBQyxTQUFTLENBQUMsY0FBYyxDQUFDLElBQUksQ0FBQyxTQUFTLENBQUMsQ0FBQyxDQUFDLEVBQUUsR0FBRyxDQUFDLEVBQUU7QUFDM0QsV0FBRyxDQUFDLEdBQUcsQ0FBQyxHQUFHLFNBQVMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxHQUFHLENBQUMsQ0FBQztPQUM5QjtLQUNGO0dBQ0Y7O0FBRUQsU0FBTyxHQUFHLENBQUM7Q0FDWjs7QUFFTSxJQUFJLFFBQVEsR0FBRyxNQUFNLENBQUMsU0FBUyxDQUFDLFFBQVEsQ0FBQzs7Ozs7O0FBS2hELElBQUksVUFBVSxHQUFHLG9CQUFTLEtBQUssRUFBRTtBQUMvQixTQUFPLE9BQU8sS0FBSyxLQUFLLFVBQVUsQ0FBQztDQUNwQyxDQUFDOzs7QUFHRixJQUFJLFVBQVUsQ0FBQyxHQUFHLENBQUMsRUFBRTtBQUNuQixVQU9PLFVBQVUsR0FQakIsVUFBVSxHQUFHLFVBQVMsS0FBSyxFQUFFO0FBQzNCLFdBQ0UsT0FBTyxLQUFLLEtBQUssVUFBVSxJQUMzQixRQUFRLENBQUMsSUFBSSxDQUFDLEtBQUssQ0FBQyxLQUFLLG1CQUFtQixDQUM1QztHQUNILENBQUM7Q0FDSDtRQUNRLFVBQVUsR0FBVixVQUFVOzs7OztBQUlaLElBQU0sT0FBTyxHQUNsQixLQUFLLENBQUMsT0FBTyxJQUNiLFVBQVMsS0FBSyxFQUFFO0FBQ2QsU0FBTyxLQUFLLElBQUksT0FBTyxLQUFLLEtBQUssUUFBUSxHQUNyQyxRQUFRLENBQUMsSUFBSSxDQUFDLEtBQUssQ0FBQyxLQUFLLGdCQUFnQixHQUN6QyxLQUFLLENBQUM7Q0FDWCxDQUFDOzs7OztBQUdHLFNBQVMsT0FBTyxDQUFDLEtBQUssRUFBRSxLQUFLLEVBQUU7QUFDcEMsT0FBSyxJQUFJLENBQUMsR0FBRyxDQUFDLEVBQUUsR0FBRyxHQUFHLEtBQUssQ0FBQyxNQUFNLEVBQUUsQ0FBQyxHQUFHLEdBQUcsRUFBRSxDQUFDLEVBQUUsRUFBRTtBQUNoRCxRQUFJLEtBQUssQ0FBQyxDQUFDLENBQUMsS0FBSyxLQUFLLEVBQUU7QUFDdEIsYUFBTyxDQUFDLENBQUM7S0FDVjtHQUNGO0FBQ0QsU0FBTyxDQUFDLENBQUMsQ0FBQztDQUNYOztBQUVNLFNBQVMsZ0JBQWdCLENBQUMsTUFBTSxFQUFFO0FBQ3ZDLE1BQUksT0FBTyxNQUFNLEtBQUssUUFBUSxFQUFFOztBQUU5QixRQUFJLE1BQU0sSUFBSSxNQUFNLENBQUMsTUFBTSxFQUFFO0FBQzNCLGFBQU8sTUFBTSxDQUFDLE1BQU0sRUFBRSxDQUFDO0tBQ3hCLE1BQU0sSUFBSSxNQUFNLElBQUksSUFBSSxFQUFFO0FBQ3pCLGFBQU8sRUFBRSxDQUFDO0tBQ1gsTUFBTSxJQUFJLENBQUMsTUFBTSxFQUFFO0FBQ2xCLGFBQU8sTUFBTSxHQUFHLEVBQUUsQ0FBQztLQUNwQjs7Ozs7QUFLRCxVQUFNLEdBQUcsRUFBRSxHQUFHLE1BQU0sQ0FBQztHQUN0Qjs7QUFFRCxNQUFJLENBQUMsUUFBUSxDQUFDLElBQUksQ0FBQyxNQUFNLENBQUMsRUFBRTtBQUMxQixXQUFPLE1BQU0sQ0FBQztHQUNmO0FBQ0QsU0FBTyxNQUFNLENBQUMsT0FBTyxDQUFDLFFBQVEsRUFBRSxVQUFVLENBQUMsQ0FBQztDQUM3Qzs7QUFFTSxTQUFTLE9BQU8sQ0FBQyxLQUFLLEVBQUU7QUFDN0IsTUFBSSxDQUFDLEtBQUssSUFBSSxLQUFLLEtBQUssQ0FBQyxFQUFFO0FBQ3pCLFdBQU8sSUFBSSxDQUFDO0dBQ2IsTUFBTSxJQUFJLE9BQU8sQ0FBQyxLQUFLLENBQUMsSUFBSSxLQUFLLENBQUMsTUFBTSxLQUFLLENBQUMsRUFBRTtBQUMvQyxXQUFPLElBQUksQ0FBQztHQUNiLE1BQU07QUFDTCxXQUFPLEtBQUssQ0FBQztHQUNkO0NBQ0Y7O0FBRU0sU0FBUyxXQUFXLENBQUMsTUFBTSxFQUFFO0FBQ2xDLE1BQUksS0FBSyxHQUFHLE1BQU0sQ0FBQyxFQUFFLEVBQUUsTUFBTSxDQUFDLENBQUM7QUFDL0IsT0FBSyxDQUFDLE9BQU8sR0FBRyxNQUFNLENBQUM7QUFDdkIsU0FBTyxLQUFLLENBQUM7Q0FDZDs7QUFFTSxTQUFTLFdBQVcsQ0FBQyxNQUFNLEVBQUUsR0FBRyxFQUFFO0FBQ3ZDLFFBQU0sQ0FBQyxJQUFJLEdBQUcsR0FBRyxDQUFDO0FBQ2xCLFNBQU8sTUFBTSxDQUFDO0NBQ2Y7O0FBRU0sU0FBUyxpQkFBaUIsQ0FBQyxXQUFXLEVBQUUsRUFBRSxFQUFFO0FBQ2pELFNBQU8sQ0FBQyxXQUFXLEdBQUcsV0FBVyxHQUFHLEdBQUcsR0FBRyxFQUFFLENBQUEsR0FBSSxFQUFFLENBQUM7Q0FDcEQiLCJmaWxlIjoidXRpbHMuanMiLCJzb3VyY2VzQ29udGVudCI6WyJjb25zdCBlc2NhcGUgPSB7XG4gICcmJzogJyZhbXA7JyxcbiAgJzwnOiAnJmx0OycsXG4gICc+JzogJyZndDsnLFxuICAnXCInOiAnJnF1b3Q7JyxcbiAgXCInXCI6ICcmI3gyNzsnLFxuICAnYCc6ICcmI3g2MDsnLFxuICAnPSc6ICcmI3gzRDsnXG59O1xuXG5jb25zdCBiYWRDaGFycyA9IC9bJjw+XCInYD1dL2csXG4gIHBvc3NpYmxlID0gL1smPD5cIidgPV0vO1xuXG5mdW5jdGlvbiBlc2NhcGVDaGFyKGNocikge1xuICByZXR1cm4gZXNjYXBlW2Nocl07XG59XG5cbmV4cG9ydCBmdW5jdGlvbiBleHRlbmQob2JqIC8qICwgLi4uc291cmNlICovKSB7XG4gIGZvciAobGV0IGkgPSAxOyBpIDwgYXJndW1lbnRzLmxlbmd0aDsgaSsrKSB7XG4gICAgZm9yIChsZXQga2V5IGluIGFyZ3VtZW50c1tpXSkge1xuICAgICAgaWYgKE9iamVjdC5wcm90b3R5cGUuaGFzT3duUHJvcGVydHkuY2FsbChhcmd1bWVudHNbaV0sIGtleSkpIHtcbiAgICAgICAgb2JqW2tleV0gPSBhcmd1bWVudHNbaV1ba2V5XTtcbiAgICAgIH1cbiAgICB9XG4gIH1cblxuICByZXR1cm4gb2JqO1xufVxuXG5leHBvcnQgbGV0IHRvU3RyaW5nID0gT2JqZWN0LnByb3RvdHlwZS50b1N0cmluZztcblxuLy8gU291cmNlZCBmcm9tIGxvZGFzaFxuLy8gaHR0cHM6Ly9naXRodWIuY29tL2Jlc3RpZWpzL2xvZGFzaC9ibG9iL21hc3Rlci9MSUNFTlNFLnR4dFxuLyogZXNsaW50LWRpc2FibGUgZnVuYy1zdHlsZSAqL1xubGV0IGlzRnVuY3Rpb24gPSBmdW5jdGlvbih2YWx1ZSkge1xuICByZXR1cm4gdHlwZW9mIHZhbHVlID09PSAnZnVuY3Rpb24nO1xufTtcbi8vIGZhbGxiYWNrIGZvciBvbGRlciB2ZXJzaW9ucyBvZiBDaHJvbWUgYW5kIFNhZmFyaVxuLyogaXN0YW5idWwgaWdub3JlIG5leHQgKi9cbmlmIChpc0Z1bmN0aW9uKC94LykpIHtcbiAgaXNGdW5jdGlvbiA9IGZ1bmN0aW9uKHZhbHVlKSB7XG4gICAgcmV0dXJuIChcbiAgICAgIHR5cGVvZiB2YWx1ZSA9PT0gJ2Z1bmN0aW9uJyAmJlxuICAgICAgdG9TdHJpbmcuY2FsbCh2YWx1ZSkgPT09ICdbb2JqZWN0IEZ1bmN0aW9uXSdcbiAgICApO1xuICB9O1xufVxuZXhwb3J0IHsgaXNGdW5jdGlvbiB9O1xuLyogZXNsaW50LWVuYWJsZSBmdW5jLXN0eWxlICovXG5cbi8qIGlzdGFuYnVsIGlnbm9yZSBuZXh0ICovXG5leHBvcnQgY29uc3QgaXNBcnJheSA9XG4gIEFycmF5LmlzQXJyYXkgfHxcbiAgZnVuY3Rpb24odmFsdWUpIHtcbiAgICByZXR1cm4gdmFsdWUgJiYgdHlwZW9mIHZhbHVlID09PSAnb2JqZWN0J1xuICAgICAgPyB0b1N0cmluZy5jYWxsKHZhbHVlKSA9PT0gJ1tvYmplY3QgQXJyYXldJ1xuICAgICAgOiBmYWxzZTtcbiAgfTtcblxuLy8gT2xkZXIgSUUgdmVyc2lvbnMgZG8gbm90IGRpcmVjdGx5IHN1cHBvcnQgaW5kZXhPZiBzbyB3ZSBtdXN0IGltcGxlbWVudCBvdXIgb3duLCBzYWRseS5cbmV4cG9ydCBmdW5jdGlvbiBpbmRleE9mKGFycmF5LCB2YWx1ZSkge1xuICBmb3IgKGxldCBpID0gMCwgbGVuID0gYXJyYXkubGVuZ3RoOyBpIDwgbGVuOyBpKyspIHtcbiAgICBpZiAoYXJyYXlbaV0gPT09IHZhbHVlKSB7XG4gICAgICByZXR1cm4gaTtcbiAgICB9XG4gIH1cbiAgcmV0dXJuIC0xO1xufVxuXG5leHBvcnQgZnVuY3Rpb24gZXNjYXBlRXhwcmVzc2lvbihzdHJpbmcpIHtcbiAgaWYgKHR5cGVvZiBzdHJpbmcgIT09ICdzdHJpbmcnKSB7XG4gICAgLy8gZG9uJ3QgZXNjYXBlIFNhZmVTdHJpbmdzLCBzaW5jZSB0aGV5J3JlIGFscmVhZHkgc2FmZVxuICAgIGlmIChzdHJpbmcgJiYgc3RyaW5nLnRvSFRNTCkge1xuICAgICAgcmV0dXJuIHN0cmluZy50b0hUTUwoKTtcbiAgICB9IGVsc2UgaWYgKHN0cmluZyA9PSBudWxsKSB7XG4gICAgICByZXR1cm4gJyc7XG4gICAgfSBlbHNlIGlmICghc3RyaW5nKSB7XG4gICAgICByZXR1cm4gc3RyaW5nICsgJyc7XG4gICAgfVxuXG4gICAgLy8gRm9yY2UgYSBzdHJpbmcgY29udmVyc2lvbiBhcyB0aGlzIHdpbGwgYmUgZG9uZSBieSB0aGUgYXBwZW5kIHJlZ2FyZGxlc3MgYW5kXG4gICAgLy8gdGhlIHJlZ2V4IHRlc3Qgd2lsbCBkbyB0aGlzIHRyYW5zcGFyZW50bHkgYmVoaW5kIHRoZSBzY2VuZXMsIGNhdXNpbmcgaXNzdWVzIGlmXG4gICAgLy8gYW4gb2JqZWN0J3MgdG8gc3RyaW5nIGhhcyBlc2NhcGVkIGNoYXJhY3RlcnMgaW4gaXQuXG4gICAgc3RyaW5nID0gJycgKyBzdHJpbmc7XG4gIH1cblxuICBpZiAoIXBvc3NpYmxlLnRlc3Qoc3RyaW5nKSkge1xuICAgIHJldHVybiBzdHJpbmc7XG4gIH1cbiAgcmV0dXJuIHN0cmluZy5yZXBsYWNlKGJhZENoYXJzLCBlc2NhcGVDaGFyKTtcbn1cblxuZXhwb3J0IGZ1bmN0aW9uIGlzRW1wdHkodmFsdWUpIHtcbiAgaWYgKCF2YWx1ZSAmJiB2YWx1ZSAhPT0gMCkge1xuICAgIHJldHVybiB0cnVlO1xuICB9IGVsc2UgaWYgKGlzQXJyYXkodmFsdWUpICYmIHZhbHVlLmxlbmd0aCA9PT0gMCkge1xuICAgIHJldHVybiB0cnVlO1xuICB9IGVsc2Uge1xuICAgIHJldHVybiBmYWxzZTtcbiAgfVxufVxuXG5leHBvcnQgZnVuY3Rpb24gY3JlYXRlRnJhbWUob2JqZWN0KSB7XG4gIGxldCBmcmFtZSA9IGV4dGVuZCh7fSwgb2JqZWN0KTtcbiAgZnJhbWUuX3BhcmVudCA9IG9iamVjdDtcbiAgcmV0dXJuIGZyYW1lO1xufVxuXG5leHBvcnQgZnVuY3Rpb24gYmxvY2tQYXJhbXMocGFyYW1zLCBpZHMpIHtcbiAgcGFyYW1zLnBhdGggPSBpZHM7XG4gIHJldHVybiBwYXJhbXM7XG59XG5cbmV4cG9ydCBmdW5jdGlvbiBhcHBlbmRDb250ZXh0UGF0aChjb250ZXh0UGF0aCwgaWQpIHtcbiAgcmV0dXJuIChjb250ZXh0UGF0aCA/IGNvbnRleHRQYXRoICsgJy4nIDogJycpICsgaWQ7XG59XG4iXX0=
-
-
-/***/ }),
-/* 424 */,
-/* 425 */,
-/* 426 */,
-/* 427 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-module.exports = __webpack_require__(413);
-
-
-/***/ }),
-/* 428 */,
-/* 429 */,
-/* 430 */
-/***/ (function(module, exports) {
-
-"use strict";
-
-
-exports.__esModule = true;
-
-exports['default'] = function (instance) {
-  instance.registerHelper('lookup', function (obj, field, options) {
-    if (!obj) {
-      // Note for 5.0: Change to "obj == null" in 5.0
-      return obj;
-    }
-    return options.lookupProperty(obj, field);
-  });
-};
-
-module.exports = exports['default'];
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2hlbHBlcnMvbG9va3VwLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7cUJBQWUsVUFBUyxRQUFRLEVBQUU7QUFDaEMsVUFBUSxDQUFDLGNBQWMsQ0FBQyxRQUFRLEVBQUUsVUFBUyxHQUFHLEVBQUUsS0FBSyxFQUFFLE9BQU8sRUFBRTtBQUM5RCxRQUFJLENBQUMsR0FBRyxFQUFFOztBQUVSLGFBQU8sR0FBRyxDQUFDO0tBQ1o7QUFDRCxXQUFPLE9BQU8sQ0FBQyxjQUFjLENBQUMsR0FBRyxFQUFFLEtBQUssQ0FBQyxDQUFDO0dBQzNDLENBQUMsQ0FBQztDQUNKIiwiZmlsZSI6Imxvb2t1cC5qcyIsInNvdXJjZXNDb250ZW50IjpbImV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uKGluc3RhbmNlKSB7XG4gIGluc3RhbmNlLnJlZ2lzdGVySGVscGVyKCdsb29rdXAnLCBmdW5jdGlvbihvYmosIGZpZWxkLCBvcHRpb25zKSB7XG4gICAgaWYgKCFvYmopIHtcbiAgICAgIC8vIE5vdGUgZm9yIDUuMDogQ2hhbmdlIHRvIFwib2JqID09IG51bGxcIiBpbiA1LjBcbiAgICAgIHJldHVybiBvYmo7XG4gICAgfVxuICAgIHJldHVybiBvcHRpb25zLmxvb2t1cFByb3BlcnR5KG9iaiwgZmllbGQpO1xuICB9KTtcbn1cbiJdfQ==
-
-
-/***/ }),
-/* 431 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const os = __importStar(__webpack_require__(87));
-const utils_1 = __webpack_require__(82);
-/**
- * Commands
- *
- * Command Format:
- *   ::name key=value,key=value::message
- *
- * Examples:
- *   ::warning::This is the message
- *   ::set-env name=MY_VAR::some value
- */
-function issueCommand(command, properties, message) {
-    const cmd = new Command(command, properties, message);
-    process.stdout.write(cmd.toString() + os.EOL);
-}
-exports.issueCommand = issueCommand;
-function issue(name, message = '') {
-    issueCommand(name, {}, message);
-}
-exports.issue = issue;
-const CMD_STRING = '::';
-class Command {
-    constructor(command, properties, message) {
-        if (!command) {
-            command = 'missing.command';
-        }
-        this.command = command;
-        this.properties = properties;
-        this.message = message;
-    }
-    toString() {
-        let cmdStr = CMD_STRING + this.command;
-        if (this.properties && Object.keys(this.properties).length > 0) {
-            cmdStr += ' ';
-            let first = true;
-            for (const key in this.properties) {
-                if (this.properties.hasOwnProperty(key)) {
-                    const val = this.properties[key];
-                    if (val) {
-                        if (first) {
-                            first = false;
-                        }
-                        else {
-                            cmdStr += ',';
-                        }
-                        cmdStr += `${key}=${escapeProperty(val)}`;
-                    }
-                }
-            }
-        }
-        cmdStr += `${CMD_STRING}${escapeData(this.message)}`;
-        return cmdStr;
-    }
-}
-function escapeData(s) {
-    return utils_1.toCommandValue(s)
-        .replace(/%/g, '%25')
-        .replace(/\r/g, '%0D')
-        .replace(/\n/g, '%0A');
-}
-function escapeProperty(s) {
-    return utils_1.toCommandValue(s)
-        .replace(/%/g, '%25')
-        .replace(/\r/g, '%0D')
-        .replace(/\n/g, '%0A')
-        .replace(/:/g, '%3A')
-        .replace(/,/g, '%2C');
-}
-//# sourceMappingURL=command.js.map
-
-/***/ }),
-/* 432 */,
-/* 433 */,
-/* 434 */,
-/* 435 */,
-/* 436 */,
-/* 437 */,
-/* 438 */,
-/* 439 */,
-/* 440 */,
-/* 441 */,
-/* 442 */,
-/* 443 */,
-/* 444 */,
-/* 445 */,
-/* 446 */,
-/* 447 */,
-/* 448 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-var universalUserAgent = __webpack_require__(526);
-var beforeAfterHook = __webpack_require__(500);
-var request = __webpack_require__(753);
-var graphql = __webpack_require__(743);
-var authToken = __webpack_require__(813);
-
-function _defineProperty(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
-
-  return obj;
-}
-
-function ownKeys(object, enumerableOnly) {
-  var keys = Object.keys(object);
-
-  if (Object.getOwnPropertySymbols) {
-    var symbols = Object.getOwnPropertySymbols(object);
-    if (enumerableOnly) symbols = symbols.filter(function (sym) {
-      return Object.getOwnPropertyDescriptor(object, sym).enumerable;
-    });
-    keys.push.apply(keys, symbols);
-  }
-
-  return keys;
-}
-
-function _objectSpread2(target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i] != null ? arguments[i] : {};
-
-    if (i % 2) {
-      ownKeys(Object(source), true).forEach(function (key) {
-        _defineProperty(target, key, source[key]);
-      });
-    } else if (Object.getOwnPropertyDescriptors) {
-      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
-    } else {
-      ownKeys(Object(source)).forEach(function (key) {
-        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
-      });
-    }
-  }
-
-  return target;
-}
-
-const VERSION = "3.1.2";
-
-class Octokit {
-  constructor(options = {}) {
-    const hook = new beforeAfterHook.Collection();
-    const requestDefaults = {
-      baseUrl: request.request.endpoint.DEFAULTS.baseUrl,
-      headers: {},
-      request: Object.assign({}, options.request, {
-        hook: hook.bind(null, "request")
-      }),
-      mediaType: {
-        previews: [],
-        format: ""
-      }
-    }; // prepend default user agent with `options.userAgent` if set
-
-    requestDefaults.headers["user-agent"] = [options.userAgent, `octokit-core.js/${VERSION} ${universalUserAgent.getUserAgent()}`].filter(Boolean).join(" ");
-
-    if (options.baseUrl) {
-      requestDefaults.baseUrl = options.baseUrl;
-    }
-
-    if (options.previews) {
-      requestDefaults.mediaType.previews = options.previews;
-    }
-
-    if (options.timeZone) {
-      requestDefaults.headers["time-zone"] = options.timeZone;
-    }
-
-    this.request = request.request.defaults(requestDefaults);
-    this.graphql = graphql.withCustomRequest(this.request).defaults(_objectSpread2(_objectSpread2({}, requestDefaults), {}, {
-      baseUrl: requestDefaults.baseUrl.replace(/\/api\/v3$/, "/api")
-    }));
-    this.log = Object.assign({
-      debug: () => {},
-      info: () => {},
-      warn: console.warn.bind(console),
-      error: console.error.bind(console)
-    }, options.log);
-    this.hook = hook; // (1) If neither `options.authStrategy` nor `options.auth` are set, the `octokit` instance
-    //     is unauthenticated. The `this.auth()` method is a no-op and no request hook is registred.
-    // (2) If only `options.auth` is set, use the default token authentication strategy.
-    // (3) If `options.authStrategy` is set then use it and pass in `options.auth`. Always pass own request as many strategies accept a custom request instance.
-    // TODO: type `options.auth` based on `options.authStrategy`.
-
-    if (!options.authStrategy) {
-      if (!options.auth) {
-        // (1)
-        this.auth = async () => ({
-          type: "unauthenticated"
-        });
-      } else {
-        // (2)
-        const auth = authToken.createTokenAuth(options.auth); // @ts-ignore  ¯\_(ツ)_/¯
-
-        hook.wrap("request", auth.hook);
-        this.auth = auth;
-      }
-    } else {
-      const auth = options.authStrategy(Object.assign({
-        request: this.request
-      }, options.auth)); // @ts-ignore  ¯\_(ツ)_/¯
-
-      hook.wrap("request", auth.hook);
-      this.auth = auth;
-    } // apply plugins
-    // https://stackoverflow.com/a/16345172
-
-
-    const classConstructor = this.constructor;
-    classConstructor.plugins.forEach(plugin => {
-      Object.assign(this, plugin(this, options));
-    });
-  }
-
-  static defaults(defaults) {
-    const OctokitWithDefaults = class extends this {
-      constructor(...args) {
-        const options = args[0] || {};
-
-        if (typeof defaults === "function") {
-          super(defaults(options));
-          return;
-        }
-
-        super(Object.assign({}, defaults, options, options.userAgent && defaults.userAgent ? {
-          userAgent: `${options.userAgent} ${defaults.userAgent}`
-        } : null));
-      }
-
-    };
-    return OctokitWithDefaults;
-  }
-  /**
-   * Attach a plugin (or many) to your Octokit instance.
-   *
-   * @example
-   * const API = Octokit.plugin(plugin1, plugin2, plugin3, ...)
-   */
-
-
-  static plugin(...newPlugins) {
-    var _a;
-
-    const currentPlugins = this.plugins;
-    const NewOctokit = (_a = class extends this {}, _a.plugins = currentPlugins.concat(newPlugins.filter(plugin => !currentPlugins.includes(plugin))), _a);
-    return NewOctokit;
-  }
-
-}
-Octokit.VERSION = VERSION;
-Octokit.plugins = [];
-
-exports.Octokit = Octokit;
-//# sourceMappingURL=index.js.map
-
-
-/***/ }),
-/* 449 */,
-/* 450 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-
-const fs = __webpack_require__(747)
-const EventEmitter = __webpack_require__(759)
-const flatstr = __webpack_require__(649)
-const inherits = __webpack_require__(669).inherits
-
-const BUSY_WRITE_TIMEOUT = 100
-
-const sleep = __webpack_require__(517)
-
-// 16 MB - magic number
-// This constant ensures that SonicBoom only needs
-// 32 MB of free memory to run. In case of having 1GB+
-// of data to write, this prevents an out of memory
-// condition.
-const MAX_WRITE = 16 * 1024 * 1024
-
-function openFile (file, sonic) {
-  sonic._opening = true
-  sonic._writing = true
-  sonic._asyncDrainScheduled = false
-  sonic.file = file
-
-  // NOTE: 'error' and 'ready' events emitted below only relevant when sonic.sync===false
-  // for sync mode, there is no way to add a listener that will receive these
-
-  function fileOpened (err, fd) {
-    if (err) {
-      sonic.emit('error', err)
-      return
-    }
-
-    sonic.fd = fd
-    sonic._reopening = false
-    sonic._opening = false
-    sonic._writing = false
-
-    sonic.emit('ready')
-
-    if (sonic._reopening) {
-      return
-    }
-
-    // start
-    var len = sonic._buf.length
-    if (len > 0 && len > sonic.minLength && !sonic.destroyed) {
-      actualWrite(sonic)
-    }
-  }
-
-  if (sonic.sync) {
-    const fd = fs.openSync(file, 'a')
-    fileOpened(null, fd)
-    process.nextTick(() => sonic.emit('ready'))
-  } else {
-    fs.open(file, 'a', fileOpened)
-  }
-}
-
-function SonicBoom (opts) {
-  if (!(this instanceof SonicBoom)) {
-    return new SonicBoom(opts)
-  }
-
-  var { fd, dest, minLength, sync } = opts || {}
-
-  fd = fd || dest
-
-  this._buf = ''
-  this.fd = -1
-  this._writing = false
-  this._writingBuf = ''
-  this._ending = false
-  this._reopening = false
-  this._asyncDrainScheduled = false
-  this.file = null
-  this.destroyed = false
-  this.sync = sync || false
-
-  this.minLength = minLength || 0
-
-  if (typeof fd === 'number') {
-    this.fd = fd
-    process.nextTick(() => this.emit('ready'))
-  } else if (typeof fd === 'string') {
-    openFile(fd, this)
-  } else {
-    throw new Error('SonicBoom supports only file descriptors and files')
-  }
-
-  this.release = (err, n) => {
-    if (err) {
-      if (err.code === 'EAGAIN') {
-        if (this.sync) {
-          // This error code should not happen in sync mode, because it is
-          // not using the underlining operating system asynchronous functions.
-          // However it happens, and so we handle it.
-          // Ref: https://github.com/pinojs/pino/issues/783
-          try {
-            sleep(BUSY_WRITE_TIMEOUT)
-            this.release(undefined, 0)
-          } catch (err) {
-            this.release(err)
-          }
-        } else {
-          // Let's give the destination some time to process the chunk.
-          setTimeout(() => {
-            fs.write(this.fd, this._writingBuf, 'utf8', this.release)
-          }, BUSY_WRITE_TIMEOUT)
-        }
-      } else {
-        this.emit('error', err)
-      }
-      return
-    }
-
-    if (this._writingBuf.length !== n) {
-      this._writingBuf = this._writingBuf.slice(n)
-      if (this.sync) {
-        try {
-          do {
-            n = fs.writeSync(this.fd, this._writingBuf, 'utf8')
-            this._writingBuf = this._writingBuf.slice(n)
-          } while (this._writingBuf.length !== 0)
-        } catch (err) {
-          this.release(err)
-          return
-        }
-      } else {
-        fs.write(this.fd, this._writingBuf, 'utf8', this.release)
-        return
-      }
-    }
-
-    this._writingBuf = ''
-
-    if (this.destroyed) {
-      return
-    }
-
-    var len = this._buf.length
-    if (this._reopening) {
-      this._writing = false
-      this._reopening = false
-      this.reopen()
-    } else if (len > 0 && len > this.minLength) {
-      actualWrite(this)
-    } else if (this._ending) {
-      if (len > 0) {
-        actualWrite(this)
-      } else {
-        this._writing = false
-        actualClose(this)
-      }
-    } else {
-      this._writing = false
-      if (this.sync) {
-        if (!this._asyncDrainScheduled) {
-          this._asyncDrainScheduled = true
-          process.nextTick(emitDrain, this)
-        }
-      } else {
-        this.emit('drain')
-      }
-    }
-  }
-
-  this.on('newListener', function (name) {
-    if (name === 'drain') {
-      this._asyncDrainScheduled = false
-    }
-  })
-}
-
-function emitDrain (sonic) {
-  const hasListeners = sonic.listenerCount('drain') > 0
-  if (!hasListeners) return
-  sonic._asyncDrainScheduled = false
-  sonic.emit('drain')
-}
-
-inherits(SonicBoom, EventEmitter)
-
-SonicBoom.prototype.write = function (data) {
-  if (this.destroyed) {
-    throw new Error('SonicBoom destroyed')
-  }
-
-  this._buf += data
-  var len = this._buf.length
-  if (!this._writing && len > this.minLength) {
-    actualWrite(this)
-  }
-  return len < 16384
-}
-
-SonicBoom.prototype.flush = function () {
-  if (this.destroyed) {
-    throw new Error('SonicBoom destroyed')
-  }
-
-  if (this._writing || this.minLength <= 0) {
-    return
-  }
-
-  actualWrite(this)
-}
-
-SonicBoom.prototype.reopen = function (file) {
-  if (this.destroyed) {
-    throw new Error('SonicBoom destroyed')
-  }
-
-  if (this._opening) {
-    this.once('ready', () => {
-      this.reopen(file)
-    })
-    return
-  }
-
-  if (this._ending) {
-    return
-  }
-
-  if (!this.file) {
-    throw new Error('Unable to reopen a file descriptor, you must pass a file to SonicBoom')
-  }
-
-  this._reopening = true
-
-  if (this._writing) {
-    return
-  }
-
-  fs.close(this.fd, (err) => {
-    if (err) {
-      return this.emit('error', err)
-    }
-  })
-
-  openFile(file || this.file, this)
-}
-
-SonicBoom.prototype.end = function () {
-  if (this.destroyed) {
-    throw new Error('SonicBoom destroyed')
-  }
-
-  if (this._opening) {
-    this.once('ready', () => {
-      this.end()
-    })
-    return
-  }
-
-  if (this._ending) {
-    return
-  }
-
-  this._ending = true
-
-  if (!this._writing && this._buf.length > 0 && this.fd >= 0) {
-    actualWrite(this)
-    return
-  }
-
-  if (this._writing) {
-    return
-  }
-
-  actualClose(this)
-}
-
-SonicBoom.prototype.flushSync = function () {
-  if (this.destroyed) {
-    throw new Error('SonicBoom destroyed')
-  }
-
-  if (this.fd < 0) {
-    throw new Error('sonic boom is not ready yet')
-  }
-
-  if (this._buf.length > 0) {
-    fs.writeSync(this.fd, this._buf, 'utf8')
-    this._buf = ''
-  }
-}
-
-SonicBoom.prototype.destroy = function () {
-  if (this.destroyed) {
-    return
-  }
-  actualClose(this)
-}
-
-function actualWrite (sonic) {
-  sonic._writing = true
-  var buf = sonic._buf
-  var release = sonic.release
-  if (buf.length > MAX_WRITE) {
-    buf = buf.slice(0, MAX_WRITE)
-    sonic._buf = sonic._buf.slice(MAX_WRITE)
-  } else {
-    sonic._buf = ''
-  }
-  flatstr(buf)
-  sonic._writingBuf = buf
-  if (sonic.sync) {
-    try {
-      var written = fs.writeSync(sonic.fd, buf, 'utf8')
-      release(null, written)
-    } catch (err) {
-      release(err)
-    }
-  } else {
-    fs.write(sonic.fd, buf, 'utf8', release)
-  }
-}
-
-function actualClose (sonic) {
-  if (sonic.fd === -1) {
-    sonic.once('ready', actualClose.bind(null, sonic))
-    return
-  }
-  // TODO write a test to check if we are not leaking fds
-  fs.close(sonic.fd, (err) => {
-    if (err) {
-      sonic.emit('error', err)
-      return
-    }
-
-    if (sonic._ending && !sonic._writing) {
-      sonic.emit('finish')
-    }
-    sonic.emit('close')
-  })
-  sonic.destroyed = true
-  sonic._buf = ''
-}
-
-module.exports = SonicBoom
-
-
-/***/ }),
-/* 451 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-/* -*- Mode: js; js-indent-level: 2; -*- */
-/*
- * Copyright 2014 Mozilla Foundation and contributors
- * Licensed under the New BSD license. See LICENSE or:
- * http://opensource.org/licenses/BSD-3-Clause
- */
-
-var util = __webpack_require__(338);
-
-/**
- * Determine whether mappingB is after mappingA with respect to generated
- * position.
- */
-function generatedPositionAfter(mappingA, mappingB) {
-  // Optimized for most common case
-  var lineA = mappingA.generatedLine;
-  var lineB = mappingB.generatedLine;
-  var columnA = mappingA.generatedColumn;
-  var columnB = mappingB.generatedColumn;
-  return lineB > lineA || lineB == lineA && columnB >= columnA ||
-         util.compareByGeneratedPositionsInflated(mappingA, mappingB) <= 0;
-}
-
-/**
- * A data structure to provide a sorted view of accumulated mappings in a
- * performance conscious manner. It trades a neglibable overhead in general
- * case for a large speedup in case of mappings being added in order.
- */
-function MappingList() {
-  this._array = [];
-  this._sorted = true;
-  // Serves as infimum
-  this._last = {generatedLine: -1, generatedColumn: 0};
-}
-
-/**
- * Iterate through internal items. This method takes the same arguments that
- * `Array.prototype.forEach` takes.
- *
- * NOTE: The order of the mappings is NOT guaranteed.
- */
-MappingList.prototype.unsortedForEach =
-  function MappingList_forEach(aCallback, aThisArg) {
-    this._array.forEach(aCallback, aThisArg);
-  };
-
-/**
- * Add the given source mapping.
- *
- * @param Object aMapping
- */
-MappingList.prototype.add = function MappingList_add(aMapping) {
-  if (generatedPositionAfter(this._last, aMapping)) {
-    this._last = aMapping;
-    this._array.push(aMapping);
-  } else {
-    this._sorted = false;
-    this._array.push(aMapping);
-  }
-};
-
-/**
- * Returns the flat, sorted array of mappings. The mappings are sorted by
- * generated position.
- *
- * WARNING: This method returns internal data without copying, for
- * performance. The return value must NOT be mutated, and should be treated as
- * an immutable borrow. If you want to take ownership, you must make your own
- * copy.
- */
-MappingList.prototype.toArray = function MappingList_toArray() {
-  if (!this._sorted) {
-    this._array.sort(util.compareByGeneratedPositionsInflated);
-    this._sorted = true;
-  }
-  return this._array;
-};
-
-exports.MappingList = MappingList;
-
-
-/***/ }),
-/* 452 */,
-/* 453 */,
-/* 454 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
-
-var Stream = _interopDefault(__webpack_require__(413));
-var http = _interopDefault(__webpack_require__(605));
-var Url = _interopDefault(__webpack_require__(835));
-var https = _interopDefault(__webpack_require__(211));
-var zlib = _interopDefault(__webpack_require__(761));
-
-// Based on https://github.com/tmpvar/jsdom/blob/aa85b2abf07766ff7bf5c1f6daafb3726f2f2db5/lib/jsdom/living/blob.js
-
-// fix for "Readable" isn't a named export issue
-const Readable = Stream.Readable;
-
-const BUFFER = Symbol('buffer');
-const TYPE = Symbol('type');
-
-class Blob {
-	constructor() {
-		this[TYPE] = '';
-
-		const blobParts = arguments[0];
-		const options = arguments[1];
-
-		const buffers = [];
-		let size = 0;
-
-		if (blobParts) {
-			const a = blobParts;
-			const length = Number(a.length);
-			for (let i = 0; i < length; i++) {
-				const element = a[i];
-				let buffer;
-				if (element instanceof Buffer) {
-					buffer = element;
-				} else if (ArrayBuffer.isView(element)) {
-					buffer = Buffer.from(element.buffer, element.byteOffset, element.byteLength);
-				} else if (element instanceof ArrayBuffer) {
-					buffer = Buffer.from(element);
-				} else if (element instanceof Blob) {
-					buffer = element[BUFFER];
-				} else {
-					buffer = Buffer.from(typeof element === 'string' ? element : String(element));
-				}
-				size += buffer.length;
-				buffers.push(buffer);
-			}
-		}
-
-		this[BUFFER] = Buffer.concat(buffers);
-
-		let type = options && options.type !== undefined && String(options.type).toLowerCase();
-		if (type && !/[^\u0020-\u007E]/.test(type)) {
-			this[TYPE] = type;
-		}
-	}
-	get size() {
-		return this[BUFFER].length;
-	}
-	get type() {
-		return this[TYPE];
-	}
-	text() {
-		return Promise.resolve(this[BUFFER].toString());
-	}
-	arrayBuffer() {
-		const buf = this[BUFFER];
-		const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
-		return Promise.resolve(ab);
-	}
-	stream() {
-		const readable = new Readable();
-		readable._read = function () {};
-		readable.push(this[BUFFER]);
-		readable.push(null);
-		return readable;
-	}
-	toString() {
-		return '[object Blob]';
-	}
-	slice() {
-		const size = this.size;
-
-		const start = arguments[0];
-		const end = arguments[1];
-		let relativeStart, relativeEnd;
-		if (start === undefined) {
-			relativeStart = 0;
-		} else if (start < 0) {
-			relativeStart = Math.max(size + start, 0);
-		} else {
-			relativeStart = Math.min(start, size);
-		}
-		if (end === undefined) {
-			relativeEnd = size;
-		} else if (end < 0) {
-			relativeEnd = Math.max(size + end, 0);
-		} else {
-			relativeEnd = Math.min(end, size);
-		}
-		const span = Math.max(relativeEnd - relativeStart, 0);
-
-		const buffer = this[BUFFER];
-		const slicedBuffer = buffer.slice(relativeStart, relativeStart + span);
-		const blob = new Blob([], { type: arguments[2] });
-		blob[BUFFER] = slicedBuffer;
-		return blob;
-	}
-}
-
-Object.defineProperties(Blob.prototype, {
-	size: { enumerable: true },
-	type: { enumerable: true },
-	slice: { enumerable: true }
-});
-
-Object.defineProperty(Blob.prototype, Symbol.toStringTag, {
-	value: 'Blob',
-	writable: false,
-	enumerable: false,
-	configurable: true
-});
-
-/**
- * fetch-error.js
- *
- * FetchError interface for operational errors
- */
-
-/**
- * Create FetchError instance
- *
- * @param   String      message      Error message for human
- * @param   String      type         Error type for machine
- * @param   String      systemError  For Node.js system error
- * @return  FetchError
- */
-function FetchError(message, type, systemError) {
-  Error.call(this, message);
-
-  this.message = message;
-  this.type = type;
-
-  // when err.type is `system`, err.code contains system error code
-  if (systemError) {
-    this.code = this.errno = systemError.code;
-  }
-
-  // hide custom error implementation details from end-users
-  Error.captureStackTrace(this, this.constructor);
-}
-
-FetchError.prototype = Object.create(Error.prototype);
-FetchError.prototype.constructor = FetchError;
-FetchError.prototype.name = 'FetchError';
-
-let convert;
-try {
-	convert = __webpack_require__(18).convert;
-} catch (e) {}
-
-const INTERNALS = Symbol('Body internals');
-
-// fix an issue where "PassThrough" isn't a named export for node <10
-const PassThrough = Stream.PassThrough;
-
-/**
- * Body mixin
- *
- * Ref: https://fetch.spec.whatwg.org/#body
- *
- * @param   Stream  body  Readable stream
- * @param   Object  opts  Response options
- * @return  Void
- */
-function Body(body) {
-	var _this = this;
-
-	var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
-	    _ref$size = _ref.size;
-
-	let size = _ref$size === undefined ? 0 : _ref$size;
-	var _ref$timeout = _ref.timeout;
-	let timeout = _ref$timeout === undefined ? 0 : _ref$timeout;
-
-	if (body == null) {
-		// body is undefined or null
-		body = null;
-	} else if (isURLSearchParams(body)) {
-		// body is a URLSearchParams
-		body = Buffer.from(body.toString());
-	} else if (isBlob(body)) ; else if (Buffer.isBuffer(body)) ; else if (Object.prototype.toString.call(body) === '[object ArrayBuffer]') {
-		// body is ArrayBuffer
-		body = Buffer.from(body);
-	} else if (ArrayBuffer.isView(body)) {
-		// body is ArrayBufferView
-		body = Buffer.from(body.buffer, body.byteOffset, body.byteLength);
-	} else if (body instanceof Stream) ; else {
-		// none of the above
-		// coerce to string then buffer
-		body = Buffer.from(String(body));
-	}
-	this[INTERNALS] = {
-		body,
-		disturbed: false,
-		error: null
-	};
-	this.size = size;
-	this.timeout = timeout;
-
-	if (body instanceof Stream) {
-		body.on('error', function (err) {
-			const error = err.name === 'AbortError' ? err : new FetchError(`Invalid response body while trying to fetch ${_this.url}: ${err.message}`, 'system', err);
-			_this[INTERNALS].error = error;
-		});
-	}
-}
-
-Body.prototype = {
-	get body() {
-		return this[INTERNALS].body;
-	},
-
-	get bodyUsed() {
-		return this[INTERNALS].disturbed;
-	},
-
-	/**
-  * Decode response as ArrayBuffer
-  *
-  * @return  Promise
-  */
-	arrayBuffer() {
-		return consumeBody.call(this).then(function (buf) {
-			return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
-		});
-	},
-
-	/**
-  * Return raw response as Blob
-  *
-  * @return Promise
-  */
-	blob() {
-		let ct = this.headers && this.headers.get('content-type') || '';
-		return consumeBody.call(this).then(function (buf) {
-			return Object.assign(
-			// Prevent copying
-			new Blob([], {
-				type: ct.toLowerCase()
-			}), {
-				[BUFFER]: buf
-			});
-		});
-	},
-
-	/**
-  * Decode response as json
-  *
-  * @return  Promise
-  */
-	json() {
-		var _this2 = this;
-
-		return consumeBody.call(this).then(function (buffer) {
-			try {
-				return JSON.parse(buffer.toString());
-			} catch (err) {
-				return Body.Promise.reject(new FetchError(`invalid json response body at ${_this2.url} reason: ${err.message}`, 'invalid-json'));
-			}
-		});
-	},
-
-	/**
-  * Decode response as text
-  *
-  * @return  Promise
-  */
-	text() {
-		return consumeBody.call(this).then(function (buffer) {
-			return buffer.toString();
-		});
-	},
-
-	/**
-  * Decode response as buffer (non-spec api)
-  *
-  * @return  Promise
-  */
-	buffer() {
-		return consumeBody.call(this);
-	},
-
-	/**
-  * Decode response as text, while automatically detecting the encoding and
-  * trying to decode to UTF-8 (non-spec api)
-  *
-  * @return  Promise
-  */
-	textConverted() {
-		var _this3 = this;
-
-		return consumeBody.call(this).then(function (buffer) {
-			return convertBody(buffer, _this3.headers);
-		});
-	}
-};
-
-// In browsers, all properties are enumerable.
-Object.defineProperties(Body.prototype, {
-	body: { enumerable: true },
-	bodyUsed: { enumerable: true },
-	arrayBuffer: { enumerable: true },
-	blob: { enumerable: true },
-	json: { enumerable: true },
-	text: { enumerable: true }
-});
-
-Body.mixIn = function (proto) {
-	for (const name of Object.getOwnPropertyNames(Body.prototype)) {
-		// istanbul ignore else: future proof
-		if (!(name in proto)) {
-			const desc = Object.getOwnPropertyDescriptor(Body.prototype, name);
-			Object.defineProperty(proto, name, desc);
-		}
-	}
-};
-
-/**
- * Consume and convert an entire Body to a Buffer.
- *
- * Ref: https://fetch.spec.whatwg.org/#concept-body-consume-body
- *
- * @return  Promise
- */
-function consumeBody() {
-	var _this4 = this;
-
-	if (this[INTERNALS].disturbed) {
-		return Body.Promise.reject(new TypeError(`body used already for: ${this.url}`));
-	}
-
-	this[INTERNALS].disturbed = true;
-
-	if (this[INTERNALS].error) {
-		return Body.Promise.reject(this[INTERNALS].error);
-	}
-
-	let body = this.body;
-
-	// body is null
-	if (body === null) {
-		return Body.Promise.resolve(Buffer.alloc(0));
-	}
-
-	// body is blob
-	if (isBlob(body)) {
-		body = body.stream();
-	}
-
-	// body is buffer
-	if (Buffer.isBuffer(body)) {
-		return Body.Promise.resolve(body);
-	}
-
-	// istanbul ignore if: should never happen
-	if (!(body instanceof Stream)) {
-		return Body.Promise.resolve(Buffer.alloc(0));
-	}
-
-	// body is stream
-	// get ready to actually consume the body
-	let accum = [];
-	let accumBytes = 0;
-	let abort = false;
-
-	return new Body.Promise(function (resolve, reject) {
-		let resTimeout;
-
-		// allow timeout on slow response body
-		if (_this4.timeout) {
-			resTimeout = setTimeout(function () {
-				abort = true;
-				reject(new FetchError(`Response timeout while trying to fetch ${_this4.url} (over ${_this4.timeout}ms)`, 'body-timeout'));
-			}, _this4.timeout);
-		}
-
-		// handle stream errors
-		body.on('error', function (err) {
-			if (err.name === 'AbortError') {
-				// if the request was aborted, reject with this Error
-				abort = true;
-				reject(err);
-			} else {
-				// other errors, such as incorrect content-encoding
-				reject(new FetchError(`Invalid response body while trying to fetch ${_this4.url}: ${err.message}`, 'system', err));
-			}
-		});
-
-		body.on('data', function (chunk) {
-			if (abort || chunk === null) {
-				return;
-			}
-
-			if (_this4.size && accumBytes + chunk.length > _this4.size) {
-				abort = true;
-				reject(new FetchError(`content size at ${_this4.url} over limit: ${_this4.size}`, 'max-size'));
-				return;
-			}
-
-			accumBytes += chunk.length;
-			accum.push(chunk);
-		});
-
-		body.on('end', function () {
-			if (abort) {
-				return;
-			}
-
-			clearTimeout(resTimeout);
-
-			try {
-				resolve(Buffer.concat(accum, accumBytes));
-			} catch (err) {
-				// handle streams that have accumulated too much data (issue #414)
-				reject(new FetchError(`Could not create Buffer from response body for ${_this4.url}: ${err.message}`, 'system', err));
-			}
-		});
-	});
-}
-
-/**
- * Detect buffer encoding and convert to target encoding
- * ref: http://www.w3.org/TR/2011/WD-html5-20110113/parsing.html#determining-the-character-encoding
- *
- * @param   Buffer  buffer    Incoming buffer
- * @param   String  encoding  Target encoding
- * @return  String
- */
-function convertBody(buffer, headers) {
-	if (typeof convert !== 'function') {
-		throw new Error('The package `encoding` must be installed to use the textConverted() function');
-	}
-
-	const ct = headers.get('content-type');
-	let charset = 'utf-8';
-	let res, str;
-
-	// header
-	if (ct) {
-		res = /charset=([^;]*)/i.exec(ct);
-	}
-
-	// no charset in content type, peek at response body for at most 1024 bytes
-	str = buffer.slice(0, 1024).toString();
-
-	// html5
-	if (!res && str) {
-		res = /<meta.+?charset=(['"])(.+?)\1/i.exec(str);
-	}
-
-	// html4
-	if (!res && str) {
-		res = /<meta[\s]+?http-equiv=(['"])content-type\1[\s]+?content=(['"])(.+?)\2/i.exec(str);
-		if (!res) {
-			res = /<meta[\s]+?content=(['"])(.+?)\1[\s]+?http-equiv=(['"])content-type\3/i.exec(str);
-			if (res) {
-				res.pop(); // drop last quote
-			}
-		}
-
-		if (res) {
-			res = /charset=(.*)/i.exec(res.pop());
-		}
-	}
-
-	// xml
-	if (!res && str) {
-		res = /<\?xml.+?encoding=(['"])(.+?)\1/i.exec(str);
-	}
-
-	// found charset
-	if (res) {
-		charset = res.pop();
-
-		// prevent decode issues when sites use incorrect encoding
-		// ref: https://hsivonen.fi/encoding-menu/
-		if (charset === 'gb2312' || charset === 'gbk') {
-			charset = 'gb18030';
-		}
-	}
-
-	// turn raw buffers into a single utf-8 buffer
-	return convert(buffer, 'UTF-8', charset).toString();
-}
-
-/**
- * Detect a URLSearchParams object
- * ref: https://github.com/bitinn/node-fetch/issues/296#issuecomment-307598143
- *
- * @param   Object  obj     Object to detect by type or brand
- * @return  String
- */
-function isURLSearchParams(obj) {
-	// Duck-typing as a necessary condition.
-	if (typeof obj !== 'object' || typeof obj.append !== 'function' || typeof obj.delete !== 'function' || typeof obj.get !== 'function' || typeof obj.getAll !== 'function' || typeof obj.has !== 'function' || typeof obj.set !== 'function') {
-		return false;
-	}
-
-	// Brand-checking and more duck-typing as optional condition.
-	return obj.constructor.name === 'URLSearchParams' || Object.prototype.toString.call(obj) === '[object URLSearchParams]' || typeof obj.sort === 'function';
-}
-
-/**
- * Check if `obj` is a W3C `Blob` object (which `File` inherits from)
- * @param  {*} obj
- * @return {boolean}
- */
-function isBlob(obj) {
-	return typeof obj === 'object' && typeof obj.arrayBuffer === 'function' && typeof obj.type === 'string' && typeof obj.stream === 'function' && typeof obj.constructor === 'function' && typeof obj.constructor.name === 'string' && /^(Blob|File)$/.test(obj.constructor.name) && /^(Blob|File)$/.test(obj[Symbol.toStringTag]);
-}
-
-/**
- * Clone body given Res/Req instance
- *
- * @param   Mixed  instance  Response or Request instance
- * @return  Mixed
- */
-function clone(instance) {
-	let p1, p2;
-	let body = instance.body;
-
-	// don't allow cloning a used body
-	if (instance.bodyUsed) {
-		throw new Error('cannot clone body after it is used');
-	}
-
-	// check that body is a stream and not form-data object
-	// note: we can't clone the form-data object without having it as a dependency
-	if (body instanceof Stream && typeof body.getBoundary !== 'function') {
-		// tee instance body
-		p1 = new PassThrough();
-		p2 = new PassThrough();
-		body.pipe(p1);
-		body.pipe(p2);
-		// set instance body to teed body and return the other teed body
-		instance[INTERNALS].body = p1;
-		body = p2;
-	}
-
-	return body;
-}
-
-/**
- * Performs the operation "extract a `Content-Type` value from |object|" as
- * specified in the specification:
- * https://fetch.spec.whatwg.org/#concept-bodyinit-extract
- *
- * This function assumes that instance.body is present.
- *
- * @param   Mixed  instance  Any options.body input
- */
-function extractContentType(body) {
-	if (body === null) {
-		// body is null
-		return null;
-	} else if (typeof body === 'string') {
-		// body is string
-		return 'text/plain;charset=UTF-8';
-	} else if (isURLSearchParams(body)) {
-		// body is a URLSearchParams
-		return 'application/x-www-form-urlencoded;charset=UTF-8';
-	} else if (isBlob(body)) {
-		// body is blob
-		return body.type || null;
-	} else if (Buffer.isBuffer(body)) {
-		// body is buffer
-		return null;
-	} else if (Object.prototype.toString.call(body) === '[object ArrayBuffer]') {
-		// body is ArrayBuffer
-		return null;
-	} else if (ArrayBuffer.isView(body)) {
-		// body is ArrayBufferView
-		return null;
-	} else if (typeof body.getBoundary === 'function') {
-		// detect form data input from form-data module
-		return `multipart/form-data;boundary=${body.getBoundary()}`;
-	} else if (body instanceof Stream) {
-		// body is stream
-		// can't really do much about this
-		return null;
-	} else {
-		// Body constructor defaults other things to string
-		return 'text/plain;charset=UTF-8';
-	}
-}
-
-/**
- * The Fetch Standard treats this as if "total bytes" is a property on the body.
- * For us, we have to explicitly get it with a function.
- *
- * ref: https://fetch.spec.whatwg.org/#concept-body-total-bytes
- *
- * @param   Body    instance   Instance of Body
- * @return  Number?            Number of bytes, or null if not possible
- */
-function getTotalBytes(instance) {
-	const body = instance.body;
-
-
-	if (body === null) {
-		// body is null
-		return 0;
-	} else if (isBlob(body)) {
-		return body.size;
-	} else if (Buffer.isBuffer(body)) {
-		// body is buffer
-		return body.length;
-	} else if (body && typeof body.getLengthSync === 'function') {
-		// detect form data input from form-data module
-		if (body._lengthRetrievers && body._lengthRetrievers.length == 0 || // 1.x
-		body.hasKnownLength && body.hasKnownLength()) {
-			// 2.x
-			return body.getLengthSync();
-		}
-		return null;
-	} else {
-		// body is stream
-		return null;
-	}
-}
-
-/**
- * Write a Body to a Node.js WritableStream (e.g. http.Request) object.
- *
- * @param   Body    instance   Instance of Body
- * @return  Void
- */
-function writeToStream(dest, instance) {
-	const body = instance.body;
-
-
-	if (body === null) {
-		// body is null
-		dest.end();
-	} else if (isBlob(body)) {
-		body.stream().pipe(dest);
-	} else if (Buffer.isBuffer(body)) {
-		// body is buffer
-		dest.write(body);
-		dest.end();
-	} else {
-		// body is stream
-		body.pipe(dest);
-	}
-}
-
-// expose Promise
-Body.Promise = global.Promise;
-
-/**
- * headers.js
- *
- * Headers class offers convenient helpers
- */
-
-const invalidTokenRegex = /[^\^_`a-zA-Z\-0-9!#$%&'*+.|~]/;
-const invalidHeaderCharRegex = /[^\t\x20-\x7e\x80-\xff]/;
-
-function validateName(name) {
-	name = `${name}`;
-	if (invalidTokenRegex.test(name) || name === '') {
-		throw new TypeError(`${name} is not a legal HTTP header name`);
-	}
-}
-
-function validateValue(value) {
-	value = `${value}`;
-	if (invalidHeaderCharRegex.test(value)) {
-		throw new TypeError(`${value} is not a legal HTTP header value`);
-	}
-}
-
-/**
- * Find the key in the map object given a header name.
- *
- * Returns undefined if not found.
- *
- * @param   String  name  Header name
- * @return  String|Undefined
- */
-function find(map, name) {
-	name = name.toLowerCase();
-	for (const key in map) {
-		if (key.toLowerCase() === name) {
-			return key;
-		}
-	}
-	return undefined;
-}
-
-const MAP = Symbol('map');
-class Headers {
-	/**
-  * Headers class
-  *
-  * @param   Object  headers  Response headers
-  * @return  Void
-  */
-	constructor() {
-		let init = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : undefined;
-
-		this[MAP] = Object.create(null);
-
-		if (init instanceof Headers) {
-			const rawHeaders = init.raw();
-			const headerNames = Object.keys(rawHeaders);
-
-			for (const headerName of headerNames) {
-				for (const value of rawHeaders[headerName]) {
-					this.append(headerName, value);
-				}
-			}
-
-			return;
-		}
-
-		// We don't worry about converting prop to ByteString here as append()
-		// will handle it.
-		if (init == null) ; else if (typeof init === 'object') {
-			const method = init[Symbol.iterator];
-			if (method != null) {
-				if (typeof method !== 'function') {
-					throw new TypeError('Header pairs must be iterable');
-				}
-
-				// sequence<sequence<ByteString>>
-				// Note: per spec we have to first exhaust the lists then process them
-				const pairs = [];
-				for (const pair of init) {
-					if (typeof pair !== 'object' || typeof pair[Symbol.iterator] !== 'function') {
-						throw new TypeError('Each header pair must be iterable');
-					}
-					pairs.push(Array.from(pair));
-				}
-
-				for (const pair of pairs) {
-					if (pair.length !== 2) {
-						throw new TypeError('Each header pair must be a name/value tuple');
-					}
-					this.append(pair[0], pair[1]);
-				}
-			} else {
-				// record<ByteString, ByteString>
-				for (const key of Object.keys(init)) {
-					const value = init[key];
-					this.append(key, value);
-				}
-			}
-		} else {
-			throw new TypeError('Provided initializer must be an object');
-		}
-	}
-
-	/**
-  * Return combined header value given name
-  *
-  * @param   String  name  Header name
-  * @return  Mixed
-  */
-	get(name) {
-		name = `${name}`;
-		validateName(name);
-		const key = find(this[MAP], name);
-		if (key === undefined) {
-			return null;
-		}
-
-		return this[MAP][key].join(', ');
-	}
-
-	/**
-  * Iterate over all headers
-  *
-  * @param   Function  callback  Executed for each item with parameters (value, name, thisArg)
-  * @param   Boolean   thisArg   `this` context for callback function
-  * @return  Void
-  */
-	forEach(callback) {
-		let thisArg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
-
-		let pairs = getHeaders(this);
-		let i = 0;
-		while (i < pairs.length) {
-			var _pairs$i = pairs[i];
-			const name = _pairs$i[0],
-			      value = _pairs$i[1];
-
-			callback.call(thisArg, value, name, this);
-			pairs = getHeaders(this);
-			i++;
-		}
-	}
-
-	/**
-  * Overwrite header values given name
-  *
-  * @param   String  name   Header name
-  * @param   String  value  Header value
-  * @return  Void
-  */
-	set(name, value) {
-		name = `${name}`;
-		value = `${value}`;
-		validateName(name);
-		validateValue(value);
-		const key = find(this[MAP], name);
-		this[MAP][key !== undefined ? key : name] = [value];
-	}
-
-	/**
-  * Append a value onto existing header
-  *
-  * @param   String  name   Header name
-  * @param   String  value  Header value
-  * @return  Void
-  */
-	append(name, value) {
-		name = `${name}`;
-		value = `${value}`;
-		validateName(name);
-		validateValue(value);
-		const key = find(this[MAP], name);
-		if (key !== undefined) {
-			this[MAP][key].push(value);
-		} else {
-			this[MAP][name] = [value];
-		}
-	}
-
-	/**
-  * Check for header name existence
-  *
-  * @param   String   name  Header name
-  * @return  Boolean
-  */
-	has(name) {
-		name = `${name}`;
-		validateName(name);
-		return find(this[MAP], name) !== undefined;
-	}
-
-	/**
-  * Delete all header values given name
-  *
-  * @param   String  name  Header name
-  * @return  Void
-  */
-	delete(name) {
-		name = `${name}`;
-		validateName(name);
-		const key = find(this[MAP], name);
-		if (key !== undefined) {
-			delete this[MAP][key];
-		}
-	}
-
-	/**
-  * Return raw headers (non-spec api)
-  *
-  * @return  Object
-  */
-	raw() {
-		return this[MAP];
-	}
-
-	/**
-  * Get an iterator on keys.
-  *
-  * @return  Iterator
-  */
-	keys() {
-		return createHeadersIterator(this, 'key');
-	}
-
-	/**
-  * Get an iterator on values.
-  *
-  * @return  Iterator
-  */
-	values() {
-		return createHeadersIterator(this, 'value');
-	}
-
-	/**
-  * Get an iterator on entries.
-  *
-  * This is the default iterator of the Headers object.
-  *
-  * @return  Iterator
-  */
-	[Symbol.iterator]() {
-		return createHeadersIterator(this, 'key+value');
-	}
-}
-Headers.prototype.entries = Headers.prototype[Symbol.iterator];
-
-Object.defineProperty(Headers.prototype, Symbol.toStringTag, {
-	value: 'Headers',
-	writable: false,
-	enumerable: false,
-	configurable: true
-});
-
-Object.defineProperties(Headers.prototype, {
-	get: { enumerable: true },
-	forEach: { enumerable: true },
-	set: { enumerable: true },
-	append: { enumerable: true },
-	has: { enumerable: true },
-	delete: { enumerable: true },
-	keys: { enumerable: true },
-	values: { enumerable: true },
-	entries: { enumerable: true }
-});
-
-function getHeaders(headers) {
-	let kind = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'key+value';
-
-	const keys = Object.keys(headers[MAP]).sort();
-	return keys.map(kind === 'key' ? function (k) {
-		return k.toLowerCase();
-	} : kind === 'value' ? function (k) {
-		return headers[MAP][k].join(', ');
-	} : function (k) {
-		return [k.toLowerCase(), headers[MAP][k].join(', ')];
-	});
-}
-
-const INTERNAL = Symbol('internal');
-
-function createHeadersIterator(target, kind) {
-	const iterator = Object.create(HeadersIteratorPrototype);
-	iterator[INTERNAL] = {
-		target,
-		kind,
-		index: 0
-	};
-	return iterator;
-}
-
-const HeadersIteratorPrototype = Object.setPrototypeOf({
-	next() {
-		// istanbul ignore if
-		if (!this || Object.getPrototypeOf(this) !== HeadersIteratorPrototype) {
-			throw new TypeError('Value of `this` is not a HeadersIterator');
-		}
-
-		var _INTERNAL = this[INTERNAL];
-		const target = _INTERNAL.target,
-		      kind = _INTERNAL.kind,
-		      index = _INTERNAL.index;
-
-		const values = getHeaders(target, kind);
-		const len = values.length;
-		if (index >= len) {
-			return {
-				value: undefined,
-				done: true
-			};
-		}
-
-		this[INTERNAL].index = index + 1;
-
-		return {
-			value: values[index],
-			done: false
-		};
-	}
-}, Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]())));
-
-Object.defineProperty(HeadersIteratorPrototype, Symbol.toStringTag, {
-	value: 'HeadersIterator',
-	writable: false,
-	enumerable: false,
-	configurable: true
-});
-
-/**
- * Export the Headers object in a form that Node.js can consume.
- *
- * @param   Headers  headers
- * @return  Object
- */
-function exportNodeCompatibleHeaders(headers) {
-	const obj = Object.assign({ __proto__: null }, headers[MAP]);
-
-	// http.request() only supports string as Host header. This hack makes
-	// specifying custom Host header possible.
-	const hostHeaderKey = find(headers[MAP], 'Host');
-	if (hostHeaderKey !== undefined) {
-		obj[hostHeaderKey] = obj[hostHeaderKey][0];
-	}
-
-	return obj;
-}
-
-/**
- * Create a Headers object from an object of headers, ignoring those that do
- * not conform to HTTP grammar productions.
- *
- * @param   Object  obj  Object of headers
- * @return  Headers
- */
-function createHeadersLenient(obj) {
-	const headers = new Headers();
-	for (const name of Object.keys(obj)) {
-		if (invalidTokenRegex.test(name)) {
-			continue;
-		}
-		if (Array.isArray(obj[name])) {
-			for (const val of obj[name]) {
-				if (invalidHeaderCharRegex.test(val)) {
-					continue;
-				}
-				if (headers[MAP][name] === undefined) {
-					headers[MAP][name] = [val];
-				} else {
-					headers[MAP][name].push(val);
-				}
-			}
-		} else if (!invalidHeaderCharRegex.test(obj[name])) {
-			headers[MAP][name] = [obj[name]];
-		}
-	}
-	return headers;
-}
-
-const INTERNALS$1 = Symbol('Response internals');
-
-// fix an issue where "STATUS_CODES" aren't a named export for node <10
-const STATUS_CODES = http.STATUS_CODES;
-
-/**
- * Response class
- *
- * @param   Stream  body  Readable stream
- * @param   Object  opts  Response options
- * @return  Void
- */
-class Response {
-	constructor() {
-		let body = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-		let opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-		Body.call(this, body, opts);
-
-		const status = opts.status || 200;
-		const headers = new Headers(opts.headers);
-
-		if (body != null && !headers.has('Content-Type')) {
-			const contentType = extractContentType(body);
-			if (contentType) {
-				headers.append('Content-Type', contentType);
-			}
-		}
-
-		this[INTERNALS$1] = {
-			url: opts.url,
-			status,
-			statusText: opts.statusText || STATUS_CODES[status],
-			headers,
-			counter: opts.counter
-		};
-	}
-
-	get url() {
-		return this[INTERNALS$1].url || '';
-	}
-
-	get status() {
-		return this[INTERNALS$1].status;
-	}
-
-	/**
-  * Convenience property representing if the request ended normally
-  */
-	get ok() {
-		return this[INTERNALS$1].status >= 200 && this[INTERNALS$1].status < 300;
-	}
-
-	get redirected() {
-		return this[INTERNALS$1].counter > 0;
-	}
-
-	get statusText() {
-		return this[INTERNALS$1].statusText;
-	}
-
-	get headers() {
-		return this[INTERNALS$1].headers;
-	}
-
-	/**
-  * Clone this response
-  *
-  * @return  Response
-  */
-	clone() {
-		return new Response(clone(this), {
-			url: this.url,
-			status: this.status,
-			statusText: this.statusText,
-			headers: this.headers,
-			ok: this.ok,
-			redirected: this.redirected
-		});
-	}
-}
-
-Body.mixIn(Response.prototype);
-
-Object.defineProperties(Response.prototype, {
-	url: { enumerable: true },
-	status: { enumerable: true },
-	ok: { enumerable: true },
-	redirected: { enumerable: true },
-	statusText: { enumerable: true },
-	headers: { enumerable: true },
-	clone: { enumerable: true }
-});
-
-Object.defineProperty(Response.prototype, Symbol.toStringTag, {
-	value: 'Response',
-	writable: false,
-	enumerable: false,
-	configurable: true
-});
-
-const INTERNALS$2 = Symbol('Request internals');
-
-// fix an issue where "format", "parse" aren't a named export for node <10
-const parse_url = Url.parse;
-const format_url = Url.format;
-
-const streamDestructionSupported = 'destroy' in Stream.Readable.prototype;
-
-/**
- * Check if a value is an instance of Request.
- *
- * @param   Mixed   input
- * @return  Boolean
- */
-function isRequest(input) {
-	return typeof input === 'object' && typeof input[INTERNALS$2] === 'object';
-}
-
-function isAbortSignal(signal) {
-	const proto = signal && typeof signal === 'object' && Object.getPrototypeOf(signal);
-	return !!(proto && proto.constructor.name === 'AbortSignal');
-}
-
-/**
- * Request class
- *
- * @param   Mixed   input  Url or Request instance
- * @param   Object  init   Custom options
- * @return  Void
- */
-class Request {
-	constructor(input) {
-		let init = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-		let parsedURL;
-
-		// normalize input
-		if (!isRequest(input)) {
-			if (input && input.href) {
-				// in order to support Node.js' Url objects; though WHATWG's URL objects
-				// will fall into this branch also (since their `toString()` will return
-				// `href` property anyway)
-				parsedURL = parse_url(input.href);
-			} else {
-				// coerce input to a string before attempting to parse
-				parsedURL = parse_url(`${input}`);
-			}
-			input = {};
-		} else {
-			parsedURL = parse_url(input.url);
-		}
-
-		let method = init.method || input.method || 'GET';
-		method = method.toUpperCase();
-
-		if ((init.body != null || isRequest(input) && input.body !== null) && (method === 'GET' || method === 'HEAD')) {
-			throw new TypeError('Request with GET/HEAD method cannot have body');
-		}
-
-		let inputBody = init.body != null ? init.body : isRequest(input) && input.body !== null ? clone(input) : null;
-
-		Body.call(this, inputBody, {
-			timeout: init.timeout || input.timeout || 0,
-			size: init.size || input.size || 0
-		});
-
-		const headers = new Headers(init.headers || input.headers || {});
-
-		if (inputBody != null && !headers.has('Content-Type')) {
-			const contentType = extractContentType(inputBody);
-			if (contentType) {
-				headers.append('Content-Type', contentType);
-			}
-		}
-
-		let signal = isRequest(input) ? input.signal : null;
-		if ('signal' in init) signal = init.signal;
-
-		if (signal != null && !isAbortSignal(signal)) {
-			throw new TypeError('Expected signal to be an instanceof AbortSignal');
-		}
-
-		this[INTERNALS$2] = {
-			method,
-			redirect: init.redirect || input.redirect || 'follow',
-			headers,
-			parsedURL,
-			signal
-		};
-
-		// node-fetch-only options
-		this.follow = init.follow !== undefined ? init.follow : input.follow !== undefined ? input.follow : 20;
-		this.compress = init.compress !== undefined ? init.compress : input.compress !== undefined ? input.compress : true;
-		this.counter = init.counter || input.counter || 0;
-		this.agent = init.agent || input.agent;
-	}
-
-	get method() {
-		return this[INTERNALS$2].method;
-	}
-
-	get url() {
-		return format_url(this[INTERNALS$2].parsedURL);
-	}
-
-	get headers() {
-		return this[INTERNALS$2].headers;
-	}
-
-	get redirect() {
-		return this[INTERNALS$2].redirect;
-	}
-
-	get signal() {
-		return this[INTERNALS$2].signal;
-	}
-
-	/**
-  * Clone this request
-  *
-  * @return  Request
-  */
-	clone() {
-		return new Request(this);
-	}
-}
-
-Body.mixIn(Request.prototype);
-
-Object.defineProperty(Request.prototype, Symbol.toStringTag, {
-	value: 'Request',
-	writable: false,
-	enumerable: false,
-	configurable: true
-});
-
-Object.defineProperties(Request.prototype, {
-	method: { enumerable: true },
-	url: { enumerable: true },
-	headers: { enumerable: true },
-	redirect: { enumerable: true },
-	clone: { enumerable: true },
-	signal: { enumerable: true }
-});
-
-/**
- * Convert a Request to Node.js http request options.
- *
- * @param   Request  A Request instance
- * @return  Object   The options object to be passed to http.request
- */
-function getNodeRequestOptions(request) {
-	const parsedURL = request[INTERNALS$2].parsedURL;
-	const headers = new Headers(request[INTERNALS$2].headers);
-
-	// fetch step 1.3
-	if (!headers.has('Accept')) {
-		headers.set('Accept', '*/*');
-	}
-
-	// Basic fetch
-	if (!parsedURL.protocol || !parsedURL.hostname) {
-		throw new TypeError('Only absolute URLs are supported');
-	}
-
-	if (!/^https?:$/.test(parsedURL.protocol)) {
-		throw new TypeError('Only HTTP(S) protocols are supported');
-	}
-
-	if (request.signal && request.body instanceof Stream.Readable && !streamDestructionSupported) {
-		throw new Error('Cancellation of streamed requests with AbortSignal is not supported in node < 8');
-	}
-
-	// HTTP-network-or-cache fetch steps 2.4-2.7
-	let contentLengthValue = null;
-	if (request.body == null && /^(POST|PUT)$/i.test(request.method)) {
-		contentLengthValue = '0';
-	}
-	if (request.body != null) {
-		const totalBytes = getTotalBytes(request);
-		if (typeof totalBytes === 'number') {
-			contentLengthValue = String(totalBytes);
-		}
-	}
-	if (contentLengthValue) {
-		headers.set('Content-Length', contentLengthValue);
-	}
-
-	// HTTP-network-or-cache fetch step 2.11
-	if (!headers.has('User-Agent')) {
-		headers.set('User-Agent', 'node-fetch/1.0 (+https://github.com/bitinn/node-fetch)');
-	}
-
-	// HTTP-network-or-cache fetch step 2.15
-	if (request.compress && !headers.has('Accept-Encoding')) {
-		headers.set('Accept-Encoding', 'gzip,deflate');
-	}
-
-	let agent = request.agent;
-	if (typeof agent === 'function') {
-		agent = agent(parsedURL);
-	}
-
-	if (!headers.has('Connection') && !agent) {
-		headers.set('Connection', 'close');
-	}
-
-	// HTTP-network fetch step 4.2
-	// chunked encoding is handled by Node.js
-
-	return Object.assign({}, parsedURL, {
-		method: request.method,
-		headers: exportNodeCompatibleHeaders(headers),
-		agent
-	});
-}
-
-/**
- * abort-error.js
- *
- * AbortError interface for cancelled requests
- */
-
-/**
- * Create AbortError instance
- *
- * @param   String      message      Error message for human
- * @return  AbortError
- */
-function AbortError(message) {
-  Error.call(this, message);
-
-  this.type = 'aborted';
-  this.message = message;
-
-  // hide custom error implementation details from end-users
-  Error.captureStackTrace(this, this.constructor);
-}
-
-AbortError.prototype = Object.create(Error.prototype);
-AbortError.prototype.constructor = AbortError;
-AbortError.prototype.name = 'AbortError';
-
-// fix an issue where "PassThrough", "resolve" aren't a named export for node <10
-const PassThrough$1 = Stream.PassThrough;
-const resolve_url = Url.resolve;
-
-/**
- * Fetch function
- *
- * @param   Mixed    url   Absolute url or Request instance
- * @param   Object   opts  Fetch options
- * @return  Promise
- */
-function fetch(url, opts) {
-
-	// allow custom promise
-	if (!fetch.Promise) {
-		throw new Error('native promise missing, set fetch.Promise to your favorite alternative');
-	}
-
-	Body.Promise = fetch.Promise;
-
-	// wrap http.request into fetch
-	return new fetch.Promise(function (resolve, reject) {
-		// build request object
-		const request = new Request(url, opts);
-		const options = getNodeRequestOptions(request);
-
-		const send = (options.protocol === 'https:' ? https : http).request;
-		const signal = request.signal;
-
-		let response = null;
-
-		const abort = function abort() {
-			let error = new AbortError('The user aborted a request.');
-			reject(error);
-			if (request.body && request.body instanceof Stream.Readable) {
-				request.body.destroy(error);
-			}
-			if (!response || !response.body) return;
-			response.body.emit('error', error);
-		};
-
-		if (signal && signal.aborted) {
-			abort();
-			return;
-		}
-
-		const abortAndFinalize = function abortAndFinalize() {
-			abort();
-			finalize();
-		};
-
-		// send request
-		const req = send(options);
-		let reqTimeout;
-
-		if (signal) {
-			signal.addEventListener('abort', abortAndFinalize);
-		}
-
-		function finalize() {
-			req.abort();
-			if (signal) signal.removeEventListener('abort', abortAndFinalize);
-			clearTimeout(reqTimeout);
-		}
-
-		if (request.timeout) {
-			req.once('socket', function (socket) {
-				reqTimeout = setTimeout(function () {
-					reject(new FetchError(`network timeout at: ${request.url}`, 'request-timeout'));
-					finalize();
-				}, request.timeout);
-			});
-		}
-
-		req.on('error', function (err) {
-			reject(new FetchError(`request to ${request.url} failed, reason: ${err.message}`, 'system', err));
-			finalize();
-		});
-
-		req.on('response', function (res) {
-			clearTimeout(reqTimeout);
-
-			const headers = createHeadersLenient(res.headers);
-
-			// HTTP fetch step 5
-			if (fetch.isRedirect(res.statusCode)) {
-				// HTTP fetch step 5.2
-				const location = headers.get('Location');
-
-				// HTTP fetch step 5.3
-				const locationURL = location === null ? null : resolve_url(request.url, location);
-
-				// HTTP fetch step 5.5
-				switch (request.redirect) {
-					case 'error':
-						reject(new FetchError(`uri requested responds with a redirect, redirect mode is set to error: ${request.url}`, 'no-redirect'));
-						finalize();
-						return;
-					case 'manual':
-						// node-fetch-specific step: make manual redirect a bit easier to use by setting the Location header value to the resolved URL.
-						if (locationURL !== null) {
-							// handle corrupted header
-							try {
-								headers.set('Location', locationURL);
-							} catch (err) {
-								// istanbul ignore next: nodejs server prevent invalid response headers, we can't test this through normal request
-								reject(err);
-							}
-						}
-						break;
-					case 'follow':
-						// HTTP-redirect fetch step 2
-						if (locationURL === null) {
-							break;
-						}
-
-						// HTTP-redirect fetch step 5
-						if (request.counter >= request.follow) {
-							reject(new FetchError(`maximum redirect reached at: ${request.url}`, 'max-redirect'));
-							finalize();
-							return;
-						}
-
-						// HTTP-redirect fetch step 6 (counter increment)
-						// Create a new Request object.
-						const requestOpts = {
-							headers: new Headers(request.headers),
-							follow: request.follow,
-							counter: request.counter + 1,
-							agent: request.agent,
-							compress: request.compress,
-							method: request.method,
-							body: request.body,
-							signal: request.signal,
-							timeout: request.timeout,
-							size: request.size
-						};
-
-						// HTTP-redirect fetch step 9
-						if (res.statusCode !== 303 && request.body && getTotalBytes(request) === null) {
-							reject(new FetchError('Cannot follow redirect with body being a readable stream', 'unsupported-redirect'));
-							finalize();
-							return;
-						}
-
-						// HTTP-redirect fetch step 11
-						if (res.statusCode === 303 || (res.statusCode === 301 || res.statusCode === 302) && request.method === 'POST') {
-							requestOpts.method = 'GET';
-							requestOpts.body = undefined;
-							requestOpts.headers.delete('content-length');
-						}
-
-						// HTTP-redirect fetch step 15
-						resolve(fetch(new Request(locationURL, requestOpts)));
-						finalize();
-						return;
-				}
-			}
-
-			// prepare response
-			res.once('end', function () {
-				if (signal) signal.removeEventListener('abort', abortAndFinalize);
-			});
-			let body = res.pipe(new PassThrough$1());
-
-			const response_options = {
-				url: request.url,
-				status: res.statusCode,
-				statusText: res.statusMessage,
-				headers: headers,
-				size: request.size,
-				timeout: request.timeout,
-				counter: request.counter
-			};
-
-			// HTTP-network fetch step 12.1.1.3
-			const codings = headers.get('Content-Encoding');
-
-			// HTTP-network fetch step 12.1.1.4: handle content codings
-
-			// in following scenarios we ignore compression support
-			// 1. compression support is disabled
-			// 2. HEAD request
-			// 3. no Content-Encoding header
-			// 4. no content response (204)
-			// 5. content not modified response (304)
-			if (!request.compress || request.method === 'HEAD' || codings === null || res.statusCode === 204 || res.statusCode === 304) {
-				response = new Response(body, response_options);
-				resolve(response);
-				return;
-			}
-
-			// For Node v6+
-			// Be less strict when decoding compressed responses, since sometimes
-			// servers send slightly invalid responses that are still accepted
-			// by common browsers.
-			// Always using Z_SYNC_FLUSH is what cURL does.
-			const zlibOptions = {
-				flush: zlib.Z_SYNC_FLUSH,
-				finishFlush: zlib.Z_SYNC_FLUSH
-			};
-
-			// for gzip
-			if (codings == 'gzip' || codings == 'x-gzip') {
-				body = body.pipe(zlib.createGunzip(zlibOptions));
-				response = new Response(body, response_options);
-				resolve(response);
-				return;
-			}
-
-			// for deflate
-			if (codings == 'deflate' || codings == 'x-deflate') {
-				// handle the infamous raw deflate response from old servers
-				// a hack for old IIS and Apache servers
-				const raw = res.pipe(new PassThrough$1());
-				raw.once('data', function (chunk) {
-					// see http://stackoverflow.com/questions/37519828
-					if ((chunk[0] & 0x0F) === 0x08) {
-						body = body.pipe(zlib.createInflate());
-					} else {
-						body = body.pipe(zlib.createInflateRaw());
-					}
-					response = new Response(body, response_options);
-					resolve(response);
-				});
-				return;
-			}
-
-			// for br
-			if (codings == 'br' && typeof zlib.createBrotliDecompress === 'function') {
-				body = body.pipe(zlib.createBrotliDecompress());
-				response = new Response(body, response_options);
-				resolve(response);
-				return;
-			}
-
-			// otherwise, use response as-is
-			response = new Response(body, response_options);
-			resolve(response);
-		});
-
-		writeToStream(req, request);
-	});
-}
-/**
- * Redirect code matching
- *
- * @param   Number   code  Status code
- * @return  Boolean
- */
-fetch.isRedirect = function (code) {
-	return code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
-};
-
-// expose Promise
-fetch.Promise = global.Promise;
-
-module.exports = exports = fetch;
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = exports;
-exports.Headers = Headers;
-exports.Request = Request;
-exports.Response = Response;
-exports.FetchError = FetchError;
-
-
-/***/ }),
-/* 455 */,
-/* 456 */,
-/* 457 */,
-/* 458 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ReadMe = void 0;
-class ReadMe {
-    constructor(options) {
-        this.create = false;
-        this.path = options.path;
-        this.changelogEntry = options.changelogEntry;
-        this.version = options.version;
-        this.packageName = options.packageName;
-    }
-    updateContent(content) {
-        const minorVersion = this.version.split('.').slice(0, 2).join('.');
-        return content.replace(/version = "~> [\d]+.[\d]+"/, `version = "~> ${minorVersion}"`);
-    }
-}
-exports.ReadMe = ReadMe;
-//# sourceMappingURL=readme.js.map
-
-/***/ }),
-/* 459 */,
-/* 460 */,
-/* 461 */,
-/* 462 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-const SemVer = __webpack_require__(65)
-const Comparator = __webpack_require__(174)
-const {ANY} = Comparator
-const Range = __webpack_require__(124)
-const satisfies = __webpack_require__(310)
-const gt = __webpack_require__(486)
-const lt = __webpack_require__(586)
-const lte = __webpack_require__(898)
-const gte = __webpack_require__(167)
-
-const outside = (version, range, hilo, options) => {
-  version = new SemVer(version, options)
-  range = new Range(range, options)
-
-  let gtfn, ltefn, ltfn, comp, ecomp
-  switch (hilo) {
-    case '>':
-      gtfn = gt
-      ltefn = lte
-      ltfn = lt
-      comp = '>'
-      ecomp = '>='
-      break
-    case '<':
-      gtfn = lt
-      ltefn = gte
-      ltfn = gt
-      comp = '<'
-      ecomp = '<='
-      break
-    default:
-      throw new TypeError('Must provide a hilo val of "<" or ">"')
-  }
-
-  // If it satisifes the range it is not outside
-  if (satisfies(version, range, options)) {
-    return false
-  }
-
-  // From now on, variable terms are as if we're in "gtr" mode.
-  // but note that everything is flipped for the "ltr" function.
-
-  for (let i = 0; i < range.set.length; ++i) {
-    const comparators = range.set[i]
-
-    let high = null
-    let low = null
-
-    comparators.forEach((comparator) => {
-      if (comparator.semver === ANY) {
-        comparator = new Comparator('>=0.0.0')
-      }
-      high = high || comparator
-      low = low || comparator
-      if (gtfn(comparator.semver, high.semver, options)) {
-        high = comparator
-      } else if (ltfn(comparator.semver, low.semver, options)) {
-        low = comparator
-      }
-    })
-
-    // If the edge version comparator has a operator then our version
-    // isn't outside it
-    if (high.operator === comp || high.operator === ecomp) {
-      return false
-    }
-
-    // If the lowest version comparator has an operator and our version
-    // is less than it then it isn't higher than the range
-    if ((!low.operator || low.operator === comp) &&
-        ltefn(version, low.semver)) {
-      return false
-    } else if (low.operator === ecomp && ltfn(version, low.semver)) {
-      return false
-    }
-  }
-  return true
-}
-
-module.exports = outside
-
-
-/***/ }),
-/* 463 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
-
-var deprecation = __webpack_require__(692);
-var once = _interopDefault(__webpack_require__(49));
-
-const logOnce = once(deprecation => console.warn(deprecation));
-/**
- * Error with extra properties to help with debugging
- */
-
-class RequestError extends Error {
-  constructor(message, statusCode, options) {
-    super(message); // Maintains proper stack trace (only available on V8)
-
-    /* istanbul ignore next */
-
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-
-    this.name = "HttpError";
-    this.status = statusCode;
-    Object.defineProperty(this, "code", {
-      get() {
-        logOnce(new deprecation.Deprecation("[@octokit/request-error] `error.code` is deprecated, use `error.status`."));
-        return statusCode;
-      }
-
-    });
-    this.headers = options.headers || {}; // redact request credentials without mutating original request options
-
-    const requestCopy = Object.assign({}, options.request);
-
-    if (options.request.headers.authorization) {
-      requestCopy.headers = Object.assign({}, options.request.headers, {
-        authorization: options.request.headers.authorization.replace(/ .*$/, " [REDACTED]")
-      });
-    }
-
-    requestCopy.url = requestCopy.url // client_id & client_secret can be passed as URL query parameters to increase rate limit
-    // see https://developer.github.com/v3/#increasing-the-unauthenticated-rate-limit-for-oauth-applications
-    .replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]") // OAuth tokens can be passed as URL query parameters, although it is not recommended
-    // see https://developer.github.com/v3/#oauth2-token-sent-in-a-header
-    .replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
-    this.request = requestCopy;
-  }
-
-}
-
-exports.RequestError = RequestError;
-//# sourceMappingURL=index.js.map
-
-
-/***/ }),
-/* 464 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-const compareBuild = __webpack_require__(16)
-const rsort = (list, loose) => list.sort((a, b) => compareBuild(b, a, loose))
-module.exports = rsort
-
-
-/***/ }),
-/* 465 */,
-/* 466 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-exports.__esModule = true;
-
-var _utils = __webpack_require__(423);
-
-exports['default'] = function (instance) {
-  instance.registerDecorator('inline', function (fn, props, container, options) {
-    var ret = fn;
-    if (!props.partials) {
-      props.partials = {};
-      ret = function (context, options) {
-        // Create a new partials stack frame prior to exec.
-        var original = container.partials;
-        container.partials = _utils.extend({}, original, props.partials);
-        var ret = fn(context, options);
-        container.partials = original;
-        return ret;
-      };
-    }
-
-    props.partials[options.args[0]] = options.fn;
-
-    return ret;
-  });
-};
-
-module.exports = exports['default'];
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2RlY29yYXRvcnMvaW5saW5lLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7cUJBQXVCLFVBQVU7O3FCQUVsQixVQUFTLFFBQVEsRUFBRTtBQUNoQyxVQUFRLENBQUMsaUJBQWlCLENBQUMsUUFBUSxFQUFFLFVBQVMsRUFBRSxFQUFFLEtBQUssRUFBRSxTQUFTLEVBQUUsT0FBTyxFQUFFO0FBQzNFLFFBQUksR0FBRyxHQUFHLEVBQUUsQ0FBQztBQUNiLFFBQUksQ0FBQyxLQUFLLENBQUMsUUFBUSxFQUFFO0FBQ25CLFdBQUssQ0FBQyxRQUFRLEdBQUcsRUFBRSxDQUFDO0FBQ3BCLFNBQUcsR0FBRyxVQUFTLE9BQU8sRUFBRSxPQUFPLEVBQUU7O0FBRS9CLFlBQUksUUFBUSxHQUFHLFNBQVMsQ0FBQyxRQUFRLENBQUM7QUFDbEMsaUJBQVMsQ0FBQyxRQUFRLEdBQUcsY0FBTyxFQUFFLEVBQUUsUUFBUSxFQUFFLEtBQUssQ0FBQyxRQUFRLENBQUMsQ0FBQztBQUMxRCxZQUFJLEdBQUcsR0FBRyxFQUFFLENBQUMsT0FBTyxFQUFFLE9BQU8sQ0FBQyxDQUFDO0FBQy9CLGlCQUFTLENBQUMsUUFBUSxHQUFHLFFBQVEsQ0FBQztBQUM5QixlQUFPLEdBQUcsQ0FBQztPQUNaLENBQUM7S0FDSDs7QUFFRCxTQUFLLENBQUMsUUFBUSxDQUFDLE9BQU8sQ0FBQyxJQUFJLENBQUMsQ0FBQyxDQUFDLENBQUMsR0FBRyxPQUFPLENBQUMsRUFBRSxDQUFDOztBQUU3QyxXQUFPLEdBQUcsQ0FBQztHQUNaLENBQUMsQ0FBQztDQUNKIiwiZmlsZSI6ImlubGluZS5qcyIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IGV4dGVuZCB9IGZyb20gJy4uL3V0aWxzJztcblxuZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24oaW5zdGFuY2UpIHtcbiAgaW5zdGFuY2UucmVnaXN0ZXJEZWNvcmF0b3IoJ2lubGluZScsIGZ1bmN0aW9uKGZuLCBwcm9wcywgY29udGFpbmVyLCBvcHRpb25zKSB7XG4gICAgbGV0IHJldCA9IGZuO1xuICAgIGlmICghcHJvcHMucGFydGlhbHMpIHtcbiAgICAgIHByb3BzLnBhcnRpYWxzID0ge307XG4gICAgICByZXQgPSBmdW5jdGlvbihjb250ZXh0LCBvcHRpb25zKSB7XG4gICAgICAgIC8vIENyZWF0ZSBhIG5ldyBwYXJ0aWFscyBzdGFjayBmcmFtZSBwcmlvciB0byBleGVjLlxuICAgICAgICBsZXQgb3JpZ2luYWwgPSBjb250YWluZXIucGFydGlhbHM7XG4gICAgICAgIGNvbnRhaW5lci5wYXJ0aWFscyA9IGV4dGVuZCh7fSwgb3JpZ2luYWwsIHByb3BzLnBhcnRpYWxzKTtcbiAgICAgICAgbGV0IHJldCA9IGZuKGNvbnRleHQsIG9wdGlvbnMpO1xuICAgICAgICBjb250YWluZXIucGFydGlhbHMgPSBvcmlnaW5hbDtcbiAgICAgICAgcmV0dXJuIHJldDtcbiAgICAgIH07XG4gICAgfVxuXG4gICAgcHJvcHMucGFydGlhbHNbb3B0aW9ucy5hcmdzWzBdXSA9IG9wdGlvbnMuZm47XG5cbiAgICByZXR1cm4gcmV0O1xuICB9KTtcbn1cbiJdfQ==
-
-
-/***/ }),
-/* 467 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-
-const rx = __webpack_require__(789)
-
-module.exports = parse
-
-function parse ({ paths }) {
-  const wildcards = []
-  var wcLen = 0
-  const secret = paths.reduce(function (o, strPath, ix) {
-    var path = strPath.match(rx).map((p) => p.replace(/'|"|`/g, ''))
-    const leadingBracket = strPath[0] === '['
-    path = path.map((p) => {
-      if (p[0] === '[') return p.substr(1, p.length - 2)
-      else return p
-    })
-    const star = path.indexOf('*')
-    if (star > -1) {
-      const before = path.slice(0, star)
-      const beforeStr = before.join('.')
-      const after = path.slice(star + 1, path.length)
-      if (after.indexOf('*') > -1) throw Error('fast-redact – Only one wildcard per path is supported')
-      const nested = after.length > 0
-      wcLen++
-      wildcards.push({
-        before,
-        beforeStr,
-        after,
-        nested
-      })
-    } else {
-      o[strPath] = {
-        path: path,
-        val: undefined,
-        precensored: false,
-        circle: '',
-        escPath: JSON.stringify(strPath),
-        leadingBracket: leadingBracket
-      }
-    }
-    return o
-  }, {})
-
-  return { wildcards, wcLen, secret }
-}
-
-
-/***/ }),
-/* 468 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-
-const validator = __webpack_require__(205)
-const parse = __webpack_require__(467)
-const redactor = __webpack_require__(519)
-const restorer = __webpack_require__(948)
-const { groupRedact, nestedRedact } = __webpack_require__(239)
-const state = __webpack_require__(525)
-const rx = __webpack_require__(789)
-const validate = validator()
-const noop = (o) => o
-noop.restore = noop
-
-const DEFAULT_CENSOR = '[REDACTED]'
-fastRedact.rx = rx
-fastRedact.validator = validator
-
-module.exports = fastRedact
-
-function fastRedact (opts = {}) {
-  const paths = Array.from(new Set(opts.paths || []))
-  const serialize = 'serialize' in opts ? (
-    opts.serialize === false ? opts.serialize
-      : (typeof opts.serialize === 'function' ? opts.serialize : JSON.stringify)
-  ) : JSON.stringify
-  const remove = opts.remove
-  if (remove === true && serialize !== JSON.stringify) {
-    throw Error('fast-redact – remove option may only be set when serializer is JSON.stringify')
-  }
-  const censor = remove === true
-    ? undefined
-    : 'censor' in opts ? opts.censor : DEFAULT_CENSOR
-
-  const isCensorFct = typeof censor === 'function'
-
-  if (paths.length === 0) return serialize || noop
-
-  validate({ paths, serialize, censor })
-
-  const { wildcards, wcLen, secret } = parse({ paths, censor })
-
-  const compileRestore = restorer({ secret, wcLen })
-  const strict = 'strict' in opts ? opts.strict : true
-
-  return redactor({ secret, wcLen, serialize, strict, isCensorFct }, state({
-    secret,
-    censor,
-    compileRestore,
-    serialize,
-    groupRedact,
-    nestedRedact,
-    wildcards,
-    wcLen
-  }))
-}
-
-
-/***/ }),
-/* 469 */,
-/* 470 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const command_1 = __webpack_require__(431);
-const file_command_1 = __webpack_require__(102);
-const utils_1 = __webpack_require__(82);
-const os = __importStar(__webpack_require__(87));
-const path = __importStar(__webpack_require__(622));
-/**
- * The code to exit an action
- */
-var ExitCode;
-(function (ExitCode) {
-    /**
-     * A code indicating that the action was successful
-     */
-    ExitCode[ExitCode["Success"] = 0] = "Success";
-    /**
-     * A code indicating that the action was a failure
-     */
-    ExitCode[ExitCode["Failure"] = 1] = "Failure";
-})(ExitCode = exports.ExitCode || (exports.ExitCode = {}));
-//-----------------------------------------------------------------------
-// Variables
-//-----------------------------------------------------------------------
-/**
- * Sets env variable for this action and future actions in the job
- * @param name the name of the variable to set
- * @param val the value of the variable. Non-string values will be converted to a string via JSON.stringify
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function exportVariable(name, val) {
-    const convertedVal = utils_1.toCommandValue(val);
-    process.env[name] = convertedVal;
-    const filePath = process.env['GITHUB_ENV'] || '';
-    if (filePath) {
-        const delimiter = '_GitHubActionsFileCommandDelimeter_';
-        const commandValue = `${name}<<${delimiter}${os.EOL}${convertedVal}${os.EOL}${delimiter}`;
-        file_command_1.issueCommand('ENV', commandValue);
-    }
-    else {
-        command_1.issueCommand('set-env', { name }, convertedVal);
-    }
-}
-exports.exportVariable = exportVariable;
-/**
- * Registers a secret which will get masked from logs
- * @param secret value of the secret
- */
-function setSecret(secret) {
-    command_1.issueCommand('add-mask', {}, secret);
-}
-exports.setSecret = setSecret;
-/**
- * Prepends inputPath to the PATH (for this action and future actions)
- * @param inputPath
- */
-function addPath(inputPath) {
-    const filePath = process.env['GITHUB_PATH'] || '';
-    if (filePath) {
-        file_command_1.issueCommand('PATH', inputPath);
-    }
-    else {
-        command_1.issueCommand('add-path', {}, inputPath);
-    }
-    process.env['PATH'] = `${inputPath}${path.delimiter}${process.env['PATH']}`;
-}
-exports.addPath = addPath;
-/**
- * Gets the value of an input.  The value is also trimmed.
- *
- * @param     name     name of the input to get
- * @param     options  optional. See InputOptions.
- * @returns   string
- */
-function getInput(name, options) {
-    const val = process.env[`INPUT_${name.replace(/ /g, '_').toUpperCase()}`] || '';
-    if (options && options.required && !val) {
-        throw new Error(`Input required and not supplied: ${name}`);
-    }
-    return val.trim();
-}
-exports.getInput = getInput;
-/**
- * Sets the value of an output.
- *
- * @param     name     name of the output to set
- * @param     value    value to store. Non-string values will be converted to a string via JSON.stringify
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function setOutput(name, value) {
-    command_1.issueCommand('set-output', { name }, value);
-}
-exports.setOutput = setOutput;
-/**
- * Enables or disables the echoing of commands into stdout for the rest of the step.
- * Echoing is disabled by default if ACTIONS_STEP_DEBUG is not set.
- *
- */
-function setCommandEcho(enabled) {
-    command_1.issue('echo', enabled ? 'on' : 'off');
-}
-exports.setCommandEcho = setCommandEcho;
-//-----------------------------------------------------------------------
-// Results
-//-----------------------------------------------------------------------
-/**
- * Sets the action status to failed.
- * When the action exits it will be with an exit code of 1
- * @param message add error issue message
- */
-function setFailed(message) {
-    process.exitCode = ExitCode.Failure;
-    error(message);
-}
-exports.setFailed = setFailed;
-//-----------------------------------------------------------------------
-// Logging Commands
-//-----------------------------------------------------------------------
-/**
- * Gets whether Actions Step Debug is on or not
- */
-function isDebug() {
-    return process.env['RUNNER_DEBUG'] === '1';
-}
-exports.isDebug = isDebug;
-/**
- * Writes debug message to user log
- * @param message debug message
- */
-function debug(message) {
-    command_1.issueCommand('debug', {}, message);
-}
-exports.debug = debug;
-/**
- * Adds an error issue
- * @param message error issue message. Errors will be converted to string via toString()
- */
-function error(message) {
-    command_1.issue('error', message instanceof Error ? message.toString() : message);
-}
-exports.error = error;
-/**
- * Adds an warning issue
- * @param message warning issue message. Errors will be converted to string via toString()
- */
-function warning(message) {
-    command_1.issue('warning', message instanceof Error ? message.toString() : message);
-}
-exports.warning = warning;
-/**
- * Writes info to log with console.log.
- * @param message info message
- */
-function info(message) {
-    process.stdout.write(message + os.EOL);
-}
-exports.info = info;
-/**
- * Begin an output group.
- *
- * Output until the next `groupEnd` will be foldable in this group
- *
- * @param name The name of the output group
- */
-function startGroup(name) {
-    command_1.issue('group', name);
-}
-exports.startGroup = startGroup;
-/**
- * End an output group.
- */
-function endGroup() {
-    command_1.issue('endgroup');
-}
-exports.endGroup = endGroup;
-/**
- * Wrap an asynchronous function call in a group.
- *
- * Returns the same type as the function itself.
- *
- * @param name The name of the group
- * @param fn The function to wrap in the group
- */
-function group(name, fn) {
-    return __awaiter(this, void 0, void 0, function* () {
-        startGroup(name);
-        let result;
-        try {
-            result = yield fn();
-        }
-        finally {
-            endGroup();
-        }
-        return result;
-    });
-}
-exports.group = group;
-//-----------------------------------------------------------------------
-// Wrapper action state
-//-----------------------------------------------------------------------
-/**
- * Saves state for current action, the state can only be retrieved by this action's post job execution.
- *
- * @param     name     name of the state to store
- * @param     value    value to store. Non-string values will be converted to a string via JSON.stringify
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function saveState(name, value) {
-    command_1.issueCommand('save-state', { name }, value);
-}
-exports.saveState = saveState;
-/**
- * Gets the value of an state set by this action's main execution.
- *
- * @param     name     name of the state to get
- * @returns   string
- */
-function getState(name) {
-    return process.env[`STATE_${name}`] || '';
-}
-exports.getState = getState;
-//# sourceMappingURL=core.js.map
-
-/***/ }),
-/* 471 */,
-/* 472 */,
-/* 473 */,
-/* 474 */
-/***/ (function(module, exports) {
-
-"use strict";
-// Build out our basic SafeString type
-
-
-exports.__esModule = true;
-function SafeString(string) {
-  this.string = string;
-}
-
-SafeString.prototype.toString = SafeString.prototype.toHTML = function () {
-  return '' + this.string;
-};
-
-exports['default'] = SafeString;
-module.exports = exports['default'];
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL3NhZmUtc3RyaW5nLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7QUFDQSxTQUFTLFVBQVUsQ0FBQyxNQUFNLEVBQUU7QUFDMUIsTUFBSSxDQUFDLE1BQU0sR0FBRyxNQUFNLENBQUM7Q0FDdEI7O0FBRUQsVUFBVSxDQUFDLFNBQVMsQ0FBQyxRQUFRLEdBQUcsVUFBVSxDQUFDLFNBQVMsQ0FBQyxNQUFNLEdBQUcsWUFBVztBQUN2RSxTQUFPLEVBQUUsR0FBRyxJQUFJLENBQUMsTUFBTSxDQUFDO0NBQ3pCLENBQUM7O3FCQUVhLFVBQVUiLCJmaWxlIjoic2FmZS1zdHJpbmcuanMiLCJzb3VyY2VzQ29udGVudCI6WyIvLyBCdWlsZCBvdXQgb3VyIGJhc2ljIFNhZmVTdHJpbmcgdHlwZVxuZnVuY3Rpb24gU2FmZVN0cmluZyhzdHJpbmcpIHtcbiAgdGhpcy5zdHJpbmcgPSBzdHJpbmc7XG59XG5cblNhZmVTdHJpbmcucHJvdG90eXBlLnRvU3RyaW5nID0gU2FmZVN0cmluZy5wcm90b3R5cGUudG9IVE1MID0gZnVuY3Rpb24oKSB7XG4gIHJldHVybiAnJyArIHRoaXMuc3RyaW5nO1xufTtcblxuZXhwb3J0IGRlZmF1bHQgU2FmZVN0cmluZztcbiJdfQ==
-
-
-/***/ }),
-/* 475 */,
-/* 476 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-
-exports.__esModule = true;
-exports.createProtoAccessControl = createProtoAccessControl;
-exports.resultIsAllowed = resultIsAllowed;
-exports.resetLoggedProperties = resetLoggedProperties;
-// istanbul ignore next
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
-
-var _createNewLookupObject = __webpack_require__(912);
-
-var _logger = __webpack_require__(979);
-
-var logger = _interopRequireWildcard(_logger);
-
-var loggedProperties = Object.create(null);
-
-function createProtoAccessControl(runtimeOptions) {
-  var defaultMethodWhiteList = Object.create(null);
-  defaultMethodWhiteList['constructor'] = false;
-  defaultMethodWhiteList['__defineGetter__'] = false;
-  defaultMethodWhiteList['__defineSetter__'] = false;
-  defaultMethodWhiteList['__lookupGetter__'] = false;
-
-  var defaultPropertyWhiteList = Object.create(null);
-  // eslint-disable-next-line no-proto
-  defaultPropertyWhiteList['__proto__'] = false;
-
-  return {
-    properties: {
-      whitelist: _createNewLookupObject.createNewLookupObject(defaultPropertyWhiteList, runtimeOptions.allowedProtoProperties),
-      defaultValue: runtimeOptions.allowProtoPropertiesByDefault
-    },
-    methods: {
-      whitelist: _createNewLookupObject.createNewLookupObject(defaultMethodWhiteList, runtimeOptions.allowedProtoMethods),
-      defaultValue: runtimeOptions.allowProtoMethodsByDefault
-    }
-  };
-}
-
-function resultIsAllowed(result, protoAccessControl, propertyName) {
-  if (typeof result === 'function') {
-    return checkWhiteList(protoAccessControl.methods, propertyName);
-  } else {
-    return checkWhiteList(protoAccessControl.properties, propertyName);
-  }
-}
-
-function checkWhiteList(protoAccessControlForType, propertyName) {
-  if (protoAccessControlForType.whitelist[propertyName] !== undefined) {
-    return protoAccessControlForType.whitelist[propertyName] === true;
-  }
-  if (protoAccessControlForType.defaultValue !== undefined) {
-    return protoAccessControlForType.defaultValue;
-  }
-  logUnexpecedPropertyAccessOnce(propertyName);
-  return false;
-}
-
-function logUnexpecedPropertyAccessOnce(propertyName) {
-  if (loggedProperties[propertyName] !== true) {
-    loggedProperties[propertyName] = true;
-    logger.log('error', 'Handlebars: Access has been denied to resolve the property "' + propertyName + '" because it is not an "own property" of its parent.\n' + 'You can add a runtime option to disable the check or this warning:\n' + 'See https://handlebarsjs.com/api-reference/runtime-options.html#options-to-control-prototype-access for details');
-  }
-}
-
-function resetLoggedProperties() {
-  Object.keys(loggedProperties).forEach(function (propertyName) {
-    delete loggedProperties[propertyName];
-  });
-}
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2ludGVybmFsL3Byb3RvLWFjY2Vzcy5qcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7O3FDQUFzQyw0QkFBNEI7O3NCQUMxQyxXQUFXOztJQUF2QixNQUFNOztBQUVsQixJQUFNLGdCQUFnQixHQUFHLE1BQU0sQ0FBQyxNQUFNLENBQUMsSUFBSSxDQUFDLENBQUM7O0FBRXRDLFNBQVMsd0JBQXdCLENBQUMsY0FBYyxFQUFFO0FBQ3ZELE1BQUksc0JBQXNCLEdBQUcsTUFBTSxDQUFDLE1BQU0sQ0FBQyxJQUFJLENBQUMsQ0FBQztBQUNqRCx3QkFBc0IsQ0FBQyxhQUFhLENBQUMsR0FBRyxLQUFLLENBQUM7QUFDOUMsd0JBQXNCLENBQUMsa0JBQWtCLENBQUMsR0FBRyxLQUFLLENBQUM7QUFDbkQsd0JBQXNCLENBQUMsa0JBQWtCLENBQUMsR0FBRyxLQUFLLENBQUM7QUFDbkQsd0JBQXNCLENBQUMsa0JBQWtCLENBQUMsR0FBRyxLQUFLLENBQUM7O0FBRW5ELE1BQUksd0JBQXdCLEdBQUcsTUFBTSxDQUFDLE1BQU0sQ0FBQyxJQUFJLENBQUMsQ0FBQzs7QUFFbkQsMEJBQXdCLENBQUMsV0FBVyxDQUFDLEdBQUcsS0FBSyxDQUFDOztBQUU5QyxTQUFPO0FBQ0wsY0FBVSxFQUFFO0FBQ1YsZUFBUyxFQUFFLDZDQUNULHdCQUF3QixFQUN4QixjQUFjLENBQUMsc0JBQXNCLENBQ3RDO0FBQ0Qsa0JBQVksRUFBRSxjQUFjLENBQUMsNkJBQTZCO0tBQzNEO0FBQ0QsV0FBTyxFQUFFO0FBQ1AsZUFBUyxFQUFFLDZDQUNULHNCQUFzQixFQUN0QixjQUFjLENBQUMsbUJBQW1CLENBQ25DO0FBQ0Qsa0JBQVksRUFBRSxjQUFjLENBQUMsMEJBQTBCO0tBQ3hEO0dBQ0YsQ0FBQztDQUNIOztBQUVNLFNBQVMsZUFBZSxDQUFDLE1BQU0sRUFBRSxrQkFBa0IsRUFBRSxZQUFZLEVBQUU7QUFDeEUsTUFBSSxPQUFPLE1BQU0sS0FBSyxVQUFVLEVBQUU7QUFDaEMsV0FBTyxjQUFjLENBQUMsa0JBQWtCLENBQUMsT0FBTyxFQUFFLFlBQVksQ0FBQyxDQUFDO0dBQ2pFLE1BQU07QUFDTCxXQUFPLGNBQWMsQ0FBQyxrQkFBa0IsQ0FBQyxVQUFVLEVBQUUsWUFBWSxDQUFDLENBQUM7R0FDcEU7Q0FDRjs7QUFFRCxTQUFTLGNBQWMsQ0FBQyx5QkFBeUIsRUFBRSxZQUFZLEVBQUU7QUFDL0QsTUFBSSx5QkFBeUIsQ0FBQyxTQUFTLENBQUMsWUFBWSxDQUFDLEtBQUssU0FBUyxFQUFFO0FBQ25FLFdBQU8seUJBQXlCLENBQUMsU0FBUyxDQUFDLFlBQVksQ0FBQyxLQUFLLElBQUksQ0FBQztHQUNuRTtBQUNELE1BQUkseUJBQXlCLENBQUMsWUFBWSxLQUFLLFNBQVMsRUFBRTtBQUN4RCxXQUFPLHlCQUF5QixDQUFDLFlBQVksQ0FBQztHQUMvQztBQUNELGdDQUE4QixDQUFDLFlBQVksQ0FBQyxDQUFDO0FBQzdDLFNBQU8sS0FBSyxDQUFDO0NBQ2Q7O0FBRUQsU0FBUyw4QkFBOEIsQ0FBQyxZQUFZLEVBQUU7QUFDcEQsTUFBSSxnQkFBZ0IsQ0FBQyxZQUFZLENBQUMsS0FBSyxJQUFJLEVBQUU7QUFDM0Msb0JBQWdCLENBQUMsWUFBWSxDQUFDLEdBQUcsSUFBSSxDQUFDO0FBQ3RDLFVBQU0sQ0FBQyxHQUFHLENBQ1IsT0FBTyxFQUNQLGlFQUErRCxZQUFZLG9JQUNILG9IQUMyQyxDQUNwSCxDQUFDO0dBQ0g7Q0FDRjs7QUFFTSxTQUFTLHFCQUFxQixHQUFHO0FBQ3RDLFFBQU0sQ0FBQyxJQUFJLENBQUMsZ0JBQWdCLENBQUMsQ0FBQyxPQUFPLENBQUMsVUFBQSxZQUFZLEVBQUk7QUFDcEQsV0FBTyxnQkFBZ0IsQ0FBQyxZQUFZLENBQUMsQ0FBQztHQUN2QyxDQUFDLENBQUM7Q0FDSiIsImZpbGUiOiJwcm90by1hY2Nlc3MuanMiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBjcmVhdGVOZXdMb29rdXBPYmplY3QgfSBmcm9tICcuL2NyZWF0ZS1uZXctbG9va3VwLW9iamVjdCc7XG5pbXBvcnQgKiBhcyBsb2dnZXIgZnJvbSAnLi4vbG9nZ2VyJztcblxuY29uc3QgbG9nZ2VkUHJvcGVydGllcyA9IE9iamVjdC5jcmVhdGUobnVsbCk7XG5cbmV4cG9ydCBmdW5jdGlvbiBjcmVhdGVQcm90b0FjY2Vzc0NvbnRyb2wocnVudGltZU9wdGlvbnMpIHtcbiAgbGV0IGRlZmF1bHRNZXRob2RXaGl0ZUxpc3QgPSBPYmplY3QuY3JlYXRlKG51bGwpO1xuICBkZWZhdWx0TWV0aG9kV2hpdGVMaXN0Wydjb25zdHJ1Y3RvciddID0gZmFsc2U7XG4gIGRlZmF1bHRNZXRob2RXaGl0ZUxpc3RbJ19fZGVmaW5lR2V0dGVyX18nXSA9IGZhbHNlO1xuICBkZWZhdWx0TWV0aG9kV2hpdGVMaXN0WydfX2RlZmluZVNldHRlcl9fJ10gPSBmYWxzZTtcbiAgZGVmYXVsdE1ldGhvZFdoaXRlTGlzdFsnX19sb29rdXBHZXR0ZXJfXyddID0gZmFsc2U7XG5cbiAgbGV0IGRlZmF1bHRQcm9wZXJ0eVdoaXRlTGlzdCA9IE9iamVjdC5jcmVhdGUobnVsbCk7XG4gIC8vIGVzbGludC1kaXNhYmxlLW5leHQtbGluZSBuby1wcm90b1xuICBkZWZhdWx0UHJvcGVydHlXaGl0ZUxpc3RbJ19fcHJvdG9fXyddID0gZmFsc2U7XG5cbiAgcmV0dXJuIHtcbiAgICBwcm9wZXJ0aWVzOiB7XG4gICAgICB3aGl0ZWxpc3Q6IGNyZWF0ZU5ld0xvb2t1cE9iamVjdChcbiAgICAgICAgZGVmYXVsdFByb3BlcnR5V2hpdGVMaXN0LFxuICAgICAgICBydW50aW1lT3B0aW9ucy5hbGxvd2VkUHJvdG9Qcm9wZXJ0aWVzXG4gICAgICApLFxuICAgICAgZGVmYXVsdFZhbHVlOiBydW50aW1lT3B0aW9ucy5hbGxvd1Byb3RvUHJvcGVydGllc0J5RGVmYXVsdFxuICAgIH0sXG4gICAgbWV0aG9kczoge1xuICAgICAgd2hpdGVsaXN0OiBjcmVhdGVOZXdMb29rdXBPYmplY3QoXG4gICAgICAgIGRlZmF1bHRNZXRob2RXaGl0ZUxpc3QsXG4gICAgICAgIHJ1bnRpbWVPcHRpb25zLmFsbG93ZWRQcm90b01ldGhvZHNcbiAgICAgICksXG4gICAgICBkZWZhdWx0VmFsdWU6IHJ1bnRpbWVPcHRpb25zLmFsbG93UHJvdG9NZXRob2RzQnlEZWZhdWx0XG4gICAgfVxuICB9O1xufVxuXG5leHBvcnQgZnVuY3Rpb24gcmVzdWx0SXNBbGxvd2VkKHJlc3VsdCwgcHJvdG9BY2Nlc3NDb250cm9sLCBwcm9wZXJ0eU5hbWUpIHtcbiAgaWYgKHR5cGVvZiByZXN1bHQgPT09ICdmdW5jdGlvbicpIHtcbiAgICByZXR1cm4gY2hlY2tXaGl0ZUxpc3QocHJvdG9BY2Nlc3NDb250cm9sLm1ldGhvZHMsIHByb3BlcnR5TmFtZSk7XG4gIH0gZWxzZSB7XG4gICAgcmV0dXJuIGNoZWNrV2hpdGVMaXN0KHByb3RvQWNjZXNzQ29udHJvbC5wcm9wZXJ0aWVzLCBwcm9wZXJ0eU5hbWUpO1xuICB9XG59XG5cbmZ1bmN0aW9uIGNoZWNrV2hpdGVMaXN0KHByb3RvQWNjZXNzQ29udHJvbEZvclR5cGUsIHByb3BlcnR5TmFtZSkge1xuICBpZiAocHJvdG9BY2Nlc3NDb250cm9sRm9yVHlwZS53aGl0ZWxpc3RbcHJvcGVydHlOYW1lXSAhPT0gdW5kZWZpbmVkKSB7XG4gICAgcmV0dXJuIHByb3RvQWNjZXNzQ29udHJvbEZvclR5cGUud2hpdGVsaXN0W3Byb3BlcnR5TmFtZV0gPT09IHRydWU7XG4gIH1cbiAgaWYgKHByb3RvQWNjZXNzQ29udHJvbEZvclR5cGUuZGVmYXVsdFZhbHVlICE9PSB1bmRlZmluZWQpIHtcbiAgICByZXR1cm4gcHJvdG9BY2Nlc3NDb250cm9sRm9yVHlwZS5kZWZhdWx0VmFsdWU7XG4gIH1cbiAgbG9nVW5leHBlY2VkUHJvcGVydHlBY2Nlc3NPbmNlKHByb3BlcnR5TmFtZSk7XG4gIHJldHVybiBmYWxzZTtcbn1cblxuZnVuY3Rpb24gbG9nVW5leHBlY2VkUHJvcGVydHlBY2Nlc3NPbmNlKHByb3BlcnR5TmFtZSkge1xuICBpZiAobG9nZ2VkUHJvcGVydGllc1twcm9wZXJ0eU5hbWVdICE9PSB0cnVlKSB7XG4gICAgbG9nZ2VkUHJvcGVydGllc1twcm9wZXJ0eU5hbWVdID0gdHJ1ZTtcbiAgICBsb2dnZXIubG9nKFxuICAgICAgJ2Vycm9yJyxcbiAgICAgIGBIYW5kbGViYXJzOiBBY2Nlc3MgaGFzIGJlZW4gZGVuaWVkIHRvIHJlc29sdmUgdGhlIHByb3BlcnR5IFwiJHtwcm9wZXJ0eU5hbWV9XCIgYmVjYXVzZSBpdCBpcyBub3QgYW4gXCJvd24gcHJvcGVydHlcIiBvZiBpdHMgcGFyZW50LlxcbmAgK1xuICAgICAgICBgWW91IGNhbiBhZGQgYSBydW50aW1lIG9wdGlvbiB0byBkaXNhYmxlIHRoZSBjaGVjayBvciB0aGlzIHdhcm5pbmc6XFxuYCArXG4gICAgICAgIGBTZWUgaHR0cHM6Ly9oYW5kbGViYXJzanMuY29tL2FwaS1yZWZlcmVuY2UvcnVudGltZS1vcHRpb25zLmh0bWwjb3B0aW9ucy10by1jb250cm9sLXByb3RvdHlwZS1hY2Nlc3MgZm9yIGRldGFpbHNgXG4gICAgKTtcbiAgfVxufVxuXG5leHBvcnQgZnVuY3Rpb24gcmVzZXRMb2dnZWRQcm9wZXJ0aWVzKCkge1xuICBPYmplY3Qua2V5cyhsb2dnZWRQcm9wZXJ0aWVzKS5mb3JFYWNoKHByb3BlcnR5TmFtZSA9PiB7XG4gICAgZGVsZXRlIGxvZ2dlZFByb3BlcnRpZXNbcHJvcGVydHlOYW1lXTtcbiAgfSk7XG59XG4iXX0=
-
-
-/***/ }),
-/* 477 */,
-/* 478 */,
-/* 479 */,
-/* 480 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-const Range = __webpack_require__(124)
-const validRange = (range, options) => {
-  try {
-    // Return '*' instead of '' so that truthiness works.
-    // This will throw if it's invalid anyway
-    return new Range(range, options).range || '*'
-  } catch (er) {
-    return null
-  }
-}
-module.exports = validRange
-
-
-/***/ }),
-/* 481 */,
-/* 482 */,
-/* 483 */,
-/* 484 */,
-/* 485 */,
-/* 486 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-const compare = __webpack_require__(874)
-const gt = (a, b, loose) => compare(a, b, loose) > 0
-module.exports = gt
-
-
-/***/ }),
-/* 487 */,
-/* 488 */,
-/* 489 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-const SemVer = __webpack_require__(65)
-const patch = (a, loose) => new SemVer(a, loose).patch
-module.exports = patch
-
-
-/***/ }),
-/* 490 */,
-/* 491 */,
-/* 492 */,
-/* 493 */,
-/* 494 */,
-/* 495 */,
-/* 496 */,
-/* 497 */,
-/* 498 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-exports.__esModule = true;
-// istanbul ignore next
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
-
-var _utils = __webpack_require__(423);
-
-var _exception = __webpack_require__(311);
-
-var _exception2 = _interopRequireDefault(_exception);
-
-exports['default'] = function (instance) {
-  instance.registerHelper('each', function (context, options) {
-    if (!options) {
-      throw new _exception2['default']('Must pass iterator to #each');
-    }
-
-    var fn = options.fn,
-        inverse = options.inverse,
-        i = 0,
-        ret = '',
-        data = undefined,
-        contextPath = undefined;
-
-    if (options.data && options.ids) {
-      contextPath = _utils.appendContextPath(options.data.contextPath, options.ids[0]) + '.';
-    }
-
-    if (_utils.isFunction(context)) {
-      context = context.call(this);
-    }
-
-    if (options.data) {
-      data = _utils.createFrame(options.data);
-    }
-
-    function execIteration(field, index, last) {
-      if (data) {
-        data.key = field;
-        data.index = index;
-        data.first = index === 0;
-        data.last = !!last;
-
-        if (contextPath) {
-          data.contextPath = contextPath + field;
-        }
-      }
-
-      ret = ret + fn(context[field], {
-        data: data,
-        blockParams: _utils.blockParams([context[field], field], [contextPath + field, null])
-      });
-    }
-
-    if (context && typeof context === 'object') {
-      if (_utils.isArray(context)) {
-        for (var j = context.length; i < j; i++) {
-          if (i in context) {
-            execIteration(i, i, i === context.length - 1);
-          }
-        }
-      } else if (global.Symbol && context[global.Symbol.iterator]) {
-        var newContext = [];
-        var iterator = context[global.Symbol.iterator]();
-        for (var it = iterator.next(); !it.done; it = iterator.next()) {
-          newContext.push(it.value);
-        }
-        context = newContext;
-        for (var j = context.length; i < j; i++) {
-          execIteration(i, i, i === context.length - 1);
-        }
-      } else {
-        (function () {
-          var priorKey = undefined;
-
-          Object.keys(context).forEach(function (key) {
-            // We're running the iterations one step out of sync so we can detect
-            // the last iteration without have to scan the object twice and create
-            // an itermediate keys array.
-            if (priorKey !== undefined) {
-              execIteration(priorKey, i - 1);
-            }
-            priorKey = key;
-            i++;
-          });
-          if (priorKey !== undefined) {
-            execIteration(priorKey, i - 1, true);
-          }
-        })();
-      }
-    }
-
-    if (i === 0) {
-      ret = inverse(this);
-    }
-
-    return ret;
-  });
-};
-
-module.exports = exports['default'];
-//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2hlbHBlcnMvZWFjaC5qcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7Ozs7O3FCQU1PLFVBQVU7O3lCQUNLLGNBQWM7Ozs7cUJBRXJCLFVBQVMsUUFBUSxFQUFFO0FBQ2hDLFVBQVEsQ0FBQyxjQUFjLENBQUMsTUFBTSxFQUFFLFVBQVMsT0FBTyxFQUFFLE9BQU8sRUFBRTtBQUN6RCxRQUFJLENBQUMsT0FBTyxFQUFFO0FBQ1osWUFBTSwyQkFBYyw2QkFBNkIsQ0FBQyxDQUFDO0tBQ3BEOztBQUVELFFBQUksRUFBRSxHQUFHLE9BQU8sQ0FBQyxFQUFFO1FBQ2pCLE9BQU8sR0FBRyxPQUFPLENBQUMsT0FBTztRQUN6QixDQUFDLEdBQUcsQ0FBQztRQUNMLEdBQUcsR0FBRyxFQUFFO1FBQ1IsSUFBSSxZQUFBO1FBQ0osV0FBVyxZQUFBLENBQUM7O0FBRWQsUUFBSSxPQUFPLENBQUMsSUFBSSxJQUFJLE9BQU8sQ0FBQyxHQUFHLEVBQUU7QUFDL0IsaUJBQVcsR0FDVCx5QkFBa0IsT0FBTyxDQUFDLElBQUksQ0FBQyxXQUFXLEVBQUUsT0FBTyxDQUFDLEdBQUcsQ0FBQyxDQUFDLENBQUMsQ0FBQyxHQUFHLEdBQUcsQ0FBQztLQUNyRTs7QUFFRCxRQUFJLGtCQUFXLE9BQU8sQ0FBQyxFQUFFO0FBQ3ZCLGFBQU8sR0FBRyxPQUFPLENBQUMsSUFBSSxDQUFDLElBQUksQ0FBQyxDQUFDO0tBQzlCOztBQUVELFFBQUksT0FBTyxDQUFDLElBQUksRUFBRTtBQUNoQixVQUFJLEdBQUcsbUJBQVksT0FBTyxDQUFDLElBQUksQ0FBQyxDQUFDO0tBQ2xDOztBQUVELGFBQVMsYUFBYSxDQUFDLEtBQUssRUFBRSxLQUFLLEVBQUUsSUFBSSxFQUFFO0FBQ3pDLFVBQUksSUFBSSxFQUFFO0FBQ1IsWUFBSSxDQUFDLEdBQUcsR0FBRyxLQUFLLENBQUM7QUFDakIsWUFBSSxDQUFDLEtBQUssR0FBRyxLQUFLLENBQUM7QUFDbkIsWUFBSSxDQUFDLEtBQUssR0FBRyxLQUFLLEtBQUssQ0FBQyxDQUFDO0FBQ3pCLFlBQUksQ0FBQyxJQUFJLEdBQUcsQ0FBQyxDQUFDLElBQUksQ0FBQzs7QUFFbkIsWUFBSSxXQUFXLEVBQUU7QUFDZixjQUFJLENBQUMsV0FBVyxHQUFHLFdBQVcsR0FBRyxLQUFLLENBQUM7U0FDeEM7T0FDRjs7QUFFRCxTQUFHLEdBQ0QsR0FBRyxHQUNILEVBQUUsQ0FBQyxPQUFPLENBQUMsS0FBSyxDQUFDLEVBQUU7QUFDakIsWUFBSSxFQUFFLElBQUk7QUFDVixtQkFBVyxFQUFFLG1CQUNYLENBQUMsT0FBTyxDQUFDLEtBQUssQ0FBQyxFQUFFLEtBQUssQ0FBQyxFQUN2QixDQUFDLFdBQVcsR0FBRyxLQUFLLEVBQUUsSUFBSSxDQUFDLENBQzVCO09BQ0YsQ0FBQyxDQUFDO0tBQ047O0FBRUQsUUFBSSxPQUFPLElBQUksT0FBTyxPQUFPLEtBQUssUUFBUSxFQUFFO0FBQzFDLFVBQUksZUFBUSxPQUFPLENBQUMsRUFBRTtBQUNwQixhQUFLLElBQUksQ0FBQyxHQUFHLE9BQU8sQ0FBQyxNQUFNLEVBQUUsQ0FBQyxHQUFHLENBQUMsRUFBRSxDQUFDLEVBQUUsRUFBRTtBQUN2QyxjQUFJLENBQUMsSUFBSSxPQUFPLEVBQUU7QUFDaEIseUJBQWEsQ0FBQyxDQUFDLEVBQUUsQ0FBQyxFQUFFLENBQUMsS0FBSyxPQUFPLENBQUMsTUFBTSxHQUFHLENBQUMsQ0FBQyxDQUFDO1dBQy9DO1NBQ0Y7T0FDRixNQUFNLElBQUksTUFBTSxDQUFDLE1BQU0sSUFBSSxPQUFPLENBQUMsTUFBTSxDQUFDLE1BQU0sQ0FBQyxRQUFRLENBQUMsRUFBRTtBQUMzRCxZQUFNLFVBQVUsR0FBRyxFQUFFLENBQUM7QUFDdEIsWUFBTSxRQUFRLEdBQUcsT0FBTyxDQUFDLE1BQU0sQ0FBQyxNQUFNLENBQUMsUUFBUSxDQUFDLEVBQUUsQ0FBQztBQUNuRCxhQUFLLElBQUksRUFBRSxHQUFHLFFBQVEsQ0FBQyxJQUFJLEVBQUUsRUFBRSxDQUFDLEVBQUUsQ0FBQyxJQUFJLEVBQUUsRUFBRSxHQUFHLFFBQVEsQ0FBQyxJQUFJLEVBQUUsRUFBRTtBQUM3RCxvQkFBVSxDQUFDLElBQUksQ0FBQyxFQUFFLENBQUMsS0FBSyxDQUFDLENBQUM7U0FDM0I7QUFDRCxlQUFPLEdBQUcsVUFBVSxDQUFDO0FBQ3JCLGFBQUssSUFBSSxDQUFDLEdBQUcsT0FBTyxDQUFDLE1BQU0sRUFBRSxDQUFDLEdBQUcsQ0FBQyxFQUFFLENBQUMsRUFBRSxFQUFFO0FBQ3ZDLHVCQUFhLENBQUMsQ0FBQyxFQUFFLENBQUMsRUFBRSxDQUFDLEtBQUssT0FBTyxDQUFDLE1BQU0sR0FBRyxDQUFDLENBQUMsQ0FBQztTQUMvQztPQUNGLE1BQU07O0FBQ0wsY0FBSSxRQUFRLFlBQUEsQ0FBQzs7QUFFYixnQkFBTSxDQUFDLElBQUksQ0FBQyxPQUFPLENBQUMsQ0FBQyxPQUFPLENBQUMsVUFBQSxHQUFHLEVBQUk7Ozs7QUFJbEMsZ0JBQUksUUFBUSxLQUFLLFNBQVMsRUFBRTtBQUMxQiwyQkFBYSxDQUFDLFFBQVEsRUFBRSxDQUFDLEdBQUcsQ0FBQyxDQUFDLENBQUM7YUFDaEM7QUFDRCxvQkFBUSxHQUFHLEdBQUcsQ0FBQztBQUNmLGFBQUMsRUFBRSxDQUFDO1dBQ0wsQ0FBQyxDQUFDO0FBQ0gsY0FBSSxRQUFRLEtBQUssU0FBUyxFQUFFO0FBQzFCLHlCQUFhLENBQUMsUUFBUSxFQUFFLENBQUMsR0FBRyxDQUFDLEVBQUUsSUFBSSxDQUFDLENBQUM7V0FDdEM7O09BQ0Y7S0FDRjs7QUFFRCxRQUFJLENBQUMsS0FBSyxDQUFDLEVBQUU7QUFDWCxTQUFHLEdBQUcsT0FBTyxDQUFDLElBQUksQ0FBQyxDQUFDO0tBQ3JCOztBQUVELFdBQU8sR0FBRyxDQUFDO0dBQ1osQ0FBQyxDQUFDO0NBQ0oiLCJmaWxlIjoiZWFjaC5qcyIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7XG4gIGFwcGVuZENvbnRleHRQYXRoLFxuICBibG9ja1BhcmFtcyxcbiAgY3JlYXRlRnJhbWUsXG4gIGlzQXJyYXksXG4gIGlzRnVuY3Rpb25cbn0gZnJvbSAnLi4vdXRpbHMnO1xuaW1wb3J0IEV4Y2VwdGlvbiBmcm9tICcuLi9leGNlcHRpb24nO1xuXG5leHBvcnQgZGVmYXVsdCBmdW5jdGlvbihpbnN0YW5jZSkge1xuICBpbnN0YW5jZS5yZWdpc3RlckhlbHBlcignZWFjaCcsIGZ1bmN0aW9uKGNvbnRleHQsIG9wdGlvbnMpIHtcbiAgICBpZiAoIW9wdGlvbnMpIHtcbiAgICAgIHRocm93IG5ldyBFeGNlcHRpb24oJ011c3QgcGFzcyBpdGVyYXRvciB0byAjZWFjaCcpO1xuICAgIH1cblxuICAgIGxldCBmbiA9IG9wdGlvbnMuZm4sXG4gICAgICBpbnZlcnNlID0gb3B0aW9ucy5pbnZlcnNlLFxuICAgICAgaSA9IDAsXG4gICAgICByZXQgPSAnJyxcbiAgICAgIGRhdGEsXG4gICAgICBjb250ZXh0UGF0aDtcblxuICAgIGlmIChvcHRpb25zLmRhdGEgJiYgb3B0aW9ucy5pZHMpIHtcbiAgICAgIGNvbnRleHRQYXRoID1cbiAgICAgICAgYXBwZW5kQ29udGV4dFBhdGgob3B0aW9ucy5kYXRhLmNvbnRleHRQYXRoLCBvcHRpb25zLmlkc1swXSkgKyAnLic7XG4gICAgfVxuXG4gICAgaWYgKGlzRnVuY3Rpb24oY29udGV4dCkpIHtcbiAgICAgIGNvbnRleHQgPSBjb250ZXh0LmNhbGwodGhpcyk7XG4gICAgfVxuXG4gICAgaWYgKG9wdGlvbnMuZGF0YSkge1xuICAgICAgZGF0YSA9IGNyZWF0ZUZyYW1lKG9wdGlvbnMuZGF0YSk7XG4gICAgfVxuXG4gICAgZnVuY3Rpb24gZXhlY0l0ZXJhdGlvbihmaWVsZCwgaW5kZXgsIGxhc3QpIHtcbiAgICAgIGlmIChkYXRhKSB7XG4gICAgICAgIGRhdGEua2V5ID0gZmllbGQ7XG4gICAgICAgIGRhdGEuaW5kZXggPSBpbmRleDtcbiAgICAgICAgZGF0YS5maXJzdCA9IGluZGV4ID09PSAwO1xuICAgICAgICBkYXRhLmxhc3QgPSAhIWxhc3Q7XG5cbiAgICAgICAgaWYgKGNvbnRleHRQYXRoKSB7XG4gICAgICAgICAgZGF0YS5jb250ZXh0UGF0aCA9IGNvbnRleHRQYXRoICsgZmllbGQ7XG4gICAgICAgIH1cbiAgICAgIH1cblxuICAgICAgcmV0ID1cbiAgICAgICAgcmV0ICtcbiAgICAgICAgZm4oY29udGV4dFtmaWVsZF0sIHtcbiAgICAgICAgICBkYXRhOiBkYXRhLFxuICAgICAgICAgIGJsb2NrUGFyYW1zOiBibG9ja1BhcmFtcyhcbiAgICAgICAgICAgIFtjb250ZXh0W2ZpZWxkXSwgZmllbGRdLFxuICAgICAgICAgICAgW2NvbnRleHRQYXRoICsgZmllbGQsIG51bGxdXG4gICAgICAgICAgKVxuICAgICAgICB9KTtcbiAgICB9XG5cbiAgICBpZiAoY29udGV4dCAmJiB0eXBlb2YgY29udGV4dCA9PT0gJ29iamVjdCcpIHtcbiAgICAgIGlmIChpc0FycmF5KGNvbnRleHQpKSB7XG4gICAgICAgIGZvciAobGV0IGogPSBjb250ZXh0Lmxlbmd0aDsgaSA8IGo7IGkrKykge1xuICAgICAgICAgIGlmIChpIGluIGNvbnRleHQpIHtcbiAgICAgICAgICAgIGV4ZWNJdGVyYXRpb24oaSwgaSwgaSA9PT0gY29udGV4dC5sZW5ndGggLSAxKTtcbiAgICAgICAgICB9XG4gICAgICAgIH1cbiAgICAgIH0gZWxzZSBpZiAoZ2xvYmFsLlN5bWJvbCAmJiBjb250ZXh0W2dsb2JhbC5TeW1ib2wuaXRlcmF0b3JdKSB7XG4gICAgICAgIGNvbnN0IG5ld0NvbnRleHQgPSBbXTtcbiAgICAgICAgY29uc3QgaXRlcmF0b3IgPSBjb250ZXh0W2dsb2JhbC5TeW1ib2wuaXRlcmF0b3JdKCk7XG4gICAgICAgIGZvciAobGV0IGl0ID0gaXRlcmF0b3IubmV4dCgpOyAhaXQuZG9uZTsgaXQgPSBpdGVyYXRvci5uZXh0KCkpIHtcbiAgICAgICAgICBuZXdDb250ZXh0LnB1c2goaXQudmFsdWUpO1xuICAgICAgICB9XG4gICAgICAgIGNvbnRleHQgPSBuZXdDb250ZXh0O1xuICAgICAgICBmb3IgKGxldCBqID0gY29udGV4dC5sZW5ndGg7IGkgPCBqOyBpKyspIHtcbiAgICAgICAgICBleGVjSXRlcmF0aW9uKGksIGksIGkgPT09IGNvbnRleHQubGVuZ3RoIC0gMSk7XG4gICAgICAgIH1cbiAgICAgIH0gZWxzZSB7XG4gICAgICAgIGxldCBwcmlvcktleTtcblxuICAgICAgICBPYmplY3Qua2V5cyhjb250ZXh0KS5mb3JFYWNoKGtleSA9PiB7XG4gICAgICAgICAgLy8gV2UncmUgcnVubmluZyB0aGUgaXRlcmF0aW9ucyBvbmUgc3RlcCBvdXQgb2Ygc3luYyBzbyB3ZSBjYW4gZGV0ZWN0XG4gICAgICAgICAgLy8gdGhlIGxhc3QgaXRlcmF0aW9uIHdpdGhvdXQgaGF2ZSB0byBzY2FuIHRoZSBvYmplY3QgdHdpY2UgYW5kIGNyZWF0ZVxuICAgICAgICAgIC8vIGFuIGl0ZXJtZWRpYXRlIGtleXMgYXJyYXkuXG4gICAgICAgICAgaWYgKHByaW9yS2V5ICE9PSB1bmRlZmluZWQpIHtcbiAgICAgICAgICAgIGV4ZWNJdGVyYXRpb24ocHJpb3JLZXksIGkgLSAxKTtcbiAgICAgICAgICB9XG4gICAgICAgICAgcHJpb3JLZXkgPSBrZXk7XG4gICAgICAgICAgaSsrO1xuICAgICAgICB9KTtcbiAgICAgICAgaWYgKHByaW9yS2V5ICE9PSB1bmRlZmluZWQpIHtcbiAgICAgICAgICBleGVjSXRlcmF0aW9uKHByaW9yS2V5LCBpIC0gMSwgdHJ1ZSk7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG5cbiAgICBpZiAoaSA9PT0gMCkge1xuICAgICAgcmV0ID0gaW52ZXJzZSh0aGlzKTtcbiAgICB9XG5cbiAgICByZXR1cm4gcmV0O1xuICB9KTtcbn1cbiJdfQ==
-
-
-/***/ }),
-/* 499 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-const SemVer = __webpack_require__(65)
-const parse = __webpack_require__(830)
-const {re, t} = __webpack_require__(976)
-
-const coerce = (version, options) => {
-  if (version instanceof SemVer) {
-    return version
-  }
-
-  if (typeof version === 'number') {
-    version = String(version)
-  }
-
-  if (typeof version !== 'string') {
-    return null
-  }
-
-  options = options || {}
-
-  let match = null
-  if (!options.rtl) {
-    match = version.match(re[t.COERCE])
-  } else {
-    // Find the right-most coercible string that does not share
-    // a terminus with a more left-ward coercible string.
-    // Eg, '1.2.3.4' wants to coerce '2.3.4', not '3.4' or '4'
-    //
-    // Walk through the string checking with a /g regexp
-    // Manually set the index so as to pick up overlapping matches.
-    // Stop when we get a match that ends at the string end, since no
-    // coercible string can be more right-ward without the same terminus.
-    let next
-    while ((next = re[t.COERCERTL].exec(version)) &&
-        (!match || match.index + match[0].length !== version.length)
-    ) {
-      if (!match ||
-            next.index + next[0].length !== match.index + match[0].length) {
-        match = next
-      }
-      re[t.COERCERTL].lastIndex = next.index + next[1].length + next[2].length
-    }
-    // leave it in a clean state
-    re[t.COERCERTL].lastIndex = -1
-  }
-
-  if (match === null)
-    return null
-
-  return parse(`${match[2]}.${match[3] || '0'}.${match[4] || '0'}`, options)
-}
-module.exports = coerce
-
-
-/***/ }),
-/* 500 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-var register = __webpack_require__(280)
-var addHook = __webpack_require__(510)
-var removeHook = __webpack_require__(866)
-
-// bind with array of arguments: https://stackoverflow.com/a/21792913
-var bind = Function.bind
-var bindable = bind.bind(bind)
-
-function bindApi (hook, state, name) {
-  var removeHookRef = bindable(removeHook, null).apply(null, name ? [state, name] : [state])
-  hook.api = { remove: removeHookRef }
-  hook.remove = removeHookRef
-
-  ;['before', 'error', 'after', 'wrap'].forEach(function (kind) {
-    var args = name ? [state, kind, name] : [state, kind]
-    hook[kind] = hook.api[kind] = bindable(addHook, null).apply(null, args)
-  })
-}
-
-function HookSingular () {
-  var singularHookName = 'h'
-  var singularHookState = {
-    registry: {}
-  }
-  var singularHook = register.bind(null, singularHookState, singularHookName)
-  bindApi(singularHook, singularHookState, singularHookName)
-  return singularHook
-}
-
-function HookCollection () {
-  var state = {
-    registry: {}
-  }
-
-  var hook = register.bind(null, state)
-  bindApi(hook, state)
-
-  return hook
-}
-
-var collectionHookDeprecationMessageDisplayed = false
-function Hook () {
-  if (!collectionHookDeprecationMessageDisplayed) {
-    console.warn('[before-after-hook]: "Hook()" repurposing warning, use "Hook.Collection()". Read more: https://git.io/upgrade-before-after-hook-to-1.4')
-    collectionHookDeprecationMessageDisplayed = true
-  }
-  return HookCollection()
-}
-
-Hook.Singular = HookSingular.bind()
-Hook.Collection = HookCollection.bind()
-
-module.exports = Hook
-// expose constructors as a named property for TypeScript
-module.exports.Hook = Hook
-module.exports.Singular = Hook.Singular
-module.exports.Collection = Hook.Collection
-
-
-/***/ }),
-/* 501 */
-/***/ (function(module) {
-
-var toString = Object.prototype.toString
-
-var isModern = (
-  typeof Buffer.alloc === 'function' &&
-  typeof Buffer.allocUnsafe === 'function' &&
-  typeof Buffer.from === 'function'
-)
-
-function isArrayBuffer (input) {
-  return toString.call(input).slice(8, -1) === 'ArrayBuffer'
-}
-
-function fromArrayBuffer (obj, byteOffset, length) {
-  byteOffset >>>= 0
-
-  var maxLength = obj.byteLength - byteOffset
-
-  if (maxLength < 0) {
-    throw new RangeError("'offset' is out of bounds")
-  }
-
-  if (length === undefined) {
-    length = maxLength
-  } else {
-    length >>>= 0
-
-    if (length > maxLength) {
-      throw new RangeError("'length' is out of bounds")
-    }
-  }
-
-  return isModern
-    ? Buffer.from(obj.slice(byteOffset, byteOffset + length))
-    : new Buffer(new Uint8Array(obj.slice(byteOffset, byteOffset + length)))
-}
-
-function fromString (string, encoding) {
-  if (typeof encoding !== 'string' || encoding === '') {
-    encoding = 'utf8'
-  }
-
-  if (!Buffer.isEncoding(encoding)) {
-    throw new TypeError('"encoding" must be a valid string encoding')
-  }
-
-  return isModern
-    ? Buffer.from(string, encoding)
-    : new Buffer(string, encoding)
-}
-
-function bufferFrom (value, encodingOrOffset, length) {
-  if (typeof value === 'number') {
-    throw new TypeError('"value" argument must not be a number')
-  }
-
-  if (isArrayBuffer(value)) {
-    return fromArrayBuffer(value, encodingOrOffset, length)
-  }
-
-  if (typeof value === 'string') {
-    return fromString(value, encodingOrOffset)
-  }
-
-  return isModern
-    ? Buffer.from(value)
-    : new Buffer(value)
-}
-
-module.exports = bufferFrom
-
-
-/***/ }),
-/* 502 */,
-/* 503 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-const parse = __webpack_require__(830)
-const clean = (version, options) => {
-  const s = parse(version.trim().replace(/^[=v]+/, ''), options)
-  return s ? s.version : null
-}
-module.exports = clean
-
-
-/***/ }),
-/* 504 */,
-/* 505 */,
-/* 506 */,
-/* 507 */,
-/* 508 */,
-/* 509 */,
-/* 510 */
-/***/ (function(module) {
-
-module.exports = addHook
-
-function addHook (state, kind, name, hook) {
-  var orig = hook
-  if (!state.registry[name]) {
-    state.registry[name] = []
-  }
-
-  if (kind === 'before') {
-    hook = function (method, options) {
-      return Promise.resolve()
-        .then(orig.bind(null, options))
-        .then(method.bind(null, options))
-    }
-  }
-
-  if (kind === 'after') {
-    hook = function (method, options) {
-      var result
-      return Promise.resolve()
-        .then(method.bind(null, options))
-        .then(function (result_) {
-          result = result_
-          return orig(result, options)
-        })
-        .then(function () {
-          return result
-        })
-    }
-  }
-
-  if (kind === 'error') {
-    hook = function (method, options) {
-      return Promise.resolve()
-        .then(method.bind(null, options))
-        .catch(function (error) {
-          return orig(error, options)
-        })
-    }
-  }
-
-  state.registry[name].push({
-    hook: hook,
-    orig: orig
-  })
-}
-
-
-/***/ }),
-/* 511 */,
-/* 512 */,
-/* 513 */
-/***/ (function(module) {
-
-"use strict";
-
-module.exports = function (obj, modifier) {
-	var key;
-	var val;
-	var ret = {};
-	var keys = Object.keys(Object(obj));
-
-	for (var i = 0; i < keys.length; i++) {
-		key = keys[i];
-		val = obj[key];
-		ret[key] = modifier(val, key);
-	}
-
-	return ret;
-};
-
-
-/***/ }),
-/* 514 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ConventionalCommits = void 0;
-const chalk = __webpack_require__(843);
-const semver = __webpack_require__(876);
-const stream_1 = __webpack_require__(413);
-const checkpoint_1 = __webpack_require__(923);
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const concat = __webpack_require__(596);
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const conventionalCommitsFilter = __webpack_require__(304);
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const conventionalCommitsParser = __webpack_require__(549);
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const conventionalChangelogWriter = __webpack_require__(142);
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const parseGithubRepoUrl = __webpack_require__(345);
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const presetFactory = __webpack_require__(851);
-// Perform some post processing on the commits parsed by conventional commits:
-// 1. don't allow BREAKING CHANGES to have two newlines:
-const stream_2 = __webpack_require__(413);
-class PostProcessCommits extends stream_2.Transform {
-    _transform(chunk, _encoding, done) {
-        chunk.notes.forEach(note => {
-            note.text = note.text.split(/\r?\n/)[0];
-        });
-        this.push(JSON.stringify(chunk, null, 4) + '\n');
-        done();
-    }
-}
-class ConventionalCommits {
-    constructor(options) {
-        const parsedGithubRepoUrl = parseGithubRepoUrl(options.githubRepoUrl);
-        if (!parsedGithubRepoUrl)
-            throw Error('could not parse githubRepoUrl');
-        const [owner, repository] = parsedGithubRepoUrl;
-        this.commits = options.commits;
-        this.bumpMinorPreMajor = options.bumpMinorPreMajor || false;
-        this.host = options.host || 'https://www.github.com';
-        this.owner = owner;
-        this.repository = repository;
-        // we allow some languages (currently Ruby) to provide their own
-        // template style:
-        this.commitPartial = options.commitPartial;
-        this.headerPartial = options.headerPartial;
-        this.mainTemplate = options.mainTemplate;
-        this.changelogSections = options.changelogSections;
-    }
-    async suggestBump(version) {
-        const preMajor = this.bumpMinorPreMajor
-            ? semver.lt(version, 'v1.0.0')
-            : false;
-        const bump = await this.guessReleaseType(preMajor);
-        checkpoint_1.checkpoint(`release as ${chalk.green(bump.releaseType)}: ${chalk.yellow(bump.reason)}`, checkpoint_1.CheckpointType.Success);
-        return bump;
-    }
-    async generateChangelogEntry(options) {
-        const context = {
-            host: this.host,
-            owner: this.owner,
-            repository: this.repository,
-            version: options.version,
-            previousTag: options.previousTag,
-            currentTag: options.currentTag,
-            linkCompare: !!options.previousTag,
-        };
-        // allows the sections displayed in the CHANGELOG to be configured
-        // as an example, Ruby displays docs:
-        const config = {};
-        if (this.changelogSections) {
-            config.types = this.changelogSections;
-        }
-        const preset = await presetFactory(config);
-        preset.writerOpts.commitPartial =
-            this.commitPartial || preset.writerOpts.commitPartial;
-        preset.writerOpts.headerPartial =
-            this.headerPartial || preset.writerOpts.headerPartial;
-        preset.writerOpts.mainTemplate =
-            this.mainTemplate || preset.writerOpts.mainTemplate;
-        return new Promise((resolve, reject) => {
-            let content = '';
-            const stream = this.commitsReadable()
-                .pipe(conventionalCommitsParser(preset.parserOpts))
-                .pipe(new PostProcessCommits({ objectMode: true }))
-                .pipe(conventionalChangelogWriter(context, preset.writerOpts));
-            stream.on('error', (err) => {
-                return reject(err);
-            });
-            stream.on('data', (buffer) => {
-                content += buffer.toString('utf8');
-            });
-            stream.on('end', () => {
-                return resolve(content.trim());
-            });
-        });
-    }
-    async guessReleaseType(preMajor) {
-        const VERSIONS = ['major', 'minor', 'patch'];
-        const preset = await presetFactory({ preMajor });
-        return new Promise((resolve, reject) => {
-            const stream = this.commitsReadable()
-                .pipe(conventionalCommitsParser(preset.parserOpts))
-                .pipe(concat((data) => {
-                const commits = conventionalCommitsFilter(data);
-                let result = preset.recommendedBumpOpts.whatBump(commits, preset.recommendedBumpOpts);
-                if (result && result.level !== null) {
-                    result.releaseType = VERSIONS[result.level];
-                }
-                else if (result === null) {
-                    result = {};
-                }
-                // we have slightly different logic than the default of conventional commits,
-                // the minor should be bumped when features are introduced for pre 1.x.x libs:
-                if (result.reason.indexOf(' 0 features') === -1 &&
-                    result.releaseType === 'patch') {
-                    result.releaseType = 'minor';
-                }
-                return resolve(result);
-            }));
-            stream.on('error', (err) => {
-                return reject(err);
-            });
-        });
-    }
-    commitsReadable() {
-        // The conventional commits parser expects an array of string commit
-        // messages terminated by `-hash-` followed by the commit sha. We
-        // piggyback off of this, and use this sha when choosing a
-        // point to branch from for PRs.
-        const commitsReadable = new stream_1.Readable();
-        this.commits.forEach((commit) => {
-            commitsReadable.push(`${commit.message}\n-hash-\n${commit.sha ? commit.sha : ''}`);
-        });
-        commitsReadable.push(null);
-        return commitsReadable;
-    }
-}
-exports.ConventionalCommits = ConventionalCommits;
-//# sourceMappingURL=conventional-commits.js.map
-
-/***/ }),
-/* 515 */,
-/* 516 */,
-/* 517 */
-/***/ (function(module) {
-
-"use strict";
-
-
-/* global SharedArrayBuffer, Atomics */
-
-if (typeof SharedArrayBuffer !== 'undefined' && typeof Atomics !== 'undefined') {
-  const nil = new Int32Array(new SharedArrayBuffer(4))
-
-  function sleep (ms) {
-    // also filters out NaN, non-number types, including empty strings, but allows bigints
-    const valid = ms > 0 && ms < Infinity 
-    if (valid === false) {
-      if (typeof ms !== 'number' && typeof ms !== 'bigint') {
-        throw TypeError('sleep: ms must be a number')
-      }
-      throw RangeError('sleep: ms must be a number that is greater than 0 but less than Infinity')
-    }
-
-    Atomics.wait(nil, 0, 0, Number(ms))
-  }
-  module.exports = sleep
-} else {
-
-  function sleep (ms) {
-    // also filters out NaN, non-number types, including empty strings, but allows bigints
-    const valid = ms > 0 && ms < Infinity 
-    if (valid === false) {
-      if (typeof ms !== 'number' && typeof ms !== 'bigint') {
-        throw TypeError('sleep: ms must be a number')
-      }
-      throw RangeError('sleep: ms must be a number that is greater than 0 but less than Infinity')
-    }
-    const target = Date.now() + Number(ms)
-    while (target > Date.now()){}
-  }
-
-  module.exports = sleep
-
-}
-
-
-/***/ }),
-/* 518 */,
-/* 519 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-
-const rx = __webpack_require__(789)
-
-module.exports = redactor
-
-function redactor ({ secret, serialize, wcLen, strict, isCensorFct }, state) {
-  /* eslint-disable-next-line */
-  const redact = Function('o', `
-    if (typeof o !== 'object' || o == null) {
-      ${strictImpl(strict, serialize)}
-    }
-    const { censor, secret } = this
-    ${redactTmpl(secret, isCensorFct)}
-    this.compileRestore()
-    ${dynamicRedactTmpl(wcLen > 0, isCensorFct)}
-    ${resultTmpl(serialize)}
-  `).bind(state)
-
-  if (serialize === false) {
-    redact.restore = (o) => state.restore(o)
-  }
-
-  return redact
-}
-
-function redactTmpl (secret, isCensorFct) {
-  return Object.keys(secret).map((path) => {
-    const { escPath, leadingBracket } = secret[path]
-    const skip = leadingBracket ? 1 : 0
-    const delim = leadingBracket ? '' : '.'
-    const hops = []
-    var match
-    while ((match = rx.exec(path)) !== null) {
-      const [ , ix ] = match
-      const { index, input } = match
-      if (index > skip) hops.push(input.substring(0, index - (ix ? 0 : 1)))
-    }
-    var existence = hops.map((p) => `o${delim}${p}`).join(' && ')
-    if (existence.length === 0) existence += `o${delim}${path} != null`
-    else existence += ` && o${delim}${path} != null`
-
-    const circularDetection = `
-      switch (true) {
-        ${hops.reverse().map((p) => `
-          case o${delim}${p} === censor:
-            secret[${escPath}].circle = ${JSON.stringify(p)}
-            break
-        `).join('\n')}
-      }
-    `
-    return `
-      if (${existence}) {
-        const val = o${delim}${path}
-        if (val === censor) {
-          secret[${escPath}].precensored = true
-        } else {
-          secret[${escPath}].val = val
-          o${delim}${path} = ${isCensorFct ? 'censor(val)' : 'censor'}
-          ${circularDetection}
-        }
-      }
-    `
-  }).join('\n')
-}
-
-function dynamicRedactTmpl (hasWildcards, isCensorFct) {
-  return hasWildcards === true ? `
-    {
-      const { wildcards, wcLen, groupRedact, nestedRedact } = this
-      for (var i = 0; i < wcLen; i++) {
-        const { before, beforeStr, after, nested } = wildcards[i]
-        if (nested === true) {
-          secret[beforeStr] = secret[beforeStr] || []
-          nestedRedact(secret[beforeStr], o, before, after, censor, ${isCensorFct})
-        } else secret[beforeStr] = groupRedact(o, before, censor, ${isCensorFct})
-      }
-    }
-  ` : ''
-}
-
-function resultTmpl (serialize) {
-  return serialize === false ? `return o` : `
-    var s = this.serialize(o)
-    this.restore(o)
-    return s
-  `
-}
-
-function strictImpl (strict, serialize) {
-  return strict === true
-    ? `throw Error('fast-redact: primitives cannot be redacted')`
-    : serialize === false ? `return o` : `return this.serialize(o)`
-}
-
-
-/***/ }),
-/* 520 */,
-/* 521 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.FileData = void 0;
-/**
- * The content and the mode of a file.
- * Default file mode is a text file which has code '100644'.
- * If `content` is not null, then `content` must be the entire file content.
- * See https://developer.github.com/v3/git/trees/#tree-object for details on mode.
- */
-class FileData {
-    constructor(content, mode = '100644') {
-        this.mode = mode;
-        this.content = content;
-    }
-}
-exports.FileData = FileData;
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-/* 522 */,
-/* 523 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-// Packages
-var retrier = __webpack_require__(560);
-
-function retry(fn, opts) {
-  function run(resolve, reject) {
-    var options = opts || {};
-
-    // Default `randomize` to true
-    if (!('randomize' in options)) {
-      options.randomize = true;
-    }
-
-    var op = retrier.operation(options);
-
-    // We allow the user to abort retrying
-    // this makes sense in the cases where
-    // knowledge is obtained that retrying
-    // would be futile (e.g.: auth errors)
-
-    function bail(err) {
-      reject(err || new Error('Aborted'));
-    }
-
-    function onError(err, num) {
-      if (err.bail) {
-        bail(err);
-        return;
-      }
-
-      if (!op.retry(err)) {
-        reject(op.mainError());
-      } else if (options.onRetry) {
-        options.onRetry(err, num);
-      }
-    }
-
-    function runAttempt(num) {
-      var val;
-
-      try {
-        val = fn(bail, num);
-      } catch (err) {
-        onError(err, num);
-        return;
-      }
-
-      Promise.resolve(val)
-        .then(resolve)
-        .catch(function catchIt(err) {
-          onError(err, num);
-        });
-    }
-
-    op.attempt(runAttempt);
-  }
-
-  return new Promise(run);
-}
-
-module.exports = retry;
-
-
-/***/ }),
-/* 524 */,
-/* 525 */
-/***/ (function(module) {
-
-"use strict";
-
-
-module.exports = state
-
-function state (o) {
-  const {
-    secret,
-    censor,
-    isCensorFct,
-    compileRestore,
-    serialize,
-    groupRedact,
-    nestedRedact,
-    wildcards,
-    wcLen
-  } = o
-  const builder = [{ secret, censor, isCensorFct, compileRestore }]
-  builder.push({ secret })
-  if (serialize !== false) builder.push({ serialize })
-  if (wcLen > 0) builder.push({ groupRedact, nestedRedact, wildcards, wcLen })
-  return Object.assign(...builder)
-}
-
-
-/***/ }),
-/* 526 */
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-function getUserAgent() {
-  if (typeof navigator === "object" && "userAgent" in navigator) {
-    return navigator.userAgent;
-  }
-
-  if (typeof process === "object" && "version" in process) {
-    return `Node.js/${process.version.substr(1)} (${process.platform}; ${process.arch})`;
-  }
-
-  return "<environment undetectable>";
-}
-
-exports.getUserAgent = getUserAgent;
-//# sourceMappingURL=index.js.map
-
-
-/***/ }),
-/* 527 */,
-/* 528 */,
-/* 529 */,
-/* 530 */,
-/* 531 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-// Determine if version is greater than all the versions possible in the range.
-const outside = __webpack_require__(462)
-const gtr = (version, range, options) => outside(version, range, '>', options)
-module.exports = gtr
-
-
-/***/ }),
-/* 532 */,
-/* 533 */,
-/* 534 */,
-/* 535 */,
-/* 536 */,
-/* 537 */,
-/* 538 */,
-/* 539 */,
-/* 540 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Python = void 0;
-const release_pr_1 = __webpack_require__(93);
-const conventional_commits_1 = __webpack_require__(514);
-const checkpoint_1 = __webpack_require__(923);
-// Generic
-const changelog_1 = __webpack_require__(261);
-// Python specific.
-const setup_py_1 = __webpack_require__(910);
-const setup_cfg_1 = __webpack_require__(201);
-const CHANGELOG_SECTIONS = [
-    { type: 'feat', section: 'Features' },
-    { type: 'fix', section: 'Bug Fixes' },
-    { type: 'perf', section: 'Performance Improvements' },
-    { type: 'deps', section: 'Dependencies' },
-    { type: 'revert', section: 'Reverts' },
-    { type: 'docs', section: 'Documentation' },
-    { type: 'style', section: 'Styles', hidden: true },
-    { type: 'chore', section: 'Miscellaneous Chores', hidden: true },
-    { type: 'refactor', section: 'Code Refactoring', hidden: true },
-    { type: 'test', section: 'Tests', hidden: true },
-    { type: 'build', section: 'Build System', hidden: true },
-    { type: 'ci', section: 'Continuous Integration', hidden: true },
-];
-class Python extends release_pr_1.ReleasePR {
-    async _run() {
-        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}-` : undefined);
-        const commits = await this.commits({
-            sha: latestTag ? latestTag.sha : undefined,
-            path: this.path,
-        });
-        const cc = new conventional_commits_1.ConventionalCommits({
-            commits,
-            githubRepoUrl: this.repoUrl,
-            bumpMinorPreMajor: this.bumpMinorPreMajor,
-            changelogSections: this.changelogSections || CHANGELOG_SECTIONS,
-        });
-        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
-        const changelogEntry = await cc.generateChangelogEntry({
-            version: candidate.version,
-            currentTag: `v${candidate.version}`,
-            previousTag: candidate.previousTag,
-        });
-        // don't create a release candidate until user facing changes
-        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
-        // one line is a good indicator that there were no interesting commits.
-        if (this.changelogEmpty(changelogEntry)) {
-            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return;
-        }
-        const updates = [];
-        updates.push(new changelog_1.Changelog({
-            path: this.addPath('CHANGELOG.md'),
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        updates.push(new setup_cfg_1.SetupCfg({
-            path: this.addPath('setup.cfg'),
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        updates.push(new setup_py_1.SetupPy({
-            path: this.addPath('setup.py'),
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        await this.openPR({
-            sha: commits[0].sha,
-            changelogEntry: `${changelogEntry}\n---\n`,
-            updates,
-            version: candidate.version,
-            includePackageName: this.monorepoTags,
-        });
-    }
-    defaultInitialVersion() {
-        return '0.1.0';
-    }
-}
-exports.Python = Python;
-Python.releaserName = 'python';
-//# sourceMappingURL=python.js.map
-
-/***/ }),
-/* 541 */,
-/* 542 */,
-/* 543 */,
-/* 544 */,
-/* 545 */,
-/* 546 */,
-/* 547 */,
-/* 548 */
-/***/ (function(module) {
-
-const debug = (
-  typeof process === 'object' &&
-  process.env &&
-  process.env.NODE_DEBUG &&
-  /\bsemver\b/i.test(process.env.NODE_DEBUG)
-) ? (...args) => console.error('SEMVER', ...args)
-  : () => {}
-
-module.exports = debug
-
-
-/***/ }),
-/* 549 */
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-"use strict";
-
-
-var parser = __webpack_require__(320)
-var regex = __webpack_require__(970)
-var through = __webpack_require__(576)
-var _ = __webpack_require__(557)
-
-function assignOpts (options) {
-  options = _.extend({
-    headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?: (.*)$/,
-    headerCorrespondence: ['type', 'scope', 'subject'],
-    referenceActions: [
-      'close',
-      'closes',
-      'closed',
-      'fix',
-      'fixes',
-      'fixed',
-      'resolve',
-      'resolves',
-      'resolved'
-    ],
-    issuePrefixes: ['#'],
-    noteKeywords: ['BREAKING CHANGE'],
-    fieldPattern: /^-(.*?)-$/,
-    revertPattern: /^Revert\s"([\s\S]*)"\s*This reverts commit (\w*)\./,
-    revertCorrespondence: ['header', 'hash'],
-    warn: function () {},
-    mergePattern: null,
-    mergeCorrespondence: null
-  }, options)
-
-  if (typeof options.headerPattern === 'string') {
-    options.headerPattern = new RegExp(options.headerPattern)
-  }
-
-  if (typeof options.headerCorrespondence === 'string') {
-    options.headerCorrespondence = options.headerCorrespondence.split(',')
-  }
-
-  if (typeof options.referenceActions === 'string') {
-    options.referenceActions = options.referenceActions.split(',')
-  }
-
-  if (typeof options.issuePrefixes === 'string') {
-    options.issuePrefixes = options.issuePrefixes.split(',')
-  }
-
-  if (typeof options.noteKeywords === 'string') {
-    options.noteKeywords = options.noteKeywords.split(',')
-  }
-
-  if (typeof options.fieldPattern === 'string') {
-    options.fieldPattern = new RegExp(options.fieldPattern)
-  }
-
-  if (typeof options.revertPattern === 'string') {
-    options.revertPattern = new RegExp(options.revertPattern)
-  }
-
-  if (typeof options.revertCorrespondence === 'string') {
-    options.revertCorrespondence = options.revertCorrespondence.split(',')
-  }
-
-  if (typeof options.mergePattern === 'string') {
-    options.mergePattern = new RegExp(options.mergePattern)
-  }
-
-  return options
-}
-
-function conventionalCommitsParser (options) {
-  options = assignOpts(options)
-  var reg = regex(options)
-
-  return through.obj(function (data, enc, cb) {
-    var commit
-
-    try {
-      commit = parser(data.toString(), options, reg)
-      cb(null, commit)
-    } catch (err) {
-      if (options.warn === true) {
-        cb(err)
-      } else {
-        options.warn(err.toString())
-        cb(null, '')
-      }
-    }
-  })
-}
-
-function sync (commit, options) {
-  options = assignOpts(options)
-  var reg = regex(options)
-
-  return parser(commit, options, reg)
-}
-
-module.exports = conventionalCommitsParser
-module.exports.sync = sync
-
-
-/***/ }),
-/* 550 */,
-/* 551 */,
-/* 552 */,
-/* 553 */,
-/* 554 */,
-/* 555 */,
-/* 556 */,
-/* 557 */
+/* 288 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* module decorator */ module = __webpack_require__.nmd(module);
@@ -36792,6 +27919,11295 @@ module.exports.sync = sync
 
 
 /***/ }),
+/* 289 */,
+/* 290 */,
+/* 291 */,
+/* 292 */,
+/* 293 */
+/***/ (function(module) {
+
+module.exports = require("buffer");
+
+/***/ }),
+/* 294 */,
+/* 295 */,
+/* 296 */,
+/* 297 */,
+/* 298 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+const compare = __webpack_require__(874)
+const eq = (a, b, loose) => compare(a, b, loose) === 0
+module.exports = eq
+
+
+/***/ }),
+/* 299 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+const VERSION = "2.4.0";
+
+/**
+ * Some “list” response that can be paginated have a different response structure
+ *
+ * They have a `total_count` key in the response (search also has `incomplete_results`,
+ * /installation/repositories also has `repository_selection`), as well as a key with
+ * the list of the items which name varies from endpoint to endpoint.
+ *
+ * Octokit normalizes these responses so that paginated results are always returned following
+ * the same structure. One challenge is that if the list response has only one page, no Link
+ * header is provided, so this header alone is not sufficient to check wether a response is
+ * paginated or not.
+ *
+ * We check if a "total_count" key is present in the response data, but also make sure that
+ * a "url" property is not, as the "Get the combined status for a specific ref" endpoint would
+ * otherwise match: https://developer.github.com/v3/repos/statuses/#get-the-combined-status-for-a-specific-ref
+ */
+function normalizePaginatedListResponse(response) {
+  const responseNeedsNormalization = "total_count" in response.data && !("url" in response.data);
+  if (!responseNeedsNormalization) return response; // keep the additional properties intact as there is currently no other way
+  // to retrieve the same information.
+
+  const incompleteResults = response.data.incomplete_results;
+  const repositorySelection = response.data.repository_selection;
+  const totalCount = response.data.total_count;
+  delete response.data.incomplete_results;
+  delete response.data.repository_selection;
+  delete response.data.total_count;
+  const namespaceKey = Object.keys(response.data)[0];
+  const data = response.data[namespaceKey];
+  response.data = data;
+
+  if (typeof incompleteResults !== "undefined") {
+    response.data.incomplete_results = incompleteResults;
+  }
+
+  if (typeof repositorySelection !== "undefined") {
+    response.data.repository_selection = repositorySelection;
+  }
+
+  response.data.total_count = totalCount;
+  return response;
+}
+
+function iterator(octokit, route, parameters) {
+  const options = typeof route === "function" ? route.endpoint(parameters) : octokit.request.endpoint(route, parameters);
+  const requestMethod = typeof route === "function" ? route : octokit.request;
+  const method = options.method;
+  const headers = options.headers;
+  let url = options.url;
+  return {
+    [Symbol.asyncIterator]: () => ({
+      next() {
+        if (!url) {
+          return Promise.resolve({
+            done: true
+          });
+        }
+
+        return requestMethod({
+          method,
+          url,
+          headers
+        }).then(normalizePaginatedListResponse).then(response => {
+          // `response.headers.link` format:
+          // '<https://api.github.com/users/aseemk/followers?page=2>; rel="next", <https://api.github.com/users/aseemk/followers?page=2>; rel="last"'
+          // sets `url` to undefined if "next" URL is not present or `link` header is not set
+          url = ((response.headers.link || "").match(/<([^>]+)>;\s*rel="next"/) || [])[1];
+          return {
+            value: response
+          };
+        });
+      }
+
+    })
+  };
+}
+
+function paginate(octokit, route, parameters, mapFn) {
+  if (typeof parameters === "function") {
+    mapFn = parameters;
+    parameters = undefined;
+  }
+
+  return gather(octokit, [], iterator(octokit, route, parameters)[Symbol.asyncIterator](), mapFn);
+}
+
+function gather(octokit, results, iterator, mapFn) {
+  return iterator.next().then(result => {
+    if (result.done) {
+      return results;
+    }
+
+    let earlyExit = false;
+
+    function done() {
+      earlyExit = true;
+    }
+
+    results = results.concat(mapFn ? mapFn(result.value, done) : result.value.data);
+
+    if (earlyExit) {
+      return results;
+    }
+
+    return gather(octokit, results, iterator, mapFn);
+  });
+}
+
+/**
+ * @param octokit Octokit instance
+ * @param options Options passed to Octokit constructor
+ */
+
+function paginateRest(octokit) {
+  return {
+    paginate: Object.assign(paginate.bind(null, octokit), {
+      iterator: iterator.bind(null, octokit)
+    })
+  };
+}
+paginateRest.VERSION = VERSION;
+
+exports.paginateRest = paginateRest;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+/* 300 */,
+/* 301 */,
+/* 302 */,
+/* 303 */,
+/* 304 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+var isMatch = __webpack_require__(561)
+var modifyValues = __webpack_require__(513)
+
+function modifyValue (val) {
+  if (typeof val === 'string') {
+    return val.trim()
+  }
+
+  return val
+}
+
+function conventionalCommitsFilter (commits) {
+  if (!Array.isArray(commits)) {
+    throw new TypeError('Expected an array')
+  }
+
+  var ret = []
+  var ignores = []
+  var remove = []
+  commits.forEach(function (commit) {
+    if (commit.revert) {
+      ignores.push(commit)
+    }
+
+    ret.push(commit)
+  })
+
+  // Filter out reverted commits
+  ret = ret.filter(function (commit) {
+    var ignoreThis = false
+
+    commit = commit.raw ? modifyValues(commit.raw, modifyValue) : modifyValues(commit, modifyValue)
+
+    ignores.some(function (ignoreCommit) {
+      var ignore = modifyValues(ignoreCommit.revert, modifyValue)
+
+      ignoreThis = isMatch(commit, ignore)
+
+      if (ignoreThis) {
+        remove.push(ignoreCommit.hash)
+      }
+
+      return ignoreThis
+    })
+
+    return !ignoreThis
+  })
+
+  // Filter out the commits that reverted something otherwise keep the revert commits
+  ret = ret.filter(function (commit) {
+    return remove.indexOf(commit.hash) !== 0
+  })
+
+  return ret
+}
+
+module.exports = conventionalCommitsFilter
+
+
+/***/ }),
+/* 305 */,
+/* 306 */,
+/* 307 */
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = {
+  mapHttpRequest,
+  reqSerializer
+}
+
+var rawSymbol = Symbol('pino-raw-req-ref')
+var pinoReqProto = Object.create({}, {
+  id: {
+    enumerable: true,
+    writable: true,
+    value: ''
+  },
+  method: {
+    enumerable: true,
+    writable: true,
+    value: ''
+  },
+  url: {
+    enumerable: true,
+    writable: true,
+    value: ''
+  },
+  headers: {
+    enumerable: true,
+    writable: true,
+    value: {}
+  },
+  remoteAddress: {
+    enumerable: true,
+    writable: true,
+    value: ''
+  },
+  remotePort: {
+    enumerable: true,
+    writable: true,
+    value: ''
+  },
+  raw: {
+    enumerable: false,
+    get: function () {
+      return this[rawSymbol]
+    },
+    set: function (val) {
+      this[rawSymbol] = val
+    }
+  }
+})
+Object.defineProperty(pinoReqProto, rawSymbol, {
+  writable: true,
+  value: {}
+})
+
+function reqSerializer (req) {
+  // req.info is for hapi compat.
+  var connection = req.info || req.connection
+  const _req = Object.create(pinoReqProto)
+  _req.id = (typeof req.id === 'function' ? req.id() : (req.id || (req.info ? req.info.id : undefined)))
+  _req.method = req.method
+  // req.originalUrl is for expressjs compat.
+  if (req.originalUrl) {
+    _req.url = req.originalUrl
+  } else {
+    // req.url.path is  for hapi compat.
+    _req.url = req.path || (req.url ? (req.url.path || req.url) : undefined)
+  }
+  _req.headers = req.headers
+  _req.remoteAddress = connection && connection.remoteAddress
+  _req.remotePort = connection && connection.remotePort
+  // req.raw is  for hapi compat/equivalence
+  _req.raw = req.raw || req
+  return _req
+}
+
+function mapHttpRequest (req) {
+  return {
+    req: reqSerializer(req)
+  }
+}
+
+
+/***/ }),
+/* 308 */,
+/* 309 */
+/***/ (function(module) {
+
+module.exports = eval("require")("pino-pretty");
+
+
+/***/ }),
+/* 310 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+const Range = __webpack_require__(124)
+const satisfies = (version, range, options) => {
+  try {
+    range = new Range(range, options)
+  } catch (er) {
+    return false
+  }
+  return range.test(version)
+}
+module.exports = satisfies
+
+
+/***/ }),
+/* 311 */
+/***/ (function(module, exports) {
+
+"use strict";
+
+
+exports.__esModule = true;
+var errorProps = ['description', 'fileName', 'lineNumber', 'endLineNumber', 'message', 'name', 'number', 'stack'];
+
+function Exception(message, node) {
+  var loc = node && node.loc,
+      line = undefined,
+      endLineNumber = undefined,
+      column = undefined,
+      endColumn = undefined;
+
+  if (loc) {
+    line = loc.start.line;
+    endLineNumber = loc.end.line;
+    column = loc.start.column;
+    endColumn = loc.end.column;
+
+    message += ' - ' + line + ':' + column;
+  }
+
+  var tmp = Error.prototype.constructor.call(this, message);
+
+  // Unfortunately errors are not enumerable in Chrome (at least), so `for prop in tmp` doesn't work.
+  for (var idx = 0; idx < errorProps.length; idx++) {
+    this[errorProps[idx]] = tmp[errorProps[idx]];
+  }
+
+  /* istanbul ignore else */
+  if (Error.captureStackTrace) {
+    Error.captureStackTrace(this, Exception);
+  }
+
+  try {
+    if (loc) {
+      this.lineNumber = line;
+      this.endLineNumber = endLineNumber;
+
+      // Work around issue under safari where we can't directly set the column value
+      /* istanbul ignore next */
+      if (Object.defineProperty) {
+        Object.defineProperty(this, 'column', {
+          value: column,
+          enumerable: true
+        });
+        Object.defineProperty(this, 'endColumn', {
+          value: endColumn,
+          enumerable: true
+        });
+      } else {
+        this.column = column;
+        this.endColumn = endColumn;
+      }
+    }
+  } catch (nop) {
+    /* Ignore if the browser is very particular */
+  }
+}
+
+Exception.prototype = new Error();
+
+exports['default'] = Exception;
+module.exports = exports['default'];
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2V4Y2VwdGlvbi5qcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7QUFBQSxJQUFNLFVBQVUsR0FBRyxDQUNqQixhQUFhLEVBQ2IsVUFBVSxFQUNWLFlBQVksRUFDWixlQUFlLEVBQ2YsU0FBUyxFQUNULE1BQU0sRUFDTixRQUFRLEVBQ1IsT0FBTyxDQUNSLENBQUM7O0FBRUYsU0FBUyxTQUFTLENBQUMsT0FBTyxFQUFFLElBQUksRUFBRTtBQUNoQyxNQUFJLEdBQUcsR0FBRyxJQUFJLElBQUksSUFBSSxDQUFDLEdBQUc7TUFDeEIsSUFBSSxZQUFBO01BQ0osYUFBYSxZQUFBO01BQ2IsTUFBTSxZQUFBO01BQ04sU0FBUyxZQUFBLENBQUM7O0FBRVosTUFBSSxHQUFHLEVBQUU7QUFDUCxRQUFJLEdBQUcsR0FBRyxDQUFDLEtBQUssQ0FBQyxJQUFJLENBQUM7QUFDdEIsaUJBQWEsR0FBRyxHQUFHLENBQUMsR0FBRyxDQUFDLElBQUksQ0FBQztBQUM3QixVQUFNLEdBQUcsR0FBRyxDQUFDLEtBQUssQ0FBQyxNQUFNLENBQUM7QUFDMUIsYUFBUyxHQUFHLEdBQUcsQ0FBQyxHQUFHLENBQUMsTUFBTSxDQUFDOztBQUUzQixXQUFPLElBQUksS0FBSyxHQUFHLElBQUksR0FBRyxHQUFHLEdBQUcsTUFBTSxDQUFDO0dBQ3hDOztBQUVELE1BQUksR0FBRyxHQUFHLEtBQUssQ0FBQyxTQUFTLENBQUMsV0FBVyxDQUFDLElBQUksQ0FBQyxJQUFJLEVBQUUsT0FBTyxDQUFDLENBQUM7OztBQUcxRCxPQUFLLElBQUksR0FBRyxHQUFHLENBQUMsRUFBRSxHQUFHLEdBQUcsVUFBVSxDQUFDLE1BQU0sRUFBRSxHQUFHLEVBQUUsRUFBRTtBQUNoRCxRQUFJLENBQUMsVUFBVSxDQUFDLEdBQUcsQ0FBQyxDQUFDLEdBQUcsR0FBRyxDQUFDLFVBQVUsQ0FBQyxHQUFHLENBQUMsQ0FBQyxDQUFDO0dBQzlDOzs7QUFHRCxNQUFJLEtBQUssQ0FBQyxpQkFBaUIsRUFBRTtBQUMzQixTQUFLLENBQUMsaUJBQWlCLENBQUMsSUFBSSxFQUFFLFNBQVMsQ0FBQyxDQUFDO0dBQzFDOztBQUVELE1BQUk7QUFDRixRQUFJLEdBQUcsRUFBRTtBQUNQLFVBQUksQ0FBQyxVQUFVLEdBQUcsSUFBSSxDQUFDO0FBQ3ZCLFVBQUksQ0FBQyxhQUFhLEdBQUcsYUFBYSxDQUFDOzs7O0FBSW5DLFVBQUksTUFBTSxDQUFDLGNBQWMsRUFBRTtBQUN6QixjQUFNLENBQUMsY0FBYyxDQUFDLElBQUksRUFBRSxRQUFRLEVBQUU7QUFDcEMsZUFBSyxFQUFFLE1BQU07QUFDYixvQkFBVSxFQUFFLElBQUk7U0FDakIsQ0FBQyxDQUFDO0FBQ0gsY0FBTSxDQUFDLGNBQWMsQ0FBQyxJQUFJLEVBQUUsV0FBVyxFQUFFO0FBQ3ZDLGVBQUssRUFBRSxTQUFTO0FBQ2hCLG9CQUFVLEVBQUUsSUFBSTtTQUNqQixDQUFDLENBQUM7T0FDSixNQUFNO0FBQ0wsWUFBSSxDQUFDLE1BQU0sR0FBRyxNQUFNLENBQUM7QUFDckIsWUFBSSxDQUFDLFNBQVMsR0FBRyxTQUFTLENBQUM7T0FDNUI7S0FDRjtHQUNGLENBQUMsT0FBTyxHQUFHLEVBQUU7O0dBRWI7Q0FDRjs7QUFFRCxTQUFTLENBQUMsU0FBUyxHQUFHLElBQUksS0FBSyxFQUFFLENBQUM7O3FCQUVuQixTQUFTIiwiZmlsZSI6ImV4Y2VwdGlvbi5qcyIsInNvdXJjZXNDb250ZW50IjpbImNvbnN0IGVycm9yUHJvcHMgPSBbXG4gICdkZXNjcmlwdGlvbicsXG4gICdmaWxlTmFtZScsXG4gICdsaW5lTnVtYmVyJyxcbiAgJ2VuZExpbmVOdW1iZXInLFxuICAnbWVzc2FnZScsXG4gICduYW1lJyxcbiAgJ251bWJlcicsXG4gICdzdGFjaydcbl07XG5cbmZ1bmN0aW9uIEV4Y2VwdGlvbihtZXNzYWdlLCBub2RlKSB7XG4gIGxldCBsb2MgPSBub2RlICYmIG5vZGUubG9jLFxuICAgIGxpbmUsXG4gICAgZW5kTGluZU51bWJlcixcbiAgICBjb2x1bW4sXG4gICAgZW5kQ29sdW1uO1xuXG4gIGlmIChsb2MpIHtcbiAgICBsaW5lID0gbG9jLnN0YXJ0LmxpbmU7XG4gICAgZW5kTGluZU51bWJlciA9IGxvYy5lbmQubGluZTtcbiAgICBjb2x1bW4gPSBsb2Muc3RhcnQuY29sdW1uO1xuICAgIGVuZENvbHVtbiA9IGxvYy5lbmQuY29sdW1uO1xuXG4gICAgbWVzc2FnZSArPSAnIC0gJyArIGxpbmUgKyAnOicgKyBjb2x1bW47XG4gIH1cblxuICBsZXQgdG1wID0gRXJyb3IucHJvdG90eXBlLmNvbnN0cnVjdG9yLmNhbGwodGhpcywgbWVzc2FnZSk7XG5cbiAgLy8gVW5mb3J0dW5hdGVseSBlcnJvcnMgYXJlIG5vdCBlbnVtZXJhYmxlIGluIENocm9tZSAoYXQgbGVhc3QpLCBzbyBgZm9yIHByb3AgaW4gdG1wYCBkb2Vzbid0IHdvcmsuXG4gIGZvciAobGV0IGlkeCA9IDA7IGlkeCA8IGVycm9yUHJvcHMubGVuZ3RoOyBpZHgrKykge1xuICAgIHRoaXNbZXJyb3JQcm9wc1tpZHhdXSA9IHRtcFtlcnJvclByb3BzW2lkeF1dO1xuICB9XG5cbiAgLyogaXN0YW5idWwgaWdub3JlIGVsc2UgKi9cbiAgaWYgKEVycm9yLmNhcHR1cmVTdGFja1RyYWNlKSB7XG4gICAgRXJyb3IuY2FwdHVyZVN0YWNrVHJhY2UodGhpcywgRXhjZXB0aW9uKTtcbiAgfVxuXG4gIHRyeSB7XG4gICAgaWYgKGxvYykge1xuICAgICAgdGhpcy5saW5lTnVtYmVyID0gbGluZTtcbiAgICAgIHRoaXMuZW5kTGluZU51bWJlciA9IGVuZExpbmVOdW1iZXI7XG5cbiAgICAgIC8vIFdvcmsgYXJvdW5kIGlzc3VlIHVuZGVyIHNhZmFyaSB3aGVyZSB3ZSBjYW4ndCBkaXJlY3RseSBzZXQgdGhlIGNvbHVtbiB2YWx1ZVxuICAgICAgLyogaXN0YW5idWwgaWdub3JlIG5leHQgKi9cbiAgICAgIGlmIChPYmplY3QuZGVmaW5lUHJvcGVydHkpIHtcbiAgICAgICAgT2JqZWN0LmRlZmluZVByb3BlcnR5KHRoaXMsICdjb2x1bW4nLCB7XG4gICAgICAgICAgdmFsdWU6IGNvbHVtbixcbiAgICAgICAgICBlbnVtZXJhYmxlOiB0cnVlXG4gICAgICAgIH0pO1xuICAgICAgICBPYmplY3QuZGVmaW5lUHJvcGVydHkodGhpcywgJ2VuZENvbHVtbicsIHtcbiAgICAgICAgICB2YWx1ZTogZW5kQ29sdW1uLFxuICAgICAgICAgIGVudW1lcmFibGU6IHRydWVcbiAgICAgICAgfSk7XG4gICAgICB9IGVsc2Uge1xuICAgICAgICB0aGlzLmNvbHVtbiA9IGNvbHVtbjtcbiAgICAgICAgdGhpcy5lbmRDb2x1bW4gPSBlbmRDb2x1bW47XG4gICAgICB9XG4gICAgfVxuICB9IGNhdGNoIChub3ApIHtcbiAgICAvKiBJZ25vcmUgaWYgdGhlIGJyb3dzZXIgaXMgdmVyeSBwYXJ0aWN1bGFyICovXG4gIH1cbn1cblxuRXhjZXB0aW9uLnByb3RvdHlwZSA9IG5ldyBFcnJvcigpO1xuXG5leHBvcnQgZGVmYXVsdCBFeGNlcHRpb247XG4iXX0=
+
+
+/***/ }),
+/* 312 */,
+/* 313 */,
+/* 314 */,
+/* 315 */
+/***/ (function(module) {
+
+if (typeof Object.create === 'function') {
+  // implementation from standard node.js 'util' module
+  module.exports = function inherits(ctor, superCtor) {
+    if (superCtor) {
+      ctor.super_ = superCtor
+      ctor.prototype = Object.create(superCtor.prototype, {
+        constructor: {
+          value: ctor,
+          enumerable: false,
+          writable: true,
+          configurable: true
+        }
+      })
+    }
+  };
+} else {
+  // old school shim for old browsers
+  module.exports = function inherits(ctor, superCtor) {
+    if (superCtor) {
+      ctor.super_ = superCtor
+      var TempCtor = function () {}
+      TempCtor.prototype = superCtor.prototype
+      ctor.prototype = new TempCtor()
+      ctor.prototype.constructor = ctor
+    }
+  }
+}
+
+
+/***/ }),
+/* 316 */,
+/* 317 */
+/***/ (function(__unusedmodule, exports) {
+
+var undefined = (void 0); // Paranoia
+
+// Beyond this value, index getters/setters (i.e. array[0], array[1]) are so slow to
+// create, and consume so much memory, that the browser appears frozen.
+var MAX_ARRAY_LENGTH = 1e5;
+
+// Approximations of internal ECMAScript conversion functions
+var ECMAScript = (function() {
+  // Stash a copy in case other scripts modify these
+  var opts = Object.prototype.toString,
+      ophop = Object.prototype.hasOwnProperty;
+
+  return {
+    // Class returns internal [[Class]] property, used to avoid cross-frame instanceof issues:
+    Class: function(v) { return opts.call(v).replace(/^\[object *|\]$/g, ''); },
+    HasProperty: function(o, p) { return p in o; },
+    HasOwnProperty: function(o, p) { return ophop.call(o, p); },
+    IsCallable: function(o) { return typeof o === 'function'; },
+    ToInt32: function(v) { return v >> 0; },
+    ToUint32: function(v) { return v >>> 0; }
+  };
+}());
+
+// Snapshot intrinsics
+var LN2 = Math.LN2,
+    abs = Math.abs,
+    floor = Math.floor,
+    log = Math.log,
+    min = Math.min,
+    pow = Math.pow,
+    round = Math.round;
+
+// ES5: lock down object properties
+function configureProperties(obj) {
+  if (getOwnPropNames && defineProp) {
+    var props = getOwnPropNames(obj), i;
+    for (i = 0; i < props.length; i += 1) {
+      defineProp(obj, props[i], {
+        value: obj[props[i]],
+        writable: false,
+        enumerable: false,
+        configurable: false
+      });
+    }
+  }
+}
+
+// emulate ES5 getter/setter API using legacy APIs
+// http://blogs.msdn.com/b/ie/archive/2010/09/07/transitioning-existing-code-to-the-es5-getter-setter-apis.aspx
+// (second clause tests for Object.defineProperty() in IE<9 that only supports extending DOM prototypes, but
+// note that IE<9 does not support __defineGetter__ or __defineSetter__ so it just renders the method harmless)
+var defineProp
+if (Object.defineProperty && (function() {
+      try {
+        Object.defineProperty({}, 'x', {});
+        return true;
+      } catch (e) {
+        return false;
+      }
+    })()) {
+  defineProp = Object.defineProperty;
+} else {
+  defineProp = function(o, p, desc) {
+    if (!o === Object(o)) throw new TypeError("Object.defineProperty called on non-object");
+    if (ECMAScript.HasProperty(desc, 'get') && Object.prototype.__defineGetter__) { Object.prototype.__defineGetter__.call(o, p, desc.get); }
+    if (ECMAScript.HasProperty(desc, 'set') && Object.prototype.__defineSetter__) { Object.prototype.__defineSetter__.call(o, p, desc.set); }
+    if (ECMAScript.HasProperty(desc, 'value')) { o[p] = desc.value; }
+    return o;
+  };
+}
+
+var getOwnPropNames = Object.getOwnPropertyNames || function (o) {
+  if (o !== Object(o)) throw new TypeError("Object.getOwnPropertyNames called on non-object");
+  var props = [], p;
+  for (p in o) {
+    if (ECMAScript.HasOwnProperty(o, p)) {
+      props.push(p);
+    }
+  }
+  return props;
+};
+
+// ES5: Make obj[index] an alias for obj._getter(index)/obj._setter(index, value)
+// for index in 0 ... obj.length
+function makeArrayAccessors(obj) {
+  if (!defineProp) { return; }
+
+  if (obj.length > MAX_ARRAY_LENGTH) throw new RangeError("Array too large for polyfill");
+
+  function makeArrayAccessor(index) {
+    defineProp(obj, index, {
+      'get': function() { return obj._getter(index); },
+      'set': function(v) { obj._setter(index, v); },
+      enumerable: true,
+      configurable: false
+    });
+  }
+
+  var i;
+  for (i = 0; i < obj.length; i += 1) {
+    makeArrayAccessor(i);
+  }
+}
+
+// Internal conversion functions:
+//    pack<Type>()   - take a number (interpreted as Type), output a byte array
+//    unpack<Type>() - take a byte array, output a Type-like number
+
+function as_signed(value, bits) { var s = 32 - bits; return (value << s) >> s; }
+function as_unsigned(value, bits) { var s = 32 - bits; return (value << s) >>> s; }
+
+function packI8(n) { return [n & 0xff]; }
+function unpackI8(bytes) { return as_signed(bytes[0], 8); }
+
+function packU8(n) { return [n & 0xff]; }
+function unpackU8(bytes) { return as_unsigned(bytes[0], 8); }
+
+function packU8Clamped(n) { n = round(Number(n)); return [n < 0 ? 0 : n > 0xff ? 0xff : n & 0xff]; }
+
+function packI16(n) { return [(n >> 8) & 0xff, n & 0xff]; }
+function unpackI16(bytes) { return as_signed(bytes[0] << 8 | bytes[1], 16); }
+
+function packU16(n) { return [(n >> 8) & 0xff, n & 0xff]; }
+function unpackU16(bytes) { return as_unsigned(bytes[0] << 8 | bytes[1], 16); }
+
+function packI32(n) { return [(n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff]; }
+function unpackI32(bytes) { return as_signed(bytes[0] << 24 | bytes[1] << 16 | bytes[2] << 8 | bytes[3], 32); }
+
+function packU32(n) { return [(n >> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff]; }
+function unpackU32(bytes) { return as_unsigned(bytes[0] << 24 | bytes[1] << 16 | bytes[2] << 8 | bytes[3], 32); }
+
+function packIEEE754(v, ebits, fbits) {
+
+  var bias = (1 << (ebits - 1)) - 1,
+      s, e, f, ln,
+      i, bits, str, bytes;
+
+  function roundToEven(n) {
+    var w = floor(n), f = n - w;
+    if (f < 0.5)
+      return w;
+    if (f > 0.5)
+      return w + 1;
+    return w % 2 ? w + 1 : w;
+  }
+
+  // Compute sign, exponent, fraction
+  if (v !== v) {
+    // NaN
+    // http://dev.w3.org/2006/webapi/WebIDL/#es-type-mapping
+    e = (1 << ebits) - 1; f = pow(2, fbits - 1); s = 0;
+  } else if (v === Infinity || v === -Infinity) {
+    e = (1 << ebits) - 1; f = 0; s = (v < 0) ? 1 : 0;
+  } else if (v === 0) {
+    e = 0; f = 0; s = (1 / v === -Infinity) ? 1 : 0;
+  } else {
+    s = v < 0;
+    v = abs(v);
+
+    if (v >= pow(2, 1 - bias)) {
+      e = min(floor(log(v) / LN2), 1023);
+      f = roundToEven(v / pow(2, e) * pow(2, fbits));
+      if (f / pow(2, fbits) >= 2) {
+        e = e + 1;
+        f = 1;
+      }
+      if (e > bias) {
+        // Overflow
+        e = (1 << ebits) - 1;
+        f = 0;
+      } else {
+        // Normalized
+        e = e + bias;
+        f = f - pow(2, fbits);
+      }
+    } else {
+      // Denormalized
+      e = 0;
+      f = roundToEven(v / pow(2, 1 - bias - fbits));
+    }
+  }
+
+  // Pack sign, exponent, fraction
+  bits = [];
+  for (i = fbits; i; i -= 1) { bits.push(f % 2 ? 1 : 0); f = floor(f / 2); }
+  for (i = ebits; i; i -= 1) { bits.push(e % 2 ? 1 : 0); e = floor(e / 2); }
+  bits.push(s ? 1 : 0);
+  bits.reverse();
+  str = bits.join('');
+
+  // Bits to bytes
+  bytes = [];
+  while (str.length) {
+    bytes.push(parseInt(str.substring(0, 8), 2));
+    str = str.substring(8);
+  }
+  return bytes;
+}
+
+function unpackIEEE754(bytes, ebits, fbits) {
+
+  // Bytes to bits
+  var bits = [], i, j, b, str,
+      bias, s, e, f;
+
+  for (i = bytes.length; i; i -= 1) {
+    b = bytes[i - 1];
+    for (j = 8; j; j -= 1) {
+      bits.push(b % 2 ? 1 : 0); b = b >> 1;
+    }
+  }
+  bits.reverse();
+  str = bits.join('');
+
+  // Unpack sign, exponent, fraction
+  bias = (1 << (ebits - 1)) - 1;
+  s = parseInt(str.substring(0, 1), 2) ? -1 : 1;
+  e = parseInt(str.substring(1, 1 + ebits), 2);
+  f = parseInt(str.substring(1 + ebits), 2);
+
+  // Produce number
+  if (e === (1 << ebits) - 1) {
+    return f !== 0 ? NaN : s * Infinity;
+  } else if (e > 0) {
+    // Normalized
+    return s * pow(2, e - bias) * (1 + f / pow(2, fbits));
+  } else if (f !== 0) {
+    // Denormalized
+    return s * pow(2, -(bias - 1)) * (f / pow(2, fbits));
+  } else {
+    return s < 0 ? -0 : 0;
+  }
+}
+
+function unpackF64(b) { return unpackIEEE754(b, 11, 52); }
+function packF64(v) { return packIEEE754(v, 11, 52); }
+function unpackF32(b) { return unpackIEEE754(b, 8, 23); }
+function packF32(v) { return packIEEE754(v, 8, 23); }
+
+
+//
+// 3 The ArrayBuffer Type
+//
+
+(function() {
+
+  /** @constructor */
+  var ArrayBuffer = function ArrayBuffer(length) {
+    length = ECMAScript.ToInt32(length);
+    if (length < 0) throw new RangeError('ArrayBuffer size is not a small enough positive integer');
+
+    this.byteLength = length;
+    this._bytes = [];
+    this._bytes.length = length;
+
+    var i;
+    for (i = 0; i < this.byteLength; i += 1) {
+      this._bytes[i] = 0;
+    }
+
+    configureProperties(this);
+  };
+
+  exports.ArrayBuffer = exports.ArrayBuffer || ArrayBuffer;
+
+  //
+  // 4 The ArrayBufferView Type
+  //
+
+  // NOTE: this constructor is not exported
+  /** @constructor */
+  var ArrayBufferView = function ArrayBufferView() {
+    //this.buffer = null;
+    //this.byteOffset = 0;
+    //this.byteLength = 0;
+  };
+
+  //
+  // 5 The Typed Array View Types
+  //
+
+  function makeConstructor(bytesPerElement, pack, unpack) {
+    // Each TypedArray type requires a distinct constructor instance with
+    // identical logic, which this produces.
+
+    var ctor;
+    ctor = function(buffer, byteOffset, length) {
+      var array, sequence, i, s;
+
+      if (!arguments.length || typeof arguments[0] === 'number') {
+        // Constructor(unsigned long length)
+        this.length = ECMAScript.ToInt32(arguments[0]);
+        if (length < 0) throw new RangeError('ArrayBufferView size is not a small enough positive integer');
+
+        this.byteLength = this.length * this.BYTES_PER_ELEMENT;
+        this.buffer = new ArrayBuffer(this.byteLength);
+        this.byteOffset = 0;
+      } else if (typeof arguments[0] === 'object' && arguments[0].constructor === ctor) {
+        // Constructor(TypedArray array)
+        array = arguments[0];
+
+        this.length = array.length;
+        this.byteLength = this.length * this.BYTES_PER_ELEMENT;
+        this.buffer = new ArrayBuffer(this.byteLength);
+        this.byteOffset = 0;
+
+        for (i = 0; i < this.length; i += 1) {
+          this._setter(i, array._getter(i));
+        }
+      } else if (typeof arguments[0] === 'object' &&
+                 !(arguments[0] instanceof ArrayBuffer || ECMAScript.Class(arguments[0]) === 'ArrayBuffer')) {
+        // Constructor(sequence<type> array)
+        sequence = arguments[0];
+
+        this.length = ECMAScript.ToUint32(sequence.length);
+        this.byteLength = this.length * this.BYTES_PER_ELEMENT;
+        this.buffer = new ArrayBuffer(this.byteLength);
+        this.byteOffset = 0;
+
+        for (i = 0; i < this.length; i += 1) {
+          s = sequence[i];
+          this._setter(i, Number(s));
+        }
+      } else if (typeof arguments[0] === 'object' &&
+                 (arguments[0] instanceof ArrayBuffer || ECMAScript.Class(arguments[0]) === 'ArrayBuffer')) {
+        // Constructor(ArrayBuffer buffer,
+        //             optional unsigned long byteOffset, optional unsigned long length)
+        this.buffer = buffer;
+
+        this.byteOffset = ECMAScript.ToUint32(byteOffset);
+        if (this.byteOffset > this.buffer.byteLength) {
+          throw new RangeError("byteOffset out of range");
+        }
+
+        if (this.byteOffset % this.BYTES_PER_ELEMENT) {
+          // The given byteOffset must be a multiple of the element
+          // size of the specific type, otherwise an exception is raised.
+          throw new RangeError("ArrayBuffer length minus the byteOffset is not a multiple of the element size.");
+        }
+
+        if (arguments.length < 3) {
+          this.byteLength = this.buffer.byteLength - this.byteOffset;
+
+          if (this.byteLength % this.BYTES_PER_ELEMENT) {
+            throw new RangeError("length of buffer minus byteOffset not a multiple of the element size");
+          }
+          this.length = this.byteLength / this.BYTES_PER_ELEMENT;
+        } else {
+          this.length = ECMAScript.ToUint32(length);
+          this.byteLength = this.length * this.BYTES_PER_ELEMENT;
+        }
+
+        if ((this.byteOffset + this.byteLength) > this.buffer.byteLength) {
+          throw new RangeError("byteOffset and length reference an area beyond the end of the buffer");
+        }
+      } else {
+        throw new TypeError("Unexpected argument type(s)");
+      }
+
+      this.constructor = ctor;
+
+      configureProperties(this);
+      makeArrayAccessors(this);
+    };
+
+    ctor.prototype = new ArrayBufferView();
+    ctor.prototype.BYTES_PER_ELEMENT = bytesPerElement;
+    ctor.prototype._pack = pack;
+    ctor.prototype._unpack = unpack;
+    ctor.BYTES_PER_ELEMENT = bytesPerElement;
+
+    // getter type (unsigned long index);
+    ctor.prototype._getter = function(index) {
+      if (arguments.length < 1) throw new SyntaxError("Not enough arguments");
+
+      index = ECMAScript.ToUint32(index);
+      if (index >= this.length) {
+        return undefined;
+      }
+
+      var bytes = [], i, o;
+      for (i = 0, o = this.byteOffset + index * this.BYTES_PER_ELEMENT;
+           i < this.BYTES_PER_ELEMENT;
+           i += 1, o += 1) {
+        bytes.push(this.buffer._bytes[o]);
+      }
+      return this._unpack(bytes);
+    };
+
+    // NONSTANDARD: convenience alias for getter: type get(unsigned long index);
+    ctor.prototype.get = ctor.prototype._getter;
+
+    // setter void (unsigned long index, type value);
+    ctor.prototype._setter = function(index, value) {
+      if (arguments.length < 2) throw new SyntaxError("Not enough arguments");
+
+      index = ECMAScript.ToUint32(index);
+      if (index >= this.length) {
+        return undefined;
+      }
+
+      var bytes = this._pack(value), i, o;
+      for (i = 0, o = this.byteOffset + index * this.BYTES_PER_ELEMENT;
+           i < this.BYTES_PER_ELEMENT;
+           i += 1, o += 1) {
+        this.buffer._bytes[o] = bytes[i];
+      }
+    };
+
+    // void set(TypedArray array, optional unsigned long offset);
+    // void set(sequence<type> array, optional unsigned long offset);
+    ctor.prototype.set = function(index, value) {
+      if (arguments.length < 1) throw new SyntaxError("Not enough arguments");
+      var array, sequence, offset, len,
+          i, s, d,
+          byteOffset, byteLength, tmp;
+
+      if (typeof arguments[0] === 'object' && arguments[0].constructor === this.constructor) {
+        // void set(TypedArray array, optional unsigned long offset);
+        array = arguments[0];
+        offset = ECMAScript.ToUint32(arguments[1]);
+
+        if (offset + array.length > this.length) {
+          throw new RangeError("Offset plus length of array is out of range");
+        }
+
+        byteOffset = this.byteOffset + offset * this.BYTES_PER_ELEMENT;
+        byteLength = array.length * this.BYTES_PER_ELEMENT;
+
+        if (array.buffer === this.buffer) {
+          tmp = [];
+          for (i = 0, s = array.byteOffset; i < byteLength; i += 1, s += 1) {
+            tmp[i] = array.buffer._bytes[s];
+          }
+          for (i = 0, d = byteOffset; i < byteLength; i += 1, d += 1) {
+            this.buffer._bytes[d] = tmp[i];
+          }
+        } else {
+          for (i = 0, s = array.byteOffset, d = byteOffset;
+               i < byteLength; i += 1, s += 1, d += 1) {
+            this.buffer._bytes[d] = array.buffer._bytes[s];
+          }
+        }
+      } else if (typeof arguments[0] === 'object' && typeof arguments[0].length !== 'undefined') {
+        // void set(sequence<type> array, optional unsigned long offset);
+        sequence = arguments[0];
+        len = ECMAScript.ToUint32(sequence.length);
+        offset = ECMAScript.ToUint32(arguments[1]);
+
+        if (offset + len > this.length) {
+          throw new RangeError("Offset plus length of array is out of range");
+        }
+
+        for (i = 0; i < len; i += 1) {
+          s = sequence[i];
+          this._setter(offset + i, Number(s));
+        }
+      } else {
+        throw new TypeError("Unexpected argument type(s)");
+      }
+    };
+
+    // TypedArray subarray(long begin, optional long end);
+    ctor.prototype.subarray = function(start, end) {
+      function clamp(v, min, max) { return v < min ? min : v > max ? max : v; }
+
+      start = ECMAScript.ToInt32(start);
+      end = ECMAScript.ToInt32(end);
+
+      if (arguments.length < 1) { start = 0; }
+      if (arguments.length < 2) { end = this.length; }
+
+      if (start < 0) { start = this.length + start; }
+      if (end < 0) { end = this.length + end; }
+
+      start = clamp(start, 0, this.length);
+      end = clamp(end, 0, this.length);
+
+      var len = end - start;
+      if (len < 0) {
+        len = 0;
+      }
+
+      return new this.constructor(
+        this.buffer, this.byteOffset + start * this.BYTES_PER_ELEMENT, len);
+    };
+
+    return ctor;
+  }
+
+  var Int8Array = makeConstructor(1, packI8, unpackI8);
+  var Uint8Array = makeConstructor(1, packU8, unpackU8);
+  var Uint8ClampedArray = makeConstructor(1, packU8Clamped, unpackU8);
+  var Int16Array = makeConstructor(2, packI16, unpackI16);
+  var Uint16Array = makeConstructor(2, packU16, unpackU16);
+  var Int32Array = makeConstructor(4, packI32, unpackI32);
+  var Uint32Array = makeConstructor(4, packU32, unpackU32);
+  var Float32Array = makeConstructor(4, packF32, unpackF32);
+  var Float64Array = makeConstructor(8, packF64, unpackF64);
+
+  exports.Int8Array = exports.Int8Array || Int8Array;
+  exports.Uint8Array = exports.Uint8Array || Uint8Array;
+  exports.Uint8ClampedArray = exports.Uint8ClampedArray || Uint8ClampedArray;
+  exports.Int16Array = exports.Int16Array || Int16Array;
+  exports.Uint16Array = exports.Uint16Array || Uint16Array;
+  exports.Int32Array = exports.Int32Array || Int32Array;
+  exports.Uint32Array = exports.Uint32Array || Uint32Array;
+  exports.Float32Array = exports.Float32Array || Float32Array;
+  exports.Float64Array = exports.Float64Array || Float64Array;
+}());
+
+//
+// 6 The DataView View Type
+//
+
+(function() {
+  function r(array, index) {
+    return ECMAScript.IsCallable(array.get) ? array.get(index) : array[index];
+  }
+
+  var IS_BIG_ENDIAN = (function() {
+    var u16array = new(exports.Uint16Array)([0x1234]),
+        u8array = new(exports.Uint8Array)(u16array.buffer);
+    return r(u8array, 0) === 0x12;
+  }());
+
+  // Constructor(ArrayBuffer buffer,
+  //             optional unsigned long byteOffset,
+  //             optional unsigned long byteLength)
+  /** @constructor */
+  var DataView = function DataView(buffer, byteOffset, byteLength) {
+    if (arguments.length === 0) {
+      buffer = new exports.ArrayBuffer(0);
+    } else if (!(buffer instanceof exports.ArrayBuffer || ECMAScript.Class(buffer) === 'ArrayBuffer')) {
+      throw new TypeError("TypeError");
+    }
+
+    this.buffer = buffer || new exports.ArrayBuffer(0);
+
+    this.byteOffset = ECMAScript.ToUint32(byteOffset);
+    if (this.byteOffset > this.buffer.byteLength) {
+      throw new RangeError("byteOffset out of range");
+    }
+
+    if (arguments.length < 3) {
+      this.byteLength = this.buffer.byteLength - this.byteOffset;
+    } else {
+      this.byteLength = ECMAScript.ToUint32(byteLength);
+    }
+
+    if ((this.byteOffset + this.byteLength) > this.buffer.byteLength) {
+      throw new RangeError("byteOffset and length reference an area beyond the end of the buffer");
+    }
+
+    configureProperties(this);
+  };
+
+  function makeGetter(arrayType) {
+    return function(byteOffset, littleEndian) {
+
+      byteOffset = ECMAScript.ToUint32(byteOffset);
+
+      if (byteOffset + arrayType.BYTES_PER_ELEMENT > this.byteLength) {
+        throw new RangeError("Array index out of range");
+      }
+      byteOffset += this.byteOffset;
+
+      var uint8Array = new exports.Uint8Array(this.buffer, byteOffset, arrayType.BYTES_PER_ELEMENT),
+          bytes = [], i;
+      for (i = 0; i < arrayType.BYTES_PER_ELEMENT; i += 1) {
+        bytes.push(r(uint8Array, i));
+      }
+
+      if (Boolean(littleEndian) === Boolean(IS_BIG_ENDIAN)) {
+        bytes.reverse();
+      }
+
+      return r(new arrayType(new exports.Uint8Array(bytes).buffer), 0);
+    };
+  }
+
+  DataView.prototype.getUint8 = makeGetter(exports.Uint8Array);
+  DataView.prototype.getInt8 = makeGetter(exports.Int8Array);
+  DataView.prototype.getUint16 = makeGetter(exports.Uint16Array);
+  DataView.prototype.getInt16 = makeGetter(exports.Int16Array);
+  DataView.prototype.getUint32 = makeGetter(exports.Uint32Array);
+  DataView.prototype.getInt32 = makeGetter(exports.Int32Array);
+  DataView.prototype.getFloat32 = makeGetter(exports.Float32Array);
+  DataView.prototype.getFloat64 = makeGetter(exports.Float64Array);
+
+  function makeSetter(arrayType) {
+    return function(byteOffset, value, littleEndian) {
+
+      byteOffset = ECMAScript.ToUint32(byteOffset);
+      if (byteOffset + arrayType.BYTES_PER_ELEMENT > this.byteLength) {
+        throw new RangeError("Array index out of range");
+      }
+
+      // Get bytes
+      var typeArray = new arrayType([value]),
+          byteArray = new exports.Uint8Array(typeArray.buffer),
+          bytes = [], i, byteView;
+
+      for (i = 0; i < arrayType.BYTES_PER_ELEMENT; i += 1) {
+        bytes.push(r(byteArray, i));
+      }
+
+      // Flip if necessary
+      if (Boolean(littleEndian) === Boolean(IS_BIG_ENDIAN)) {
+        bytes.reverse();
+      }
+
+      // Write them
+      byteView = new exports.Uint8Array(this.buffer, byteOffset, arrayType.BYTES_PER_ELEMENT);
+      byteView.set(bytes);
+    };
+  }
+
+  DataView.prototype.setUint8 = makeSetter(exports.Uint8Array);
+  DataView.prototype.setInt8 = makeSetter(exports.Int8Array);
+  DataView.prototype.setUint16 = makeSetter(exports.Uint16Array);
+  DataView.prototype.setInt16 = makeSetter(exports.Int16Array);
+  DataView.prototype.setUint32 = makeSetter(exports.Uint32Array);
+  DataView.prototype.setInt32 = makeSetter(exports.Int32Array);
+  DataView.prototype.setFloat32 = makeSetter(exports.Float32Array);
+  DataView.prototype.setFloat64 = makeSetter(exports.Float64Array);
+
+  exports.DataView = exports.DataView || DataView;
+
+}());
+
+
+/***/ }),
+/* 318 */,
+/* 319 */,
+/* 320 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+var trimOffNewlines = __webpack_require__(582)
+var _ = __webpack_require__(288)
+
+var CATCH_ALL = /()(.+)/gi
+var SCISSOR = '# ------------------------ >8 ------------------------'
+
+function append (src, line) {
+  if (src) {
+    src += '\n' + line
+  } else {
+    src = line
+  }
+
+  return src
+}
+
+function getCommentFilter (char) {
+  return function (line) {
+    return line.charAt(0) !== char
+  }
+}
+
+function truncateToScissor (lines) {
+  var scissorIndex = lines.indexOf(SCISSOR)
+
+  if (scissorIndex === -1) {
+    return lines
+  }
+
+  return lines.slice(0, scissorIndex)
+}
+
+function getReferences (input, regex) {
+  var references = []
+  var referenceSentences
+  var referenceMatch
+
+  var reApplicable = input.match(regex.references) !== null
+    ? regex.references
+    : CATCH_ALL
+
+  while ((referenceSentences = reApplicable.exec(input))) {
+    var action = referenceSentences[1] || null
+    var sentence = referenceSentences[2]
+
+    while ((referenceMatch = regex.referenceParts.exec(sentence))) {
+      var owner = null
+      var repository = referenceMatch[1] || ''
+      var ownerRepo = repository.split('/')
+
+      if (ownerRepo.length > 1) {
+        owner = ownerRepo.shift()
+        repository = ownerRepo.join('/')
+      }
+
+      var reference = {
+        action: action,
+        owner: owner,
+        repository: repository || null,
+        issue: referenceMatch[3],
+        raw: referenceMatch[0],
+        prefix: referenceMatch[2]
+      }
+
+      references.push(reference)
+    }
+  }
+
+  return references
+}
+
+function passTrough () {
+  return true
+}
+
+function parser (raw, options, regex) {
+  if (!raw || !raw.trim()) {
+    throw new TypeError('Expected a raw commit')
+  }
+
+  if (_.isEmpty(options)) {
+    throw new TypeError('Expected options')
+  }
+
+  if (_.isEmpty(regex)) {
+    throw new TypeError('Expected regex')
+  }
+
+  var headerMatch
+  var mergeMatch
+  var currentProcessedField
+  var mentionsMatch
+  var revertMatch
+  var otherFields = {}
+  var commentFilter = typeof options.commentChar === 'string'
+    ? getCommentFilter(options.commentChar)
+    : passTrough
+
+  var rawLines = trimOffNewlines(raw).split(/\r?\n/)
+  var lines = truncateToScissor(rawLines).filter(commentFilter)
+
+  var continueNote = false
+  var isBody = true
+  var headerCorrespondence = _.map(options.headerCorrespondence, function (part) {
+    return part.trim()
+  })
+  var revertCorrespondence = _.map(options.revertCorrespondence, function (field) {
+    return field.trim()
+  })
+  var mergeCorrespondence = _.map(options.mergeCorrespondence, function (field) {
+    return field.trim()
+  })
+
+  var body = null
+  var footer = null
+  var header = null
+  var mentions = []
+  var merge = null
+  var notes = []
+  var references = []
+  var revert = null
+
+  if (lines.length === 0) {
+    return {
+      body: body,
+      footer: footer,
+      header: header,
+      mentions: mentions,
+      merge: merge,
+      notes: notes,
+      references: references,
+      revert: revert,
+      scope: null,
+      subject: null,
+      type: null
+    }
+  }
+
+  // msg parts
+  merge = lines.shift()
+  var mergeParts = {}
+  var headerParts = {}
+  body = ''
+  footer = ''
+
+  mergeMatch = merge.match(options.mergePattern)
+  if (mergeMatch && options.mergePattern) {
+    merge = mergeMatch[0]
+
+    header = lines.shift()
+    while (!header.trim()) {
+      header = lines.shift()
+    }
+
+    _.forEach(mergeCorrespondence, function (partName, index) {
+      var partValue = mergeMatch[index + 1] || null
+      mergeParts[partName] = partValue
+    })
+  } else {
+    header = merge
+    merge = null
+
+    _.forEach(mergeCorrespondence, function (partName) {
+      mergeParts[partName] = null
+    })
+  }
+
+  headerMatch = header.match(options.headerPattern)
+  if (headerMatch) {
+    _.forEach(headerCorrespondence, function (partName, index) {
+      var partValue = headerMatch[index + 1] || null
+      headerParts[partName] = partValue
+    })
+  } else {
+    _.forEach(headerCorrespondence, function (partName) {
+      headerParts[partName] = null
+    })
+  }
+
+  Array.prototype.push.apply(references, getReferences(header, {
+    references: regex.references,
+    referenceParts: regex.referenceParts
+  }))
+
+  // body or footer
+  _.forEach(lines, function (line) {
+    if (options.fieldPattern) {
+      var fieldMatch = options.fieldPattern.exec(line)
+
+      if (fieldMatch) {
+        currentProcessedField = fieldMatch[1]
+
+        return
+      }
+
+      if (currentProcessedField) {
+        otherFields[currentProcessedField] = append(otherFields[currentProcessedField], line)
+
+        return
+      }
+    }
+
+    var referenceMatched
+
+    // this is a new important note
+    var notesMatch = line.match(regex.notes)
+    if (notesMatch) {
+      continueNote = true
+      isBody = false
+      footer = append(footer, line)
+
+      var note = {
+        title: notesMatch[1],
+        text: notesMatch[2]
+      }
+
+      notes.push(note)
+
+      return
+    }
+
+    var lineReferences = getReferences(line, {
+      references: regex.references,
+      referenceParts: regex.referenceParts
+    })
+
+    if (lineReferences.length > 0) {
+      isBody = false
+      referenceMatched = true
+      continueNote = false
+    }
+
+    Array.prototype.push.apply(references, lineReferences)
+
+    if (referenceMatched) {
+      footer = append(footer, line)
+
+      return
+    }
+
+    if (continueNote) {
+      notes[notes.length - 1].text = append(notes[notes.length - 1].text, line)
+      footer = append(footer, line)
+
+      return
+    }
+
+    if (isBody) {
+      body = append(body, line)
+    } else {
+      footer = append(footer, line)
+    }
+  })
+
+  if (options.breakingHeaderPattern && notes.length === 0) {
+    var breakingHeader = header.match(options.breakingHeaderPattern)
+    if (breakingHeader) {
+      const noteText = breakingHeader[3] // the description of the change.
+      notes.push({
+        title: 'BREAKING CHANGE',
+        text: noteText
+      })
+    }
+  }
+
+  while ((mentionsMatch = regex.mentions.exec(raw))) {
+    mentions.push(mentionsMatch[1])
+  }
+
+  // does this commit revert any other commit?
+  revertMatch = raw.match(options.revertPattern)
+  if (revertMatch) {
+    revert = {}
+    _.forEach(revertCorrespondence, function (partName, index) {
+      var partValue = revertMatch[index + 1] || null
+      revert[partName] = partValue
+    })
+  } else {
+    revert = null
+  }
+
+  _.map(notes, function (note) {
+    note.text = trimOffNewlines(note.text)
+
+    return note
+  })
+
+  var msg = _.merge(headerParts, mergeParts, {
+    merge: merge,
+    header: header,
+    body: body ? trimOffNewlines(body) : null,
+    footer: footer ? trimOffNewlines(footer) : null,
+    notes: notes,
+    references: references,
+    mentions: mentions,
+    revert: revert
+  }, otherFields)
+
+  return msg
+}
+
+module.exports = parser
+
+
+/***/ }),
+/* 321 */
+/***/ (function(module) {
+
+"use strict";
+
+function tryStringify (o) {
+  try { return JSON.stringify(o) } catch(e) { return '"[Circular]"' }
+}
+
+module.exports = format
+
+function format(f, args, opts) {
+  var ss = (opts && opts.stringify) || tryStringify
+  var offset = 1
+  if (typeof f === 'object' && f !== null) {
+    var len = args.length + offset
+    if (len === 1) return f
+    var objects = new Array(len)
+    objects[0] = ss(f)
+    for (var index = 1; index < len; index++) {
+      objects[index] = ss(args[index])
+    }
+    return objects.join(' ')
+  }
+  if (typeof f !== 'string') {
+    return f
+  }
+  var argLen = args.length
+  if (argLen === 0) return f
+  var x = ''
+  var str = ''
+  var a = 1 - offset
+  var lastPos = -1
+  var flen = (f && f.length) || 0
+  for (var i = 0; i < flen;) {
+    if (f.charCodeAt(i) === 37 && i + 1 < flen) {
+      lastPos = lastPos > -1 ? lastPos : 0
+      switch (f.charCodeAt(i + 1)) {
+        case 100: // 'd'
+          if (a >= argLen)
+            break
+          if (lastPos < i)
+            str += f.slice(lastPos, i)
+          if (args[a] == null)  break
+          str += Number(args[a])
+          lastPos = i = i + 2
+          break
+        case 79: // 'O'
+        case 111: // 'o'
+        case 106: // 'j'
+          if (a >= argLen)
+            break
+          if (lastPos < i)
+            str += f.slice(lastPos, i)
+          if (args[a] === undefined) break
+          var type = typeof args[a]
+          if (type === 'string') {
+            str += '\'' + args[a] + '\''
+            lastPos = i + 2
+            i++
+            break
+          }
+          if (type === 'function') {
+            str += args[a].name || '<anonymous>'
+            lastPos = i + 2
+            i++
+            break
+          }
+          str += ss(args[a])
+          lastPos = i + 2
+          i++
+          break
+        case 115: // 's'
+          if (a >= argLen)
+            break
+          if (lastPos < i)
+            str += f.slice(lastPos, i)
+          str += String(args[a])
+          lastPos = i + 2
+          i++
+          break
+        case 37: // '%'
+          if (lastPos < i)
+            str += f.slice(lastPos, i)
+          str += '%'
+          lastPos = i + 2
+          i++
+          break
+      }
+      ++a
+    }
+    ++i
+  }
+  if (lastPos === -1)
+    return f
+  else if (lastPos < flen) {
+    str += f.slice(lastPos)
+  }
+
+  return str
+}
+
+
+/***/ }),
+/* 322 */,
+/* 323 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+const outside = __webpack_require__(462)
+// Determine if version is less than all the versions possible in the range
+const ltr = (version, range, options) => outside(version, range, '<', options)
+module.exports = ltr
+
+
+/***/ }),
+/* 324 */,
+/* 325 */,
+/* 326 */,
+/* 327 */,
+/* 328 */,
+/* 329 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+var errSerializer = __webpack_require__(621)
+var reqSerializers = __webpack_require__(307)
+var resSerializers = __webpack_require__(578)
+
+module.exports = {
+  err: errSerializer,
+  mapHttpRequest: reqSerializers.mapHttpRequest,
+  mapHttpResponse: resSerializers.mapHttpResponse,
+  req: reqSerializers.reqSerializer,
+  res: resSerializers.resSerializer,
+
+  wrapErrorSerializer: function wrapErrorSerializer (customSerializer) {
+    if (customSerializer === errSerializer) return customSerializer
+    return function wrapErrSerializer (err) {
+      return customSerializer(errSerializer(err))
+    }
+  },
+
+  wrapRequestSerializer: function wrapRequestSerializer (customSerializer) {
+    if (customSerializer === reqSerializers.reqSerializer) return customSerializer
+    return function wrappedReqSerializer (req) {
+      return customSerializer(reqSerializers.reqSerializer(req))
+    }
+  },
+
+  wrapResponseSerializer: function wrapResponseSerializer (customSerializer) {
+    if (customSerializer === resSerializers.resSerializer) return customSerializer
+    return function wrappedResSerializer (res) {
+      return customSerializer(resSerializers.resSerializer(res))
+    }
+  }
+}
+
+
+/***/ }),
+/* 330 */,
+/* 331 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const { version } = __webpack_require__(929)
+
+module.exports = { version }
+
+
+/***/ }),
+/* 332 */,
+/* 333 */,
+/* 334 */,
+/* 335 */,
+/* 336 */,
+/* 337 */,
+/* 338 */
+/***/ (function(__unusedmodule, exports) {
+
+/* -*- Mode: js; js-indent-level: 2; -*- */
+/*
+ * Copyright 2011 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ */
+
+/**
+ * This is a helper function for getting values from parameter/options
+ * objects.
+ *
+ * @param args The object we are extracting values from
+ * @param name The name of the property we are getting.
+ * @param defaultValue An optional value to return if the property is missing
+ * from the object. If this is not specified and the property is missing, an
+ * error will be thrown.
+ */
+function getArg(aArgs, aName, aDefaultValue) {
+  if (aName in aArgs) {
+    return aArgs[aName];
+  } else if (arguments.length === 3) {
+    return aDefaultValue;
+  } else {
+    throw new Error('"' + aName + '" is a required argument.');
+  }
+}
+exports.getArg = getArg;
+
+var urlRegexp = /^(?:([\w+\-.]+):)?\/\/(?:(\w+:\w+)@)?([\w.-]*)(?::(\d+))?(.*)$/;
+var dataUrlRegexp = /^data:.+\,.+$/;
+
+function urlParse(aUrl) {
+  var match = aUrl.match(urlRegexp);
+  if (!match) {
+    return null;
+  }
+  return {
+    scheme: match[1],
+    auth: match[2],
+    host: match[3],
+    port: match[4],
+    path: match[5]
+  };
+}
+exports.urlParse = urlParse;
+
+function urlGenerate(aParsedUrl) {
+  var url = '';
+  if (aParsedUrl.scheme) {
+    url += aParsedUrl.scheme + ':';
+  }
+  url += '//';
+  if (aParsedUrl.auth) {
+    url += aParsedUrl.auth + '@';
+  }
+  if (aParsedUrl.host) {
+    url += aParsedUrl.host;
+  }
+  if (aParsedUrl.port) {
+    url += ":" + aParsedUrl.port
+  }
+  if (aParsedUrl.path) {
+    url += aParsedUrl.path;
+  }
+  return url;
+}
+exports.urlGenerate = urlGenerate;
+
+/**
+ * Normalizes a path, or the path portion of a URL:
+ *
+ * - Replaces consecutive slashes with one slash.
+ * - Removes unnecessary '.' parts.
+ * - Removes unnecessary '<dir>/..' parts.
+ *
+ * Based on code in the Node.js 'path' core module.
+ *
+ * @param aPath The path or url to normalize.
+ */
+function normalize(aPath) {
+  var path = aPath;
+  var url = urlParse(aPath);
+  if (url) {
+    if (!url.path) {
+      return aPath;
+    }
+    path = url.path;
+  }
+  var isAbsolute = exports.isAbsolute(path);
+
+  var parts = path.split(/\/+/);
+  for (var part, up = 0, i = parts.length - 1; i >= 0; i--) {
+    part = parts[i];
+    if (part === '.') {
+      parts.splice(i, 1);
+    } else if (part === '..') {
+      up++;
+    } else if (up > 0) {
+      if (part === '') {
+        // The first part is blank if the path is absolute. Trying to go
+        // above the root is a no-op. Therefore we can remove all '..' parts
+        // directly after the root.
+        parts.splice(i + 1, up);
+        up = 0;
+      } else {
+        parts.splice(i, 2);
+        up--;
+      }
+    }
+  }
+  path = parts.join('/');
+
+  if (path === '') {
+    path = isAbsolute ? '/' : '.';
+  }
+
+  if (url) {
+    url.path = path;
+    return urlGenerate(url);
+  }
+  return path;
+}
+exports.normalize = normalize;
+
+/**
+ * Joins two paths/URLs.
+ *
+ * @param aRoot The root path or URL.
+ * @param aPath The path or URL to be joined with the root.
+ *
+ * - If aPath is a URL or a data URI, aPath is returned, unless aPath is a
+ *   scheme-relative URL: Then the scheme of aRoot, if any, is prepended
+ *   first.
+ * - Otherwise aPath is a path. If aRoot is a URL, then its path portion
+ *   is updated with the result and aRoot is returned. Otherwise the result
+ *   is returned.
+ *   - If aPath is absolute, the result is aPath.
+ *   - Otherwise the two paths are joined with a slash.
+ * - Joining for example 'http://' and 'www.example.com' is also supported.
+ */
+function join(aRoot, aPath) {
+  if (aRoot === "") {
+    aRoot = ".";
+  }
+  if (aPath === "") {
+    aPath = ".";
+  }
+  var aPathUrl = urlParse(aPath);
+  var aRootUrl = urlParse(aRoot);
+  if (aRootUrl) {
+    aRoot = aRootUrl.path || '/';
+  }
+
+  // `join(foo, '//www.example.org')`
+  if (aPathUrl && !aPathUrl.scheme) {
+    if (aRootUrl) {
+      aPathUrl.scheme = aRootUrl.scheme;
+    }
+    return urlGenerate(aPathUrl);
+  }
+
+  if (aPathUrl || aPath.match(dataUrlRegexp)) {
+    return aPath;
+  }
+
+  // `join('http://', 'www.example.com')`
+  if (aRootUrl && !aRootUrl.host && !aRootUrl.path) {
+    aRootUrl.host = aPath;
+    return urlGenerate(aRootUrl);
+  }
+
+  var joined = aPath.charAt(0) === '/'
+    ? aPath
+    : normalize(aRoot.replace(/\/+$/, '') + '/' + aPath);
+
+  if (aRootUrl) {
+    aRootUrl.path = joined;
+    return urlGenerate(aRootUrl);
+  }
+  return joined;
+}
+exports.join = join;
+
+exports.isAbsolute = function (aPath) {
+  return aPath.charAt(0) === '/' || urlRegexp.test(aPath);
+};
+
+/**
+ * Make a path relative to a URL or another path.
+ *
+ * @param aRoot The root path or URL.
+ * @param aPath The path or URL to be made relative to aRoot.
+ */
+function relative(aRoot, aPath) {
+  if (aRoot === "") {
+    aRoot = ".";
+  }
+
+  aRoot = aRoot.replace(/\/$/, '');
+
+  // It is possible for the path to be above the root. In this case, simply
+  // checking whether the root is a prefix of the path won't work. Instead, we
+  // need to remove components from the root one by one, until either we find
+  // a prefix that fits, or we run out of components to remove.
+  var level = 0;
+  while (aPath.indexOf(aRoot + '/') !== 0) {
+    var index = aRoot.lastIndexOf("/");
+    if (index < 0) {
+      return aPath;
+    }
+
+    // If the only part of the root that is left is the scheme (i.e. http://,
+    // file:///, etc.), one or more slashes (/), or simply nothing at all, we
+    // have exhausted all components, so the path is not relative to the root.
+    aRoot = aRoot.slice(0, index);
+    if (aRoot.match(/^([^\/]+:\/)?\/*$/)) {
+      return aPath;
+    }
+
+    ++level;
+  }
+
+  // Make sure we add a "../" for each component we removed from the root.
+  return Array(level + 1).join("../") + aPath.substr(aRoot.length + 1);
+}
+exports.relative = relative;
+
+var supportsNullProto = (function () {
+  var obj = Object.create(null);
+  return !('__proto__' in obj);
+}());
+
+function identity (s) {
+  return s;
+}
+
+/**
+ * Because behavior goes wacky when you set `__proto__` on objects, we
+ * have to prefix all the strings in our set with an arbitrary character.
+ *
+ * See https://github.com/mozilla/source-map/pull/31 and
+ * https://github.com/mozilla/source-map/issues/30
+ *
+ * @param String aStr
+ */
+function toSetString(aStr) {
+  if (isProtoString(aStr)) {
+    return '$' + aStr;
+  }
+
+  return aStr;
+}
+exports.toSetString = supportsNullProto ? identity : toSetString;
+
+function fromSetString(aStr) {
+  if (isProtoString(aStr)) {
+    return aStr.slice(1);
+  }
+
+  return aStr;
+}
+exports.fromSetString = supportsNullProto ? identity : fromSetString;
+
+function isProtoString(s) {
+  if (!s) {
+    return false;
+  }
+
+  var length = s.length;
+
+  if (length < 9 /* "__proto__".length */) {
+    return false;
+  }
+
+  if (s.charCodeAt(length - 1) !== 95  /* '_' */ ||
+      s.charCodeAt(length - 2) !== 95  /* '_' */ ||
+      s.charCodeAt(length - 3) !== 111 /* 'o' */ ||
+      s.charCodeAt(length - 4) !== 116 /* 't' */ ||
+      s.charCodeAt(length - 5) !== 111 /* 'o' */ ||
+      s.charCodeAt(length - 6) !== 114 /* 'r' */ ||
+      s.charCodeAt(length - 7) !== 112 /* 'p' */ ||
+      s.charCodeAt(length - 8) !== 95  /* '_' */ ||
+      s.charCodeAt(length - 9) !== 95  /* '_' */) {
+    return false;
+  }
+
+  for (var i = length - 10; i >= 0; i--) {
+    if (s.charCodeAt(i) !== 36 /* '$' */) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Comparator between two mappings where the original positions are compared.
+ *
+ * Optionally pass in `true` as `onlyCompareGenerated` to consider two
+ * mappings with the same original source/line/column, but different generated
+ * line and column the same. Useful when searching for a mapping with a
+ * stubbed out mapping.
+ */
+function compareByOriginalPositions(mappingA, mappingB, onlyCompareOriginal) {
+  var cmp = strcmp(mappingA.source, mappingB.source);
+  if (cmp !== 0) {
+    return cmp;
+  }
+
+  cmp = mappingA.originalLine - mappingB.originalLine;
+  if (cmp !== 0) {
+    return cmp;
+  }
+
+  cmp = mappingA.originalColumn - mappingB.originalColumn;
+  if (cmp !== 0 || onlyCompareOriginal) {
+    return cmp;
+  }
+
+  cmp = mappingA.generatedColumn - mappingB.generatedColumn;
+  if (cmp !== 0) {
+    return cmp;
+  }
+
+  cmp = mappingA.generatedLine - mappingB.generatedLine;
+  if (cmp !== 0) {
+    return cmp;
+  }
+
+  return strcmp(mappingA.name, mappingB.name);
+}
+exports.compareByOriginalPositions = compareByOriginalPositions;
+
+/**
+ * Comparator between two mappings with deflated source and name indices where
+ * the generated positions are compared.
+ *
+ * Optionally pass in `true` as `onlyCompareGenerated` to consider two
+ * mappings with the same generated line and column, but different
+ * source/name/original line and column the same. Useful when searching for a
+ * mapping with a stubbed out mapping.
+ */
+function compareByGeneratedPositionsDeflated(mappingA, mappingB, onlyCompareGenerated) {
+  var cmp = mappingA.generatedLine - mappingB.generatedLine;
+  if (cmp !== 0) {
+    return cmp;
+  }
+
+  cmp = mappingA.generatedColumn - mappingB.generatedColumn;
+  if (cmp !== 0 || onlyCompareGenerated) {
+    return cmp;
+  }
+
+  cmp = strcmp(mappingA.source, mappingB.source);
+  if (cmp !== 0) {
+    return cmp;
+  }
+
+  cmp = mappingA.originalLine - mappingB.originalLine;
+  if (cmp !== 0) {
+    return cmp;
+  }
+
+  cmp = mappingA.originalColumn - mappingB.originalColumn;
+  if (cmp !== 0) {
+    return cmp;
+  }
+
+  return strcmp(mappingA.name, mappingB.name);
+}
+exports.compareByGeneratedPositionsDeflated = compareByGeneratedPositionsDeflated;
+
+function strcmp(aStr1, aStr2) {
+  if (aStr1 === aStr2) {
+    return 0;
+  }
+
+  if (aStr1 === null) {
+    return 1; // aStr2 !== null
+  }
+
+  if (aStr2 === null) {
+    return -1; // aStr1 !== null
+  }
+
+  if (aStr1 > aStr2) {
+    return 1;
+  }
+
+  return -1;
+}
+
+/**
+ * Comparator between two mappings with inflated source and name strings where
+ * the generated positions are compared.
+ */
+function compareByGeneratedPositionsInflated(mappingA, mappingB) {
+  var cmp = mappingA.generatedLine - mappingB.generatedLine;
+  if (cmp !== 0) {
+    return cmp;
+  }
+
+  cmp = mappingA.generatedColumn - mappingB.generatedColumn;
+  if (cmp !== 0) {
+    return cmp;
+  }
+
+  cmp = strcmp(mappingA.source, mappingB.source);
+  if (cmp !== 0) {
+    return cmp;
+  }
+
+  cmp = mappingA.originalLine - mappingB.originalLine;
+  if (cmp !== 0) {
+    return cmp;
+  }
+
+  cmp = mappingA.originalColumn - mappingB.originalColumn;
+  if (cmp !== 0) {
+    return cmp;
+  }
+
+  return strcmp(mappingA.name, mappingB.name);
+}
+exports.compareByGeneratedPositionsInflated = compareByGeneratedPositionsInflated;
+
+/**
+ * Strip any JSON XSSI avoidance prefix from the string (as documented
+ * in the source maps specification), and then parse the string as
+ * JSON.
+ */
+function parseSourceMapInput(str) {
+  return JSON.parse(str.replace(/^\)]}'[^\n]*\n/, ''));
+}
+exports.parseSourceMapInput = parseSourceMapInput;
+
+/**
+ * Compute the URL of a source given the the source root, the source's
+ * URL, and the source map's URL.
+ */
+function computeSourceURL(sourceRoot, sourceURL, sourceMapURL) {
+  sourceURL = sourceURL || '';
+
+  if (sourceRoot) {
+    // This follows what Chrome does.
+    if (sourceRoot[sourceRoot.length - 1] !== '/' && sourceURL[0] !== '/') {
+      sourceRoot += '/';
+    }
+    // The spec says:
+    //   Line 4: An optional source root, useful for relocating source
+    //   files on a server or removing repeated values in the
+    //   “sources” entry.  This value is prepended to the individual
+    //   entries in the “source” field.
+    sourceURL = sourceRoot + sourceURL;
+  }
+
+  // Historically, SourceMapConsumer did not take the sourceMapURL as
+  // a parameter.  This mode is still somewhat supported, which is why
+  // this code block is conditional.  However, it's preferable to pass
+  // the source map URL to SourceMapConsumer, so that this function
+  // can implement the source URL resolution algorithm as outlined in
+  // the spec.  This block is basically the equivalent of:
+  //    new URL(sourceURL, sourceMapURL).toString()
+  // ... except it avoids using URL, which wasn't available in the
+  // older releases of node still supported by this library.
+  //
+  // The spec says:
+  //   If the sources are not absolute URLs after prepending of the
+  //   “sourceRoot”, the sources are resolved relative to the
+  //   SourceMap (like resolving script src in a html document).
+  if (sourceMapURL) {
+    var parsed = urlParse(sourceMapURL);
+    if (!parsed) {
+      throw new Error("sourceMapURL could not be parsed");
+    }
+    if (parsed.path) {
+      // Strip the last path component, but keep the "/".
+      var index = parsed.path.lastIndexOf('/');
+      if (index >= 0) {
+        parsed.path = parsed.path.substring(0, index + 1);
+      }
+    }
+    sourceURL = join(urlGenerate(parsed), sourceURL);
+  }
+
+  return normalize(sourceURL);
+}
+exports.computeSourceURL = computeSourceURL;
+
+
+/***/ }),
+/* 339 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* global define */
+
+
+exports.__esModule = true;
+
+var _utils = __webpack_require__(423);
+
+var SourceNode = undefined;
+
+try {
+  /* istanbul ignore next */
+  if (typeof define !== 'function' || !define.amd) {
+    // We don't support this in AMD environments. For these environments, we asusme that
+    // they are running on the browser and thus have no need for the source-map library.
+    var SourceMap = __webpack_require__(94);
+    SourceNode = SourceMap.SourceNode;
+  }
+} catch (err) {}
+/* NOP */
+
+/* istanbul ignore if: tested but not covered in istanbul due to dist build  */
+if (!SourceNode) {
+  SourceNode = function (line, column, srcFile, chunks) {
+    this.src = '';
+    if (chunks) {
+      this.add(chunks);
+    }
+  };
+  /* istanbul ignore next */
+  SourceNode.prototype = {
+    add: function add(chunks) {
+      if (_utils.isArray(chunks)) {
+        chunks = chunks.join('');
+      }
+      this.src += chunks;
+    },
+    prepend: function prepend(chunks) {
+      if (_utils.isArray(chunks)) {
+        chunks = chunks.join('');
+      }
+      this.src = chunks + this.src;
+    },
+    toStringWithSourceMap: function toStringWithSourceMap() {
+      return { code: this.toString() };
+    },
+    toString: function toString() {
+      return this.src;
+    }
+  };
+}
+
+function castChunk(chunk, codeGen, loc) {
+  if (_utils.isArray(chunk)) {
+    var ret = [];
+
+    for (var i = 0, len = chunk.length; i < len; i++) {
+      ret.push(codeGen.wrap(chunk[i], loc));
+    }
+    return ret;
+  } else if (typeof chunk === 'boolean' || typeof chunk === 'number') {
+    // Handle primitives that the SourceNode will throw up on
+    return chunk + '';
+  }
+  return chunk;
+}
+
+function CodeGen(srcFile) {
+  this.srcFile = srcFile;
+  this.source = [];
+}
+
+CodeGen.prototype = {
+  isEmpty: function isEmpty() {
+    return !this.source.length;
+  },
+  prepend: function prepend(source, loc) {
+    this.source.unshift(this.wrap(source, loc));
+  },
+  push: function push(source, loc) {
+    this.source.push(this.wrap(source, loc));
+  },
+
+  merge: function merge() {
+    var source = this.empty();
+    this.each(function (line) {
+      source.add(['  ', line, '\n']);
+    });
+    return source;
+  },
+
+  each: function each(iter) {
+    for (var i = 0, len = this.source.length; i < len; i++) {
+      iter(this.source[i]);
+    }
+  },
+
+  empty: function empty() {
+    var loc = this.currentLocation || { start: {} };
+    return new SourceNode(loc.start.line, loc.start.column, this.srcFile);
+  },
+  wrap: function wrap(chunk) {
+    var loc = arguments.length <= 1 || arguments[1] === undefined ? this.currentLocation || { start: {} } : arguments[1];
+
+    if (chunk instanceof SourceNode) {
+      return chunk;
+    }
+
+    chunk = castChunk(chunk, this, loc);
+
+    return new SourceNode(loc.start.line, loc.start.column, this.srcFile, chunk);
+  },
+
+  functionCall: function functionCall(fn, type, params) {
+    params = this.generateList(params);
+    return this.wrap([fn, type ? '.' + type + '(' : '(', params, ')']);
+  },
+
+  quotedString: function quotedString(str) {
+    return '"' + (str + '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\u2028/g, '\\u2028') // Per Ecma-262 7.3 + 7.8.4
+    .replace(/\u2029/g, '\\u2029') + '"';
+  },
+
+  objectLiteral: function objectLiteral(obj) {
+    // istanbul ignore next
+
+    var _this = this;
+
+    var pairs = [];
+
+    Object.keys(obj).forEach(function (key) {
+      var value = castChunk(obj[key], _this);
+      if (value !== 'undefined') {
+        pairs.push([_this.quotedString(key), ':', value]);
+      }
+    });
+
+    var ret = this.generateList(pairs);
+    ret.prepend('{');
+    ret.add('}');
+    return ret;
+  },
+
+  generateList: function generateList(entries) {
+    var ret = this.empty();
+
+    for (var i = 0, len = entries.length; i < len; i++) {
+      if (i) {
+        ret.add(',');
+      }
+
+      ret.add(castChunk(entries[i], this));
+    }
+
+    return ret;
+  },
+
+  generateArray: function generateArray(entries) {
+    var ret = this.generateList(entries);
+    ret.prepend('[');
+    ret.add(']');
+
+    return ret;
+  }
+};
+
+exports['default'] = CodeGen;
+module.exports = exports['default'];
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2NvbXBpbGVyL2NvZGUtZ2VuLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7O3FCQUN3QixVQUFVOztBQUVsQyxJQUFJLFVBQVUsWUFBQSxDQUFDOztBQUVmLElBQUk7O0FBRUYsTUFBSSxPQUFPLE1BQU0sS0FBSyxVQUFVLElBQUksQ0FBQyxNQUFNLENBQUMsR0FBRyxFQUFFOzs7QUFHL0MsUUFBSSxTQUFTLEdBQUcsT0FBTyxDQUFDLFlBQVksQ0FBQyxDQUFDO0FBQ3RDLGNBQVUsR0FBRyxTQUFTLENBQUMsVUFBVSxDQUFDO0dBQ25DO0NBQ0YsQ0FBQyxPQUFPLEdBQUcsRUFBRSxFQUViOzs7O0FBQUEsQUFHRCxJQUFJLENBQUMsVUFBVSxFQUFFO0FBQ2YsWUFBVSxHQUFHLFVBQVMsSUFBSSxFQUFFLE1BQU0sRUFBRSxPQUFPLEVBQUUsTUFBTSxFQUFFO0FBQ25ELFFBQUksQ0FBQyxHQUFHLEdBQUcsRUFBRSxDQUFDO0FBQ2QsUUFBSSxNQUFNLEVBQUU7QUFDVixVQUFJLENBQUMsR0FBRyxDQUFDLE1BQU0sQ0FBQyxDQUFDO0tBQ2xCO0dBQ0YsQ0FBQzs7QUFFRixZQUFVLENBQUMsU0FBUyxHQUFHO0FBQ3JCLE9BQUcsRUFBRSxhQUFTLE1BQU0sRUFBRTtBQUNwQixVQUFJLGVBQVEsTUFBTSxDQUFDLEVBQUU7QUFDbkIsY0FBTSxHQUFHLE1BQU0sQ0FBQyxJQUFJLENBQUMsRUFBRSxDQUFDLENBQUM7T0FDMUI7QUFDRCxVQUFJLENBQUMsR0FBRyxJQUFJLE1BQU0sQ0FBQztLQUNwQjtBQUNELFdBQU8sRUFBRSxpQkFBUyxNQUFNLEVBQUU7QUFDeEIsVUFBSSxlQUFRLE1BQU0sQ0FBQyxFQUFFO0FBQ25CLGNBQU0sR0FBRyxNQUFNLENBQUMsSUFBSSxDQUFDLEVBQUUsQ0FBQyxDQUFDO09BQzFCO0FBQ0QsVUFBSSxDQUFDLEdBQUcsR0FBRyxNQUFNLEdBQUcsSUFBSSxDQUFDLEdBQUcsQ0FBQztL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QUcsQ0FBQyxDQUFDO0FBQ2pCLE9BQUcsQ0FBQyxHQUFHLENBQUMsR0FBRyxDQUFDLENBQUM7O0FBRWIsV0FBTyxHQUFHLENBQUM7R0FDWjtDQUNGLENBQUM7O3FCQUVhLE9BQU8iLCJmaWxlIjoiY29kZS1nZW4uanMiLCJzb3VyY2VzQ29udGVudCI6WyIvKiBnbG9iYWwgZGVmaW5lICovXG5pbXBvcnQgeyBpc0FycmF5IH0gZnJvbSAnLi4vdXRpbHMnO1xuXG5sZXQgU291cmNlTm9kZTtcblxudHJ5IHtcbiAgLyogaXN0YW5idWwgaWdub3JlIG5leHQgKi9cbiAgaWYgKHR5cGVvZiBkZWZpbmUgIT09ICdmdW5jdGlvbicgfHwgIWRlZmluZS5hbWQpIHtcbiAgICAvLyBXZSBkb24ndCBzdXBwb3J0IHRoaXMgaW4gQU1EIGVudmlyb25tZW50cy4gRm9yIHRoZXNlIGVudmlyb25tZW50cywgd2UgYXN1c21lIHRoYXRcbiAgICAvLyB0aGV5IGFyZSBydW5uaW5nIG9uIHRoZSBicm93c2VyIGFuZCB0aHVzIGhhdmUgbm8gbmVlZCBmb3IgdGhlIHNvdXJjZS1tYXAgbGlicmFyeS5cbiAgICBsZXQgU291cmNlTWFwID0gcmVxdWlyZSgnc291cmNlLW1hcCcpO1xuICAgIFNvdXJjZU5vZGUgPSBTb3VyY2VNYXAuU291cmNlTm9kZTtcbiAgfVxufSBjYXRjaCAoZXJyKSB7XG4gIC8qIE5PUCAqL1xufVxuXG4vKiBpc3RhbmJ1bCBpZ25vcmUgaWY6IHRlc3RlZCBidXQgbm90IGNvdmVyZWQgaW4gaXN0YW5idWwgZHVlIHRvIGRpc3QgYnVpbGQgICovXG5pZiAoIVNvdXJjZU5vZGUpIHtcbiAgU291cmNlTm9kZSA9IGZ1bmN0aW9uKGxpbmUsIGNvbHVtbiwgc3JjRmlsZSwgY2h1bmtzKSB7XG4gICAgdGhpcy5zcmMgPSAnJztcbiAgICBpZiAoY2h1bmtzKSB7XG4gICAgICB0aGlzLmFkZChjaHVua3MpO1xuICAgIH1cbiAgfTtcbiAgLyogaXN0YW5idWwgaWdub3JlIG5leHQgKi9cbiAgU291cmNlTm9kZS5wcm90b3R5cGUgPSB7XG4gICAgYWRkOiBmdW5jdGlvbihjaHVua3MpIHtcbiAgICAgIGlmIChpc0FycmF5KGNodW5rcykpIHtcbiAgICAgICAgY2h1bmtzID0gY2h1bmtzLmpvaW4oJycpO1xuICAgICAgfVxuICAgICAgdGhpcy5zcmMgKz0gY2h1bmtzO1xuICAgIH0sXG4gICAgcHJlcGVuZDogZnVuY3Rpb24oY2h1bmtzKSB7XG4gICAgICBpZiAoaXNBcnJheShjaHVua3MpKSB7XG4gICAgICAgIGNodW5rcyA9IGNodW5rcy5qb2luKCcnKTtcbiAgICAgIH1cbiAgICAgIHRoaXMuc3JjID0gY2h1bmtzICsgdGhpcy5zcmM7XG4gICAgfSxcbiAgICB0b1N0cmluZ1dpdGhTb3VyY2VNYXA6IGZ1bmN0aW9uKCkge1xuICAgICAgcmV0dXJuIHsgY29kZTogdGhpcy50b1N0cmluZygpIH07XG4gICAgfSxcbiAgICB0b1N0cmluZzogZnVuY3Rpb24oKSB7XG4gICAgICByZXR1cm4gdGhpcy5zcmM7XG4gICAgfVxuICB9O1xufVxuXG5mdW5jdGlvbiBjYXN0Q2h1bmsoY2h1bmssIGNvZGVHZW4sIGxvYykge1xuICBpZiAoaXNBcnJheShjaHVuaykpIHtcbiAgICBsZXQgcmV0ID0gW107XG5cbiAgICBmb3IgKGxldCBpID0gMCwgbGVuID0gY2h1bmsubGVuZ3RoOyBpIDwgbGVuOyBpKyspIHtcbiAgICAgIHJldC5wdXNoKGNvZGVHZW4ud3JhcChjaHVua1tpXSwgbG9jKSk7XG4gICAgfVxuICAgIHJldHVybiByZXQ7XG4gIH0gZWxzZSBpZiAodHlwZW9mIGNodW5rID09PSAnYm9vbGVhbicgfHwgdHlwZW9mIGNodW5rID09PSAnbnVtYmVyJykge1xuICAgIC8vIEhhbmRsZSBwcmltaXRpdmVzIHRoYXQgdGhlIFNvdXJjZU5vZGUgd2lsbCB0aHJvdyB1cCBvblxuICAgIHJldHVybiBjaHVuayArICcnO1xuICB9XG4gIHJldHVybiBjaHVuaztcbn1cblxuZnVuY3Rpb24gQ29kZUdlbihzcmNGaWxlKSB7XG4gIHRoaXMuc3JjRmlsZSA9IHNyY0ZpbGU7XG4gIHRoaXMuc291cmNlID0gW107XG59XG5cbkNvZGVHZW4ucHJvdG90eXBlID0ge1xuICBpc0VtcHR5KCkge1xuICAgIHJldHVybiAhdGhpcy5zb3VyY2UubGVuZ3RoO1xuICB9LFxuICBwcmVwZW5kOiBmdW5jdGlvbihzb3VyY2UsIGxvYykge1xuICAgIHRoaXMuc291cmNlLnVuc2hpZnQodGhpcy53cmFwKHNvdXJjZSwgbG9jKSk7XG4gIH0sXG4gIHB1c2g6IGZ1bmN0aW9uKHNvdXJjZSwgbG9jKSB7XG4gICAgdGhpcy5zb3VyY2UucHVzaCh0aGlzLndyYXAoc291cmNlLCBsb2MpKTtcbiAgfSxcblxuICBtZXJnZTogZnVuY3Rpb24oKSB7XG4gICAgbGV0IHNvdXJjZSA9IHRoaXMuZW1wdHkoKTtcbiAgICB0aGlzLmVhY2goZnVuY3Rpb24obGluZSkge1xuICAgICAgc291cmNlLmFkZChbJyAgJywgbGluZSwgJ1xcbiddKTtcbiAgICB9KTtcbiAgICByZXR1cm4gc291cmNlO1xuICB9LFxuXG4gIGVhY2g6IGZ1bmN0aW9uKGl0ZXIpIHtcbiAgICBmb3IgKGxldCBpID0gMCwgbGVuID0gdGhpcy5zb3VyY2UubGVuZ3RoOyBpIDwgbGVuOyBpKyspIHtcbiAgICAgIGl0ZXIodGhpcy5zb3VyY2VbaV0pO1xuICAgIH1cbiAgfSxcblxuICBlbXB0eTogZnVuY3Rpb24oKSB7XG4gICAgbGV0IGxvYyA9IHRoaXMuY3VycmVudExvY2F0aW9uIHx8IHsgc3RhcnQ6IHt9IH07XG4gICAgcmV0dXJuIG5ldyBTb3VyY2VOb2RlKGxvYy5zdGFydC5saW5lLCBsb2Muc3RhcnQuY29sdW1uLCB0aGlzLnNyY0ZpbGUpO1xuICB9LFxuICB3cmFwOiBmdW5jdGlvbihjaHVuaywgbG9jID0gdGhpcy5jdXJyZW50TG9jYXRpb24gfHwgeyBzdGFydDoge30gfSkge1xuICAgIGlmIChjaHVuayBpbnN0YW5jZW9mIFNvdXJjZU5vZGUpIHtcbiAgICAgIHJldHVybiBjaHVuaztcbiAgICB9XG5cbiAgICBjaHVuayA9IGNhc3RDaHVuayhjaHVuaywgdGhpcywgbG9jKTtcblxuICAgIHJldHVybiBuZXcgU291cmNlTm9kZShcbiAgICAgIGxvYy5zdGFydC5saW5lLFxuICAgICAgbG9jLnN0YXJ0LmNvbHVtbixcbiAgICAgIHRoaXMuc3JjRmlsZSxcbiAgICAgIGNodW5rXG4gICAgKTtcbiAgfSxcblxuICBmdW5jdGlvbkNhbGw6IGZ1bmN0aW9uKGZuLCB0eXBlLCBwYXJhbXMpIHtcbiAgICBwYXJhbXMgPSB0aGlzLmdlbmVyYXRlTGlzdChwYXJhbXMpO1xuICAgIHJldHVybiB0aGlzLndyYXAoW2ZuLCB0eXBlID8gJy4nICsgdHlwZSArICcoJyA6ICcoJywgcGFyYW1zLCAnKSddKTtcbiAgfSxcblxuICBxdW90ZWRTdHJpbmc6IGZ1bmN0aW9uKHN0cikge1xuICAgIHJldHVybiAoXG4gICAgICAnXCInICtcbiAgICAgIChzdHIgKyAnJylcbiAgICAgICAgLnJlcGxhY2UoL1xcXFwvZywgJ1xcXFxcXFxcJylcbiAgICAgICAgLnJlcGxhY2UoL1wiL2csICdcXFxcXCInKVxuICAgICAgICAucmVwbGFjZSgvXFxuL2csICdcXFxcbicpXG4gICAgICAgIC5yZXBsYWNlKC9cXHIvZywgJ1xcXFxyJylcbiAgICAgICAgLnJlcGxhY2UoL1xcdTIwMjgvZywgJ1xcXFx1MjAyOCcpIC8vIFBlciBFY21hLTI2MiA3LjMgKyA3LjguNFxuICAgICAgICAucmVwbGFjZSgvXFx1MjAyOS9nLCAnXFxcXHUyMDI5JykgK1xuICAgICAgJ1wiJ1xuICAgICk7XG4gIH0sXG5cbiAgb2JqZWN0TGl0ZXJhbDogZnVuY3Rpb24ob2JqKSB7XG4gICAgbGV0IHBhaXJzID0gW107XG5cbiAgICBPYmplY3Qua2V5cyhvYmopLmZvckVhY2goa2V5ID0+IHtcbiAgICAgIGxldCB2YWx1ZSA9IGNhc3RDaHVuayhvYmpba2V5XSwgdGhpcyk7XG4gICAgICBpZiAodmFsdWUgIT09ICd1bmRlZmluZWQnKSB7XG4gICAgICAgIHBhaXJzLnB1c2goW3RoaXMucXVvdGVkU3RyaW5nKGtleSksICc6JywgdmFsdWVdKTtcbiAgICAgIH1cbiAgICB9KTtcblxuICAgIGxldCByZXQgPSB0aGlzLmdlbmVyYXRlTGlzdChwYWlycyk7XG4gICAgcmV0LnByZXBlbmQoJ3snKTtcbiAgICByZXQuYWRkKCd9Jyk7XG4gICAgcmV0dXJuIHJldDtcbiAgfSxcblxuICBnZW5lcmF0ZUxpc3Q6IGZ1bmN0aW9uKGVudHJpZXMpIHtcbiAgICBsZXQgcmV0ID0gdGhpcy5lbXB0eSgpO1xuXG4gICAgZm9yIChsZXQgaSA9IDAsIGxlbiA9IGVudHJpZXMubGVuZ3RoOyBpIDwgbGVuOyBpKyspIHtcbiAgICAgIGlmIChpKSB7XG4gICAgICAgIHJldC5hZGQoJywnKTtcbiAgICAgIH1cblxuICAgICAgcmV0LmFkZChjYXN0Q2h1bmsoZW50cmllc1tpXSwgdGhpcykpO1xuICAgIH1cblxuICAgIHJldHVybiByZXQ7XG4gIH0sXG5cbiAgZ2VuZXJhdGVBcnJheTogZnVuY3Rpb24oZW50cmllcykge1xuICAgIGxldCByZXQgPSB0aGlzLmdlbmVyYXRlTGlzdChlbnRyaWVzKTtcbiAgICByZXQucHJlcGVuZCgnWycpO1xuICAgIHJldC5hZGQoJ10nKTtcblxuICAgIHJldHVybiByZXQ7XG4gIH1cbn07XG5cbmV4cG9ydCBkZWZhdWx0IENvZGVHZW47XG4iXX0=
+
+
+/***/ }),
+/* 340 */,
+/* 341 */,
+/* 342 */,
+/* 343 */,
+/* 344 */,
+/* 345 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+var parse = __webpack_require__(835).parse
+
+module.exports = function (string) {
+  // user/repo#version
+  var m = /^([\w-.]+)\/([\w-.]+)((?:#|@).+)?$/.exec(string)
+  if (m) return format(m)
+
+  string = string.replace('//www.', '//')
+  // normalize git@ and https:git@ urls
+  string = string.replace(/^git@/, 'https://')
+  string = string.replace(/^https:git@/, 'https://')
+  string = string.replace('.com:', '.com/')
+
+  if (!~string.indexOf('://')) {
+    return false
+  }
+  var url = parse(string)
+
+  var path = url.pathname.replace(/\.git$/, '')
+
+  // https://www.npmjs.org/doc/json.html#Git-URLs-as-Dependencies
+  var m = /^\/([\w-.]+)\/([\w-.]+)$/.exec(path)
+  if (m) return m.slice(1, 3).concat((url.hash || '').slice(1))
+
+  // archive link
+  // https://developer.github.com/v3/repos/contents/#get-archive-link
+  var m = /^\/repos\/([\w-.]+)\/([\w-.]+)\/(?:tarball|zipball)(\/.+)?$/.exec(path)
+  if (m) return format(m)
+
+  // codeload link
+  // https://developer.github.com/v3/repos/contents/#response-4
+  var m = /^\/([\w-.]+)\/([\w-.]+)\/(?:legacy\.(?:zip|tar\.gz))(\/.+)?$/.exec(path)
+  if (m) return format(m)
+
+  // tarball link
+  // https://github.com/LearnBoost/socket.io-client/blob/master/package.json#L14
+  var m = /^\/([\w-]+)\/([\w-.]+)\/archive\/(.+)\.tar\.gz?$/.exec(path)
+  if (m) return m.slice(1, 4)
+
+  // https://docs.gitlab.com/ce/user/group/subgroups/
+  if (~url.host.indexOf('gitlab')) {
+    var m = /^\/((?:[\w-.]+\/)+)([\w-.]+)$/.exec(path)
+    if (m) {
+      m = m.slice(1, 3);
+      // remove slash at the end
+      m[0] = m[0].slice(0, -1);
+      return m.concat((url.hash || '').slice(1));
+    }
+  }
+
+  return false
+}
+
+function format(m) {
+  var version = (m[3] || '').slice(1)
+  if (/^['"]/.test(version)) version = version.slice(1, -1)
+  return [m[1], m[2], version]
+}
+
+
+/***/ }),
+/* 346 */,
+/* 347 */,
+/* 348 */,
+/* 349 */,
+/* 350 */,
+/* 351 */,
+/* 352 */
+/***/ (function(module, exports) {
+
+"use strict";
+
+
+exports.__esModule = true;
+
+exports['default'] = function (Handlebars) {
+  /* istanbul ignore next */
+  var root = typeof global !== 'undefined' ? global : window,
+      $Handlebars = root.Handlebars;
+  /* istanbul ignore next */
+  Handlebars.noConflict = function () {
+    if (root.Handlebars === Handlebars) {
+      root.Handlebars = $Handlebars;
+    }
+    return Handlebars;
+  };
+};
+
+module.exports = exports['default'];
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL25vLWNvbmZsaWN0LmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7cUJBQWUsVUFBUyxVQUFVLEVBQUU7O0FBRWxDLE1BQUksSUFBSSxHQUFHLE9BQU8sTUFBTSxLQUFLLFdBQVcsR0FBRyxNQUFNLEdBQUcsTUFBTTtNQUN4RCxXQUFXLEdBQUcsSUFBSSxDQUFDLFVBQVUsQ0FBQzs7QUFFaEMsWUFBVSxDQUFDLFVBQVUsR0FBRyxZQUFXO0FBQ2pDLFFBQUksSUFBSSxDQUFDLFVBQVUsS0FBSyxVQUFVLEVBQUU7QUFDbEMsVUFBSSxDQUFDLFVBQVUsR0FBRyxXQUFXLENBQUM7S0FDL0I7QUFDRCxXQUFPLFVBQVUsQ0FBQztHQUNuQixDQUFDO0NBQ0giLCJmaWxlIjoibm8tY29uZmxpY3QuanMiLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgZGVmYXVsdCBmdW5jdGlvbihIYW5kbGViYXJzKSB7XG4gIC8qIGlzdGFuYnVsIGlnbm9yZSBuZXh0ICovXG4gIGxldCByb290ID0gdHlwZW9mIGdsb2JhbCAhPT0gJ3VuZGVmaW5lZCcgPyBnbG9iYWwgOiB3aW5kb3csXG4gICAgJEhhbmRsZWJhcnMgPSByb290LkhhbmRsZWJhcnM7XG4gIC8qIGlzdGFuYnVsIGlnbm9yZSBuZXh0ICovXG4gIEhhbmRsZWJhcnMubm9Db25mbGljdCA9IGZ1bmN0aW9uKCkge1xuICAgIGlmIChyb290LkhhbmRsZWJhcnMgPT09IEhhbmRsZWJhcnMpIHtcbiAgICAgIHJvb3QuSGFuZGxlYmFycyA9ICRIYW5kbGViYXJzO1xuICAgIH1cbiAgICByZXR1cm4gSGFuZGxlYmFycztcbiAgfTtcbn1cbiJdfQ==
+
+
+/***/ }),
+/* 353 */,
+/* 354 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.__esModule = true;
+exports.HandlebarsEnvironment = HandlebarsEnvironment;
+// istanbul ignore next
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+var _utils = __webpack_require__(423);
+
+var _exception = __webpack_require__(311);
+
+var _exception2 = _interopRequireDefault(_exception);
+
+var _helpers = __webpack_require__(269);
+
+var _decorators = __webpack_require__(125);
+
+var _logger = __webpack_require__(979);
+
+var _logger2 = _interopRequireDefault(_logger);
+
+var _internalProtoAccess = __webpack_require__(476);
+
+var VERSION = '4.7.6';
+exports.VERSION = VERSION;
+var COMPILER_REVISION = 8;
+exports.COMPILER_REVISION = COMPILER_REVISION;
+var LAST_COMPATIBLE_COMPILER_REVISION = 7;
+
+exports.LAST_COMPATIBLE_COMPILER_REVISION = LAST_COMPATIBLE_COMPILER_REVISION;
+var REVISION_CHANGES = {
+  1: '<= 1.0.rc.2', // 1.0.rc.2 is actually rev2 but doesn't report it
+  2: '== 1.0.0-rc.3',
+  3: '== 1.0.0-rc.4',
+  4: '== 1.x.x',
+  5: '== 2.0.0-alpha.x',
+  6: '>= 2.0.0-beta.1',
+  7: '>= 4.0.0 <4.3.0',
+  8: '>= 4.3.0'
+};
+
+exports.REVISION_CHANGES = REVISION_CHANGES;
+var objectType = '[object Object]';
+
+function HandlebarsEnvironment(helpers, partials, decorators) {
+  this.helpers = helpers || {};
+  this.partials = partials || {};
+  this.decorators = decorators || {};
+
+  _helpers.registerDefaultHelpers(this);
+  _decorators.registerDefaultDecorators(this);
+}
+
+HandlebarsEnvironment.prototype = {
+  constructor: HandlebarsEnvironment,
+
+  logger: _logger2['default'],
+  log: _logger2['default'].log,
+
+  registerHelper: function registerHelper(name, fn) {
+    if (_utils.toString.call(name) === objectType) {
+      if (fn) {
+        throw new _exception2['default']('Arg not supported with multiple helpers');
+      }
+      _utils.extend(this.helpers, name);
+    } else {
+      this.helpers[name] = fn;
+    }
+  },
+  unregisterHelper: function unregisterHelper(name) {
+    delete this.helpers[name];
+  },
+
+  registerPartial: function registerPartial(name, partial) {
+    if (_utils.toString.call(name) === objectType) {
+      _utils.extend(this.partials, name);
+    } else {
+      if (typeof partial === 'undefined') {
+        throw new _exception2['default']('Attempting to register a partial called "' + name + '" as undefined');
+      }
+      this.partials[name] = partial;
+    }
+  },
+  unregisterPartial: function unregisterPartial(name) {
+    delete this.partials[name];
+  },
+
+  registerDecorator: function registerDecorator(name, fn) {
+    if (_utils.toString.call(name) === objectType) {
+      if (fn) {
+        throw new _exception2['default']('Arg not supported with multiple decorators');
+      }
+      _utils.extend(this.decorators, name);
+    } else {
+      this.decorators[name] = fn;
+    }
+  },
+  unregisterDecorator: function unregisterDecorator(name) {
+    delete this.decorators[name];
+  },
+  /**
+   * Reset the memory of illegal property accesses that have already been logged.
+   * @deprecated should only be used in handlebars test-cases
+   */
+  resetLoggedPropertyAccesses: function resetLoggedPropertyAccesses() {
+    _internalProtoAccess.resetLoggedProperties();
+  }
+};
+
+var log = _logger2['default'].log;
+
+exports.log = log;
+exports.createFrame = _utils.createFrame;
+exports.logger = _logger2['default'];
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2Jhc2UuanMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7cUJBQThDLFNBQVM7O3lCQUNqQyxhQUFhOzs7O3VCQUNJLFdBQVc7OzBCQUNSLGNBQWM7O3NCQUNyQyxVQUFVOzs7O21DQUNTLHlCQUF5Qjs7QUFFeEQsSUFBTSxPQUFPLEdBQUcsT0FBTyxDQUFDOztBQUN4QixJQUFNLGlCQUFpQixHQUFHLENBQUMsQ0FBQzs7QUFDNUIsSUFBTSxpQ0FBaUMsR0FBRyxDQUFDLENBQUM7OztBQUU1QyxJQUFNLGdCQUFnQixHQUFHO0FBQzlCLEdBQUMsRUFBRSxhQUFhO0FBQ2hCLEdBQUMsRUFBRSxlQUFlO0FBQ2xCLEdBQUMsRUFBRSxlQUFlO0FBQ2xCLEdBQUMsRUFBRSxVQUFVO0FBQ2IsR0FBQyxFQUFFLGtCQUFrQjtBQUNyQixHQUFDLEVBQUUsaUJBQWlCO0FBQ3BCLEdBQUMsRUFBRSxpQkFBaUI7QUFDcEIsR0FBQyxFQUFFLFVBQVU7Q0FDZCxDQUFDOzs7QUFFRixJQUFNLFVBQVUsR0FBRyxpQkFBaUIsQ0FBQzs7QUFFOUIsU0FBUyxxQkFBcUIsQ0FBQyxPQUFPLEVBQUUsUUFBUSxFQUFFLFVBQVUsRUFBRTtBQUNuRSxNQUFJLENBQUMsT0FBTyxHQUFHLE9BQU8sSUFBSSxFQUFFLENBQUM7QUFDN0IsTUFBSSxDQUFDLFFBQVEsR0FBRyxRQUFRLElBQUksRUFBRSxDQUFDO0FBQy9CLE1BQUksQ0FBQyxVQUFVLEdBQUcsVUFBVSxJQUFJLEVBQUUsQ0FBQzs7QUFFbkMsa0NBQXVCLElBQUksQ0FBQyxDQUFDO0FBQzdCLHdDQUEwQixJQUFJLENBQUMsQ0FBQztDQUNqQzs7QUFFRCxxQkFBcUIsQ0FBQyxTQUFTLEdBQUc7QUFDaEMsYUFBVyxFQUFFLHFCQUFxQjs7QUFFbEMsUUFBTSxxQkFBUTtBQUNkLEtBQUcsRUFBRSxvQkFBTyxHQUFHOztBQUVmLGdCQUFjLEVBQUUsd0JBQVMsSUFBSSxFQUFFLEVBQUUsRUFBRTtBQUNqQyxRQUFJLGdCQUFTLElBQUksQ0FBQyxJQUFJLENBQUMsS0FBSyxVQUFVLEVBQUU7QUFDdEMsVUFBSSxFQUFFLEVBQUU7QUFDTixjQUFNLDJCQUFjLHlDQUF5QyxDQUFDLENBQUM7T0FDaEU7QUFDRCxvQkFBTyxJQUFJLENBQUMsT0FBTyxFQUFFLElBQUksQ0FBQyxDQUFDO0tBQzVCLE1BQU07QUFDTCxVQUFJLENBQUMsT0FBTyxDQUFDLElBQUksQ0FBQyxHQUFHLEVBQUUsQ0FBQztLQUN6QjtHQUNGO0FBQ0Qsa0JBQWdCLEVBQUUsMEJBQVMsSUFBSSxFQUFFO0FBQy9CLFdBQU8sSUFBSSxDQUFDLE9BQU8sQ0FBQyxJQUFJLENBQUMsQ0FBQztHQUMzQjs7QUFFRCxpQkFBZSxFQUFFLHlCQUFTLElBQUksRUFBRSxPQUFPLEVBQUU7QUFDdkMsUUFBSSxnQkFBUyxJQUFJLENBQUMsSUFBSSxDQUFDLEtBQUssVUFBVSxFQUFFO0FBQ3RDLG9CQUFPLElBQUksQ0FBQyxRQUFRLEVBQUUsSUFBSSxDQUFDLENBQUM7S0FDN0IsTUFBTTtBQUNMLFVBQUksT0FBTyxPQUFPLEtBQUssV0FBVyxFQUFFO0FBQ2xDLGNBQU0seUVBQ3dDLElBQUksb0JBQ2pELENBQUM7T0FDSDtBQUNELFVBQUksQ0FBQyxRQUFRLENBQUMsSUFBSSxDQUFDLEdBQUcsT0FBTyxDQUFDO0tBQy9CO0dBQ0Y7QUFDRCxtQkFBaUIsRUFBRSwyQkFBUyxJQUFJLEVBQUU7QUFDaEMsV0FBTyxJQUFJLENBQUMsUUFBUSxDQUFDLElBQUksQ0FBQyxDQUFDO0dBQzVCOztBQUVELG1CQUFpQixFQUFFLDJCQUFTLElBQUksRUFBRSxFQUFFLEVBQUU7QUFDcEMsUUFBSSxnQkFBUyxJQUFJLENBQUMsSUFBSSxDQUFDLEtBQUssVUFBVSxFQUFFO0FBQ3RDLFVBQUksRUFBRSxFQUFFO0FBQ04sY0FBTSwyQkFBYyw0Q0FBNEMsQ0FBQyxDQUFDO09BQ25FO0FBQ0Qsb0JBQU8sSUFBSSxDQUFDLFVBQVUsRUFBRSxJQUFJLENBQUMsQ0FBQztLQUMvQixNQUFNO0FBQ0wsVUFBSSxDQUFDLFVBQVUsQ0FBQyxJQUFJLENBQUMsR0FBRyxFQUFFLENBQUM7S0FDNUI7R0FDRjtBQUNELHFCQUFtQixFQUFFLDZCQUFTLElBQUksRUFBRTtBQUNsQyxXQUFPLElBQUksQ0FBQyxVQUFVLENBQUMsSUFBSSxDQUFDLENBQUM7R0FDOUI7Ozs7O0FBS0QsNkJBQTJCLEVBQUEsdUNBQUc7QUFDNUIsZ0RBQXVCLENBQUM7R0FDekI7Q0FDRixDQUFDOztBQUVLLElBQUksR0FBRyxHQUFHLG9CQUFPLEdBQUcsQ0FBQzs7O1FBRW5CLFdBQVc7UUFBRSxNQUFNIiwiZmlsZSI6ImJhc2UuanMiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBjcmVhdGVGcmFtZSwgZXh0ZW5kLCB0b1N0cmluZyB9IGZyb20gJy4vdXRpbHMnO1xuaW1wb3J0IEV4Y2VwdGlvbiBmcm9tICcuL2V4Y2VwdGlvbic7XG5pbXBvcnQgeyByZWdpc3RlckRlZmF1bHRIZWxwZXJzIH0gZnJvbSAnLi9oZWxwZXJzJztcbmltcG9ydCB7IHJlZ2lzdGVyRGVmYXVsdERlY29yYXRvcnMgfSBmcm9tICcuL2RlY29yYXRvcnMnO1xuaW1wb3J0IGxvZ2dlciBmcm9tICcuL2xvZ2dlcic7XG5pbXBvcnQgeyByZXNldExvZ2dlZFByb3BlcnRpZXMgfSBmcm9tICcuL2ludGVybmFsL3Byb3RvLWFjY2Vzcyc7XG5cbmV4cG9ydCBjb25zdCBWRVJTSU9OID0gJzQuNy42JztcbmV4cG9ydCBjb25zdCBDT01QSUxFUl9SRVZJU0lPTiA9IDg7XG5leHBvcnQgY29uc3QgTEFTVF9DT01QQVRJQkxFX0NPTVBJTEVSX1JFVklTSU9OID0gNztcblxuZXhwb3J0IGNvbnN0IFJFVklTSU9OX0NIQU5HRVMgPSB7XG4gIDE6ICc8PSAxLjAucmMuMicsIC8vIDEuMC5yYy4yIGlzIGFjdHVhbGx5IHJldjIgYnV0IGRvZXNuJ3QgcmVwb3J0IGl0XG4gIDI6ICc9PSAxLjAuMC1yYy4zJyxcbiAgMzogJz09IDEuMC4wLXJjLjQnLFxuICA0OiAnPT0gMS54LngnLFxuICA1OiAnPT0gMi4wLjAtYWxwaGEueCcsXG4gIDY6ICc+PSAyLjAuMC1iZXRhLjEnLFxuICA3OiAnPj0gNC4wLjAgPDQuMy4wJyxcbiAgODogJz49IDQuMy4wJ1xufTtcblxuY29uc3Qgb2JqZWN0VHlwZSA9ICdbb2JqZWN0IE9iamVjdF0nO1xuXG5leHBvcnQgZnVuY3Rpb24gSGFuZGxlYmFyc0Vudmlyb25tZW50KGhlbHBlcnMsIHBhcnRpYWxzLCBkZWNvcmF0b3JzKSB7XG4gIHRoaXMuaGVscGVycyA9IGhlbHBlcnMgfHwge307XG4gIHRoaXMucGFydGlhbHMgPSBwYXJ0aWFscyB8fCB7fTtcbiAgdGhpcy5kZWNvcmF0b3JzID0gZGVjb3JhdG9ycyB8fCB7fTtcblxuICByZWdpc3RlckRlZmF1bHRIZWxwZXJzKHRoaXMpO1xuICByZWdpc3RlckRlZmF1bHREZWNvcmF0b3JzKHRoaXMpO1xufVxuXG5IYW5kbGViYXJzRW52aXJvbm1lbnQucHJvdG90eXBlID0ge1xuICBjb25zdHJ1Y3RvcjogSGFuZGxlYmFyc0Vudmlyb25tZW50LFxuXG4gIGxvZ2dlcjogbG9nZ2VyLFxuICBsb2c6IGxvZ2dlci5sb2csXG5cbiAgcmVnaXN0ZXJIZWxwZXI6IGZ1bmN0aW9uKG5hbWUsIGZuKSB7XG4gICAgaWYgKHRvU3RyaW5nLmNhbGwobmFtZSkgPT09IG9iamVjdFR5cGUpIHtcbiAgICAgIGlmIChmbikge1xuICAgICAgICB0aHJvdyBuZXcgRXhjZXB0aW9uKCdBcmcgbm90IHN1cHBvcnRlZCB3aXRoIG11bHRpcGxlIGhlbHBlcnMnKTtcbiAgICAgIH1cbiAgICAgIGV4dGVuZCh0aGlzLmhlbHBlcnMsIG5hbWUpO1xuICAgIH0gZWxzZSB7XG4gICAgICB0aGlzLmhlbHBlcnNbbmFtZV0gPSBmbjtcbiAgICB9XG4gIH0sXG4gIHVucmVnaXN0ZXJIZWxwZXI6IGZ1bmN0aW9uKG5hbWUpIHtcbiAgICBkZWxldGUgdGhpcy5oZWxwZXJzW25hbWVdO1xuICB9LFxuXG4gIHJlZ2lzdGVyUGFydGlhbDogZnVuY3Rpb24obmFtZSwgcGFydGlhbCkge1xuICAgIGlmICh0b1N0cmluZy5jYWxsKG5hbWUpID09PSBvYmplY3RUeXBlKSB7XG4gICAgICBleHRlbmQodGhpcy5wYXJ0aWFscywgbmFtZSk7XG4gICAgfSBlbHNlIHtcbiAgICAgIGlmICh0eXBlb2YgcGFydGlhbCA9PT0gJ3VuZGVmaW5lZCcpIHtcbiAgICAgICAgdGhyb3cgbmV3IEV4Y2VwdGlvbihcbiAgICAgICAgICBgQXR0ZW1wdGluZyB0byByZWdpc3RlciBhIHBhcnRpYWwgY2FsbGVkIFwiJHtuYW1lfVwiIGFzIHVuZGVmaW5lZGBcbiAgICAgICAgKTtcbiAgICAgIH1cbiAgICAgIHRoaXMucGFydGlhbHNbbmFtZV0gPSBwYXJ0aWFsO1xuICAgIH1cbiAgfSxcbiAgdW5yZWdpc3RlclBhcnRpYWw6IGZ1bmN0aW9uKG5hbWUpIHtcbiAgICBkZWxldGUgdGhpcy5wYXJ0aWFsc1tuYW1lXTtcbiAgfSxcblxuICByZWdpc3RlckRlY29yYXRvcjogZnVuY3Rpb24obmFtZSwgZm4pIHtcbiAgICBpZiAodG9TdHJpbmcuY2FsbChuYW1lKSA9PT0gb2JqZWN0VHlwZSkge1xuICAgICAgaWYgKGZuKSB7XG4gICAgICAgIHRocm93IG5ldyBFeGNlcHRpb24oJ0FyZyBub3Qgc3VwcG9ydGVkIHdpdGggbXVsdGlwbGUgZGVjb3JhdG9ycycpO1xuICAgICAgfVxuICAgICAgZXh0ZW5kKHRoaXMuZGVjb3JhdG9ycywgbmFtZSk7XG4gICAgfSBlbHNlIHtcbiAgICAgIHRoaXMuZGVjb3JhdG9yc1tuYW1lXSA9IGZuO1xuICAgIH1cbiAgfSxcbiAgdW5yZWdpc3RlckRlY29yYXRvcjogZnVuY3Rpb24obmFtZSkge1xuICAgIGRlbGV0ZSB0aGlzLmRlY29yYXRvcnNbbmFtZV07XG4gIH0sXG4gIC8qKlxuICAgKiBSZXNldCB0aGUgbWVtb3J5IG9mIGlsbGVnYWwgcHJvcGVydHkgYWNjZXNzZXMgdGhhdCBoYXZlIGFscmVhZHkgYmVlbiBsb2dnZWQuXG4gICAqIEBkZXByZWNhdGVkIHNob3VsZCBvbmx5IGJlIHVzZWQgaW4gaGFuZGxlYmFycyB0ZXN0LWNhc2VzXG4gICAqL1xuICByZXNldExvZ2dlZFByb3BlcnR5QWNjZXNzZXMoKSB7XG4gICAgcmVzZXRMb2dnZWRQcm9wZXJ0aWVzKCk7XG4gIH1cbn07XG5cbmV4cG9ydCBsZXQgbG9nID0gbG9nZ2VyLmxvZztcblxuZXhwb3J0IHsgY3JlYXRlRnJhbWUsIGxvZ2dlciB9O1xuIl19
+
+
+/***/ }),
+/* 355 */,
+/* 356 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+/*!
+ * is-plain-object <https://github.com/jonschlinkert/is-plain-object>
+ *
+ * Copyright (c) 2014-2017, Jon Schlinkert.
+ * Released under the MIT License.
+ */
+
+function isObject(o) {
+  return Object.prototype.toString.call(o) === '[object Object]';
+}
+
+function isPlainObject(o) {
+  var ctor,prot;
+
+  if (isObject(o) === false) return false;
+
+  // If has modified constructor
+  ctor = o.constructor;
+  if (ctor === undefined) return true;
+
+  // If has modified prototype
+  prot = ctor.prototype;
+  if (isObject(prot) === false) return false;
+
+  // If constructor does not have an Object-specific method
+  if (prot.hasOwnProperty('isPrototypeOf') === false) {
+    return false;
+  }
+
+  // Most likely a plain Object
+  return true;
+}
+
+exports.isPlainObject = isPlainObject;
+
+
+/***/ }),
+/* 357 */,
+/* 358 */,
+/* 359 */,
+/* 360 */,
+/* 361 */,
+/* 362 */,
+/* 363 */,
+/* 364 */
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = (flag, argv = process.argv) => {
+	const prefix = flag.startsWith('-') ? '' : (flag.length === 1 ? '-' : '--');
+	const position = argv.indexOf(prefix + flag);
+	const terminatorPosition = argv.indexOf('--');
+	return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
+};
+
+
+/***/ }),
+/* 365 */,
+/* 366 */,
+/* 367 */,
+/* 368 */,
+/* 369 */,
+/* 370 */,
+/* 371 */,
+/* 372 */,
+/* 373 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+var RetryOperation = __webpack_require__(988);
+
+exports.operation = function(options) {
+  var timeouts = exports.timeouts(options);
+  return new RetryOperation(timeouts, {
+      forever: options && options.forever,
+      unref: options && options.unref,
+      maxRetryTime: options && options.maxRetryTime
+  });
+};
+
+exports.timeouts = function(options) {
+  if (options instanceof Array) {
+    return [].concat(options);
+  }
+
+  var opts = {
+    retries: 10,
+    factor: 2,
+    minTimeout: 1 * 1000,
+    maxTimeout: Infinity,
+    randomize: false
+  };
+  for (var key in options) {
+    opts[key] = options[key];
+  }
+
+  if (opts.minTimeout > opts.maxTimeout) {
+    throw new Error('minTimeout is greater than maxTimeout');
+  }
+
+  var timeouts = [];
+  for (var i = 0; i < opts.retries; i++) {
+    timeouts.push(this.createTimeout(i, opts));
+  }
+
+  if (options && options.forever && !timeouts.length) {
+    timeouts.push(this.createTimeout(i, opts));
+  }
+
+  // sort the array numerically ascending
+  timeouts.sort(function(a,b) {
+    return a - b;
+  });
+
+  return timeouts;
+};
+
+exports.createTimeout = function(attempt, opts) {
+  var random = (opts.randomize)
+    ? (Math.random() + 1)
+    : 1;
+
+  var timeout = Math.round(random * opts.minTimeout * Math.pow(opts.factor, attempt));
+  timeout = Math.min(timeout, opts.maxTimeout);
+
+  return timeout;
+};
+
+exports.wrap = function(obj, options, methods) {
+  if (options instanceof Array) {
+    methods = options;
+    options = null;
+  }
+
+  if (!methods) {
+    methods = [];
+    for (var key in obj) {
+      if (typeof obj[key] === 'function') {
+        methods.push(key);
+      }
+    }
+  }
+
+  for (var i = 0; i < methods.length; i++) {
+    var method   = methods[i];
+    var original = obj[method];
+
+    obj[method] = function retryWrapper(original) {
+      var op       = exports.operation(options);
+      var args     = Array.prototype.slice.call(arguments, 1);
+      var callback = args.pop();
+
+      args.push(function(err) {
+        if (op.retry(err)) {
+          return;
+        }
+        if (err) {
+          arguments[0] = op.mainError();
+        }
+        callback.apply(this, arguments);
+      });
+
+      op.attempt(function() {
+        original.apply(obj, args);
+      });
+    }.bind(obj, original);
+    obj[method].options = options;
+  }
+};
+
+
+/***/ }),
+/* 374 */,
+/* 375 */,
+/* 376 */,
+/* 377 */,
+/* 378 */,
+/* 379 */,
+/* 380 */
+/***/ (function(module, exports) {
+
+"use strict";
+
+
+exports.__esModule = true;
+
+exports['default'] = function (instance) {
+  instance.registerHelper('log', function () /* message, options */{
+    var args = [undefined],
+        options = arguments[arguments.length - 1];
+    for (var i = 0; i < arguments.length - 1; i++) {
+      args.push(arguments[i]);
+    }
+
+    var level = 1;
+    if (options.hash.level != null) {
+      level = options.hash.level;
+    } else if (options.data && options.data.level != null) {
+      level = options.data.level;
+    }
+    args[0] = level;
+
+    instance.log.apply(instance, args);
+  });
+};
+
+module.exports = exports['default'];
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2hlbHBlcnMvbG9nLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7cUJBQWUsVUFBUyxRQUFRLEVBQUU7QUFDaEMsVUFBUSxDQUFDLGNBQWMsQ0FBQyxLQUFLLEVBQUUsa0NBQWlDO0FBQzlELFFBQUksSUFBSSxHQUFHLENBQUMsU0FBUyxDQUFDO1FBQ3BCLE9BQU8sR0FBRyxTQUFTLENBQUMsU0FBUyxDQUFDLE1BQU0sR0FBRyxDQUFDLENBQUMsQ0FBQztBQUM1QyxTQUFLLElBQUksQ0FBQyxHQUFHLENBQUMsRUFBRSxDQUFDLEdBQUcsU0FBUyxDQUFDLE1BQU0sR0FBRyxDQUFDLEVBQUUsQ0FBQyxFQUFFLEVBQUU7QUFDN0MsVUFBSSxDQUFDLElBQUksQ0FBQyxTQUFTLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQztLQUN6Qjs7QUFFRCxRQUFJLEtBQUssR0FBRyxDQUFDLENBQUM7QUFDZCxRQUFJLE9BQU8sQ0FBQyxJQUFJLENBQUMsS0FBSyxJQUFJLElBQUksRUFBRTtBQUM5QixXQUFLLEdBQUcsT0FBTyxDQUFDLElBQUksQ0FBQyxLQUFLLENBQUM7S0FDNUIsTUFBTSxJQUFJLE9BQU8sQ0FBQyxJQUFJLElBQUksT0FBTyxDQUFDLElBQUksQ0FBQyxLQUFLLElBQUksSUFBSSxFQUFFO0FBQ3JELFdBQUssR0FBRyxPQUFPLENBQUMsSUFBSSxDQUFDLEtBQUssQ0FBQztLQUM1QjtBQUNELFFBQUksQ0FBQyxDQUFDLENBQUMsR0FBRyxLQUFLLENBQUM7O0FBRWhCLFlBQVEsQ0FBQyxHQUFHLE1BQUEsQ0FBWixRQUFRLEVBQVEsSUFBSSxDQUFDLENBQUM7R0FDdkIsQ0FBQyxDQUFDO0NBQ0oiLCJmaWxlIjoibG9nLmpzIiwic291cmNlc0NvbnRlbnQiOlsiZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24oaW5zdGFuY2UpIHtcbiAgaW5zdGFuY2UucmVnaXN0ZXJIZWxwZXIoJ2xvZycsIGZ1bmN0aW9uKC8qIG1lc3NhZ2UsIG9wdGlvbnMgKi8pIHtcbiAgICBsZXQgYXJncyA9IFt1bmRlZmluZWRdLFxuICAgICAgb3B0aW9ucyA9IGFyZ3VtZW50c1thcmd1bWVudHMubGVuZ3RoIC0gMV07XG4gICAgZm9yIChsZXQgaSA9IDA7IGkgPCBhcmd1bWVudHMubGVuZ3RoIC0gMTsgaSsrKSB7XG4gICAgICBhcmdzLnB1c2goYXJndW1lbnRzW2ldKTtcbiAgICB9XG5cbiAgICBsZXQgbGV2ZWwgPSAxO1xuICAgIGlmIChvcHRpb25zLmhhc2gubGV2ZWwgIT0gbnVsbCkge1xuICAgICAgbGV2ZWwgPSBvcHRpb25zLmhhc2gubGV2ZWw7XG4gICAgfSBlbHNlIGlmIChvcHRpb25zLmRhdGEgJiYgb3B0aW9ucy5kYXRhLmxldmVsICE9IG51bGwpIHtcbiAgICAgIGxldmVsID0gb3B0aW9ucy5kYXRhLmxldmVsO1xuICAgIH1cbiAgICBhcmdzWzBdID0gbGV2ZWw7XG5cbiAgICBpbnN0YW5jZS5sb2coLi4uYXJncyk7XG4gIH0pO1xufVxuIl19
+
+
+/***/ }),
+/* 381 */,
+/* 382 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+/* eslint no-prototype-builtins: 0 */
+
+const format = __webpack_require__(321)
+const { mapHttpRequest, mapHttpResponse } = __webpack_require__(329)
+const SonicBoom = __webpack_require__(450)
+const stringifySafe = __webpack_require__(97)
+const {
+  lsCacheSym,
+  chindingsSym,
+  parsedChindingsSym,
+  writeSym,
+  serializersSym,
+  formatOptsSym,
+  endSym,
+  stringifiersSym,
+  stringifySym,
+  wildcardFirstSym,
+  needsMetadataGsym,
+  redactFmtSym,
+  streamSym,
+  nestedKeySym,
+  formattersSym,
+  messageKeySym
+} = __webpack_require__(230)
+
+function noop () {}
+
+function genLog (level, hook) {
+  if (!hook) return LOG
+
+  return function hookWrappedLog (...args) {
+    hook.call(this, args, LOG)
+  }
+
+  function LOG (o, ...n) {
+    if (typeof o === 'object') {
+      var msg = o
+      if (o !== null) {
+        if (o.method && o.headers && o.socket) {
+          o = mapHttpRequest(o)
+        } else if (typeof o.setHeader === 'function') {
+          o = mapHttpResponse(o)
+        }
+      }
+      if (this[nestedKeySym]) o = { [this[nestedKeySym]]: o }
+      var formatParams
+      if (msg === null && n.length === 0) {
+        formatParams = [null]
+      } else {
+        msg = n.shift()
+        formatParams = n
+      }
+      this[writeSym](o, format(msg, formatParams, this[formatOptsSym]), level)
+    } else {
+      this[writeSym](null, format(o, n, this[formatOptsSym]), level)
+    }
+  }
+}
+
+// magically escape strings for json
+// relying on their charCodeAt
+// everything below 32 needs JSON.stringify()
+// 34 and 92 happens all the time, so we
+// have a fast case for them
+function asString (str) {
+  var result = ''
+  var last = 0
+  var found = false
+  var point = 255
+  const l = str.length
+  if (l > 100) {
+    return JSON.stringify(str)
+  }
+  for (var i = 0; i < l && point >= 32; i++) {
+    point = str.charCodeAt(i)
+    if (point === 34 || point === 92) {
+      result += str.slice(last, i) + '\\'
+      last = i
+      found = true
+    }
+  }
+  if (!found) {
+    result = str
+  } else {
+    result += str.slice(last)
+  }
+  return point < 32 ? JSON.stringify(str) : '"' + result + '"'
+}
+
+function asJson (obj, msg, num, time) {
+  const stringify = this[stringifySym]
+  const stringifiers = this[stringifiersSym]
+  const end = this[endSym]
+  const chindings = this[chindingsSym]
+  const serializers = this[serializersSym]
+  const formatters = this[formattersSym]
+  const messageKey = this[messageKeySym]
+  var data = this[lsCacheSym][num] + time
+
+  // we need the child bindings added to the output first so instance logged
+  // objects can take precedence when JSON.parse-ing the resulting log line
+  data = data + chindings
+
+  var value
+  var notHasOwnProperty = obj.hasOwnProperty === undefined
+  if (formatters.log) {
+    obj = formatters.log(obj)
+  }
+  if (msg !== undefined) {
+    obj[messageKey] = msg
+  }
+  const wildcardStringifier = stringifiers[wildcardFirstSym]
+  for (var key in obj) {
+    value = obj[key]
+    if ((notHasOwnProperty || obj.hasOwnProperty(key)) && value !== undefined) {
+      value = serializers[key] ? serializers[key](value) : value
+
+      const stringifier = stringifiers[key] || wildcardStringifier
+
+      switch (typeof value) {
+        case 'undefined':
+        case 'function':
+          continue
+        case 'number':
+          /* eslint no-fallthrough: "off" */
+          if (Number.isFinite(value) === false) {
+            value = null
+          }
+        // this case explicitly falls through to the next one
+        case 'boolean':
+          if (stringifier) value = stringifier(value)
+          break
+        case 'string':
+          value = (stringifier || asString)(value)
+          break
+        default:
+          value = (stringifier || stringify)(value)
+      }
+      if (value === undefined) continue
+      data += ',"' + key + '":' + value
+    }
+  }
+
+  return data + end
+}
+
+function asChindings (instance, bindings) {
+  var key
+  var value
+  var data = instance[chindingsSym]
+  const stringify = instance[stringifySym]
+  const stringifiers = instance[stringifiersSym]
+  const wildcardStringifier = stringifiers[wildcardFirstSym]
+  const serializers = instance[serializersSym]
+  const formatter = instance[formattersSym].bindings
+  bindings = formatter(bindings)
+
+  for (key in bindings) {
+    value = bindings[key]
+    const valid = key !== 'level' &&
+      key !== 'serializers' &&
+      key !== 'formatters' &&
+      key !== 'customLevels' &&
+      bindings.hasOwnProperty(key) &&
+      value !== undefined
+    if (valid === true) {
+      value = serializers[key] ? serializers[key](value) : value
+      value = (stringifiers[key] || wildcardStringifier || stringify)(value)
+      if (value === undefined) continue
+      data += ',"' + key + '":' + value
+    }
+  }
+  return data
+}
+
+function getPrettyStream (opts, prettifier, dest, instance) {
+  if (prettifier && typeof prettifier === 'function') {
+    prettifier = prettifier.bind(instance)
+    return prettifierMetaWrapper(prettifier(opts), dest, opts)
+  }
+  try {
+    var prettyFactory = __webpack_require__(309)
+    prettyFactory.asMetaWrapper = prettifierMetaWrapper
+    return prettifierMetaWrapper(prettyFactory(opts), dest, opts)
+  } catch (e) {
+    throw Error('Missing `pino-pretty` module: `pino-pretty` must be installed separately')
+  }
+}
+
+function prettifierMetaWrapper (pretty, dest, opts) {
+  opts = Object.assign({ suppressFlushSyncWarning: false }, opts)
+  var warned = false
+  return {
+    [needsMetadataGsym]: true,
+    lastLevel: 0,
+    lastMsg: null,
+    lastObj: null,
+    lastLogger: null,
+    flushSync () {
+      if (opts.suppressFlushSyncWarning || warned) {
+        return
+      }
+      warned = true
+      setMetadataProps(dest, this)
+      dest.write(pretty(Object.assign({
+        level: 40, // warn
+        msg: 'pino.final with prettyPrint does not support flushing',
+        time: Date.now()
+      }, this.chindings())))
+    },
+    chindings () {
+      const lastLogger = this.lastLogger
+      var chindings = null
+
+      // protection against flushSync being called before logging
+      // anything
+      if (!lastLogger) {
+        return null
+      }
+
+      if (lastLogger.hasOwnProperty(parsedChindingsSym)) {
+        chindings = lastLogger[parsedChindingsSym]
+      } else {
+        chindings = JSON.parse('{' + lastLogger[chindingsSym].substr(1) + '}')
+        lastLogger[parsedChindingsSym] = chindings
+      }
+
+      return chindings
+    },
+    write (chunk) {
+      const lastLogger = this.lastLogger
+      const chindings = this.chindings()
+
+      var time = this.lastTime
+
+      if (time.match(/^\d+/)) {
+        time = parseInt(time)
+      } else {
+        time = time.slice(1, -1)
+      }
+
+      var lastObj = this.lastObj
+      var lastMsg = this.lastMsg
+      var errorProps = null
+
+      const formatters = lastLogger[formattersSym]
+      const formattedObj = formatters.log ? formatters.log(lastObj) : lastObj
+
+      const messageKey = lastLogger[messageKeySym]
+      if (lastMsg && formattedObj && !formattedObj.hasOwnProperty(messageKey)) {
+        formattedObj[messageKey] = lastMsg
+      }
+
+      const obj = Object.assign({
+        level: this.lastLevel,
+        time
+      }, formattedObj, errorProps)
+
+      const serializers = lastLogger[serializersSym]
+      const keys = Object.keys(serializers)
+      var key
+
+      for (var i = 0; i < keys.length; i++) {
+        key = keys[i]
+        if (obj[key] !== undefined) {
+          obj[key] = serializers[key](obj[key])
+        }
+      }
+
+      for (key in chindings) {
+        if (!obj.hasOwnProperty(key)) {
+          obj[key] = chindings[key]
+        }
+      }
+
+      const stringifiers = lastLogger[stringifiersSym]
+      const redact = stringifiers[redactFmtSym]
+
+      const formatted = pretty(typeof redact === 'function' ? redact(obj) : obj)
+      if (formatted === undefined) return
+
+      setMetadataProps(dest, this)
+      dest.write(formatted)
+    }
+  }
+}
+
+function hasBeenTampered (stream) {
+  return stream.write !== stream.constructor.prototype.write
+}
+
+function buildSafeSonicBoom (opts) {
+  const stream = new SonicBoom(opts)
+  stream.on('error', filterBrokenPipe)
+  return stream
+
+  function filterBrokenPipe (err) {
+    // TODO verify on Windows
+    if (err.code === 'EPIPE') {
+      // If we get EPIPE, we should stop logging here
+      // however we have no control to the consumer of
+      // SonicBoom, so we just overwrite the write method
+      stream.write = noop
+      stream.end = noop
+      stream.flushSync = noop
+      stream.destroy = noop
+      return
+    }
+    stream.removeListener('error', filterBrokenPipe)
+    stream.emit('error', err)
+  }
+}
+
+function createArgsNormalizer (defaultOptions) {
+  return function normalizeArgs (instance, opts = {}, stream) {
+    // support stream as a string
+    if (typeof opts === 'string') {
+      stream = buildSafeSonicBoom({ dest: opts, sync: true })
+      opts = {}
+    } else if (typeof stream === 'string') {
+      stream = buildSafeSonicBoom({ dest: stream, sync: true })
+    } else if (opts instanceof SonicBoom || opts.writable || opts._writableState) {
+      stream = opts
+      opts = null
+    }
+    opts = Object.assign({}, defaultOptions, opts)
+    if ('extreme' in opts) {
+      throw Error('The extreme option has been removed, use pino.destination({ sync: false }) instead')
+    }
+    if ('onTerminated' in opts) {
+      throw Error('The onTerminated option has been removed, use pino.final instead')
+    }
+    if ('changeLevelName' in opts) {
+      process.emitWarning(
+        'The changeLevelName option is deprecated and will be removed in v7. Use levelKey instead.',
+        { code: 'changeLevelName_deprecation' }
+      )
+      opts.levelKey = opts.changeLevelName
+      delete opts.changeLevelName
+    }
+    const { enabled, prettyPrint, prettifier, messageKey } = opts
+    if (enabled === false) opts.level = 'silent'
+    stream = stream || process.stdout
+    if (stream === process.stdout && stream.fd >= 0 && !hasBeenTampered(stream)) {
+      stream = buildSafeSonicBoom({ fd: stream.fd, sync: true })
+    }
+    if (prettyPrint) {
+      const prettyOpts = Object.assign({ messageKey }, prettyPrint)
+      stream = getPrettyStream(prettyOpts, prettifier, stream, instance)
+    }
+    return { opts, stream }
+  }
+}
+
+function final (logger, handler) {
+  if (typeof logger === 'undefined' || typeof logger.child !== 'function') {
+    throw Error('expected a pino logger instance')
+  }
+  const hasHandler = (typeof handler !== 'undefined')
+  if (hasHandler && typeof handler !== 'function') {
+    throw Error('if supplied, the handler parameter should be a function')
+  }
+  const stream = logger[streamSym]
+  if (typeof stream.flushSync !== 'function') {
+    throw Error('final requires a stream that has a flushSync method, such as pino.destination')
+  }
+
+  const finalLogger = new Proxy(logger, {
+    get: (logger, key) => {
+      if (key in logger.levels.values) {
+        return (...args) => {
+          logger[key](...args)
+          stream.flushSync()
+        }
+      }
+      return logger[key]
+    }
+  })
+
+  if (!hasHandler) {
+    return finalLogger
+  }
+
+  return (err = null, ...args) => {
+    try {
+      stream.flushSync()
+    } catch (e) {
+      // it's too late to wait for the stream to be ready
+      // because this is a final tick scenario.
+      // in practice there shouldn't be a situation where it isn't
+      // however, swallow the error just in case (and for easier testing)
+    }
+    return handler(err, finalLogger, ...args)
+  }
+}
+
+function stringify (obj) {
+  try {
+    return JSON.stringify(obj)
+  } catch (_) {
+    return stringifySafe(obj)
+  }
+}
+
+function buildFormatters (level, bindings, log) {
+  return {
+    level,
+    bindings,
+    log
+  }
+}
+
+function setMetadataProps (dest, that) {
+  if (dest[needsMetadataGsym] === true) {
+    dest.lastLevel = that.lastLevel
+    dest.lastMsg = that.lastMsg
+    dest.lastObj = that.lastObj
+    dest.lastTime = that.lastTime
+    dest.lastLogger = that.lastLogger
+  }
+}
+
+module.exports = {
+  noop,
+  buildSafeSonicBoom,
+  getPrettyStream,
+  asChindings,
+  asJson,
+  genLog,
+  createArgsNormalizer,
+  final,
+  stringify,
+  buildFormatters
+}
+
+
+/***/ }),
+/* 383 */,
+/* 384 */,
+/* 385 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+var isPlainObject = __webpack_require__(356);
+var universalUserAgent = __webpack_require__(526);
+
+function lowercaseKeys(object) {
+  if (!object) {
+    return {};
+  }
+
+  return Object.keys(object).reduce((newObj, key) => {
+    newObj[key.toLowerCase()] = object[key];
+    return newObj;
+  }, {});
+}
+
+function mergeDeep(defaults, options) {
+  const result = Object.assign({}, defaults);
+  Object.keys(options).forEach(key => {
+    if (isPlainObject.isPlainObject(options[key])) {
+      if (!(key in defaults)) Object.assign(result, {
+        [key]: options[key]
+      });else result[key] = mergeDeep(defaults[key], options[key]);
+    } else {
+      Object.assign(result, {
+        [key]: options[key]
+      });
+    }
+  });
+  return result;
+}
+
+function removeUndefinedProperties(obj) {
+  for (const key in obj) {
+    if (obj[key] === undefined) {
+      delete obj[key];
+    }
+  }
+
+  return obj;
+}
+
+function merge(defaults, route, options) {
+  if (typeof route === "string") {
+    let [method, url] = route.split(" ");
+    options = Object.assign(url ? {
+      method,
+      url
+    } : {
+      url: method
+    }, options);
+  } else {
+    options = Object.assign({}, route);
+  } // lowercase header names before merging with defaults to avoid duplicates
+
+
+  options.headers = lowercaseKeys(options.headers); // remove properties with undefined values before merging
+
+  removeUndefinedProperties(options);
+  removeUndefinedProperties(options.headers);
+  const mergedOptions = mergeDeep(defaults || {}, options); // mediaType.previews arrays are merged, instead of overwritten
+
+  if (defaults && defaults.mediaType.previews.length) {
+    mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(preview => !mergedOptions.mediaType.previews.includes(preview)).concat(mergedOptions.mediaType.previews);
+  }
+
+  mergedOptions.mediaType.previews = mergedOptions.mediaType.previews.map(preview => preview.replace(/-preview/, ""));
+  return mergedOptions;
+}
+
+function addQueryParameters(url, parameters) {
+  const separator = /\?/.test(url) ? "&" : "?";
+  const names = Object.keys(parameters);
+
+  if (names.length === 0) {
+    return url;
+  }
+
+  return url + separator + names.map(name => {
+    if (name === "q") {
+      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
+    }
+
+    return `${name}=${encodeURIComponent(parameters[name])}`;
+  }).join("&");
+}
+
+const urlVariableRegex = /\{[^}]+\}/g;
+
+function removeNonChars(variableName) {
+  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
+}
+
+function extractUrlVariableNames(url) {
+  const matches = url.match(urlVariableRegex);
+
+  if (!matches) {
+    return [];
+  }
+
+  return matches.map(removeNonChars).reduce((a, b) => a.concat(b), []);
+}
+
+function omit(object, keysToOmit) {
+  return Object.keys(object).filter(option => !keysToOmit.includes(option)).reduce((obj, key) => {
+    obj[key] = object[key];
+    return obj;
+  }, {});
+}
+
+// Based on https://github.com/bramstein/url-template, licensed under BSD
+// TODO: create separate package.
+//
+// Copyright (c) 2012-2014, Bram Stein
+// All rights reserved.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+//  1. Redistributions of source code must retain the above copyright
+//     notice, this list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright
+//     notice, this list of conditions and the following disclaimer in the
+//     documentation and/or other materials provided with the distribution.
+//  3. The name of the author may not be used to endorse or promote products
+//     derived from this software without specific prior written permission.
+// THIS SOFTWARE IS PROVIDED BY THE AUTHOR "AS IS" AND ANY EXPRESS OR IMPLIED
+// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+// EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+// EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+/* istanbul ignore file */
+function encodeReserved(str) {
+  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function (part) {
+    if (!/%[0-9A-Fa-f]/.test(part)) {
+      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
+    }
+
+    return part;
+  }).join("");
+}
+
+function encodeUnreserved(str) {
+  return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
+    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
+  });
+}
+
+function encodeValue(operator, value, key) {
+  value = operator === "+" || operator === "#" ? encodeReserved(value) : encodeUnreserved(value);
+
+  if (key) {
+    return encodeUnreserved(key) + "=" + value;
+  } else {
+    return value;
+  }
+}
+
+function isDefined(value) {
+  return value !== undefined && value !== null;
+}
+
+function isKeyOperator(operator) {
+  return operator === ";" || operator === "&" || operator === "?";
+}
+
+function getValues(context, operator, key, modifier) {
+  var value = context[key],
+      result = [];
+
+  if (isDefined(value) && value !== "") {
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      value = value.toString();
+
+      if (modifier && modifier !== "*") {
+        value = value.substring(0, parseInt(modifier, 10));
+      }
+
+      result.push(encodeValue(operator, value, isKeyOperator(operator) ? key : ""));
+    } else {
+      if (modifier === "*") {
+        if (Array.isArray(value)) {
+          value.filter(isDefined).forEach(function (value) {
+            result.push(encodeValue(operator, value, isKeyOperator(operator) ? key : ""));
+          });
+        } else {
+          Object.keys(value).forEach(function (k) {
+            if (isDefined(value[k])) {
+              result.push(encodeValue(operator, value[k], k));
+            }
+          });
+        }
+      } else {
+        const tmp = [];
+
+        if (Array.isArray(value)) {
+          value.filter(isDefined).forEach(function (value) {
+            tmp.push(encodeValue(operator, value));
+          });
+        } else {
+          Object.keys(value).forEach(function (k) {
+            if (isDefined(value[k])) {
+              tmp.push(encodeUnreserved(k));
+              tmp.push(encodeValue(operator, value[k].toString()));
+            }
+          });
+        }
+
+        if (isKeyOperator(operator)) {
+          result.push(encodeUnreserved(key) + "=" + tmp.join(","));
+        } else if (tmp.length !== 0) {
+          result.push(tmp.join(","));
+        }
+      }
+    }
+  } else {
+    if (operator === ";") {
+      if (isDefined(value)) {
+        result.push(encodeUnreserved(key));
+      }
+    } else if (value === "" && (operator === "&" || operator === "?")) {
+      result.push(encodeUnreserved(key) + "=");
+    } else if (value === "") {
+      result.push("");
+    }
+  }
+
+  return result;
+}
+
+function parseUrl(template) {
+  return {
+    expand: expand.bind(null, template)
+  };
+}
+
+function expand(template, context) {
+  var operators = ["+", "#", ".", "/", ";", "?", "&"];
+  return template.replace(/\{([^\{\}]+)\}|([^\{\}]+)/g, function (_, expression, literal) {
+    if (expression) {
+      let operator = "";
+      const values = [];
+
+      if (operators.indexOf(expression.charAt(0)) !== -1) {
+        operator = expression.charAt(0);
+        expression = expression.substr(1);
+      }
+
+      expression.split(/,/g).forEach(function (variable) {
+        var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
+        values.push(getValues(context, operator, tmp[1], tmp[2] || tmp[3]));
+      });
+
+      if (operator && operator !== "+") {
+        var separator = ",";
+
+        if (operator === "?") {
+          separator = "&";
+        } else if (operator !== "#") {
+          separator = operator;
+        }
+
+        return (values.length !== 0 ? operator : "") + values.join(separator);
+      } else {
+        return values.join(",");
+      }
+    } else {
+      return encodeReserved(literal);
+    }
+  });
+}
+
+function parse(options) {
+  // https://fetch.spec.whatwg.org/#methods
+  let method = options.method.toUpperCase(); // replace :varname with {varname} to make it RFC 6570 compatible
+
+  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
+  let headers = Object.assign({}, options.headers);
+  let body;
+  let parameters = omit(options, ["method", "baseUrl", "url", "headers", "request", "mediaType"]); // extract variable names from URL to calculate remaining variables later
+
+  const urlVariableNames = extractUrlVariableNames(url);
+  url = parseUrl(url).expand(parameters);
+
+  if (!/^http/.test(url)) {
+    url = options.baseUrl + url;
+  }
+
+  const omittedParameters = Object.keys(options).filter(option => urlVariableNames.includes(option)).concat("baseUrl");
+  const remainingParameters = omit(parameters, omittedParameters);
+  const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
+
+  if (!isBinaryRequest) {
+    if (options.mediaType.format) {
+      // e.g. application/vnd.github.v3+json => application/vnd.github.v3.raw
+      headers.accept = headers.accept.split(/,/).map(preview => preview.replace(/application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/, `application/vnd$1$2.${options.mediaType.format}`)).join(",");
+    }
+
+    if (options.mediaType.previews.length) {
+      const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
+      headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map(preview => {
+        const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
+        return `application/vnd.github.${preview}-preview${format}`;
+      }).join(",");
+    }
+  } // for GET/HEAD requests, set URL query parameters from remaining parameters
+  // for PATCH/POST/PUT/DELETE requests, set request body from remaining parameters
+
+
+  if (["GET", "HEAD"].includes(method)) {
+    url = addQueryParameters(url, remainingParameters);
+  } else {
+    if ("data" in remainingParameters) {
+      body = remainingParameters.data;
+    } else {
+      if (Object.keys(remainingParameters).length) {
+        body = remainingParameters;
+      } else {
+        headers["content-length"] = 0;
+      }
+    }
+  } // default content-type for JSON if body is set
+
+
+  if (!headers["content-type"] && typeof body !== "undefined") {
+    headers["content-type"] = "application/json; charset=utf-8";
+  } // GitHub expects 'content-length: 0' header for PUT/PATCH requests without body.
+  // fetch does not allow to set `content-length` header, but we can set body to an empty string
+
+
+  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
+    body = "";
+  } // Only return body/request keys if present
+
+
+  return Object.assign({
+    method,
+    url,
+    headers
+  }, typeof body !== "undefined" ? {
+    body
+  } : null, options.request ? {
+    request: options.request
+  } : null);
+}
+
+function endpointWithDefaults(defaults, route, options) {
+  return parse(merge(defaults, route, options));
+}
+
+function withDefaults(oldDefaults, newDefaults) {
+  const DEFAULTS = merge(oldDefaults, newDefaults);
+  const endpoint = endpointWithDefaults.bind(null, DEFAULTS);
+  return Object.assign(endpoint, {
+    DEFAULTS,
+    defaults: withDefaults.bind(null, DEFAULTS),
+    merge: merge.bind(null, DEFAULTS),
+    parse
+  });
+}
+
+const VERSION = "6.0.8";
+
+const userAgent = `octokit-endpoint.js/${VERSION} ${universalUserAgent.getUserAgent()}`; // DEFAULTS has all properties set that EndpointOptions has, except url.
+// So we use RequestParameters and add method as additional required property.
+
+const DEFAULTS = {
+  method: "GET",
+  baseUrl: "https://api.github.com",
+  headers: {
+    accept: "application/vnd.github.v3+json",
+    "user-agent": userAgent
+  },
+  mediaType: {
+    format: "",
+    previews: []
+  }
+};
+
+const endpoint = withDefaults(null, DEFAULTS);
+
+exports.endpoint = endpoint;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+/* 386 */,
+/* 387 */,
+/* 388 */,
+/* 389 */,
+/* 390 */,
+/* 391 */,
+/* 392 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+/* eslint no-prototype-builtins: 0 */
+
+const { EventEmitter } = __webpack_require__(759)
+const SonicBoom = __webpack_require__(450)
+const flatstr = __webpack_require__(649)
+const {
+  lsCacheSym,
+  levelValSym,
+  setLevelSym,
+  getLevelSym,
+  chindingsSym,
+  parsedChindingsSym,
+  mixinSym,
+  asJsonSym,
+  writeSym,
+  timeSym,
+  timeSliceIndexSym,
+  streamSym,
+  serializersSym,
+  formattersSym,
+  useOnlyCustomLevelsSym,
+  needsMetadataGsym
+} = __webpack_require__(230)
+const {
+  getLevel,
+  setLevel,
+  isLevelEnabled,
+  mappings,
+  initialLsCache,
+  genLsCache,
+  assertNoLevelCollisions
+} = __webpack_require__(136)
+const {
+  asChindings,
+  asJson,
+  buildFormatters
+} = __webpack_require__(382)
+const {
+  version
+} = __webpack_require__(331)
+
+// note: use of class is satirical
+// https://github.com/pinojs/pino/pull/433#pullrequestreview-127703127
+const constructor = class Pino {}
+const prototype = {
+  constructor,
+  child,
+  bindings,
+  setBindings,
+  flush,
+  isLevelEnabled,
+  version,
+  get level () { return this[getLevelSym]() },
+  set level (lvl) { this[setLevelSym](lvl) },
+  get levelVal () { return this[levelValSym] },
+  set levelVal (n) { throw Error('levelVal is read-only') },
+  [lsCacheSym]: initialLsCache,
+  [writeSym]: write,
+  [asJsonSym]: asJson,
+  [getLevelSym]: getLevel,
+  [setLevelSym]: setLevel
+}
+
+Object.setPrototypeOf(prototype, EventEmitter.prototype)
+
+// exporting and consuming the prototype object using factory pattern fixes scoping issues with getters when serializing
+module.exports = function () {
+  return Object.create(prototype)
+}
+
+const resetChildingsFormatter = bindings => bindings
+function child (bindings) {
+  if (!bindings) {
+    throw Error('missing bindings for child Pino')
+  }
+  const serializers = this[serializersSym]
+  const formatters = this[formattersSym]
+  const instance = Object.create(this)
+  if (bindings.hasOwnProperty('serializers') === true) {
+    instance[serializersSym] = Object.create(null)
+
+    for (var k in serializers) {
+      instance[serializersSym][k] = serializers[k]
+    }
+    const parentSymbols = Object.getOwnPropertySymbols(serializers)
+    for (var i = 0; i < parentSymbols.length; i++) {
+      const ks = parentSymbols[i]
+      instance[serializersSym][ks] = serializers[ks]
+    }
+
+    for (var bk in bindings.serializers) {
+      instance[serializersSym][bk] = bindings.serializers[bk]
+    }
+    const bindingsSymbols = Object.getOwnPropertySymbols(bindings.serializers)
+    for (var bi = 0; bi < bindingsSymbols.length; bi++) {
+      const bks = bindingsSymbols[bi]
+      instance[serializersSym][bks] = bindings.serializers[bks]
+    }
+  } else instance[serializersSym] = serializers
+  if (bindings.hasOwnProperty('formatters')) {
+    const { level, bindings: chindings, log } = bindings.formatters
+    instance[formattersSym] = buildFormatters(
+      level || formatters.level,
+      chindings || resetChildingsFormatter,
+      log || formatters.log
+    )
+  } else {
+    instance[formattersSym] = buildFormatters(
+      formatters.level,
+      resetChildingsFormatter,
+      formatters.log
+    )
+  }
+  if (bindings.hasOwnProperty('customLevels') === true) {
+    assertNoLevelCollisions(this.levels, bindings.customLevels)
+    instance.levels = mappings(bindings.customLevels, instance[useOnlyCustomLevelsSym])
+    genLsCache(instance)
+  }
+  instance[chindingsSym] = asChindings(instance, bindings)
+  const childLevel = bindings.level || this.level
+  instance[setLevelSym](childLevel)
+
+  return instance
+}
+
+function bindings () {
+  const chindings = this[chindingsSym]
+  var chindingsJson = `{${chindings.substr(1)}}` // at least contains ,"pid":7068,"hostname":"myMac"
+  var bindingsFromJson = JSON.parse(chindingsJson)
+  delete bindingsFromJson.pid
+  delete bindingsFromJson.hostname
+  return bindingsFromJson
+}
+
+function setBindings (newBindings) {
+  const chindings = asChindings(this, newBindings)
+  this[chindingsSym] = chindings
+  delete this[parsedChindingsSym]
+}
+
+function write (_obj, msg, num) {
+  const t = this[timeSym]()
+  const mixin = this[mixinSym]
+  const objError = _obj instanceof Error
+  var obj
+
+  if (_obj === undefined || _obj === null) {
+    obj = mixin ? mixin() : {}
+  } else {
+    obj = Object.assign(mixin ? mixin() : {}, _obj)
+    if (!msg && objError) {
+      msg = _obj.message
+    }
+
+    if (objError) {
+      obj.stack = _obj.stack
+      if (!obj.type) {
+        obj.type = 'Error'
+      }
+    }
+  }
+
+  const s = this[asJsonSym](obj, msg, num, t)
+
+  const stream = this[streamSym]
+  if (stream[needsMetadataGsym] === true) {
+    stream.lastLevel = num
+    stream.lastObj = obj
+    stream.lastMsg = msg
+    stream.lastTime = t.slice(this[timeSliceIndexSym])
+    stream.lastLogger = this // for child loggers
+  }
+  if (stream instanceof SonicBoom) stream.write(s)
+  else stream.write(flatstr(s))
+}
+
+function flush () {
+  const stream = this[streamSym]
+  if ('flush' in stream) stream.flush()
+}
+
+
+/***/ }),
+/* 393 */,
+/* 394 */,
+/* 395 */,
+/* 396 */,
+/* 397 */,
+/* 398 */,
+/* 399 */,
+/* 400 */,
+/* 401 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.convertChangesToDMP = convertChangesToDMP;
+
+/*istanbul ignore end*/
+// See: http://code.google.com/p/google-diff-match-patch/wiki/API
+function convertChangesToDMP(changes) {
+  var ret = [],
+      change,
+      operation;
+
+  for (var i = 0; i < changes.length; i++) {
+    change = changes[i];
+
+    if (change.added) {
+      operation = 1;
+    } else if (change.removed) {
+      operation = -1;
+    } else {
+      operation = 0;
+    }
+
+    ret.push([operation, change.value]);
+  }
+
+  return ret;
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9jb252ZXJ0L2RtcC5qcyJdLCJuYW1lcyI6WyJjb252ZXJ0Q2hhbmdlc1RvRE1QIiwiY2hhbmdlcyIsInJldCIsImNoYW5nZSIsIm9wZXJhdGlvbiIsImkiLCJsZW5ndGgiLCJhZGRlZCIsInJlbW92ZWQiLCJwdXNoIiwidmFsdWUiXSwibWFwcGluZ3MiOiI7Ozs7Ozs7OztBQUFBO0FBQ08sU0FBU0EsbUJBQVQsQ0FBNkJDLE9BQTdCLEVBQXNDO0FBQzNDLE1BQUlDLEdBQUcsR0FBRyxFQUFWO0FBQUEsTUFDSUMsTUFESjtBQUFBLE1BRUlDLFNBRko7O0FBR0EsT0FBSyxJQUFJQyxDQUFDLEdBQUcsQ0FBYixFQUFnQkEsQ0FBQyxHQUFHSixPQUFPLENBQUNLLE1BQTVCLEVBQW9DRCxDQUFDLEVBQXJDLEVBQXlDO0FBQ3ZDRixJQUFBQSxNQUFNLEdBQUdGLE9BQU8sQ0FBQ0ksQ0FBRCxDQUFoQjs7QUFDQSxRQUFJRixNQUFNLENBQUNJLEtBQVgsRUFBa0I7QUFDaEJILE1BQUFBLFNBQVMsR0FBRyxDQUFaO0FBQ0QsS0FGRCxNQUVPLElBQUlELE1BQU0sQ0FBQ0ssT0FBWCxFQUFvQjtBQUN6QkosTUFBQUEsU0FBUyxHQUFHLENBQUMsQ0FBYjtBQUNELEtBRk0sTUFFQTtBQUNMQSxNQUFBQSxTQUFTLEdBQUcsQ0FBWjtBQUNEOztBQUVERixJQUFBQSxHQUFHLENBQUNPLElBQUosQ0FBUyxDQUFDTCxTQUFELEVBQVlELE1BQU0sQ0FBQ08sS0FBbkIsQ0FBVDtBQUNEOztBQUNELFNBQU9SLEdBQVA7QUFDRCIsInNvdXJjZXNDb250ZW50IjpbIi8vIFNlZTogaHR0cDovL2NvZGUuZ29vZ2xlLmNvbS9wL2dvb2dsZS1kaWZmLW1hdGNoLXBhdGNoL3dpa2kvQVBJXG5leHBvcnQgZnVuY3Rpb24gY29udmVydENoYW5nZXNUb0RNUChjaGFuZ2VzKSB7XG4gIGxldCByZXQgPSBbXSxcbiAgICAgIGNoYW5nZSxcbiAgICAgIG9wZXJhdGlvbjtcbiAgZm9yIChsZXQgaSA9IDA7IGkgPCBjaGFuZ2VzLmxlbmd0aDsgaSsrKSB7XG4gICAgY2hhbmdlID0gY2hhbmdlc1tpXTtcbiAgICBpZiAoY2hhbmdlLmFkZGVkKSB7XG4gICAgICBvcGVyYXRpb24gPSAxO1xuICAgIH0gZWxzZSBpZiAoY2hhbmdlLnJlbW92ZWQpIHtcbiAgICAgIG9wZXJhdGlvbiA9IC0xO1xuICAgIH0gZWxzZSB7XG4gICAgICBvcGVyYXRpb24gPSAwO1xuICAgIH1cblxuICAgIHJldC5wdXNoKFtvcGVyYXRpb24sIGNoYW5nZS52YWx1ZV0pO1xuICB9XG4gIHJldHVybiByZXQ7XG59XG4iXX0=
+
+
+/***/ }),
+/* 402 */,
+/* 403 */,
+/* 404 */,
+/* 405 */,
+/* 406 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.__esModule = true;
+// istanbul ignore next
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+var _handlebarsRuntime = __webpack_require__(131);
+
+var _handlebarsRuntime2 = _interopRequireDefault(_handlebarsRuntime);
+
+// Compiler imports
+
+var _handlebarsCompilerAst = __webpack_require__(154);
+
+var _handlebarsCompilerAst2 = _interopRequireDefault(_handlebarsCompilerAst);
+
+var _handlebarsCompilerBase = __webpack_require__(52);
+
+var _handlebarsCompilerCompiler = __webpack_require__(773);
+
+var _handlebarsCompilerJavascriptCompiler = __webpack_require__(632);
+
+var _handlebarsCompilerJavascriptCompiler2 = _interopRequireDefault(_handlebarsCompilerJavascriptCompiler);
+
+var _handlebarsCompilerVisitor = __webpack_require__(268);
+
+var _handlebarsCompilerVisitor2 = _interopRequireDefault(_handlebarsCompilerVisitor);
+
+var _handlebarsNoConflict = __webpack_require__(352);
+
+var _handlebarsNoConflict2 = _interopRequireDefault(_handlebarsNoConflict);
+
+var _create = _handlebarsRuntime2['default'].create;
+function create() {
+  var hb = _create();
+
+  hb.compile = function (input, options) {
+    return _handlebarsCompilerCompiler.compile(input, options, hb);
+  };
+  hb.precompile = function (input, options) {
+    return _handlebarsCompilerCompiler.precompile(input, options, hb);
+  };
+
+  hb.AST = _handlebarsCompilerAst2['default'];
+  hb.Compiler = _handlebarsCompilerCompiler.Compiler;
+  hb.JavaScriptCompiler = _handlebarsCompilerJavascriptCompiler2['default'];
+  hb.Parser = _handlebarsCompilerBase.parser;
+  hb.parse = _handlebarsCompilerBase.parse;
+  hb.parseWithoutProcessing = _handlebarsCompilerBase.parseWithoutProcessing;
+
+  return hb;
+}
+
+var inst = create();
+inst.create = create;
+
+_handlebarsNoConflict2['default'](inst);
+
+inst.Visitor = _handlebarsCompilerVisitor2['default'];
+
+inst['default'] = inst;
+
+exports['default'] = inst;
+module.exports = exports['default'];
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL2xpYi9oYW5kbGViYXJzLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7Ozs7aUNBQW9CLHNCQUFzQjs7Ozs7O3FDQUcxQiwyQkFBMkI7Ozs7c0NBS3BDLDRCQUE0Qjs7MENBQ1csZ0NBQWdDOztvREFDL0MsMkNBQTJDOzs7O3lDQUN0RCwrQkFBK0I7Ozs7b0NBRTVCLDBCQUEwQjs7OztBQUVqRCxJQUFJLE9BQU8sR0FBRywrQkFBUSxNQUFNLENBQUM7QUFDN0IsU0FBUyxNQUFNLEdBQUc7QUFDaEIsTUFBSSxFQUFFLEdBQUcsT0FBTyxFQUFFLENBQUM7O0FBRW5CLElBQUUsQ0FBQyxPQUFPLEdBQUcsVUFBUyxLQUFLLEVBQUUsT0FBTyxFQUFFO0FBQ3BDLFdBQU8sb0NBQVEsS0FBSyxFQUFFLE9BQU8sRUFBRSxFQUFFLENBQUMsQ0FBQztHQUNwQyxDQUFDO0FBQ0YsSUFBRSxDQUFDLFVBQVUsR0FBRyxVQUFTLEtBQUssRUFBRSxPQUFPLEVBQUU7QUFDdkMsV0FBTyx1Q0FBVyxLQUFLLEVBQUUsT0FBTyxFQUFFLEVBQUUsQ0FBQyxDQUFDO0dBQ3ZDLENBQUM7O0FBRUYsSUFBRSxDQUFDLEdBQUcscUNBQU0sQ0FBQztBQUNiLElBQUUsQ0FBQyxRQUFRLHVDQUFXLENBQUM7QUFDdkIsSUFBRSxDQUFDLGtCQUFrQixvREFBcUIsQ0FBQztBQUMzQyxJQUFFLENBQUMsTUFBTSxpQ0FBUyxDQUFDO0FBQ25CLElBQUUsQ0FBQyxLQUFLLGdDQUFRLENBQUM7QUFDakIsSUFBRSxDQUFDLHNCQUFzQixpREFBeUIsQ0FBQzs7QUFFbkQsU0FBTyxFQUFFLENBQUM7Q0FDWDs7QUFFRCxJQUFJLElBQUksR0FBRyxNQUFNLEVBQUUsQ0FBQztBQUNwQixJQUFJLENBQUMsTUFBTSxHQUFHLE1BQU0sQ0FBQzs7QUFFckIsa0NBQVcsSUFBSSxDQUFDLENBQUM7O0FBRWpCLElBQUksQ0FBQyxPQUFPLHlDQUFVLENBQUM7O0FBRXZCLElBQUksQ0FBQyxTQUFTLENBQUMsR0FBRyxJQUFJLENBQUM7O3FCQUVSLElBQUkiLCJmaWxlIjoiaGFuZGxlYmFycy5qcyIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCBydW50aW1lIGZyb20gJy4vaGFuZGxlYmFycy5ydW50aW1lJztcblxuLy8gQ29tcGlsZXIgaW1wb3J0c1xuaW1wb3J0IEFTVCBmcm9tICcuL2hhbmRsZWJhcnMvY29tcGlsZXIvYXN0JztcbmltcG9ydCB7XG4gIHBhcnNlciBhcyBQYXJzZXIsXG4gIHBhcnNlLFxuICBwYXJzZVdpdGhvdXRQcm9jZXNzaW5nXG59IGZyb20gJy4vaGFuZGxlYmFycy9jb21waWxlci9iYXNlJztcbmltcG9ydCB7IENvbXBpbGVyLCBjb21waWxlLCBwcmVjb21waWxlIH0gZnJvbSAnLi9oYW5kbGViYXJzL2NvbXBpbGVyL2NvbXBpbGVyJztcbmltcG9ydCBKYXZhU2NyaXB0Q29tcGlsZXIgZnJvbSAnLi9oYW5kbGViYXJzL2NvbXBpbGVyL2phdmFzY3JpcHQtY29tcGlsZXInO1xuaW1wb3J0IFZpc2l0b3IgZnJvbSAnLi9oYW5kbGViYXJzL2NvbXBpbGVyL3Zpc2l0b3InO1xuXG5pbXBvcnQgbm9Db25mbGljdCBmcm9tICcuL2hhbmRsZWJhcnMvbm8tY29uZmxpY3QnO1xuXG5sZXQgX2NyZWF0ZSA9IHJ1bnRpbWUuY3JlYXRlO1xuZnVuY3Rpb24gY3JlYXRlKCkge1xuICBsZXQgaGIgPSBfY3JlYXRlKCk7XG5cbiAgaGIuY29tcGlsZSA9IGZ1bmN0aW9uKGlucHV0LCBvcHRpb25zKSB7XG4gICAgcmV0dXJuIGNvbXBpbGUoaW5wdXQsIG9wdGlvbnMsIGhiKTtcbiAgfTtcbiAgaGIucHJlY29tcGlsZSA9IGZ1bmN0aW9uKGlucHV0LCBvcHRpb25zKSB7XG4gICAgcmV0dXJuIHByZWNvbXBpbGUoaW5wdXQsIG9wdGlvbnMsIGhiKTtcbiAgfTtcblxuICBoYi5BU1QgPSBBU1Q7XG4gIGhiLkNvbXBpbGVyID0gQ29tcGlsZXI7XG4gIGhiLkphdmFTY3JpcHRDb21waWxlciA9IEphdmFTY3JpcHRDb21waWxlcjtcbiAgaGIuUGFyc2VyID0gUGFyc2VyO1xuICBoYi5wYXJzZSA9IHBhcnNlO1xuICBoYi5wYXJzZVdpdGhvdXRQcm9jZXNzaW5nID0gcGFyc2VXaXRob3V0UHJvY2Vzc2luZztcblxuICByZXR1cm4gaGI7XG59XG5cbmxldCBpbnN0ID0gY3JlYXRlKCk7XG5pbnN0LmNyZWF0ZSA9IGNyZWF0ZTtcblxubm9Db25mbGljdChpbnN0KTtcblxuaW5zdC5WaXNpdG9yID0gVmlzaXRvcjtcblxuaW5zdFsnZGVmYXVsdCddID0gaW5zdDtcblxuZXhwb3J0IGRlZmF1bHQgaW5zdDtcbiJdfQ==
+
+
+/***/ }),
+/* 407 */,
+/* 408 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.diffArrays = diffArrays;
+exports.arrayDiff = void 0;
+
+/*istanbul ignore end*/
+var
+/*istanbul ignore start*/
+_base = _interopRequireDefault(__webpack_require__(491))
+/*istanbul ignore end*/
+;
+
+/*istanbul ignore start*/ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/*istanbul ignore end*/
+var arrayDiff = new
+/*istanbul ignore start*/
+_base
+/*istanbul ignore end*/
+.
+/*istanbul ignore start*/
+default
+/*istanbul ignore end*/
+();
+
+/*istanbul ignore start*/
+exports.arrayDiff = arrayDiff;
+
+/*istanbul ignore end*/
+arrayDiff.tokenize = function (value) {
+  return value.slice();
+};
+
+arrayDiff.join = arrayDiff.removeEmpty = function (value) {
+  return value;
+};
+
+function diffArrays(oldArr, newArr, callback) {
+  return arrayDiff.diff(oldArr, newArr, callback);
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9kaWZmL2FycmF5LmpzIl0sIm5hbWVzIjpbImFycmF5RGlmZiIsIkRpZmYiLCJ0b2tlbml6ZSIsInZhbHVlIiwic2xpY2UiLCJqb2luIiwicmVtb3ZlRW1wdHkiLCJkaWZmQXJyYXlzIiwib2xkQXJyIiwibmV3QXJyIiwiY2FsbGJhY2siLCJkaWZmIl0sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7O0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTs7Ozs7QUFFTyxJQUFNQSxTQUFTLEdBQUc7QUFBSUM7QUFBQUE7QUFBQUE7QUFBQUE7QUFBQUE7QUFBQUE7QUFBSjtBQUFBLEVBQWxCOzs7Ozs7QUFDUEQsU0FBUyxDQUFDRSxRQUFWLEdBQXFCLFVBQVNDLEtBQVQsRUFBZ0I7QUFDbkMsU0FBT0EsS0FBSyxDQUFDQyxLQUFOLEVBQVA7QUFDRCxDQUZEOztBQUdBSixTQUFTLENBQUNLLElBQVYsR0FBaUJMLFNBQVMsQ0FBQ00sV0FBVixHQUF3QixVQUFTSCxLQUFULEVBQWdCO0FBQ3ZELFNBQU9BLEtBQVA7QUFDRCxDQUZEOztBQUlPLFNBQVNJLFVBQVQsQ0FBb0JDLE1BQXBCLEVBQTRCQyxNQUE1QixFQUFvQ0MsUUFBcEMsRUFBOEM7QUFBRSxTQUFPVixTQUFTLENBQUNXLElBQVYsQ0FBZUgsTUFBZixFQUF1QkMsTUFBdkIsRUFBK0JDLFFBQS9CLENBQVA7QUFBa0QiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgRGlmZiBmcm9tICcuL2Jhc2UnO1xuXG5leHBvcnQgY29uc3QgYXJyYXlEaWZmID0gbmV3IERpZmYoKTtcbmFycmF5RGlmZi50b2tlbml6ZSA9IGZ1bmN0aW9uKHZhbHVlKSB7XG4gIHJldHVybiB2YWx1ZS5zbGljZSgpO1xufTtcbmFycmF5RGlmZi5qb2luID0gYXJyYXlEaWZmLnJlbW92ZUVtcHR5ID0gZnVuY3Rpb24odmFsdWUpIHtcbiAgcmV0dXJuIHZhbHVlO1xufTtcblxuZXhwb3J0IGZ1bmN0aW9uIGRpZmZBcnJheXMob2xkQXJyLCBuZXdBcnIsIGNhbGxiYWNrKSB7IHJldHVybiBhcnJheURpZmYuZGlmZihvbGRBcnIsIG5ld0FyciwgY2FsbGJhY2spOyB9XG4iXX0=
+
+
+/***/ }),
+/* 409 */,
+/* 410 */,
+/* 411 */,
+/* 412 */,
+/* 413 */
+/***/ (function(module) {
+
+module.exports = require("stream");
+
+/***/ }),
+/* 414 */,
+/* 415 */,
+/* 416 */
+/***/ (function(module) {
+
+// vim:ts=4:sts=4:sw=4:
+/*!
+ *
+ * Copyright 2009-2017 Kris Kowal under the terms of the MIT
+ * license found at https://github.com/kriskowal/q/blob/v1/LICENSE
+ *
+ * With parts by Tyler Close
+ * Copyright 2007-2009 Tyler Close under the terms of the MIT X license found
+ * at http://www.opensource.org/licenses/mit-license.html
+ * Forked at ref_send.js version: 2009-05-11
+ *
+ * With parts by Mark Miller
+ * Copyright (C) 2011 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+(function (definition) {
+    "use strict";
+
+    // This file will function properly as a <script> tag, or a module
+    // using CommonJS and NodeJS or RequireJS module formats.  In
+    // Common/Node/RequireJS, the module exports the Q API and when
+    // executed as a simple <script>, it creates a Q global instead.
+
+    // Montage Require
+    if (typeof bootstrap === "function") {
+        bootstrap("promise", definition);
+
+    // CommonJS
+    } else if (true) {
+        module.exports = definition();
+
+    // RequireJS
+    } else { var previousQ, global; }
+
+})(function () {
+"use strict";
+
+var hasStacks = false;
+try {
+    throw new Error();
+} catch (e) {
+    hasStacks = !!e.stack;
+}
+
+// All code after this point will be filtered from stack traces reported
+// by Q.
+var qStartingLine = captureLine();
+var qFileName;
+
+// shims
+
+// used for fallback in "allResolved"
+var noop = function () {};
+
+// Use the fastest possible means to execute a task in a future turn
+// of the event loop.
+var nextTick =(function () {
+    // linked list of tasks (single, with head node)
+    var head = {task: void 0, next: null};
+    var tail = head;
+    var flushing = false;
+    var requestTick = void 0;
+    var isNodeJS = false;
+    // queue for late tasks, used by unhandled rejection tracking
+    var laterQueue = [];
+
+    function flush() {
+        /* jshint loopfunc: true */
+        var task, domain;
+
+        while (head.next) {
+            head = head.next;
+            task = head.task;
+            head.task = void 0;
+            domain = head.domain;
+
+            if (domain) {
+                head.domain = void 0;
+                domain.enter();
+            }
+            runSingle(task, domain);
+
+        }
+        while (laterQueue.length) {
+            task = laterQueue.pop();
+            runSingle(task);
+        }
+        flushing = false;
+    }
+    // runs a single function in the async queue
+    function runSingle(task, domain) {
+        try {
+            task();
+
+        } catch (e) {
+            if (isNodeJS) {
+                // In node, uncaught exceptions are considered fatal errors.
+                // Re-throw them synchronously to interrupt flushing!
+
+                // Ensure continuation if the uncaught exception is suppressed
+                // listening "uncaughtException" events (as domains does).
+                // Continue in next event to avoid tick recursion.
+                if (domain) {
+                    domain.exit();
+                }
+                setTimeout(flush, 0);
+                if (domain) {
+                    domain.enter();
+                }
+
+                throw e;
+
+            } else {
+                // In browsers, uncaught exceptions are not fatal.
+                // Re-throw them asynchronously to avoid slow-downs.
+                setTimeout(function () {
+                    throw e;
+                }, 0);
+            }
+        }
+
+        if (domain) {
+            domain.exit();
+        }
+    }
+
+    nextTick = function (task) {
+        tail = tail.next = {
+            task: task,
+            domain: isNodeJS && process.domain,
+            next: null
+        };
+
+        if (!flushing) {
+            flushing = true;
+            requestTick();
+        }
+    };
+
+    if (typeof process === "object" &&
+        process.toString() === "[object process]" && process.nextTick) {
+        // Ensure Q is in a real Node environment, with a `process.nextTick`.
+        // To see through fake Node environments:
+        // * Mocha test runner - exposes a `process` global without a `nextTick`
+        // * Browserify - exposes a `process.nexTick` function that uses
+        //   `setTimeout`. In this case `setImmediate` is preferred because
+        //    it is faster. Browserify's `process.toString()` yields
+        //   "[object Object]", while in a real Node environment
+        //   `process.toString()` yields "[object process]".
+        isNodeJS = true;
+
+        requestTick = function () {
+            process.nextTick(flush);
+        };
+
+    } else if (typeof setImmediate === "function") {
+        // In IE10, Node.js 0.9+, or https://github.com/NobleJS/setImmediate
+        if (typeof window !== "undefined") {
+            requestTick = setImmediate.bind(window, flush);
+        } else {
+            requestTick = function () {
+                setImmediate(flush);
+            };
+        }
+
+    } else if (typeof MessageChannel !== "undefined") {
+        // modern browsers
+        // http://www.nonblocking.io/2011/06/windownexttick.html
+        var channel = new MessageChannel();
+        // At least Safari Version 6.0.5 (8536.30.1) intermittently cannot create
+        // working message ports the first time a page loads.
+        channel.port1.onmessage = function () {
+            requestTick = requestPortTick;
+            channel.port1.onmessage = flush;
+            flush();
+        };
+        var requestPortTick = function () {
+            // Opera requires us to provide a message payload, regardless of
+            // whether we use it.
+            channel.port2.postMessage(0);
+        };
+        requestTick = function () {
+            setTimeout(flush, 0);
+            requestPortTick();
+        };
+
+    } else {
+        // old browsers
+        requestTick = function () {
+            setTimeout(flush, 0);
+        };
+    }
+    // runs a task after all other tasks have been run
+    // this is useful for unhandled rejection tracking that needs to happen
+    // after all `then`d tasks have been run.
+    nextTick.runAfter = function (task) {
+        laterQueue.push(task);
+        if (!flushing) {
+            flushing = true;
+            requestTick();
+        }
+    };
+    return nextTick;
+})();
+
+// Attempt to make generics safe in the face of downstream
+// modifications.
+// There is no situation where this is necessary.
+// If you need a security guarantee, these primordials need to be
+// deeply frozen anyway, and if you don’t need a security guarantee,
+// this is just plain paranoid.
+// However, this **might** have the nice side-effect of reducing the size of
+// the minified code by reducing x.call() to merely x()
+// See Mark Miller’s explanation of what this does.
+// http://wiki.ecmascript.org/doku.php?id=conventions:safe_meta_programming
+var call = Function.call;
+function uncurryThis(f) {
+    return function () {
+        return call.apply(f, arguments);
+    };
+}
+// This is equivalent, but slower:
+// uncurryThis = Function_bind.bind(Function_bind.call);
+// http://jsperf.com/uncurrythis
+
+var array_slice = uncurryThis(Array.prototype.slice);
+
+var array_reduce = uncurryThis(
+    Array.prototype.reduce || function (callback, basis) {
+        var index = 0,
+            length = this.length;
+        // concerning the initial value, if one is not provided
+        if (arguments.length === 1) {
+            // seek to the first value in the array, accounting
+            // for the possibility that is is a sparse array
+            do {
+                if (index in this) {
+                    basis = this[index++];
+                    break;
+                }
+                if (++index >= length) {
+                    throw new TypeError();
+                }
+            } while (1);
+        }
+        // reduce
+        for (; index < length; index++) {
+            // account for the possibility that the array is sparse
+            if (index in this) {
+                basis = callback(basis, this[index], index);
+            }
+        }
+        return basis;
+    }
+);
+
+var array_indexOf = uncurryThis(
+    Array.prototype.indexOf || function (value) {
+        // not a very good shim, but good enough for our one use of it
+        for (var i = 0; i < this.length; i++) {
+            if (this[i] === value) {
+                return i;
+            }
+        }
+        return -1;
+    }
+);
+
+var array_map = uncurryThis(
+    Array.prototype.map || function (callback, thisp) {
+        var self = this;
+        var collect = [];
+        array_reduce(self, function (undefined, value, index) {
+            collect.push(callback.call(thisp, value, index, self));
+        }, void 0);
+        return collect;
+    }
+);
+
+var object_create = Object.create || function (prototype) {
+    function Type() { }
+    Type.prototype = prototype;
+    return new Type();
+};
+
+var object_defineProperty = Object.defineProperty || function (obj, prop, descriptor) {
+    obj[prop] = descriptor.value;
+    return obj;
+};
+
+var object_hasOwnProperty = uncurryThis(Object.prototype.hasOwnProperty);
+
+var object_keys = Object.keys || function (object) {
+    var keys = [];
+    for (var key in object) {
+        if (object_hasOwnProperty(object, key)) {
+            keys.push(key);
+        }
+    }
+    return keys;
+};
+
+var object_toString = uncurryThis(Object.prototype.toString);
+
+function isObject(value) {
+    return value === Object(value);
+}
+
+// generator related shims
+
+// FIXME: Remove this function once ES6 generators are in SpiderMonkey.
+function isStopIteration(exception) {
+    return (
+        object_toString(exception) === "[object StopIteration]" ||
+        exception instanceof QReturnValue
+    );
+}
+
+// FIXME: Remove this helper and Q.return once ES6 generators are in
+// SpiderMonkey.
+var QReturnValue;
+if (typeof ReturnValue !== "undefined") {
+    QReturnValue = ReturnValue;
+} else {
+    QReturnValue = function (value) {
+        this.value = value;
+    };
+}
+
+// long stack traces
+
+var STACK_JUMP_SEPARATOR = "From previous event:";
+
+function makeStackTraceLong(error, promise) {
+    // If possible, transform the error stack trace by removing Node and Q
+    // cruft, then concatenating with the stack trace of `promise`. See #57.
+    if (hasStacks &&
+        promise.stack &&
+        typeof error === "object" &&
+        error !== null &&
+        error.stack
+    ) {
+        var stacks = [];
+        for (var p = promise; !!p; p = p.source) {
+            if (p.stack && (!error.__minimumStackCounter__ || error.__minimumStackCounter__ > p.stackCounter)) {
+                object_defineProperty(error, "__minimumStackCounter__", {value: p.stackCounter, configurable: true});
+                stacks.unshift(p.stack);
+            }
+        }
+        stacks.unshift(error.stack);
+
+        var concatedStacks = stacks.join("\n" + STACK_JUMP_SEPARATOR + "\n");
+        var stack = filterStackString(concatedStacks);
+        object_defineProperty(error, "stack", {value: stack, configurable: true});
+    }
+}
+
+function filterStackString(stackString) {
+    var lines = stackString.split("\n");
+    var desiredLines = [];
+    for (var i = 0; i < lines.length; ++i) {
+        var line = lines[i];
+
+        if (!isInternalFrame(line) && !isNodeFrame(line) && line) {
+            desiredLines.push(line);
+        }
+    }
+    return desiredLines.join("\n");
+}
+
+function isNodeFrame(stackLine) {
+    return stackLine.indexOf("(module.js:") !== -1 ||
+           stackLine.indexOf("(node.js:") !== -1;
+}
+
+function getFileNameAndLineNumber(stackLine) {
+    // Named functions: "at functionName (filename:lineNumber:columnNumber)"
+    // In IE10 function name can have spaces ("Anonymous function") O_o
+    var attempt1 = /at .+ \((.+):(\d+):(?:\d+)\)$/.exec(stackLine);
+    if (attempt1) {
+        return [attempt1[1], Number(attempt1[2])];
+    }
+
+    // Anonymous functions: "at filename:lineNumber:columnNumber"
+    var attempt2 = /at ([^ ]+):(\d+):(?:\d+)$/.exec(stackLine);
+    if (attempt2) {
+        return [attempt2[1], Number(attempt2[2])];
+    }
+
+    // Firefox style: "function@filename:lineNumber or @filename:lineNumber"
+    var attempt3 = /.*@(.+):(\d+)$/.exec(stackLine);
+    if (attempt3) {
+        return [attempt3[1], Number(attempt3[2])];
+    }
+}
+
+function isInternalFrame(stackLine) {
+    var fileNameAndLineNumber = getFileNameAndLineNumber(stackLine);
+
+    if (!fileNameAndLineNumber) {
+        return false;
+    }
+
+    var fileName = fileNameAndLineNumber[0];
+    var lineNumber = fileNameAndLineNumber[1];
+
+    return fileName === qFileName &&
+        lineNumber >= qStartingLine &&
+        lineNumber <= qEndingLine;
+}
+
+// discover own file name and line number range for filtering stack
+// traces
+function captureLine() {
+    if (!hasStacks) {
+        return;
+    }
+
+    try {
+        throw new Error();
+    } catch (e) {
+        var lines = e.stack.split("\n");
+        var firstLine = lines[0].indexOf("@") > 0 ? lines[1] : lines[2];
+        var fileNameAndLineNumber = getFileNameAndLineNumber(firstLine);
+        if (!fileNameAndLineNumber) {
+            return;
+        }
+
+        qFileName = fileNameAndLineNumber[0];
+        return fileNameAndLineNumber[1];
+    }
+}
+
+function deprecate(callback, name, alternative) {
+    return function () {
+        if (typeof console !== "undefined" &&
+            typeof console.warn === "function") {
+            console.warn(name + " is deprecated, use " + alternative +
+                         " instead.", new Error("").stack);
+        }
+        return callback.apply(callback, arguments);
+    };
+}
+
+// end of shims
+// beginning of real work
+
+/**
+ * Constructs a promise for an immediate reference, passes promises through, or
+ * coerces promises from different systems.
+ * @param value immediate reference or promise
+ */
+function Q(value) {
+    // If the object is already a Promise, return it directly.  This enables
+    // the resolve function to both be used to created references from objects,
+    // but to tolerably coerce non-promises to promises.
+    if (value instanceof Promise) {
+        return value;
+    }
+
+    // assimilate thenables
+    if (isPromiseAlike(value)) {
+        return coerce(value);
+    } else {
+        return fulfill(value);
+    }
+}
+Q.resolve = Q;
+
+/**
+ * Performs a task in a future turn of the event loop.
+ * @param {Function} task
+ */
+Q.nextTick = nextTick;
+
+/**
+ * Controls whether or not long stack traces will be on
+ */
+Q.longStackSupport = false;
+
+/**
+ * The counter is used to determine the stopping point for building
+ * long stack traces. In makeStackTraceLong we walk backwards through
+ * the linked list of promises, only stacks which were created before
+ * the rejection are concatenated.
+ */
+var longStackCounter = 1;
+
+// enable long stacks if Q_DEBUG is set
+if (typeof process === "object" && process && process.env && process.env.Q_DEBUG) {
+    Q.longStackSupport = true;
+}
+
+/**
+ * Constructs a {promise, resolve, reject} object.
+ *
+ * `resolve` is a callback to invoke with a more resolved value for the
+ * promise. To fulfill the promise, invoke `resolve` with any value that is
+ * not a thenable. To reject the promise, invoke `resolve` with a rejected
+ * thenable, or invoke `reject` with the reason directly. To resolve the
+ * promise to another thenable, thus putting it in the same state, invoke
+ * `resolve` with that other thenable.
+ */
+Q.defer = defer;
+function defer() {
+    // if "messages" is an "Array", that indicates that the promise has not yet
+    // been resolved.  If it is "undefined", it has been resolved.  Each
+    // element of the messages array is itself an array of complete arguments to
+    // forward to the resolved promise.  We coerce the resolution value to a
+    // promise using the `resolve` function because it handles both fully
+    // non-thenable values and other thenables gracefully.
+    var messages = [], progressListeners = [], resolvedPromise;
+
+    var deferred = object_create(defer.prototype);
+    var promise = object_create(Promise.prototype);
+
+    promise.promiseDispatch = function (resolve, op, operands) {
+        var args = array_slice(arguments);
+        if (messages) {
+            messages.push(args);
+            if (op === "when" && operands[1]) { // progress operand
+                progressListeners.push(operands[1]);
+            }
+        } else {
+            Q.nextTick(function () {
+                resolvedPromise.promiseDispatch.apply(resolvedPromise, args);
+            });
+        }
+    };
+
+    // XXX deprecated
+    promise.valueOf = function () {
+        if (messages) {
+            return promise;
+        }
+        var nearerValue = nearer(resolvedPromise);
+        if (isPromise(nearerValue)) {
+            resolvedPromise = nearerValue; // shorten chain
+        }
+        return nearerValue;
+    };
+
+    promise.inspect = function () {
+        if (!resolvedPromise) {
+            return { state: "pending" };
+        }
+        return resolvedPromise.inspect();
+    };
+
+    if (Q.longStackSupport && hasStacks) {
+        try {
+            throw new Error();
+        } catch (e) {
+            // NOTE: don't try to use `Error.captureStackTrace` or transfer the
+            // accessor around; that causes memory leaks as per GH-111. Just
+            // reify the stack trace as a string ASAP.
+            //
+            // At the same time, cut off the first line; it's always just
+            // "[object Promise]\n", as per the `toString`.
+            promise.stack = e.stack.substring(e.stack.indexOf("\n") + 1);
+            promise.stackCounter = longStackCounter++;
+        }
+    }
+
+    // NOTE: we do the checks for `resolvedPromise` in each method, instead of
+    // consolidating them into `become`, since otherwise we'd create new
+    // promises with the lines `become(whatever(value))`. See e.g. GH-252.
+
+    function become(newPromise) {
+        resolvedPromise = newPromise;
+
+        if (Q.longStackSupport && hasStacks) {
+            // Only hold a reference to the new promise if long stacks
+            // are enabled to reduce memory usage
+            promise.source = newPromise;
+        }
+
+        array_reduce(messages, function (undefined, message) {
+            Q.nextTick(function () {
+                newPromise.promiseDispatch.apply(newPromise, message);
+            });
+        }, void 0);
+
+        messages = void 0;
+        progressListeners = void 0;
+    }
+
+    deferred.promise = promise;
+    deferred.resolve = function (value) {
+        if (resolvedPromise) {
+            return;
+        }
+
+        become(Q(value));
+    };
+
+    deferred.fulfill = function (value) {
+        if (resolvedPromise) {
+            return;
+        }
+
+        become(fulfill(value));
+    };
+    deferred.reject = function (reason) {
+        if (resolvedPromise) {
+            return;
+        }
+
+        become(reject(reason));
+    };
+    deferred.notify = function (progress) {
+        if (resolvedPromise) {
+            return;
+        }
+
+        array_reduce(progressListeners, function (undefined, progressListener) {
+            Q.nextTick(function () {
+                progressListener(progress);
+            });
+        }, void 0);
+    };
+
+    return deferred;
+}
+
+/**
+ * Creates a Node-style callback that will resolve or reject the deferred
+ * promise.
+ * @returns a nodeback
+ */
+defer.prototype.makeNodeResolver = function () {
+    var self = this;
+    return function (error, value) {
+        if (error) {
+            self.reject(error);
+        } else if (arguments.length > 2) {
+            self.resolve(array_slice(arguments, 1));
+        } else {
+            self.resolve(value);
+        }
+    };
+};
+
+/**
+ * @param resolver {Function} a function that returns nothing and accepts
+ * the resolve, reject, and notify functions for a deferred.
+ * @returns a promise that may be resolved with the given resolve and reject
+ * functions, or rejected by a thrown exception in resolver
+ */
+Q.Promise = promise; // ES6
+Q.promise = promise;
+function promise(resolver) {
+    if (typeof resolver !== "function") {
+        throw new TypeError("resolver must be a function.");
+    }
+    var deferred = defer();
+    try {
+        resolver(deferred.resolve, deferred.reject, deferred.notify);
+    } catch (reason) {
+        deferred.reject(reason);
+    }
+    return deferred.promise;
+}
+
+promise.race = race; // ES6
+promise.all = all; // ES6
+promise.reject = reject; // ES6
+promise.resolve = Q; // ES6
+
+// XXX experimental.  This method is a way to denote that a local value is
+// serializable and should be immediately dispatched to a remote upon request,
+// instead of passing a reference.
+Q.passByCopy = function (object) {
+    //freeze(object);
+    //passByCopies.set(object, true);
+    return object;
+};
+
+Promise.prototype.passByCopy = function () {
+    //freeze(object);
+    //passByCopies.set(object, true);
+    return this;
+};
+
+/**
+ * If two promises eventually fulfill to the same value, promises that value,
+ * but otherwise rejects.
+ * @param x {Any*}
+ * @param y {Any*}
+ * @returns {Any*} a promise for x and y if they are the same, but a rejection
+ * otherwise.
+ *
+ */
+Q.join = function (x, y) {
+    return Q(x).join(y);
+};
+
+Promise.prototype.join = function (that) {
+    return Q([this, that]).spread(function (x, y) {
+        if (x === y) {
+            // TODO: "===" should be Object.is or equiv
+            return x;
+        } else {
+            throw new Error("Q can't join: not the same: " + x + " " + y);
+        }
+    });
+};
+
+/**
+ * Returns a promise for the first of an array of promises to become settled.
+ * @param answers {Array[Any*]} promises to race
+ * @returns {Any*} the first promise to be settled
+ */
+Q.race = race;
+function race(answerPs) {
+    return promise(function (resolve, reject) {
+        // Switch to this once we can assume at least ES5
+        // answerPs.forEach(function (answerP) {
+        //     Q(answerP).then(resolve, reject);
+        // });
+        // Use this in the meantime
+        for (var i = 0, len = answerPs.length; i < len; i++) {
+            Q(answerPs[i]).then(resolve, reject);
+        }
+    });
+}
+
+Promise.prototype.race = function () {
+    return this.then(Q.race);
+};
+
+/**
+ * Constructs a Promise with a promise descriptor object and optional fallback
+ * function.  The descriptor contains methods like when(rejected), get(name),
+ * set(name, value), post(name, args), and delete(name), which all
+ * return either a value, a promise for a value, or a rejection.  The fallback
+ * accepts the operation name, a resolver, and any further arguments that would
+ * have been forwarded to the appropriate method above had a method been
+ * provided with the proper name.  The API makes no guarantees about the nature
+ * of the returned object, apart from that it is usable whereever promises are
+ * bought and sold.
+ */
+Q.makePromise = Promise;
+function Promise(descriptor, fallback, inspect) {
+    if (fallback === void 0) {
+        fallback = function (op) {
+            return reject(new Error(
+                "Promise does not support operation: " + op
+            ));
+        };
+    }
+    if (inspect === void 0) {
+        inspect = function () {
+            return {state: "unknown"};
+        };
+    }
+
+    var promise = object_create(Promise.prototype);
+
+    promise.promiseDispatch = function (resolve, op, args) {
+        var result;
+        try {
+            if (descriptor[op]) {
+                result = descriptor[op].apply(promise, args);
+            } else {
+                result = fallback.call(promise, op, args);
+            }
+        } catch (exception) {
+            result = reject(exception);
+        }
+        if (resolve) {
+            resolve(result);
+        }
+    };
+
+    promise.inspect = inspect;
+
+    // XXX deprecated `valueOf` and `exception` support
+    if (inspect) {
+        var inspected = inspect();
+        if (inspected.state === "rejected") {
+            promise.exception = inspected.reason;
+        }
+
+        promise.valueOf = function () {
+            var inspected = inspect();
+            if (inspected.state === "pending" ||
+                inspected.state === "rejected") {
+                return promise;
+            }
+            return inspected.value;
+        };
+    }
+
+    return promise;
+}
+
+Promise.prototype.toString = function () {
+    return "[object Promise]";
+};
+
+Promise.prototype.then = function (fulfilled, rejected, progressed) {
+    var self = this;
+    var deferred = defer();
+    var done = false;   // ensure the untrusted promise makes at most a
+                        // single call to one of the callbacks
+
+    function _fulfilled(value) {
+        try {
+            return typeof fulfilled === "function" ? fulfilled(value) : value;
+        } catch (exception) {
+            return reject(exception);
+        }
+    }
+
+    function _rejected(exception) {
+        if (typeof rejected === "function") {
+            makeStackTraceLong(exception, self);
+            try {
+                return rejected(exception);
+            } catch (newException) {
+                return reject(newException);
+            }
+        }
+        return reject(exception);
+    }
+
+    function _progressed(value) {
+        return typeof progressed === "function" ? progressed(value) : value;
+    }
+
+    Q.nextTick(function () {
+        self.promiseDispatch(function (value) {
+            if (done) {
+                return;
+            }
+            done = true;
+
+            deferred.resolve(_fulfilled(value));
+        }, "when", [function (exception) {
+            if (done) {
+                return;
+            }
+            done = true;
+
+            deferred.resolve(_rejected(exception));
+        }]);
+    });
+
+    // Progress propagator need to be attached in the current tick.
+    self.promiseDispatch(void 0, "when", [void 0, function (value) {
+        var newValue;
+        var threw = false;
+        try {
+            newValue = _progressed(value);
+        } catch (e) {
+            threw = true;
+            if (Q.onerror) {
+                Q.onerror(e);
+            } else {
+                throw e;
+            }
+        }
+
+        if (!threw) {
+            deferred.notify(newValue);
+        }
+    }]);
+
+    return deferred.promise;
+};
+
+Q.tap = function (promise, callback) {
+    return Q(promise).tap(callback);
+};
+
+/**
+ * Works almost like "finally", but not called for rejections.
+ * Original resolution value is passed through callback unaffected.
+ * Callback may return a promise that will be awaited for.
+ * @param {Function} callback
+ * @returns {Q.Promise}
+ * @example
+ * doSomething()
+ *   .then(...)
+ *   .tap(console.log)
+ *   .then(...);
+ */
+Promise.prototype.tap = function (callback) {
+    callback = Q(callback);
+
+    return this.then(function (value) {
+        return callback.fcall(value).thenResolve(value);
+    });
+};
+
+/**
+ * Registers an observer on a promise.
+ *
+ * Guarantees:
+ *
+ * 1. that fulfilled and rejected will be called only once.
+ * 2. that either the fulfilled callback or the rejected callback will be
+ *    called, but not both.
+ * 3. that fulfilled and rejected will not be called in this turn.
+ *
+ * @param value      promise or immediate reference to observe
+ * @param fulfilled  function to be called with the fulfilled value
+ * @param rejected   function to be called with the rejection exception
+ * @param progressed function to be called on any progress notifications
+ * @return promise for the return value from the invoked callback
+ */
+Q.when = when;
+function when(value, fulfilled, rejected, progressed) {
+    return Q(value).then(fulfilled, rejected, progressed);
+}
+
+Promise.prototype.thenResolve = function (value) {
+    return this.then(function () { return value; });
+};
+
+Q.thenResolve = function (promise, value) {
+    return Q(promise).thenResolve(value);
+};
+
+Promise.prototype.thenReject = function (reason) {
+    return this.then(function () { throw reason; });
+};
+
+Q.thenReject = function (promise, reason) {
+    return Q(promise).thenReject(reason);
+};
+
+/**
+ * If an object is not a promise, it is as "near" as possible.
+ * If a promise is rejected, it is as "near" as possible too.
+ * If it’s a fulfilled promise, the fulfillment value is nearer.
+ * If it’s a deferred promise and the deferred has been resolved, the
+ * resolution is "nearer".
+ * @param object
+ * @returns most resolved (nearest) form of the object
+ */
+
+// XXX should we re-do this?
+Q.nearer = nearer;
+function nearer(value) {
+    if (isPromise(value)) {
+        var inspected = value.inspect();
+        if (inspected.state === "fulfilled") {
+            return inspected.value;
+        }
+    }
+    return value;
+}
+
+/**
+ * @returns whether the given object is a promise.
+ * Otherwise it is a fulfilled value.
+ */
+Q.isPromise = isPromise;
+function isPromise(object) {
+    return object instanceof Promise;
+}
+
+Q.isPromiseAlike = isPromiseAlike;
+function isPromiseAlike(object) {
+    return isObject(object) && typeof object.then === "function";
+}
+
+/**
+ * @returns whether the given object is a pending promise, meaning not
+ * fulfilled or rejected.
+ */
+Q.isPending = isPending;
+function isPending(object) {
+    return isPromise(object) && object.inspect().state === "pending";
+}
+
+Promise.prototype.isPending = function () {
+    return this.inspect().state === "pending";
+};
+
+/**
+ * @returns whether the given object is a value or fulfilled
+ * promise.
+ */
+Q.isFulfilled = isFulfilled;
+function isFulfilled(object) {
+    return !isPromise(object) || object.inspect().state === "fulfilled";
+}
+
+Promise.prototype.isFulfilled = function () {
+    return this.inspect().state === "fulfilled";
+};
+
+/**
+ * @returns whether the given object is a rejected promise.
+ */
+Q.isRejected = isRejected;
+function isRejected(object) {
+    return isPromise(object) && object.inspect().state === "rejected";
+}
+
+Promise.prototype.isRejected = function () {
+    return this.inspect().state === "rejected";
+};
+
+//// BEGIN UNHANDLED REJECTION TRACKING
+
+// This promise library consumes exceptions thrown in handlers so they can be
+// handled by a subsequent promise.  The exceptions get added to this array when
+// they are created, and removed when they are handled.  Note that in ES6 or
+// shimmed environments, this would naturally be a `Set`.
+var unhandledReasons = [];
+var unhandledRejections = [];
+var reportedUnhandledRejections = [];
+var trackUnhandledRejections = true;
+
+function resetUnhandledRejections() {
+    unhandledReasons.length = 0;
+    unhandledRejections.length = 0;
+
+    if (!trackUnhandledRejections) {
+        trackUnhandledRejections = true;
+    }
+}
+
+function trackRejection(promise, reason) {
+    if (!trackUnhandledRejections) {
+        return;
+    }
+    if (typeof process === "object" && typeof process.emit === "function") {
+        Q.nextTick.runAfter(function () {
+            if (array_indexOf(unhandledRejections, promise) !== -1) {
+                process.emit("unhandledRejection", reason, promise);
+                reportedUnhandledRejections.push(promise);
+            }
+        });
+    }
+
+    unhandledRejections.push(promise);
+    if (reason && typeof reason.stack !== "undefined") {
+        unhandledReasons.push(reason.stack);
+    } else {
+        unhandledReasons.push("(no stack) " + reason);
+    }
+}
+
+function untrackRejection(promise) {
+    if (!trackUnhandledRejections) {
+        return;
+    }
+
+    var at = array_indexOf(unhandledRejections, promise);
+    if (at !== -1) {
+        if (typeof process === "object" && typeof process.emit === "function") {
+            Q.nextTick.runAfter(function () {
+                var atReport = array_indexOf(reportedUnhandledRejections, promise);
+                if (atReport !== -1) {
+                    process.emit("rejectionHandled", unhandledReasons[at], promise);
+                    reportedUnhandledRejections.splice(atReport, 1);
+                }
+            });
+        }
+        unhandledRejections.splice(at, 1);
+        unhandledReasons.splice(at, 1);
+    }
+}
+
+Q.resetUnhandledRejections = resetUnhandledRejections;
+
+Q.getUnhandledReasons = function () {
+    // Make a copy so that consumers can't interfere with our internal state.
+    return unhandledReasons.slice();
+};
+
+Q.stopUnhandledRejectionTracking = function () {
+    resetUnhandledRejections();
+    trackUnhandledRejections = false;
+};
+
+resetUnhandledRejections();
+
+//// END UNHANDLED REJECTION TRACKING
+
+/**
+ * Constructs a rejected promise.
+ * @param reason value describing the failure
+ */
+Q.reject = reject;
+function reject(reason) {
+    var rejection = Promise({
+        "when": function (rejected) {
+            // note that the error has been handled
+            if (rejected) {
+                untrackRejection(this);
+            }
+            return rejected ? rejected(reason) : this;
+        }
+    }, function fallback() {
+        return this;
+    }, function inspect() {
+        return { state: "rejected", reason: reason };
+    });
+
+    // Note that the reason has not been handled.
+    trackRejection(rejection, reason);
+
+    return rejection;
+}
+
+/**
+ * Constructs a fulfilled promise for an immediate reference.
+ * @param value immediate reference
+ */
+Q.fulfill = fulfill;
+function fulfill(value) {
+    return Promise({
+        "when": function () {
+            return value;
+        },
+        "get": function (name) {
+            return value[name];
+        },
+        "set": function (name, rhs) {
+            value[name] = rhs;
+        },
+        "delete": function (name) {
+            delete value[name];
+        },
+        "post": function (name, args) {
+            // Mark Miller proposes that post with no name should apply a
+            // promised function.
+            if (name === null || name === void 0) {
+                return value.apply(void 0, args);
+            } else {
+                return value[name].apply(value, args);
+            }
+        },
+        "apply": function (thisp, args) {
+            return value.apply(thisp, args);
+        },
+        "keys": function () {
+            return object_keys(value);
+        }
+    }, void 0, function inspect() {
+        return { state: "fulfilled", value: value };
+    });
+}
+
+/**
+ * Converts thenables to Q promises.
+ * @param promise thenable promise
+ * @returns a Q promise
+ */
+function coerce(promise) {
+    var deferred = defer();
+    Q.nextTick(function () {
+        try {
+            promise.then(deferred.resolve, deferred.reject, deferred.notify);
+        } catch (exception) {
+            deferred.reject(exception);
+        }
+    });
+    return deferred.promise;
+}
+
+/**
+ * Annotates an object such that it will never be
+ * transferred away from this process over any promise
+ * communication channel.
+ * @param object
+ * @returns promise a wrapping of that object that
+ * additionally responds to the "isDef" message
+ * without a rejection.
+ */
+Q.master = master;
+function master(object) {
+    return Promise({
+        "isDef": function () {}
+    }, function fallback(op, args) {
+        return dispatch(object, op, args);
+    }, function () {
+        return Q(object).inspect();
+    });
+}
+
+/**
+ * Spreads the values of a promised array of arguments into the
+ * fulfillment callback.
+ * @param fulfilled callback that receives variadic arguments from the
+ * promised array
+ * @param rejected callback that receives the exception if the promise
+ * is rejected.
+ * @returns a promise for the return value or thrown exception of
+ * either callback.
+ */
+Q.spread = spread;
+function spread(value, fulfilled, rejected) {
+    return Q(value).spread(fulfilled, rejected);
+}
+
+Promise.prototype.spread = function (fulfilled, rejected) {
+    return this.all().then(function (array) {
+        return fulfilled.apply(void 0, array);
+    }, rejected);
+};
+
+/**
+ * The async function is a decorator for generator functions, turning
+ * them into asynchronous generators.  Although generators are only part
+ * of the newest ECMAScript 6 drafts, this code does not cause syntax
+ * errors in older engines.  This code should continue to work and will
+ * in fact improve over time as the language improves.
+ *
+ * ES6 generators are currently part of V8 version 3.19 with the
+ * --harmony-generators runtime flag enabled.  SpiderMonkey has had them
+ * for longer, but under an older Python-inspired form.  This function
+ * works on both kinds of generators.
+ *
+ * Decorates a generator function such that:
+ *  - it may yield promises
+ *  - execution will continue when that promise is fulfilled
+ *  - the value of the yield expression will be the fulfilled value
+ *  - it returns a promise for the return value (when the generator
+ *    stops iterating)
+ *  - the decorated function returns a promise for the return value
+ *    of the generator or the first rejected promise among those
+ *    yielded.
+ *  - if an error is thrown in the generator, it propagates through
+ *    every following yield until it is caught, or until it escapes
+ *    the generator function altogether, and is translated into a
+ *    rejection for the promise returned by the decorated generator.
+ */
+Q.async = async;
+function async(makeGenerator) {
+    return function () {
+        // when verb is "send", arg is a value
+        // when verb is "throw", arg is an exception
+        function continuer(verb, arg) {
+            var result;
+
+            // Until V8 3.19 / Chromium 29 is released, SpiderMonkey is the only
+            // engine that has a deployed base of browsers that support generators.
+            // However, SM's generators use the Python-inspired semantics of
+            // outdated ES6 drafts.  We would like to support ES6, but we'd also
+            // like to make it possible to use generators in deployed browsers, so
+            // we also support Python-style generators.  At some point we can remove
+            // this block.
+
+            if (typeof StopIteration === "undefined") {
+                // ES6 Generators
+                try {
+                    result = generator[verb](arg);
+                } catch (exception) {
+                    return reject(exception);
+                }
+                if (result.done) {
+                    return Q(result.value);
+                } else {
+                    return when(result.value, callback, errback);
+                }
+            } else {
+                // SpiderMonkey Generators
+                // FIXME: Remove this case when SM does ES6 generators.
+                try {
+                    result = generator[verb](arg);
+                } catch (exception) {
+                    if (isStopIteration(exception)) {
+                        return Q(exception.value);
+                    } else {
+                        return reject(exception);
+                    }
+                }
+                return when(result, callback, errback);
+            }
+        }
+        var generator = makeGenerator.apply(this, arguments);
+        var callback = continuer.bind(continuer, "next");
+        var errback = continuer.bind(continuer, "throw");
+        return callback();
+    };
+}
+
+/**
+ * The spawn function is a small wrapper around async that immediately
+ * calls the generator and also ends the promise chain, so that any
+ * unhandled errors are thrown instead of forwarded to the error
+ * handler. This is useful because it's extremely common to run
+ * generators at the top-level to work with libraries.
+ */
+Q.spawn = spawn;
+function spawn(makeGenerator) {
+    Q.done(Q.async(makeGenerator)());
+}
+
+// FIXME: Remove this interface once ES6 generators are in SpiderMonkey.
+/**
+ * Throws a ReturnValue exception to stop an asynchronous generator.
+ *
+ * This interface is a stop-gap measure to support generator return
+ * values in older Firefox/SpiderMonkey.  In browsers that support ES6
+ * generators like Chromium 29, just use "return" in your generator
+ * functions.
+ *
+ * @param value the return value for the surrounding generator
+ * @throws ReturnValue exception with the value.
+ * @example
+ * // ES6 style
+ * Q.async(function* () {
+ *      var foo = yield getFooPromise();
+ *      var bar = yield getBarPromise();
+ *      return foo + bar;
+ * })
+ * // Older SpiderMonkey style
+ * Q.async(function () {
+ *      var foo = yield getFooPromise();
+ *      var bar = yield getBarPromise();
+ *      Q.return(foo + bar);
+ * })
+ */
+Q["return"] = _return;
+function _return(value) {
+    throw new QReturnValue(value);
+}
+
+/**
+ * The promised function decorator ensures that any promise arguments
+ * are settled and passed as values (`this` is also settled and passed
+ * as a value).  It will also ensure that the result of a function is
+ * always a promise.
+ *
+ * @example
+ * var add = Q.promised(function (a, b) {
+ *     return a + b;
+ * });
+ * add(Q(a), Q(B));
+ *
+ * @param {function} callback The function to decorate
+ * @returns {function} a function that has been decorated.
+ */
+Q.promised = promised;
+function promised(callback) {
+    return function () {
+        return spread([this, all(arguments)], function (self, args) {
+            return callback.apply(self, args);
+        });
+    };
+}
+
+/**
+ * sends a message to a value in a future turn
+ * @param object* the recipient
+ * @param op the name of the message operation, e.g., "when",
+ * @param args further arguments to be forwarded to the operation
+ * @returns result {Promise} a promise for the result of the operation
+ */
+Q.dispatch = dispatch;
+function dispatch(object, op, args) {
+    return Q(object).dispatch(op, args);
+}
+
+Promise.prototype.dispatch = function (op, args) {
+    var self = this;
+    var deferred = defer();
+    Q.nextTick(function () {
+        self.promiseDispatch(deferred.resolve, op, args);
+    });
+    return deferred.promise;
+};
+
+/**
+ * Gets the value of a property in a future turn.
+ * @param object    promise or immediate reference for target object
+ * @param name      name of property to get
+ * @return promise for the property value
+ */
+Q.get = function (object, key) {
+    return Q(object).dispatch("get", [key]);
+};
+
+Promise.prototype.get = function (key) {
+    return this.dispatch("get", [key]);
+};
+
+/**
+ * Sets the value of a property in a future turn.
+ * @param object    promise or immediate reference for object object
+ * @param name      name of property to set
+ * @param value     new value of property
+ * @return promise for the return value
+ */
+Q.set = function (object, key, value) {
+    return Q(object).dispatch("set", [key, value]);
+};
+
+Promise.prototype.set = function (key, value) {
+    return this.dispatch("set", [key, value]);
+};
+
+/**
+ * Deletes a property in a future turn.
+ * @param object    promise or immediate reference for target object
+ * @param name      name of property to delete
+ * @return promise for the return value
+ */
+Q.del = // XXX legacy
+Q["delete"] = function (object, key) {
+    return Q(object).dispatch("delete", [key]);
+};
+
+Promise.prototype.del = // XXX legacy
+Promise.prototype["delete"] = function (key) {
+    return this.dispatch("delete", [key]);
+};
+
+/**
+ * Invokes a method in a future turn.
+ * @param object    promise or immediate reference for target object
+ * @param name      name of method to invoke
+ * @param value     a value to post, typically an array of
+ *                  invocation arguments for promises that
+ *                  are ultimately backed with `resolve` values,
+ *                  as opposed to those backed with URLs
+ *                  wherein the posted value can be any
+ *                  JSON serializable object.
+ * @return promise for the return value
+ */
+// bound locally because it is used by other methods
+Q.mapply = // XXX As proposed by "Redsandro"
+Q.post = function (object, name, args) {
+    return Q(object).dispatch("post", [name, args]);
+};
+
+Promise.prototype.mapply = // XXX As proposed by "Redsandro"
+Promise.prototype.post = function (name, args) {
+    return this.dispatch("post", [name, args]);
+};
+
+/**
+ * Invokes a method in a future turn.
+ * @param object    promise or immediate reference for target object
+ * @param name      name of method to invoke
+ * @param ...args   array of invocation arguments
+ * @return promise for the return value
+ */
+Q.send = // XXX Mark Miller's proposed parlance
+Q.mcall = // XXX As proposed by "Redsandro"
+Q.invoke = function (object, name /*...args*/) {
+    return Q(object).dispatch("post", [name, array_slice(arguments, 2)]);
+};
+
+Promise.prototype.send = // XXX Mark Miller's proposed parlance
+Promise.prototype.mcall = // XXX As proposed by "Redsandro"
+Promise.prototype.invoke = function (name /*...args*/) {
+    return this.dispatch("post", [name, array_slice(arguments, 1)]);
+};
+
+/**
+ * Applies the promised function in a future turn.
+ * @param object    promise or immediate reference for target function
+ * @param args      array of application arguments
+ */
+Q.fapply = function (object, args) {
+    return Q(object).dispatch("apply", [void 0, args]);
+};
+
+Promise.prototype.fapply = function (args) {
+    return this.dispatch("apply", [void 0, args]);
+};
+
+/**
+ * Calls the promised function in a future turn.
+ * @param object    promise or immediate reference for target function
+ * @param ...args   array of application arguments
+ */
+Q["try"] =
+Q.fcall = function (object /* ...args*/) {
+    return Q(object).dispatch("apply", [void 0, array_slice(arguments, 1)]);
+};
+
+Promise.prototype.fcall = function (/*...args*/) {
+    return this.dispatch("apply", [void 0, array_slice(arguments)]);
+};
+
+/**
+ * Binds the promised function, transforming return values into a fulfilled
+ * promise and thrown errors into a rejected one.
+ * @param object    promise or immediate reference for target function
+ * @param ...args   array of application arguments
+ */
+Q.fbind = function (object /*...args*/) {
+    var promise = Q(object);
+    var args = array_slice(arguments, 1);
+    return function fbound() {
+        return promise.dispatch("apply", [
+            this,
+            args.concat(array_slice(arguments))
+        ]);
+    };
+};
+Promise.prototype.fbind = function (/*...args*/) {
+    var promise = this;
+    var args = array_slice(arguments);
+    return function fbound() {
+        return promise.dispatch("apply", [
+            this,
+            args.concat(array_slice(arguments))
+        ]);
+    };
+};
+
+/**
+ * Requests the names of the owned properties of a promised
+ * object in a future turn.
+ * @param object    promise or immediate reference for target object
+ * @return promise for the keys of the eventually settled object
+ */
+Q.keys = function (object) {
+    return Q(object).dispatch("keys", []);
+};
+
+Promise.prototype.keys = function () {
+    return this.dispatch("keys", []);
+};
+
+/**
+ * Turns an array of promises into a promise for an array.  If any of
+ * the promises gets rejected, the whole array is rejected immediately.
+ * @param {Array*} an array (or promise for an array) of values (or
+ * promises for values)
+ * @returns a promise for an array of the corresponding values
+ */
+// By Mark Miller
+// http://wiki.ecmascript.org/doku.php?id=strawman:concurrency&rev=1308776521#allfulfilled
+Q.all = all;
+function all(promises) {
+    return when(promises, function (promises) {
+        var pendingCount = 0;
+        var deferred = defer();
+        array_reduce(promises, function (undefined, promise, index) {
+            var snapshot;
+            if (
+                isPromise(promise) &&
+                (snapshot = promise.inspect()).state === "fulfilled"
+            ) {
+                promises[index] = snapshot.value;
+            } else {
+                ++pendingCount;
+                when(
+                    promise,
+                    function (value) {
+                        promises[index] = value;
+                        if (--pendingCount === 0) {
+                            deferred.resolve(promises);
+                        }
+                    },
+                    deferred.reject,
+                    function (progress) {
+                        deferred.notify({ index: index, value: progress });
+                    }
+                );
+            }
+        }, void 0);
+        if (pendingCount === 0) {
+            deferred.resolve(promises);
+        }
+        return deferred.promise;
+    });
+}
+
+Promise.prototype.all = function () {
+    return all(this);
+};
+
+/**
+ * Returns the first resolved promise of an array. Prior rejected promises are
+ * ignored.  Rejects only if all promises are rejected.
+ * @param {Array*} an array containing values or promises for values
+ * @returns a promise fulfilled with the value of the first resolved promise,
+ * or a rejected promise if all promises are rejected.
+ */
+Q.any = any;
+
+function any(promises) {
+    if (promises.length === 0) {
+        return Q.resolve();
+    }
+
+    var deferred = Q.defer();
+    var pendingCount = 0;
+    array_reduce(promises, function (prev, current, index) {
+        var promise = promises[index];
+
+        pendingCount++;
+
+        when(promise, onFulfilled, onRejected, onProgress);
+        function onFulfilled(result) {
+            deferred.resolve(result);
+        }
+        function onRejected(err) {
+            pendingCount--;
+            if (pendingCount === 0) {
+                var rejection = err || new Error("" + err);
+
+                rejection.message = ("Q can't get fulfillment value from any promise, all " +
+                    "promises were rejected. Last error message: " + rejection.message);
+
+                deferred.reject(rejection);
+            }
+        }
+        function onProgress(progress) {
+            deferred.notify({
+                index: index,
+                value: progress
+            });
+        }
+    }, undefined);
+
+    return deferred.promise;
+}
+
+Promise.prototype.any = function () {
+    return any(this);
+};
+
+/**
+ * Waits for all promises to be settled, either fulfilled or
+ * rejected.  This is distinct from `all` since that would stop
+ * waiting at the first rejection.  The promise returned by
+ * `allResolved` will never be rejected.
+ * @param promises a promise for an array (or an array) of promises
+ * (or values)
+ * @return a promise for an array of promises
+ */
+Q.allResolved = deprecate(allResolved, "allResolved", "allSettled");
+function allResolved(promises) {
+    return when(promises, function (promises) {
+        promises = array_map(promises, Q);
+        return when(all(array_map(promises, function (promise) {
+            return when(promise, noop, noop);
+        })), function () {
+            return promises;
+        });
+    });
+}
+
+Promise.prototype.allResolved = function () {
+    return allResolved(this);
+};
+
+/**
+ * @see Promise#allSettled
+ */
+Q.allSettled = allSettled;
+function allSettled(promises) {
+    return Q(promises).allSettled();
+}
+
+/**
+ * Turns an array of promises into a promise for an array of their states (as
+ * returned by `inspect`) when they have all settled.
+ * @param {Array[Any*]} values an array (or promise for an array) of values (or
+ * promises for values)
+ * @returns {Array[State]} an array of states for the respective values.
+ */
+Promise.prototype.allSettled = function () {
+    return this.then(function (promises) {
+        return all(array_map(promises, function (promise) {
+            promise = Q(promise);
+            function regardless() {
+                return promise.inspect();
+            }
+            return promise.then(regardless, regardless);
+        }));
+    });
+};
+
+/**
+ * Captures the failure of a promise, giving an oportunity to recover
+ * with a callback.  If the given promise is fulfilled, the returned
+ * promise is fulfilled.
+ * @param {Any*} promise for something
+ * @param {Function} callback to fulfill the returned promise if the
+ * given promise is rejected
+ * @returns a promise for the return value of the callback
+ */
+Q.fail = // XXX legacy
+Q["catch"] = function (object, rejected) {
+    return Q(object).then(void 0, rejected);
+};
+
+Promise.prototype.fail = // XXX legacy
+Promise.prototype["catch"] = function (rejected) {
+    return this.then(void 0, rejected);
+};
+
+/**
+ * Attaches a listener that can respond to progress notifications from a
+ * promise's originating deferred. This listener receives the exact arguments
+ * passed to ``deferred.notify``.
+ * @param {Any*} promise for something
+ * @param {Function} callback to receive any progress notifications
+ * @returns the given promise, unchanged
+ */
+Q.progress = progress;
+function progress(object, progressed) {
+    return Q(object).then(void 0, void 0, progressed);
+}
+
+Promise.prototype.progress = function (progressed) {
+    return this.then(void 0, void 0, progressed);
+};
+
+/**
+ * Provides an opportunity to observe the settling of a promise,
+ * regardless of whether the promise is fulfilled or rejected.  Forwards
+ * the resolution to the returned promise when the callback is done.
+ * The callback can return a promise to defer completion.
+ * @param {Any*} promise
+ * @param {Function} callback to observe the resolution of the given
+ * promise, takes no arguments.
+ * @returns a promise for the resolution of the given promise when
+ * ``fin`` is done.
+ */
+Q.fin = // XXX legacy
+Q["finally"] = function (object, callback) {
+    return Q(object)["finally"](callback);
+};
+
+Promise.prototype.fin = // XXX legacy
+Promise.prototype["finally"] = function (callback) {
+    if (!callback || typeof callback.apply !== "function") {
+        throw new Error("Q can't apply finally callback");
+    }
+    callback = Q(callback);
+    return this.then(function (value) {
+        return callback.fcall().then(function () {
+            return value;
+        });
+    }, function (reason) {
+        // TODO attempt to recycle the rejection with "this".
+        return callback.fcall().then(function () {
+            throw reason;
+        });
+    });
+};
+
+/**
+ * Terminates a chain of promises, forcing rejections to be
+ * thrown as exceptions.
+ * @param {Any*} promise at the end of a chain of promises
+ * @returns nothing
+ */
+Q.done = function (object, fulfilled, rejected, progress) {
+    return Q(object).done(fulfilled, rejected, progress);
+};
+
+Promise.prototype.done = function (fulfilled, rejected, progress) {
+    var onUnhandledError = function (error) {
+        // forward to a future turn so that ``when``
+        // does not catch it and turn it into a rejection.
+        Q.nextTick(function () {
+            makeStackTraceLong(error, promise);
+            if (Q.onerror) {
+                Q.onerror(error);
+            } else {
+                throw error;
+            }
+        });
+    };
+
+    // Avoid unnecessary `nextTick`ing via an unnecessary `when`.
+    var promise = fulfilled || rejected || progress ?
+        this.then(fulfilled, rejected, progress) :
+        this;
+
+    if (typeof process === "object" && process && process.domain) {
+        onUnhandledError = process.domain.bind(onUnhandledError);
+    }
+
+    promise.then(void 0, onUnhandledError);
+};
+
+/**
+ * Causes a promise to be rejected if it does not get fulfilled before
+ * some milliseconds time out.
+ * @param {Any*} promise
+ * @param {Number} milliseconds timeout
+ * @param {Any*} custom error message or Error object (optional)
+ * @returns a promise for the resolution of the given promise if it is
+ * fulfilled before the timeout, otherwise rejected.
+ */
+Q.timeout = function (object, ms, error) {
+    return Q(object).timeout(ms, error);
+};
+
+Promise.prototype.timeout = function (ms, error) {
+    var deferred = defer();
+    var timeoutId = setTimeout(function () {
+        if (!error || "string" === typeof error) {
+            error = new Error(error || "Timed out after " + ms + " ms");
+            error.code = "ETIMEDOUT";
+        }
+        deferred.reject(error);
+    }, ms);
+
+    this.then(function (value) {
+        clearTimeout(timeoutId);
+        deferred.resolve(value);
+    }, function (exception) {
+        clearTimeout(timeoutId);
+        deferred.reject(exception);
+    }, deferred.notify);
+
+    return deferred.promise;
+};
+
+/**
+ * Returns a promise for the given value (or promised value), some
+ * milliseconds after it resolved. Passes rejections immediately.
+ * @param {Any*} promise
+ * @param {Number} milliseconds
+ * @returns a promise for the resolution of the given promise after milliseconds
+ * time has elapsed since the resolution of the given promise.
+ * If the given promise rejects, that is passed immediately.
+ */
+Q.delay = function (object, timeout) {
+    if (timeout === void 0) {
+        timeout = object;
+        object = void 0;
+    }
+    return Q(object).delay(timeout);
+};
+
+Promise.prototype.delay = function (timeout) {
+    return this.then(function (value) {
+        var deferred = defer();
+        setTimeout(function () {
+            deferred.resolve(value);
+        }, timeout);
+        return deferred.promise;
+    });
+};
+
+/**
+ * Passes a continuation to a Node function, which is called with the given
+ * arguments provided as an array, and returns a promise.
+ *
+ *      Q.nfapply(FS.readFile, [__filename])
+ *      .then(function (content) {
+ *      })
+ *
+ */
+Q.nfapply = function (callback, args) {
+    return Q(callback).nfapply(args);
+};
+
+Promise.prototype.nfapply = function (args) {
+    var deferred = defer();
+    var nodeArgs = array_slice(args);
+    nodeArgs.push(deferred.makeNodeResolver());
+    this.fapply(nodeArgs).fail(deferred.reject);
+    return deferred.promise;
+};
+
+/**
+ * Passes a continuation to a Node function, which is called with the given
+ * arguments provided individually, and returns a promise.
+ * @example
+ * Q.nfcall(FS.readFile, __filename)
+ * .then(function (content) {
+ * })
+ *
+ */
+Q.nfcall = function (callback /*...args*/) {
+    var args = array_slice(arguments, 1);
+    return Q(callback).nfapply(args);
+};
+
+Promise.prototype.nfcall = function (/*...args*/) {
+    var nodeArgs = array_slice(arguments);
+    var deferred = defer();
+    nodeArgs.push(deferred.makeNodeResolver());
+    this.fapply(nodeArgs).fail(deferred.reject);
+    return deferred.promise;
+};
+
+/**
+ * Wraps a NodeJS continuation passing function and returns an equivalent
+ * version that returns a promise.
+ * @example
+ * Q.nfbind(FS.readFile, __filename)("utf-8")
+ * .then(console.log)
+ * .done()
+ */
+Q.nfbind =
+Q.denodeify = function (callback /*...args*/) {
+    if (callback === undefined) {
+        throw new Error("Q can't wrap an undefined function");
+    }
+    var baseArgs = array_slice(arguments, 1);
+    return function () {
+        var nodeArgs = baseArgs.concat(array_slice(arguments));
+        var deferred = defer();
+        nodeArgs.push(deferred.makeNodeResolver());
+        Q(callback).fapply(nodeArgs).fail(deferred.reject);
+        return deferred.promise;
+    };
+};
+
+Promise.prototype.nfbind =
+Promise.prototype.denodeify = function (/*...args*/) {
+    var args = array_slice(arguments);
+    args.unshift(this);
+    return Q.denodeify.apply(void 0, args);
+};
+
+Q.nbind = function (callback, thisp /*...args*/) {
+    var baseArgs = array_slice(arguments, 2);
+    return function () {
+        var nodeArgs = baseArgs.concat(array_slice(arguments));
+        var deferred = defer();
+        nodeArgs.push(deferred.makeNodeResolver());
+        function bound() {
+            return callback.apply(thisp, arguments);
+        }
+        Q(bound).fapply(nodeArgs).fail(deferred.reject);
+        return deferred.promise;
+    };
+};
+
+Promise.prototype.nbind = function (/*thisp, ...args*/) {
+    var args = array_slice(arguments, 0);
+    args.unshift(this);
+    return Q.nbind.apply(void 0, args);
+};
+
+/**
+ * Calls a method of a Node-style object that accepts a Node-style
+ * callback with a given array of arguments, plus a provided callback.
+ * @param object an object that has the named method
+ * @param {String} name name of the method of object
+ * @param {Array} args arguments to pass to the method; the callback
+ * will be provided by Q and appended to these arguments.
+ * @returns a promise for the value or error
+ */
+Q.nmapply = // XXX As proposed by "Redsandro"
+Q.npost = function (object, name, args) {
+    return Q(object).npost(name, args);
+};
+
+Promise.prototype.nmapply = // XXX As proposed by "Redsandro"
+Promise.prototype.npost = function (name, args) {
+    var nodeArgs = array_slice(args || []);
+    var deferred = defer();
+    nodeArgs.push(deferred.makeNodeResolver());
+    this.dispatch("post", [name, nodeArgs]).fail(deferred.reject);
+    return deferred.promise;
+};
+
+/**
+ * Calls a method of a Node-style object that accepts a Node-style
+ * callback, forwarding the given variadic arguments, plus a provided
+ * callback argument.
+ * @param object an object that has the named method
+ * @param {String} name name of the method of object
+ * @param ...args arguments to pass to the method; the callback will
+ * be provided by Q and appended to these arguments.
+ * @returns a promise for the value or error
+ */
+Q.nsend = // XXX Based on Mark Miller's proposed "send"
+Q.nmcall = // XXX Based on "Redsandro's" proposal
+Q.ninvoke = function (object, name /*...args*/) {
+    var nodeArgs = array_slice(arguments, 2);
+    var deferred = defer();
+    nodeArgs.push(deferred.makeNodeResolver());
+    Q(object).dispatch("post", [name, nodeArgs]).fail(deferred.reject);
+    return deferred.promise;
+};
+
+Promise.prototype.nsend = // XXX Based on Mark Miller's proposed "send"
+Promise.prototype.nmcall = // XXX Based on "Redsandro's" proposal
+Promise.prototype.ninvoke = function (name /*...args*/) {
+    var nodeArgs = array_slice(arguments, 1);
+    var deferred = defer();
+    nodeArgs.push(deferred.makeNodeResolver());
+    this.dispatch("post", [name, nodeArgs]).fail(deferred.reject);
+    return deferred.promise;
+};
+
+/**
+ * If a function would like to support both Node continuation-passing-style and
+ * promise-returning-style, it can end its internal promise chain with
+ * `nodeify(nodeback)`, forwarding the optional nodeback argument.  If the user
+ * elects to use a nodeback, the result will be sent there.  If they do not
+ * pass a nodeback, they will receive the result promise.
+ * @param object a result (or a promise for a result)
+ * @param {Function} nodeback a Node.js-style callback
+ * @returns either the promise or nothing
+ */
+Q.nodeify = nodeify;
+function nodeify(object, nodeback) {
+    return Q(object).nodeify(nodeback);
+}
+
+Promise.prototype.nodeify = function (nodeback) {
+    if (nodeback) {
+        this.then(function (value) {
+            Q.nextTick(function () {
+                nodeback(null, value);
+            });
+        }, function (error) {
+            Q.nextTick(function () {
+                nodeback(error);
+            });
+        });
+    } else {
+        return this;
+    }
+};
+
+Q.noConflict = function() {
+    throw new Error("Q.noConflict only works when Q is used as a global");
+};
+
+// All code before this point will be filtered from stack traces.
+var qEndingLine = captureLine();
+
+return Q;
+
+});
+
+
+/***/ }),
+/* 417 */,
+/* 418 */,
+/* 419 */,
+/* 420 */,
+/* 421 */,
+/* 422 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.openPullRequest = void 0;
+const logger_1 = __webpack_require__(148);
+const DEFAULT_PRIMARY = 'master';
+/**
+ * Create a GitHub PR on the upstream organization's repo
+ * Throws an error if the GitHub API fails
+ * @param {Octokit} octokit The authenticated octokit instance
+ * @param {RepoDomain} upstream The upstream repository
+ * @param {BranchDomain} origin The remote origin information that contains the origin branch
+ * @param {Description} description The pull request title and detailed description
+ * @param {boolean} maintainersCanModify Whether or not maintainers can modify the pull request. Default is true
+ * @param {string} upstreamPrimary The upstream repository's primary branch. Default is master.
+ * @returns {Promise<void>}
+ */
+async function openPullRequest(octokit, upstream, origin, description, maintainersCanModify = true, upstreamPrimary = DEFAULT_PRIMARY) {
+    const head = `${origin.owner}:${origin.branch}`;
+    const existingPullRequest = (await octokit.pulls.list({
+        owner: upstream.owner,
+        repo: origin.repo,
+        head,
+    })).data.find(pr => pr.head.label === head);
+    if (existingPullRequest) {
+        logger_1.logger.info(`Found existing pull request for reference ${origin.owner}:${origin.branch}. Skipping creating a new pull request.`);
+        return existingPullRequest.number;
+    }
+    const pullResponseData = (await octokit.pulls.create({
+        owner: upstream.owner,
+        repo: origin.repo,
+        title: description.title,
+        head: `${origin.owner}:${origin.branch}`,
+        base: upstreamPrimary,
+        body: description.body,
+        maintainer_can_modify: maintainersCanModify,
+    })).data;
+    logger_1.logger.info(`Successfully opened pull request available at url: ${pullResponseData.url}.`);
+    return pullResponseData.number;
+}
+exports.openPullRequest = openPullRequest;
+//# sourceMappingURL=pull-request-handler.js.map
+
+/***/ }),
+/* 423 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+
+exports.__esModule = true;
+exports.extend = extend;
+exports.indexOf = indexOf;
+exports.escapeExpression = escapeExpression;
+exports.isEmpty = isEmpty;
+exports.createFrame = createFrame;
+exports.blockParams = blockParams;
+exports.appendContextPath = appendContextPath;
+var escape = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#x27;',
+  '`': '&#x60;',
+  '=': '&#x3D;'
+};
+
+var badChars = /[&<>"'`=]/g,
+    possible = /[&<>"'`=]/;
+
+function escapeChar(chr) {
+  return escape[chr];
+}
+
+function extend(obj /* , ...source */) {
+  for (var i = 1; i < arguments.length; i++) {
+    for (var key in arguments[i]) {
+      if (Object.prototype.hasOwnProperty.call(arguments[i], key)) {
+        obj[key] = arguments[i][key];
+      }
+    }
+  }
+
+  return obj;
+}
+
+var toString = Object.prototype.toString;
+
+exports.toString = toString;
+// Sourced from lodash
+// https://github.com/bestiejs/lodash/blob/master/LICENSE.txt
+/* eslint-disable func-style */
+var isFunction = function isFunction(value) {
+  return typeof value === 'function';
+};
+// fallback for older versions of Chrome and Safari
+/* istanbul ignore next */
+if (isFunction(/x/)) {
+  exports.isFunction = isFunction = function (value) {
+    return typeof value === 'function' && toString.call(value) === '[object Function]';
+  };
+}
+exports.isFunction = isFunction;
+
+/* eslint-enable func-style */
+
+/* istanbul ignore next */
+var isArray = Array.isArray || function (value) {
+  return value && typeof value === 'object' ? toString.call(value) === '[object Array]' : false;
+};
+
+exports.isArray = isArray;
+// Older IE versions do not directly support indexOf so we must implement our own, sadly.
+
+function indexOf(array, value) {
+  for (var i = 0, len = array.length; i < len; i++) {
+    if (array[i] === value) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function escapeExpression(string) {
+  if (typeof string !== 'string') {
+    // don't escape SafeStrings, since they're already safe
+    if (string && string.toHTML) {
+      return string.toHTML();
+    } else if (string == null) {
+      return '';
+    } else if (!string) {
+      return string + '';
+    }
+
+    // Force a string conversion as this will be done by the append regardless and
+    // the regex test will do this transparently behind the scenes, causing issues if
+    // an object's to string has escaped characters in it.
+    string = '' + string;
+  }
+
+  if (!possible.test(string)) {
+    return string;
+  }
+  return string.replace(badChars, escapeChar);
+}
+
+function isEmpty(value) {
+  if (!value && value !== 0) {
+    return true;
+  } else if (isArray(value) && value.length === 0) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function createFrame(object) {
+  var frame = extend({}, object);
+  frame._parent = object;
+  return frame;
+}
+
+function blockParams(params, ids) {
+  params.path = ids;
+  return params;
+}
+
+function appendContextPath(contextPath, id) {
+  return (contextPath ? contextPath + '.' : '') + id;
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL3V0aWxzLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7Ozs7Ozs7QUFBQSxJQUFNLE1BQU0sR0FBRztBQUNiLEtBQUcsRUFBRSxPQUFPO0FBQ1osS0FBRyxFQUFFLE1BQU07QUFDWCxLQUFHLEVBQUUsTUFBTTtBQUNYLEtBQUcsRUFBRSxRQUFRO0FBQ2IsS0FBRyxFQUFFLFFBQVE7QUFDYixLQUFHLEVBQUUsUUFBUTtBQUNiLEtBQUcsRUFBRSxRQUFRO0NBQ2QsQ0FBQzs7QUFFRixJQUFNLFFBQVEsR0FBRyxZQUFZO0lBQzNCLFFBQVEsR0FBRyxXQUFXLENBQUM7O0FBRXpCLFNBQVMsVUFBVSxDQUFDLEdBQUcsRUFBRTtBQUN2QixTQUFPLE1BQU0sQ0FBQyxHQUFHLENBQUMsQ0FBQztDQUNwQjs7QUFFTSxTQUFTLE1BQU0sQ0FBQyxHQUFHLG9CQUFvQjtBQUM1QyxPQUFLLElBQUksQ0FBQyxHQUFHLENBQUMsRUFBRSxDQUFDLEdBQUcsU0FBUyxDQUFDLE1BQU0sRUFBRSxDQUFDLEVBQUUsRUFBRTtBQUN6QyxTQUFLLElBQUksR0FBRyxJQUFJLFNBQVMsQ0FBQyxDQUFDLENBQUMsRUFBRTtBQUM1QixVQUFJLE1BQU0sQ0FBQyxTQUFTLENBQUMsY0FBYyxDQUFDLElBQUksQ0FBQyxTQUFTLENBQUMsQ0FBQyxDQUFDLEVBQUUsR0FBRyxDQUFDLEVBQUU7QUFDM0QsV0FBRyxDQUFDLEdBQUcsQ0FBQyxHQUFHLFNBQVMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxHQUFHLENBQUMsQ0FBQztPQUM5QjtLQUNGO0dBQ0Y7O0FBRUQsU0FBTyxHQUFHLENBQUM7Q0FDWjs7QUFFTSxJQUFJLFFBQVEsR0FBRyxNQUFNLENBQUMsU0FBUyxDQUFDLFFBQVEsQ0FBQzs7Ozs7O0FBS2hELElBQUksVUFBVSxHQUFHLG9CQUFTLEtBQUssRUFBRTtBQUMvQixTQUFPLE9BQU8sS0FBSyxLQUFLLFVBQVUsQ0FBQztDQUNwQyxDQUFDOzs7QUFHRixJQUFJLFVBQVUsQ0FBQyxHQUFHLENBQUMsRUFBRTtBQUNuQixVQU9PLFVBQVUsR0FQakIsVUFBVSxHQUFHLFVBQVMsS0FBSyxFQUFFO0FBQzNCLFdBQ0UsT0FBTyxLQUFLLEtBQUssVUFBVSxJQUMzQixRQUFRLENBQUMsSUFBSSxDQUFDLEtBQUssQ0FBQyxLQUFLLG1CQUFtQixDQUM1QztHQUNILENBQUM7Q0FDSDtRQUNRLFVBQVUsR0FBVixVQUFVOzs7OztBQUlaLElBQU0sT0FBTyxHQUNsQixLQUFLLENBQUMsT0FBTyxJQUNiLFVBQVMsS0FBSyxFQUFFO0FBQ2QsU0FBTyxLQUFLLElBQUksT0FBTyxLQUFLLEtBQUssUUFBUSxHQUNyQyxRQUFRLENBQUMsSUFBSSxDQUFDLEtBQUssQ0FBQyxLQUFLLGdCQUFnQixHQUN6QyxLQUFLLENBQUM7Q0FDWCxDQUFDOzs7OztBQUdHLFNBQVMsT0FBTyxDQUFDLEtBQUssRUFBRSxLQUFLLEVBQUU7QUFDcEMsT0FBSyxJQUFJLENBQUMsR0FBRyxDQUFDLEVBQUUsR0FBRyxHQUFHLEtBQUssQ0FBQyxNQUFNLEVBQUUsQ0FBQyxHQUFHLEdBQUcsRUFBRSxDQUFDLEVBQUUsRUFBRTtBQUNoRCxRQUFJLEtBQUssQ0FBQyxDQUFDLENBQUMsS0FBSyxLQUFLLEVBQUU7QUFDdEIsYUFBTyxDQUFDLENBQUM7S0FDVjtHQUNGO0FBQ0QsU0FBTyxDQUFDLENBQUMsQ0FBQztDQUNYOztBQUVNLFNBQVMsZ0JBQWdCLENBQUMsTUFBTSxFQUFFO0FBQ3ZDLE1BQUksT0FBTyxNQUFNLEtBQUssUUFBUSxFQUFFOztBQUU5QixRQUFJLE1BQU0sSUFBSSxNQUFNLENBQUMsTUFBTSxFQUFFO0FBQzNCLGFBQU8sTUFBTSxDQUFDLE1BQU0sRUFBRSxDQUFDO0tBQ3hCLE1BQU0sSUFBSSxNQUFNLElBQUksSUFBSSxFQUFFO0FBQ3pCLGFBQU8sRUFBRSxDQUFDO0tBQ1gsTUFBTSxJQUFJLENBQUMsTUFBTSxFQUFFO0FBQ2xCLGFBQU8sTUFBTSxHQUFHLEVBQUUsQ0FBQztLQUNwQjs7Ozs7QUFLRCxVQUFNLEdBQUcsRUFBRSxHQUFHLE1BQU0sQ0FBQztHQUN0Qjs7QUFFRCxNQUFJLENBQUMsUUFBUSxDQUFDLElBQUksQ0FBQyxNQUFNLENBQUMsRUFBRTtBQUMxQixXQUFPLE1BQU0sQ0FBQztHQUNmO0FBQ0QsU0FBTyxNQUFNLENBQUMsT0FBTyxDQUFDLFFBQVEsRUFBRSxVQUFVLENBQUMsQ0FBQztDQUM3Qzs7QUFFTSxTQUFTLE9BQU8sQ0FBQyxLQUFLLEVBQUU7QUFDN0IsTUFBSSxDQUFDLEtBQUssSUFBSSxLQUFLLEtBQUssQ0FBQyxFQUFFO0FBQ3pCLFdBQU8sSUFBSSxDQUFDO0dBQ2IsTUFBTSxJQUFJLE9BQU8sQ0FBQyxLQUFLLENBQUMsSUFBSSxLQUFLLENBQUMsTUFBTSxLQUFLLENBQUMsRUFBRTtBQUMvQyxXQUFPLElBQUksQ0FBQztHQUNiLE1BQU07QUFDTCxXQUFPLEtBQUssQ0FBQztHQUNkO0NBQ0Y7O0FBRU0sU0FBUyxXQUFXLENBQUMsTUFBTSxFQUFFO0FBQ2xDLE1BQUksS0FBSyxHQUFHLE1BQU0sQ0FBQyxFQUFFLEVBQUUsTUFBTSxDQUFDLENBQUM7QUFDL0IsT0FBSyxDQUFDLE9BQU8sR0FBRyxNQUFNLENBQUM7QUFDdkIsU0FBTyxLQUFLLENBQUM7Q0FDZDs7QUFFTSxTQUFTLFdBQVcsQ0FBQyxNQUFNLEVBQUUsR0FBRyxFQUFFO0FBQ3ZDLFFBQU0sQ0FBQyxJQUFJLEdBQUcsR0FBRyxDQUFDO0FBQ2xCLFNBQU8sTUFBTSxDQUFDO0NBQ2Y7O0FBRU0sU0FBUyxpQkFBaUIsQ0FBQyxXQUFXLEVBQUUsRUFBRSxFQUFFO0FBQ2pELFNBQU8sQ0FBQyxXQUFXLEdBQUcsV0FBVyxHQUFHLEdBQUcsR0FBRyxFQUFFLENBQUEsR0FBSSxFQUFFLENBQUM7Q0FDcEQiLCJmaWxlIjoidXRpbHMuanMiLCJzb3VyY2VzQ29udGVudCI6WyJjb25zdCBlc2NhcGUgPSB7XG4gICcmJzogJyZhbXA7JyxcbiAgJzwnOiAnJmx0OycsXG4gICc+JzogJyZndDsnLFxuICAnXCInOiAnJnF1b3Q7JyxcbiAgXCInXCI6ICcmI3gyNzsnLFxuICAnYCc6ICcmI3g2MDsnLFxuICAnPSc6ICcmI3gzRDsnXG59O1xuXG5jb25zdCBiYWRDaGFycyA9IC9bJjw+XCInYD1dL2csXG4gIHBvc3NpYmxlID0gL1smPD5cIidgPV0vO1xuXG5mdW5jdGlvbiBlc2NhcGVDaGFyKGNocikge1xuICByZXR1cm4gZXNjYXBlW2Nocl07XG59XG5cbmV4cG9ydCBmdW5jdGlvbiBleHRlbmQob2JqIC8qICwgLi4uc291cmNlICovKSB7XG4gIGZvciAobGV0IGkgPSAxOyBpIDwgYXJndW1lbnRzLmxlbmd0aDsgaSsrKSB7XG4gICAgZm9yIChsZXQga2V5IGluIGFyZ3VtZW50c1tpXSkge1xuICAgICAgaWYgKE9iamVjdC5wcm90b3R5cGUuaGFzT3duUHJvcGVydHkuY2FsbChhcmd1bWVudHNbaV0sIGtleSkpIHtcbiAgICAgICAgb2JqW2tleV0gPSBhcmd1bWVudHNbaV1ba2V5XTtcbiAgICAgIH1cbiAgICB9XG4gIH1cblxuICByZXR1cm4gb2JqO1xufVxuXG5leHBvcnQgbGV0IHRvU3RyaW5nID0gT2JqZWN0LnByb3RvdHlwZS50b1N0cmluZztcblxuLy8gU291cmNlZCBmcm9tIGxvZGFzaFxuLy8gaHR0cHM6Ly9naXRodWIuY29tL2Jlc3RpZWpzL2xvZGFzaC9ibG9iL21hc3Rlci9MSUNFTlNFLnR4dFxuLyogZXNsaW50LWRpc2FibGUgZnVuYy1zdHlsZSAqL1xubGV0IGlzRnVuY3Rpb24gPSBmdW5jdGlvbih2YWx1ZSkge1xuICByZXR1cm4gdHlwZW9mIHZhbHVlID09PSAnZnVuY3Rpb24nO1xufTtcbi8vIGZhbGxiYWNrIGZvciBvbGRlciB2ZXJzaW9ucyBvZiBDaHJvbWUgYW5kIFNhZmFyaVxuLyogaXN0YW5idWwgaWdub3JlIG5leHQgKi9cbmlmIChpc0Z1bmN0aW9uKC94LykpIHtcbiAgaXNGdW5jdGlvbiA9IGZ1bmN0aW9uKHZhbHVlKSB7XG4gICAgcmV0dXJuIChcbiAgICAgIHR5cGVvZiB2YWx1ZSA9PT0gJ2Z1bmN0aW9uJyAmJlxuICAgICAgdG9TdHJpbmcuY2FsbCh2YWx1ZSkgPT09ICdbb2JqZWN0IEZ1bmN0aW9uXSdcbiAgICApO1xuICB9O1xufVxuZXhwb3J0IHsgaXNGdW5jdGlvbiB9O1xuLyogZXNsaW50LWVuYWJsZSBmdW5jLXN0eWxlICovXG5cbi8qIGlzdGFuYnVsIGlnbm9yZSBuZXh0ICovXG5leHBvcnQgY29uc3QgaXNBcnJheSA9XG4gIEFycmF5LmlzQXJyYXkgfHxcbiAgZnVuY3Rpb24odmFsdWUpIHtcbiAgICByZXR1cm4gdmFsdWUgJiYgdHlwZW9mIHZhbHVlID09PSAnb2JqZWN0J1xuICAgICAgPyB0b1N0cmluZy5jYWxsKHZhbHVlKSA9PT0gJ1tvYmplY3QgQXJyYXldJ1xuICAgICAgOiBmYWxzZTtcbiAgfTtcblxuLy8gT2xkZXIgSUUgdmVyc2lvbnMgZG8gbm90IGRpcmVjdGx5IHN1cHBvcnQgaW5kZXhPZiBzbyB3ZSBtdXN0IGltcGxlbWVudCBvdXIgb3duLCBzYWRseS5cbmV4cG9ydCBmdW5jdGlvbiBpbmRleE9mKGFycmF5LCB2YWx1ZSkge1xuICBmb3IgKGxldCBpID0gMCwgbGVuID0gYXJyYXkubGVuZ3RoOyBpIDwgbGVuOyBpKyspIHtcbiAgICBpZiAoYXJyYXlbaV0gPT09IHZhbHVlKSB7XG4gICAgICByZXR1cm4gaTtcbiAgICB9XG4gIH1cbiAgcmV0dXJuIC0xO1xufVxuXG5leHBvcnQgZnVuY3Rpb24gZXNjYXBlRXhwcmVzc2lvbihzdHJpbmcpIHtcbiAgaWYgKHR5cGVvZiBzdHJpbmcgIT09ICdzdHJpbmcnKSB7XG4gICAgLy8gZG9uJ3QgZXNjYXBlIFNhZmVTdHJpbmdzLCBzaW5jZSB0aGV5J3JlIGFscmVhZHkgc2FmZVxuICAgIGlmIChzdHJpbmcgJiYgc3RyaW5nLnRvSFRNTCkge1xuICAgICAgcmV0dXJuIHN0cmluZy50b0hUTUwoKTtcbiAgICB9IGVsc2UgaWYgKHN0cmluZyA9PSBudWxsKSB7XG4gICAgICByZXR1cm4gJyc7XG4gICAgfSBlbHNlIGlmICghc3RyaW5nKSB7XG4gICAgICByZXR1cm4gc3RyaW5nICsgJyc7XG4gICAgfVxuXG4gICAgLy8gRm9yY2UgYSBzdHJpbmcgY29udmVyc2lvbiBhcyB0aGlzIHdpbGwgYmUgZG9uZSBieSB0aGUgYXBwZW5kIHJlZ2FyZGxlc3MgYW5kXG4gICAgLy8gdGhlIHJlZ2V4IHRlc3Qgd2lsbCBkbyB0aGlzIHRyYW5zcGFyZW50bHkgYmVoaW5kIHRoZSBzY2VuZXMsIGNhdXNpbmcgaXNzdWVzIGlmXG4gICAgLy8gYW4gb2JqZWN0J3MgdG8gc3RyaW5nIGhhcyBlc2NhcGVkIGNoYXJhY3RlcnMgaW4gaXQuXG4gICAgc3RyaW5nID0gJycgKyBzdHJpbmc7XG4gIH1cblxuICBpZiAoIXBvc3NpYmxlLnRlc3Qoc3RyaW5nKSkge1xuICAgIHJldHVybiBzdHJpbmc7XG4gIH1cbiAgcmV0dXJuIHN0cmluZy5yZXBsYWNlKGJhZENoYXJzLCBlc2NhcGVDaGFyKTtcbn1cblxuZXhwb3J0IGZ1bmN0aW9uIGlzRW1wdHkodmFsdWUpIHtcbiAgaWYgKCF2YWx1ZSAmJiB2YWx1ZSAhPT0gMCkge1xuICAgIHJldHVybiB0cnVlO1xuICB9IGVsc2UgaWYgKGlzQXJyYXkodmFsdWUpICYmIHZhbHVlLmxlbmd0aCA9PT0gMCkge1xuICAgIHJldHVybiB0cnVlO1xuICB9IGVsc2Uge1xuICAgIHJldHVybiBmYWxzZTtcbiAgfVxufVxuXG5leHBvcnQgZnVuY3Rpb24gY3JlYXRlRnJhbWUob2JqZWN0KSB7XG4gIGxldCBmcmFtZSA9IGV4dGVuZCh7fSwgb2JqZWN0KTtcbiAgZnJhbWUuX3BhcmVudCA9IG9iamVjdDtcbiAgcmV0dXJuIGZyYW1lO1xufVxuXG5leHBvcnQgZnVuY3Rpb24gYmxvY2tQYXJhbXMocGFyYW1zLCBpZHMpIHtcbiAgcGFyYW1zLnBhdGggPSBpZHM7XG4gIHJldHVybiBwYXJhbXM7XG59XG5cbmV4cG9ydCBmdW5jdGlvbiBhcHBlbmRDb250ZXh0UGF0aChjb250ZXh0UGF0aCwgaWQpIHtcbiAgcmV0dXJuIChjb250ZXh0UGF0aCA/IGNvbnRleHRQYXRoICsgJy4nIDogJycpICsgaWQ7XG59XG4iXX0=
+
+
+/***/ }),
+/* 424 */,
+/* 425 */,
+/* 426 */,
+/* 427 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+module.exports = __webpack_require__(413);
+
+
+/***/ }),
+/* 428 */,
+/* 429 */,
+/* 430 */
+/***/ (function(module, exports) {
+
+"use strict";
+
+
+exports.__esModule = true;
+
+exports['default'] = function (instance) {
+  instance.registerHelper('lookup', function (obj, field, options) {
+    if (!obj) {
+      // Note for 5.0: Change to "obj == null" in 5.0
+      return obj;
+    }
+    return options.lookupProperty(obj, field);
+  });
+};
+
+module.exports = exports['default'];
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2hlbHBlcnMvbG9va3VwLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7cUJBQWUsVUFBUyxRQUFRLEVBQUU7QUFDaEMsVUFBUSxDQUFDLGNBQWMsQ0FBQyxRQUFRLEVBQUUsVUFBUyxHQUFHLEVBQUUsS0FBSyxFQUFFLE9BQU8sRUFBRTtBQUM5RCxRQUFJLENBQUMsR0FBRyxFQUFFOztBQUVSLGFBQU8sR0FBRyxDQUFDO0tBQ1o7QUFDRCxXQUFPLE9BQU8sQ0FBQyxjQUFjLENBQUMsR0FBRyxFQUFFLEtBQUssQ0FBQyxDQUFDO0dBQzNDLENBQUMsQ0FBQztDQUNKIiwiZmlsZSI6Imxvb2t1cC5qcyIsInNvdXJjZXNDb250ZW50IjpbImV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uKGluc3RhbmNlKSB7XG4gIGluc3RhbmNlLnJlZ2lzdGVySGVscGVyKCdsb29rdXAnLCBmdW5jdGlvbihvYmosIGZpZWxkLCBvcHRpb25zKSB7XG4gICAgaWYgKCFvYmopIHtcbiAgICAgIC8vIE5vdGUgZm9yIDUuMDogQ2hhbmdlIHRvIFwib2JqID09IG51bGxcIiBpbiA1LjBcbiAgICAgIHJldHVybiBvYmo7XG4gICAgfVxuICAgIHJldHVybiBvcHRpb25zLmxvb2t1cFByb3BlcnR5KG9iaiwgZmllbGQpO1xuICB9KTtcbn1cbiJdfQ==
+
+
+/***/ }),
+/* 431 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const os = __importStar(__webpack_require__(87));
+const utils_1 = __webpack_require__(82);
+/**
+ * Commands
+ *
+ * Command Format:
+ *   ::name key=value,key=value::message
+ *
+ * Examples:
+ *   ::warning::This is the message
+ *   ::set-env name=MY_VAR::some value
+ */
+function issueCommand(command, properties, message) {
+    const cmd = new Command(command, properties, message);
+    process.stdout.write(cmd.toString() + os.EOL);
+}
+exports.issueCommand = issueCommand;
+function issue(name, message = '') {
+    issueCommand(name, {}, message);
+}
+exports.issue = issue;
+const CMD_STRING = '::';
+class Command {
+    constructor(command, properties, message) {
+        if (!command) {
+            command = 'missing.command';
+        }
+        this.command = command;
+        this.properties = properties;
+        this.message = message;
+    }
+    toString() {
+        let cmdStr = CMD_STRING + this.command;
+        if (this.properties && Object.keys(this.properties).length > 0) {
+            cmdStr += ' ';
+            let first = true;
+            for (const key in this.properties) {
+                if (this.properties.hasOwnProperty(key)) {
+                    const val = this.properties[key];
+                    if (val) {
+                        if (first) {
+                            first = false;
+                        }
+                        else {
+                            cmdStr += ',';
+                        }
+                        cmdStr += `${key}=${escapeProperty(val)}`;
+                    }
+                }
+            }
+        }
+        cmdStr += `${CMD_STRING}${escapeData(this.message)}`;
+        return cmdStr;
+    }
+}
+function escapeData(s) {
+    return utils_1.toCommandValue(s)
+        .replace(/%/g, '%25')
+        .replace(/\r/g, '%0D')
+        .replace(/\n/g, '%0A');
+}
+function escapeProperty(s) {
+    return utils_1.toCommandValue(s)
+        .replace(/%/g, '%25')
+        .replace(/\r/g, '%0D')
+        .replace(/\n/g, '%0A')
+        .replace(/:/g, '%3A')
+        .replace(/,/g, '%2C');
+}
+//# sourceMappingURL=command.js.map
+
+/***/ }),
+/* 432 */,
+/* 433 */,
+/* 434 */,
+/* 435 */,
+/* 436 */,
+/* 437 */,
+/* 438 */,
+/* 439 */,
+/* 440 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TerraformModule = void 0;
+const release_pr_1 = __webpack_require__(93);
+const conventional_commits_1 = __webpack_require__(514);
+const checkpoint_1 = __webpack_require__(923);
+// Generic
+const changelog_1 = __webpack_require__(261);
+// Terraform specific.
+const readme_1 = __webpack_require__(458);
+class TerraformModule extends release_pr_1.ReleasePR {
+    async _run() {
+        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}-` : undefined);
+        const commits = await this.commits({
+            sha: latestTag ? latestTag.sha : undefined,
+            path: this.path,
+        });
+        const cc = new conventional_commits_1.ConventionalCommits({
+            commits,
+            githubRepoUrl: this.repoUrl,
+            bumpMinorPreMajor: this.bumpMinorPreMajor,
+            changelogSections: this.changelogSections,
+        });
+        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
+        const changelogEntry = await cc.generateChangelogEntry({
+            version: candidate.version,
+            currentTag: `v${candidate.version}`,
+            previousTag: candidate.previousTag,
+        });
+        // don't create a release candidate until user facing changes
+        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
+        // one line is a good indicator that there were no interesting commits.
+        if (this.changelogEmpty(changelogEntry)) {
+            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            return;
+        }
+        const updates = [];
+        updates.push(new changelog_1.Changelog({
+            path: this.addPath('CHANGELOG.md'),
+            changelogEntry,
+            version: candidate.version,
+            packageName: this.packageName,
+        }));
+        updates.push(new readme_1.ReadMe({
+            path: this.addPath('README.md'),
+            changelogEntry,
+            version: candidate.version,
+            packageName: this.packageName,
+        }));
+        await this.openPR({
+            sha: commits[0].sha,
+            changelogEntry: `${changelogEntry}\n---\n`,
+            updates,
+            version: candidate.version,
+            includePackageName: this.monorepoTags,
+        });
+    }
+    defaultInitialVersion() {
+        return '0.1.0';
+    }
+}
+exports.TerraformModule = TerraformModule;
+TerraformModule.releaserName = 'terraform-module';
+//# sourceMappingURL=terraform-module.js.map
+
+/***/ }),
+/* 441 */,
+/* 442 */,
+/* 443 */,
+/* 444 */,
+/* 445 */,
+/* 446 */,
+/* 447 */,
+/* 448 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+var universalUserAgent = __webpack_require__(526);
+var beforeAfterHook = __webpack_require__(500);
+var request = __webpack_require__(753);
+var graphql = __webpack_require__(743);
+var authToken = __webpack_require__(813);
+
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+function ownKeys(object, enumerableOnly) {
+  var keys = Object.keys(object);
+
+  if (Object.getOwnPropertySymbols) {
+    var symbols = Object.getOwnPropertySymbols(object);
+    if (enumerableOnly) symbols = symbols.filter(function (sym) {
+      return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+    });
+    keys.push.apply(keys, symbols);
+  }
+
+  return keys;
+}
+
+function _objectSpread2(target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i] != null ? arguments[i] : {};
+
+    if (i % 2) {
+      ownKeys(Object(source), true).forEach(function (key) {
+        _defineProperty(target, key, source[key]);
+      });
+    } else if (Object.getOwnPropertyDescriptors) {
+      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+    } else {
+      ownKeys(Object(source)).forEach(function (key) {
+        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+      });
+    }
+  }
+
+  return target;
+}
+
+const VERSION = "3.1.2";
+
+class Octokit {
+  constructor(options = {}) {
+    const hook = new beforeAfterHook.Collection();
+    const requestDefaults = {
+      baseUrl: request.request.endpoint.DEFAULTS.baseUrl,
+      headers: {},
+      request: Object.assign({}, options.request, {
+        hook: hook.bind(null, "request")
+      }),
+      mediaType: {
+        previews: [],
+        format: ""
+      }
+    }; // prepend default user agent with `options.userAgent` if set
+
+    requestDefaults.headers["user-agent"] = [options.userAgent, `octokit-core.js/${VERSION} ${universalUserAgent.getUserAgent()}`].filter(Boolean).join(" ");
+
+    if (options.baseUrl) {
+      requestDefaults.baseUrl = options.baseUrl;
+    }
+
+    if (options.previews) {
+      requestDefaults.mediaType.previews = options.previews;
+    }
+
+    if (options.timeZone) {
+      requestDefaults.headers["time-zone"] = options.timeZone;
+    }
+
+    this.request = request.request.defaults(requestDefaults);
+    this.graphql = graphql.withCustomRequest(this.request).defaults(_objectSpread2(_objectSpread2({}, requestDefaults), {}, {
+      baseUrl: requestDefaults.baseUrl.replace(/\/api\/v3$/, "/api")
+    }));
+    this.log = Object.assign({
+      debug: () => {},
+      info: () => {},
+      warn: console.warn.bind(console),
+      error: console.error.bind(console)
+    }, options.log);
+    this.hook = hook; // (1) If neither `options.authStrategy` nor `options.auth` are set, the `octokit` instance
+    //     is unauthenticated. The `this.auth()` method is a no-op and no request hook is registred.
+    // (2) If only `options.auth` is set, use the default token authentication strategy.
+    // (3) If `options.authStrategy` is set then use it and pass in `options.auth`. Always pass own request as many strategies accept a custom request instance.
+    // TODO: type `options.auth` based on `options.authStrategy`.
+
+    if (!options.authStrategy) {
+      if (!options.auth) {
+        // (1)
+        this.auth = async () => ({
+          type: "unauthenticated"
+        });
+      } else {
+        // (2)
+        const auth = authToken.createTokenAuth(options.auth); // @ts-ignore  ¯\_(ツ)_/¯
+
+        hook.wrap("request", auth.hook);
+        this.auth = auth;
+      }
+    } else {
+      const auth = options.authStrategy(Object.assign({
+        request: this.request
+      }, options.auth)); // @ts-ignore  ¯\_(ツ)_/¯
+
+      hook.wrap("request", auth.hook);
+      this.auth = auth;
+    } // apply plugins
+    // https://stackoverflow.com/a/16345172
+
+
+    const classConstructor = this.constructor;
+    classConstructor.plugins.forEach(plugin => {
+      Object.assign(this, plugin(this, options));
+    });
+  }
+
+  static defaults(defaults) {
+    const OctokitWithDefaults = class extends this {
+      constructor(...args) {
+        const options = args[0] || {};
+
+        if (typeof defaults === "function") {
+          super(defaults(options));
+          return;
+        }
+
+        super(Object.assign({}, defaults, options, options.userAgent && defaults.userAgent ? {
+          userAgent: `${options.userAgent} ${defaults.userAgent}`
+        } : null));
+      }
+
+    };
+    return OctokitWithDefaults;
+  }
+  /**
+   * Attach a plugin (or many) to your Octokit instance.
+   *
+   * @example
+   * const API = Octokit.plugin(plugin1, plugin2, plugin3, ...)
+   */
+
+
+  static plugin(...newPlugins) {
+    var _a;
+
+    const currentPlugins = this.plugins;
+    const NewOctokit = (_a = class extends this {}, _a.plugins = currentPlugins.concat(newPlugins.filter(plugin => !currentPlugins.includes(plugin))), _a);
+    return NewOctokit;
+  }
+
+}
+Octokit.VERSION = VERSION;
+Octokit.plugins = [];
+
+exports.Octokit = Octokit;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+/* 449 */,
+/* 450 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const fs = __webpack_require__(747)
+const EventEmitter = __webpack_require__(759)
+const flatstr = __webpack_require__(649)
+const inherits = __webpack_require__(669).inherits
+
+const BUSY_WRITE_TIMEOUT = 100
+
+const sleep = __webpack_require__(517)
+
+// 16 MB - magic number
+// This constant ensures that SonicBoom only needs
+// 32 MB of free memory to run. In case of having 1GB+
+// of data to write, this prevents an out of memory
+// condition.
+const MAX_WRITE = 16 * 1024 * 1024
+
+function openFile (file, sonic) {
+  sonic._opening = true
+  sonic._writing = true
+  sonic._asyncDrainScheduled = false
+  sonic.file = file
+
+  // NOTE: 'error' and 'ready' events emitted below only relevant when sonic.sync===false
+  // for sync mode, there is no way to add a listener that will receive these
+
+  function fileOpened (err, fd) {
+    if (err) {
+      sonic.emit('error', err)
+      return
+    }
+
+    sonic.fd = fd
+    sonic._reopening = false
+    sonic._opening = false
+    sonic._writing = false
+
+    sonic.emit('ready')
+
+    if (sonic._reopening) {
+      return
+    }
+
+    // start
+    var len = sonic._buf.length
+    if (len > 0 && len > sonic.minLength && !sonic.destroyed) {
+      actualWrite(sonic)
+    }
+  }
+
+  if (sonic.sync) {
+    const fd = fs.openSync(file, 'a')
+    fileOpened(null, fd)
+    process.nextTick(() => sonic.emit('ready'))
+  } else {
+    fs.open(file, 'a', fileOpened)
+  }
+}
+
+function SonicBoom (opts) {
+  if (!(this instanceof SonicBoom)) {
+    return new SonicBoom(opts)
+  }
+
+  var { fd, dest, minLength, sync } = opts || {}
+
+  fd = fd || dest
+
+  this._buf = ''
+  this.fd = -1
+  this._writing = false
+  this._writingBuf = ''
+  this._ending = false
+  this._reopening = false
+  this._asyncDrainScheduled = false
+  this.file = null
+  this.destroyed = false
+  this.sync = sync || false
+
+  this.minLength = minLength || 0
+
+  if (typeof fd === 'number') {
+    this.fd = fd
+    process.nextTick(() => this.emit('ready'))
+  } else if (typeof fd === 'string') {
+    openFile(fd, this)
+  } else {
+    throw new Error('SonicBoom supports only file descriptors and files')
+  }
+
+  this.release = (err, n) => {
+    if (err) {
+      if (err.code === 'EAGAIN') {
+        if (this.sync) {
+          // This error code should not happen in sync mode, because it is
+          // not using the underlining operating system asynchronous functions.
+          // However it happens, and so we handle it.
+          // Ref: https://github.com/pinojs/pino/issues/783
+          try {
+            sleep(BUSY_WRITE_TIMEOUT)
+            this.release(undefined, 0)
+          } catch (err) {
+            this.release(err)
+          }
+        } else {
+          // Let's give the destination some time to process the chunk.
+          setTimeout(() => {
+            fs.write(this.fd, this._writingBuf, 'utf8', this.release)
+          }, BUSY_WRITE_TIMEOUT)
+        }
+      } else {
+        this.emit('error', err)
+      }
+      return
+    }
+
+    if (this._writingBuf.length !== n) {
+      this._writingBuf = this._writingBuf.slice(n)
+      if (this.sync) {
+        try {
+          do {
+            n = fs.writeSync(this.fd, this._writingBuf, 'utf8')
+            this._writingBuf = this._writingBuf.slice(n)
+          } while (this._writingBuf.length !== 0)
+        } catch (err) {
+          this.release(err)
+          return
+        }
+      } else {
+        fs.write(this.fd, this._writingBuf, 'utf8', this.release)
+        return
+      }
+    }
+
+    this._writingBuf = ''
+
+    if (this.destroyed) {
+      return
+    }
+
+    var len = this._buf.length
+    if (this._reopening) {
+      this._writing = false
+      this._reopening = false
+      this.reopen()
+    } else if (len > 0 && len > this.minLength) {
+      actualWrite(this)
+    } else if (this._ending) {
+      if (len > 0) {
+        actualWrite(this)
+      } else {
+        this._writing = false
+        actualClose(this)
+      }
+    } else {
+      this._writing = false
+      if (this.sync) {
+        if (!this._asyncDrainScheduled) {
+          this._asyncDrainScheduled = true
+          process.nextTick(emitDrain, this)
+        }
+      } else {
+        this.emit('drain')
+      }
+    }
+  }
+
+  this.on('newListener', function (name) {
+    if (name === 'drain') {
+      this._asyncDrainScheduled = false
+    }
+  })
+}
+
+function emitDrain (sonic) {
+  const hasListeners = sonic.listenerCount('drain') > 0
+  if (!hasListeners) return
+  sonic._asyncDrainScheduled = false
+  sonic.emit('drain')
+}
+
+inherits(SonicBoom, EventEmitter)
+
+SonicBoom.prototype.write = function (data) {
+  if (this.destroyed) {
+    throw new Error('SonicBoom destroyed')
+  }
+
+  this._buf += data
+  var len = this._buf.length
+  if (!this._writing && len > this.minLength) {
+    actualWrite(this)
+  }
+  return len < 16384
+}
+
+SonicBoom.prototype.flush = function () {
+  if (this.destroyed) {
+    throw new Error('SonicBoom destroyed')
+  }
+
+  if (this._writing || this.minLength <= 0) {
+    return
+  }
+
+  actualWrite(this)
+}
+
+SonicBoom.prototype.reopen = function (file) {
+  if (this.destroyed) {
+    throw new Error('SonicBoom destroyed')
+  }
+
+  if (this._opening) {
+    this.once('ready', () => {
+      this.reopen(file)
+    })
+    return
+  }
+
+  if (this._ending) {
+    return
+  }
+
+  if (!this.file) {
+    throw new Error('Unable to reopen a file descriptor, you must pass a file to SonicBoom')
+  }
+
+  this._reopening = true
+
+  if (this._writing) {
+    return
+  }
+
+  fs.close(this.fd, (err) => {
+    if (err) {
+      return this.emit('error', err)
+    }
+  })
+
+  openFile(file || this.file, this)
+}
+
+SonicBoom.prototype.end = function () {
+  if (this.destroyed) {
+    throw new Error('SonicBoom destroyed')
+  }
+
+  if (this._opening) {
+    this.once('ready', () => {
+      this.end()
+    })
+    return
+  }
+
+  if (this._ending) {
+    return
+  }
+
+  this._ending = true
+
+  if (!this._writing && this._buf.length > 0 && this.fd >= 0) {
+    actualWrite(this)
+    return
+  }
+
+  if (this._writing) {
+    return
+  }
+
+  actualClose(this)
+}
+
+SonicBoom.prototype.flushSync = function () {
+  if (this.destroyed) {
+    throw new Error('SonicBoom destroyed')
+  }
+
+  if (this.fd < 0) {
+    throw new Error('sonic boom is not ready yet')
+  }
+
+  if (this._buf.length > 0) {
+    fs.writeSync(this.fd, this._buf, 'utf8')
+    this._buf = ''
+  }
+}
+
+SonicBoom.prototype.destroy = function () {
+  if (this.destroyed) {
+    return
+  }
+  actualClose(this)
+}
+
+function actualWrite (sonic) {
+  sonic._writing = true
+  var buf = sonic._buf
+  var release = sonic.release
+  if (buf.length > MAX_WRITE) {
+    buf = buf.slice(0, MAX_WRITE)
+    sonic._buf = sonic._buf.slice(MAX_WRITE)
+  } else {
+    sonic._buf = ''
+  }
+  flatstr(buf)
+  sonic._writingBuf = buf
+  if (sonic.sync) {
+    try {
+      var written = fs.writeSync(sonic.fd, buf, 'utf8')
+      release(null, written)
+    } catch (err) {
+      release(err)
+    }
+  } else {
+    fs.write(sonic.fd, buf, 'utf8', release)
+  }
+}
+
+function actualClose (sonic) {
+  if (sonic.fd === -1) {
+    sonic.once('ready', actualClose.bind(null, sonic))
+    return
+  }
+  // TODO write a test to check if we are not leaking fds
+  fs.close(sonic.fd, (err) => {
+    if (err) {
+      sonic.emit('error', err)
+      return
+    }
+
+    if (sonic._ending && !sonic._writing) {
+      sonic.emit('finish')
+    }
+    sonic.emit('close')
+  })
+  sonic.destroyed = true
+  sonic._buf = ''
+}
+
+module.exports = SonicBoom
+
+
+/***/ }),
+/* 451 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+/* -*- Mode: js; js-indent-level: 2; -*- */
+/*
+ * Copyright 2014 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ */
+
+var util = __webpack_require__(338);
+
+/**
+ * Determine whether mappingB is after mappingA with respect to generated
+ * position.
+ */
+function generatedPositionAfter(mappingA, mappingB) {
+  // Optimized for most common case
+  var lineA = mappingA.generatedLine;
+  var lineB = mappingB.generatedLine;
+  var columnA = mappingA.generatedColumn;
+  var columnB = mappingB.generatedColumn;
+  return lineB > lineA || lineB == lineA && columnB >= columnA ||
+         util.compareByGeneratedPositionsInflated(mappingA, mappingB) <= 0;
+}
+
+/**
+ * A data structure to provide a sorted view of accumulated mappings in a
+ * performance conscious manner. It trades a neglibable overhead in general
+ * case for a large speedup in case of mappings being added in order.
+ */
+function MappingList() {
+  this._array = [];
+  this._sorted = true;
+  // Serves as infimum
+  this._last = {generatedLine: -1, generatedColumn: 0};
+}
+
+/**
+ * Iterate through internal items. This method takes the same arguments that
+ * `Array.prototype.forEach` takes.
+ *
+ * NOTE: The order of the mappings is NOT guaranteed.
+ */
+MappingList.prototype.unsortedForEach =
+  function MappingList_forEach(aCallback, aThisArg) {
+    this._array.forEach(aCallback, aThisArg);
+  };
+
+/**
+ * Add the given source mapping.
+ *
+ * @param Object aMapping
+ */
+MappingList.prototype.add = function MappingList_add(aMapping) {
+  if (generatedPositionAfter(this._last, aMapping)) {
+    this._last = aMapping;
+    this._array.push(aMapping);
+  } else {
+    this._sorted = false;
+    this._array.push(aMapping);
+  }
+};
+
+/**
+ * Returns the flat, sorted array of mappings. The mappings are sorted by
+ * generated position.
+ *
+ * WARNING: This method returns internal data without copying, for
+ * performance. The return value must NOT be mutated, and should be treated as
+ * an immutable borrow. If you want to take ownership, you must make your own
+ * copy.
+ */
+MappingList.prototype.toArray = function MappingList_toArray() {
+  if (!this._sorted) {
+    this._array.sort(util.compareByGeneratedPositionsInflated);
+    this._sorted = true;
+  }
+  return this._array;
+};
+
+exports.MappingList = MappingList;
+
+
+/***/ }),
+/* 452 */,
+/* 453 */,
+/* 454 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var Stream = _interopDefault(__webpack_require__(413));
+var http = _interopDefault(__webpack_require__(605));
+var Url = _interopDefault(__webpack_require__(835));
+var https = _interopDefault(__webpack_require__(211));
+var zlib = _interopDefault(__webpack_require__(761));
+
+// Based on https://github.com/tmpvar/jsdom/blob/aa85b2abf07766ff7bf5c1f6daafb3726f2f2db5/lib/jsdom/living/blob.js
+
+// fix for "Readable" isn't a named export issue
+const Readable = Stream.Readable;
+
+const BUFFER = Symbol('buffer');
+const TYPE = Symbol('type');
+
+class Blob {
+	constructor() {
+		this[TYPE] = '';
+
+		const blobParts = arguments[0];
+		const options = arguments[1];
+
+		const buffers = [];
+		let size = 0;
+
+		if (blobParts) {
+			const a = blobParts;
+			const length = Number(a.length);
+			for (let i = 0; i < length; i++) {
+				const element = a[i];
+				let buffer;
+				if (element instanceof Buffer) {
+					buffer = element;
+				} else if (ArrayBuffer.isView(element)) {
+					buffer = Buffer.from(element.buffer, element.byteOffset, element.byteLength);
+				} else if (element instanceof ArrayBuffer) {
+					buffer = Buffer.from(element);
+				} else if (element instanceof Blob) {
+					buffer = element[BUFFER];
+				} else {
+					buffer = Buffer.from(typeof element === 'string' ? element : String(element));
+				}
+				size += buffer.length;
+				buffers.push(buffer);
+			}
+		}
+
+		this[BUFFER] = Buffer.concat(buffers);
+
+		let type = options && options.type !== undefined && String(options.type).toLowerCase();
+		if (type && !/[^\u0020-\u007E]/.test(type)) {
+			this[TYPE] = type;
+		}
+	}
+	get size() {
+		return this[BUFFER].length;
+	}
+	get type() {
+		return this[TYPE];
+	}
+	text() {
+		return Promise.resolve(this[BUFFER].toString());
+	}
+	arrayBuffer() {
+		const buf = this[BUFFER];
+		const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+		return Promise.resolve(ab);
+	}
+	stream() {
+		const readable = new Readable();
+		readable._read = function () {};
+		readable.push(this[BUFFER]);
+		readable.push(null);
+		return readable;
+	}
+	toString() {
+		return '[object Blob]';
+	}
+	slice() {
+		const size = this.size;
+
+		const start = arguments[0];
+		const end = arguments[1];
+		let relativeStart, relativeEnd;
+		if (start === undefined) {
+			relativeStart = 0;
+		} else if (start < 0) {
+			relativeStart = Math.max(size + start, 0);
+		} else {
+			relativeStart = Math.min(start, size);
+		}
+		if (end === undefined) {
+			relativeEnd = size;
+		} else if (end < 0) {
+			relativeEnd = Math.max(size + end, 0);
+		} else {
+			relativeEnd = Math.min(end, size);
+		}
+		const span = Math.max(relativeEnd - relativeStart, 0);
+
+		const buffer = this[BUFFER];
+		const slicedBuffer = buffer.slice(relativeStart, relativeStart + span);
+		const blob = new Blob([], { type: arguments[2] });
+		blob[BUFFER] = slicedBuffer;
+		return blob;
+	}
+}
+
+Object.defineProperties(Blob.prototype, {
+	size: { enumerable: true },
+	type: { enumerable: true },
+	slice: { enumerable: true }
+});
+
+Object.defineProperty(Blob.prototype, Symbol.toStringTag, {
+	value: 'Blob',
+	writable: false,
+	enumerable: false,
+	configurable: true
+});
+
+/**
+ * fetch-error.js
+ *
+ * FetchError interface for operational errors
+ */
+
+/**
+ * Create FetchError instance
+ *
+ * @param   String      message      Error message for human
+ * @param   String      type         Error type for machine
+ * @param   String      systemError  For Node.js system error
+ * @return  FetchError
+ */
+function FetchError(message, type, systemError) {
+  Error.call(this, message);
+
+  this.message = message;
+  this.type = type;
+
+  // when err.type is `system`, err.code contains system error code
+  if (systemError) {
+    this.code = this.errno = systemError.code;
+  }
+
+  // hide custom error implementation details from end-users
+  Error.captureStackTrace(this, this.constructor);
+}
+
+FetchError.prototype = Object.create(Error.prototype);
+FetchError.prototype.constructor = FetchError;
+FetchError.prototype.name = 'FetchError';
+
+let convert;
+try {
+	convert = __webpack_require__(18).convert;
+} catch (e) {}
+
+const INTERNALS = Symbol('Body internals');
+
+// fix an issue where "PassThrough" isn't a named export for node <10
+const PassThrough = Stream.PassThrough;
+
+/**
+ * Body mixin
+ *
+ * Ref: https://fetch.spec.whatwg.org/#body
+ *
+ * @param   Stream  body  Readable stream
+ * @param   Object  opts  Response options
+ * @return  Void
+ */
+function Body(body) {
+	var _this = this;
+
+	var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
+	    _ref$size = _ref.size;
+
+	let size = _ref$size === undefined ? 0 : _ref$size;
+	var _ref$timeout = _ref.timeout;
+	let timeout = _ref$timeout === undefined ? 0 : _ref$timeout;
+
+	if (body == null) {
+		// body is undefined or null
+		body = null;
+	} else if (isURLSearchParams(body)) {
+		// body is a URLSearchParams
+		body = Buffer.from(body.toString());
+	} else if (isBlob(body)) ; else if (Buffer.isBuffer(body)) ; else if (Object.prototype.toString.call(body) === '[object ArrayBuffer]') {
+		// body is ArrayBuffer
+		body = Buffer.from(body);
+	} else if (ArrayBuffer.isView(body)) {
+		// body is ArrayBufferView
+		body = Buffer.from(body.buffer, body.byteOffset, body.byteLength);
+	} else if (body instanceof Stream) ; else {
+		// none of the above
+		// coerce to string then buffer
+		body = Buffer.from(String(body));
+	}
+	this[INTERNALS] = {
+		body,
+		disturbed: false,
+		error: null
+	};
+	this.size = size;
+	this.timeout = timeout;
+
+	if (body instanceof Stream) {
+		body.on('error', function (err) {
+			const error = err.name === 'AbortError' ? err : new FetchError(`Invalid response body while trying to fetch ${_this.url}: ${err.message}`, 'system', err);
+			_this[INTERNALS].error = error;
+		});
+	}
+}
+
+Body.prototype = {
+	get body() {
+		return this[INTERNALS].body;
+	},
+
+	get bodyUsed() {
+		return this[INTERNALS].disturbed;
+	},
+
+	/**
+  * Decode response as ArrayBuffer
+  *
+  * @return  Promise
+  */
+	arrayBuffer() {
+		return consumeBody.call(this).then(function (buf) {
+			return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+		});
+	},
+
+	/**
+  * Return raw response as Blob
+  *
+  * @return Promise
+  */
+	blob() {
+		let ct = this.headers && this.headers.get('content-type') || '';
+		return consumeBody.call(this).then(function (buf) {
+			return Object.assign(
+			// Prevent copying
+			new Blob([], {
+				type: ct.toLowerCase()
+			}), {
+				[BUFFER]: buf
+			});
+		});
+	},
+
+	/**
+  * Decode response as json
+  *
+  * @return  Promise
+  */
+	json() {
+		var _this2 = this;
+
+		return consumeBody.call(this).then(function (buffer) {
+			try {
+				return JSON.parse(buffer.toString());
+			} catch (err) {
+				return Body.Promise.reject(new FetchError(`invalid json response body at ${_this2.url} reason: ${err.message}`, 'invalid-json'));
+			}
+		});
+	},
+
+	/**
+  * Decode response as text
+  *
+  * @return  Promise
+  */
+	text() {
+		return consumeBody.call(this).then(function (buffer) {
+			return buffer.toString();
+		});
+	},
+
+	/**
+  * Decode response as buffer (non-spec api)
+  *
+  * @return  Promise
+  */
+	buffer() {
+		return consumeBody.call(this);
+	},
+
+	/**
+  * Decode response as text, while automatically detecting the encoding and
+  * trying to decode to UTF-8 (non-spec api)
+  *
+  * @return  Promise
+  */
+	textConverted() {
+		var _this3 = this;
+
+		return consumeBody.call(this).then(function (buffer) {
+			return convertBody(buffer, _this3.headers);
+		});
+	}
+};
+
+// In browsers, all properties are enumerable.
+Object.defineProperties(Body.prototype, {
+	body: { enumerable: true },
+	bodyUsed: { enumerable: true },
+	arrayBuffer: { enumerable: true },
+	blob: { enumerable: true },
+	json: { enumerable: true },
+	text: { enumerable: true }
+});
+
+Body.mixIn = function (proto) {
+	for (const name of Object.getOwnPropertyNames(Body.prototype)) {
+		// istanbul ignore else: future proof
+		if (!(name in proto)) {
+			const desc = Object.getOwnPropertyDescriptor(Body.prototype, name);
+			Object.defineProperty(proto, name, desc);
+		}
+	}
+};
+
+/**
+ * Consume and convert an entire Body to a Buffer.
+ *
+ * Ref: https://fetch.spec.whatwg.org/#concept-body-consume-body
+ *
+ * @return  Promise
+ */
+function consumeBody() {
+	var _this4 = this;
+
+	if (this[INTERNALS].disturbed) {
+		return Body.Promise.reject(new TypeError(`body used already for: ${this.url}`));
+	}
+
+	this[INTERNALS].disturbed = true;
+
+	if (this[INTERNALS].error) {
+		return Body.Promise.reject(this[INTERNALS].error);
+	}
+
+	let body = this.body;
+
+	// body is null
+	if (body === null) {
+		return Body.Promise.resolve(Buffer.alloc(0));
+	}
+
+	// body is blob
+	if (isBlob(body)) {
+		body = body.stream();
+	}
+
+	// body is buffer
+	if (Buffer.isBuffer(body)) {
+		return Body.Promise.resolve(body);
+	}
+
+	// istanbul ignore if: should never happen
+	if (!(body instanceof Stream)) {
+		return Body.Promise.resolve(Buffer.alloc(0));
+	}
+
+	// body is stream
+	// get ready to actually consume the body
+	let accum = [];
+	let accumBytes = 0;
+	let abort = false;
+
+	return new Body.Promise(function (resolve, reject) {
+		let resTimeout;
+
+		// allow timeout on slow response body
+		if (_this4.timeout) {
+			resTimeout = setTimeout(function () {
+				abort = true;
+				reject(new FetchError(`Response timeout while trying to fetch ${_this4.url} (over ${_this4.timeout}ms)`, 'body-timeout'));
+			}, _this4.timeout);
+		}
+
+		// handle stream errors
+		body.on('error', function (err) {
+			if (err.name === 'AbortError') {
+				// if the request was aborted, reject with this Error
+				abort = true;
+				reject(err);
+			} else {
+				// other errors, such as incorrect content-encoding
+				reject(new FetchError(`Invalid response body while trying to fetch ${_this4.url}: ${err.message}`, 'system', err));
+			}
+		});
+
+		body.on('data', function (chunk) {
+			if (abort || chunk === null) {
+				return;
+			}
+
+			if (_this4.size && accumBytes + chunk.length > _this4.size) {
+				abort = true;
+				reject(new FetchError(`content size at ${_this4.url} over limit: ${_this4.size}`, 'max-size'));
+				return;
+			}
+
+			accumBytes += chunk.length;
+			accum.push(chunk);
+		});
+
+		body.on('end', function () {
+			if (abort) {
+				return;
+			}
+
+			clearTimeout(resTimeout);
+
+			try {
+				resolve(Buffer.concat(accum, accumBytes));
+			} catch (err) {
+				// handle streams that have accumulated too much data (issue #414)
+				reject(new FetchError(`Could not create Buffer from response body for ${_this4.url}: ${err.message}`, 'system', err));
+			}
+		});
+	});
+}
+
+/**
+ * Detect buffer encoding and convert to target encoding
+ * ref: http://www.w3.org/TR/2011/WD-html5-20110113/parsing.html#determining-the-character-encoding
+ *
+ * @param   Buffer  buffer    Incoming buffer
+ * @param   String  encoding  Target encoding
+ * @return  String
+ */
+function convertBody(buffer, headers) {
+	if (typeof convert !== 'function') {
+		throw new Error('The package `encoding` must be installed to use the textConverted() function');
+	}
+
+	const ct = headers.get('content-type');
+	let charset = 'utf-8';
+	let res, str;
+
+	// header
+	if (ct) {
+		res = /charset=([^;]*)/i.exec(ct);
+	}
+
+	// no charset in content type, peek at response body for at most 1024 bytes
+	str = buffer.slice(0, 1024).toString();
+
+	// html5
+	if (!res && str) {
+		res = /<meta.+?charset=(['"])(.+?)\1/i.exec(str);
+	}
+
+	// html4
+	if (!res && str) {
+		res = /<meta[\s]+?http-equiv=(['"])content-type\1[\s]+?content=(['"])(.+?)\2/i.exec(str);
+		if (!res) {
+			res = /<meta[\s]+?content=(['"])(.+?)\1[\s]+?http-equiv=(['"])content-type\3/i.exec(str);
+			if (res) {
+				res.pop(); // drop last quote
+			}
+		}
+
+		if (res) {
+			res = /charset=(.*)/i.exec(res.pop());
+		}
+	}
+
+	// xml
+	if (!res && str) {
+		res = /<\?xml.+?encoding=(['"])(.+?)\1/i.exec(str);
+	}
+
+	// found charset
+	if (res) {
+		charset = res.pop();
+
+		// prevent decode issues when sites use incorrect encoding
+		// ref: https://hsivonen.fi/encoding-menu/
+		if (charset === 'gb2312' || charset === 'gbk') {
+			charset = 'gb18030';
+		}
+	}
+
+	// turn raw buffers into a single utf-8 buffer
+	return convert(buffer, 'UTF-8', charset).toString();
+}
+
+/**
+ * Detect a URLSearchParams object
+ * ref: https://github.com/bitinn/node-fetch/issues/296#issuecomment-307598143
+ *
+ * @param   Object  obj     Object to detect by type or brand
+ * @return  String
+ */
+function isURLSearchParams(obj) {
+	// Duck-typing as a necessary condition.
+	if (typeof obj !== 'object' || typeof obj.append !== 'function' || typeof obj.delete !== 'function' || typeof obj.get !== 'function' || typeof obj.getAll !== 'function' || typeof obj.has !== 'function' || typeof obj.set !== 'function') {
+		return false;
+	}
+
+	// Brand-checking and more duck-typing as optional condition.
+	return obj.constructor.name === 'URLSearchParams' || Object.prototype.toString.call(obj) === '[object URLSearchParams]' || typeof obj.sort === 'function';
+}
+
+/**
+ * Check if `obj` is a W3C `Blob` object (which `File` inherits from)
+ * @param  {*} obj
+ * @return {boolean}
+ */
+function isBlob(obj) {
+	return typeof obj === 'object' && typeof obj.arrayBuffer === 'function' && typeof obj.type === 'string' && typeof obj.stream === 'function' && typeof obj.constructor === 'function' && typeof obj.constructor.name === 'string' && /^(Blob|File)$/.test(obj.constructor.name) && /^(Blob|File)$/.test(obj[Symbol.toStringTag]);
+}
+
+/**
+ * Clone body given Res/Req instance
+ *
+ * @param   Mixed  instance  Response or Request instance
+ * @return  Mixed
+ */
+function clone(instance) {
+	let p1, p2;
+	let body = instance.body;
+
+	// don't allow cloning a used body
+	if (instance.bodyUsed) {
+		throw new Error('cannot clone body after it is used');
+	}
+
+	// check that body is a stream and not form-data object
+	// note: we can't clone the form-data object without having it as a dependency
+	if (body instanceof Stream && typeof body.getBoundary !== 'function') {
+		// tee instance body
+		p1 = new PassThrough();
+		p2 = new PassThrough();
+		body.pipe(p1);
+		body.pipe(p2);
+		// set instance body to teed body and return the other teed body
+		instance[INTERNALS].body = p1;
+		body = p2;
+	}
+
+	return body;
+}
+
+/**
+ * Performs the operation "extract a `Content-Type` value from |object|" as
+ * specified in the specification:
+ * https://fetch.spec.whatwg.org/#concept-bodyinit-extract
+ *
+ * This function assumes that instance.body is present.
+ *
+ * @param   Mixed  instance  Any options.body input
+ */
+function extractContentType(body) {
+	if (body === null) {
+		// body is null
+		return null;
+	} else if (typeof body === 'string') {
+		// body is string
+		return 'text/plain;charset=UTF-8';
+	} else if (isURLSearchParams(body)) {
+		// body is a URLSearchParams
+		return 'application/x-www-form-urlencoded;charset=UTF-8';
+	} else if (isBlob(body)) {
+		// body is blob
+		return body.type || null;
+	} else if (Buffer.isBuffer(body)) {
+		// body is buffer
+		return null;
+	} else if (Object.prototype.toString.call(body) === '[object ArrayBuffer]') {
+		// body is ArrayBuffer
+		return null;
+	} else if (ArrayBuffer.isView(body)) {
+		// body is ArrayBufferView
+		return null;
+	} else if (typeof body.getBoundary === 'function') {
+		// detect form data input from form-data module
+		return `multipart/form-data;boundary=${body.getBoundary()}`;
+	} else if (body instanceof Stream) {
+		// body is stream
+		// can't really do much about this
+		return null;
+	} else {
+		// Body constructor defaults other things to string
+		return 'text/plain;charset=UTF-8';
+	}
+}
+
+/**
+ * The Fetch Standard treats this as if "total bytes" is a property on the body.
+ * For us, we have to explicitly get it with a function.
+ *
+ * ref: https://fetch.spec.whatwg.org/#concept-body-total-bytes
+ *
+ * @param   Body    instance   Instance of Body
+ * @return  Number?            Number of bytes, or null if not possible
+ */
+function getTotalBytes(instance) {
+	const body = instance.body;
+
+
+	if (body === null) {
+		// body is null
+		return 0;
+	} else if (isBlob(body)) {
+		return body.size;
+	} else if (Buffer.isBuffer(body)) {
+		// body is buffer
+		return body.length;
+	} else if (body && typeof body.getLengthSync === 'function') {
+		// detect form data input from form-data module
+		if (body._lengthRetrievers && body._lengthRetrievers.length == 0 || // 1.x
+		body.hasKnownLength && body.hasKnownLength()) {
+			// 2.x
+			return body.getLengthSync();
+		}
+		return null;
+	} else {
+		// body is stream
+		return null;
+	}
+}
+
+/**
+ * Write a Body to a Node.js WritableStream (e.g. http.Request) object.
+ *
+ * @param   Body    instance   Instance of Body
+ * @return  Void
+ */
+function writeToStream(dest, instance) {
+	const body = instance.body;
+
+
+	if (body === null) {
+		// body is null
+		dest.end();
+	} else if (isBlob(body)) {
+		body.stream().pipe(dest);
+	} else if (Buffer.isBuffer(body)) {
+		// body is buffer
+		dest.write(body);
+		dest.end();
+	} else {
+		// body is stream
+		body.pipe(dest);
+	}
+}
+
+// expose Promise
+Body.Promise = global.Promise;
+
+/**
+ * headers.js
+ *
+ * Headers class offers convenient helpers
+ */
+
+const invalidTokenRegex = /[^\^_`a-zA-Z\-0-9!#$%&'*+.|~]/;
+const invalidHeaderCharRegex = /[^\t\x20-\x7e\x80-\xff]/;
+
+function validateName(name) {
+	name = `${name}`;
+	if (invalidTokenRegex.test(name) || name === '') {
+		throw new TypeError(`${name} is not a legal HTTP header name`);
+	}
+}
+
+function validateValue(value) {
+	value = `${value}`;
+	if (invalidHeaderCharRegex.test(value)) {
+		throw new TypeError(`${value} is not a legal HTTP header value`);
+	}
+}
+
+/**
+ * Find the key in the map object given a header name.
+ *
+ * Returns undefined if not found.
+ *
+ * @param   String  name  Header name
+ * @return  String|Undefined
+ */
+function find(map, name) {
+	name = name.toLowerCase();
+	for (const key in map) {
+		if (key.toLowerCase() === name) {
+			return key;
+		}
+	}
+	return undefined;
+}
+
+const MAP = Symbol('map');
+class Headers {
+	/**
+  * Headers class
+  *
+  * @param   Object  headers  Response headers
+  * @return  Void
+  */
+	constructor() {
+		let init = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : undefined;
+
+		this[MAP] = Object.create(null);
+
+		if (init instanceof Headers) {
+			const rawHeaders = init.raw();
+			const headerNames = Object.keys(rawHeaders);
+
+			for (const headerName of headerNames) {
+				for (const value of rawHeaders[headerName]) {
+					this.append(headerName, value);
+				}
+			}
+
+			return;
+		}
+
+		// We don't worry about converting prop to ByteString here as append()
+		// will handle it.
+		if (init == null) ; else if (typeof init === 'object') {
+			const method = init[Symbol.iterator];
+			if (method != null) {
+				if (typeof method !== 'function') {
+					throw new TypeError('Header pairs must be iterable');
+				}
+
+				// sequence<sequence<ByteString>>
+				// Note: per spec we have to first exhaust the lists then process them
+				const pairs = [];
+				for (const pair of init) {
+					if (typeof pair !== 'object' || typeof pair[Symbol.iterator] !== 'function') {
+						throw new TypeError('Each header pair must be iterable');
+					}
+					pairs.push(Array.from(pair));
+				}
+
+				for (const pair of pairs) {
+					if (pair.length !== 2) {
+						throw new TypeError('Each header pair must be a name/value tuple');
+					}
+					this.append(pair[0], pair[1]);
+				}
+			} else {
+				// record<ByteString, ByteString>
+				for (const key of Object.keys(init)) {
+					const value = init[key];
+					this.append(key, value);
+				}
+			}
+		} else {
+			throw new TypeError('Provided initializer must be an object');
+		}
+	}
+
+	/**
+  * Return combined header value given name
+  *
+  * @param   String  name  Header name
+  * @return  Mixed
+  */
+	get(name) {
+		name = `${name}`;
+		validateName(name);
+		const key = find(this[MAP], name);
+		if (key === undefined) {
+			return null;
+		}
+
+		return this[MAP][key].join(', ');
+	}
+
+	/**
+  * Iterate over all headers
+  *
+  * @param   Function  callback  Executed for each item with parameters (value, name, thisArg)
+  * @param   Boolean   thisArg   `this` context for callback function
+  * @return  Void
+  */
+	forEach(callback) {
+		let thisArg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
+
+		let pairs = getHeaders(this);
+		let i = 0;
+		while (i < pairs.length) {
+			var _pairs$i = pairs[i];
+			const name = _pairs$i[0],
+			      value = _pairs$i[1];
+
+			callback.call(thisArg, value, name, this);
+			pairs = getHeaders(this);
+			i++;
+		}
+	}
+
+	/**
+  * Overwrite header values given name
+  *
+  * @param   String  name   Header name
+  * @param   String  value  Header value
+  * @return  Void
+  */
+	set(name, value) {
+		name = `${name}`;
+		value = `${value}`;
+		validateName(name);
+		validateValue(value);
+		const key = find(this[MAP], name);
+		this[MAP][key !== undefined ? key : name] = [value];
+	}
+
+	/**
+  * Append a value onto existing header
+  *
+  * @param   String  name   Header name
+  * @param   String  value  Header value
+  * @return  Void
+  */
+	append(name, value) {
+		name = `${name}`;
+		value = `${value}`;
+		validateName(name);
+		validateValue(value);
+		const key = find(this[MAP], name);
+		if (key !== undefined) {
+			this[MAP][key].push(value);
+		} else {
+			this[MAP][name] = [value];
+		}
+	}
+
+	/**
+  * Check for header name existence
+  *
+  * @param   String   name  Header name
+  * @return  Boolean
+  */
+	has(name) {
+		name = `${name}`;
+		validateName(name);
+		return find(this[MAP], name) !== undefined;
+	}
+
+	/**
+  * Delete all header values given name
+  *
+  * @param   String  name  Header name
+  * @return  Void
+  */
+	delete(name) {
+		name = `${name}`;
+		validateName(name);
+		const key = find(this[MAP], name);
+		if (key !== undefined) {
+			delete this[MAP][key];
+		}
+	}
+
+	/**
+  * Return raw headers (non-spec api)
+  *
+  * @return  Object
+  */
+	raw() {
+		return this[MAP];
+	}
+
+	/**
+  * Get an iterator on keys.
+  *
+  * @return  Iterator
+  */
+	keys() {
+		return createHeadersIterator(this, 'key');
+	}
+
+	/**
+  * Get an iterator on values.
+  *
+  * @return  Iterator
+  */
+	values() {
+		return createHeadersIterator(this, 'value');
+	}
+
+	/**
+  * Get an iterator on entries.
+  *
+  * This is the default iterator of the Headers object.
+  *
+  * @return  Iterator
+  */
+	[Symbol.iterator]() {
+		return createHeadersIterator(this, 'key+value');
+	}
+}
+Headers.prototype.entries = Headers.prototype[Symbol.iterator];
+
+Object.defineProperty(Headers.prototype, Symbol.toStringTag, {
+	value: 'Headers',
+	writable: false,
+	enumerable: false,
+	configurable: true
+});
+
+Object.defineProperties(Headers.prototype, {
+	get: { enumerable: true },
+	forEach: { enumerable: true },
+	set: { enumerable: true },
+	append: { enumerable: true },
+	has: { enumerable: true },
+	delete: { enumerable: true },
+	keys: { enumerable: true },
+	values: { enumerable: true },
+	entries: { enumerable: true }
+});
+
+function getHeaders(headers) {
+	let kind = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'key+value';
+
+	const keys = Object.keys(headers[MAP]).sort();
+	return keys.map(kind === 'key' ? function (k) {
+		return k.toLowerCase();
+	} : kind === 'value' ? function (k) {
+		return headers[MAP][k].join(', ');
+	} : function (k) {
+		return [k.toLowerCase(), headers[MAP][k].join(', ')];
+	});
+}
+
+const INTERNAL = Symbol('internal');
+
+function createHeadersIterator(target, kind) {
+	const iterator = Object.create(HeadersIteratorPrototype);
+	iterator[INTERNAL] = {
+		target,
+		kind,
+		index: 0
+	};
+	return iterator;
+}
+
+const HeadersIteratorPrototype = Object.setPrototypeOf({
+	next() {
+		// istanbul ignore if
+		if (!this || Object.getPrototypeOf(this) !== HeadersIteratorPrototype) {
+			throw new TypeError('Value of `this` is not a HeadersIterator');
+		}
+
+		var _INTERNAL = this[INTERNAL];
+		const target = _INTERNAL.target,
+		      kind = _INTERNAL.kind,
+		      index = _INTERNAL.index;
+
+		const values = getHeaders(target, kind);
+		const len = values.length;
+		if (index >= len) {
+			return {
+				value: undefined,
+				done: true
+			};
+		}
+
+		this[INTERNAL].index = index + 1;
+
+		return {
+			value: values[index],
+			done: false
+		};
+	}
+}, Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]())));
+
+Object.defineProperty(HeadersIteratorPrototype, Symbol.toStringTag, {
+	value: 'HeadersIterator',
+	writable: false,
+	enumerable: false,
+	configurable: true
+});
+
+/**
+ * Export the Headers object in a form that Node.js can consume.
+ *
+ * @param   Headers  headers
+ * @return  Object
+ */
+function exportNodeCompatibleHeaders(headers) {
+	const obj = Object.assign({ __proto__: null }, headers[MAP]);
+
+	// http.request() only supports string as Host header. This hack makes
+	// specifying custom Host header possible.
+	const hostHeaderKey = find(headers[MAP], 'Host');
+	if (hostHeaderKey !== undefined) {
+		obj[hostHeaderKey] = obj[hostHeaderKey][0];
+	}
+
+	return obj;
+}
+
+/**
+ * Create a Headers object from an object of headers, ignoring those that do
+ * not conform to HTTP grammar productions.
+ *
+ * @param   Object  obj  Object of headers
+ * @return  Headers
+ */
+function createHeadersLenient(obj) {
+	const headers = new Headers();
+	for (const name of Object.keys(obj)) {
+		if (invalidTokenRegex.test(name)) {
+			continue;
+		}
+		if (Array.isArray(obj[name])) {
+			for (const val of obj[name]) {
+				if (invalidHeaderCharRegex.test(val)) {
+					continue;
+				}
+				if (headers[MAP][name] === undefined) {
+					headers[MAP][name] = [val];
+				} else {
+					headers[MAP][name].push(val);
+				}
+			}
+		} else if (!invalidHeaderCharRegex.test(obj[name])) {
+			headers[MAP][name] = [obj[name]];
+		}
+	}
+	return headers;
+}
+
+const INTERNALS$1 = Symbol('Response internals');
+
+// fix an issue where "STATUS_CODES" aren't a named export for node <10
+const STATUS_CODES = http.STATUS_CODES;
+
+/**
+ * Response class
+ *
+ * @param   Stream  body  Readable stream
+ * @param   Object  opts  Response options
+ * @return  Void
+ */
+class Response {
+	constructor() {
+		let body = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+		let opts = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+		Body.call(this, body, opts);
+
+		const status = opts.status || 200;
+		const headers = new Headers(opts.headers);
+
+		if (body != null && !headers.has('Content-Type')) {
+			const contentType = extractContentType(body);
+			if (contentType) {
+				headers.append('Content-Type', contentType);
+			}
+		}
+
+		this[INTERNALS$1] = {
+			url: opts.url,
+			status,
+			statusText: opts.statusText || STATUS_CODES[status],
+			headers,
+			counter: opts.counter
+		};
+	}
+
+	get url() {
+		return this[INTERNALS$1].url || '';
+	}
+
+	get status() {
+		return this[INTERNALS$1].status;
+	}
+
+	/**
+  * Convenience property representing if the request ended normally
+  */
+	get ok() {
+		return this[INTERNALS$1].status >= 200 && this[INTERNALS$1].status < 300;
+	}
+
+	get redirected() {
+		return this[INTERNALS$1].counter > 0;
+	}
+
+	get statusText() {
+		return this[INTERNALS$1].statusText;
+	}
+
+	get headers() {
+		return this[INTERNALS$1].headers;
+	}
+
+	/**
+  * Clone this response
+  *
+  * @return  Response
+  */
+	clone() {
+		return new Response(clone(this), {
+			url: this.url,
+			status: this.status,
+			statusText: this.statusText,
+			headers: this.headers,
+			ok: this.ok,
+			redirected: this.redirected
+		});
+	}
+}
+
+Body.mixIn(Response.prototype);
+
+Object.defineProperties(Response.prototype, {
+	url: { enumerable: true },
+	status: { enumerable: true },
+	ok: { enumerable: true },
+	redirected: { enumerable: true },
+	statusText: { enumerable: true },
+	headers: { enumerable: true },
+	clone: { enumerable: true }
+});
+
+Object.defineProperty(Response.prototype, Symbol.toStringTag, {
+	value: 'Response',
+	writable: false,
+	enumerable: false,
+	configurable: true
+});
+
+const INTERNALS$2 = Symbol('Request internals');
+
+// fix an issue where "format", "parse" aren't a named export for node <10
+const parse_url = Url.parse;
+const format_url = Url.format;
+
+const streamDestructionSupported = 'destroy' in Stream.Readable.prototype;
+
+/**
+ * Check if a value is an instance of Request.
+ *
+ * @param   Mixed   input
+ * @return  Boolean
+ */
+function isRequest(input) {
+	return typeof input === 'object' && typeof input[INTERNALS$2] === 'object';
+}
+
+function isAbortSignal(signal) {
+	const proto = signal && typeof signal === 'object' && Object.getPrototypeOf(signal);
+	return !!(proto && proto.constructor.name === 'AbortSignal');
+}
+
+/**
+ * Request class
+ *
+ * @param   Mixed   input  Url or Request instance
+ * @param   Object  init   Custom options
+ * @return  Void
+ */
+class Request {
+	constructor(input) {
+		let init = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+		let parsedURL;
+
+		// normalize input
+		if (!isRequest(input)) {
+			if (input && input.href) {
+				// in order to support Node.js' Url objects; though WHATWG's URL objects
+				// will fall into this branch also (since their `toString()` will return
+				// `href` property anyway)
+				parsedURL = parse_url(input.href);
+			} else {
+				// coerce input to a string before attempting to parse
+				parsedURL = parse_url(`${input}`);
+			}
+			input = {};
+		} else {
+			parsedURL = parse_url(input.url);
+		}
+
+		let method = init.method || input.method || 'GET';
+		method = method.toUpperCase();
+
+		if ((init.body != null || isRequest(input) && input.body !== null) && (method === 'GET' || method === 'HEAD')) {
+			throw new TypeError('Request with GET/HEAD method cannot have body');
+		}
+
+		let inputBody = init.body != null ? init.body : isRequest(input) && input.body !== null ? clone(input) : null;
+
+		Body.call(this, inputBody, {
+			timeout: init.timeout || input.timeout || 0,
+			size: init.size || input.size || 0
+		});
+
+		const headers = new Headers(init.headers || input.headers || {});
+
+		if (inputBody != null && !headers.has('Content-Type')) {
+			const contentType = extractContentType(inputBody);
+			if (contentType) {
+				headers.append('Content-Type', contentType);
+			}
+		}
+
+		let signal = isRequest(input) ? input.signal : null;
+		if ('signal' in init) signal = init.signal;
+
+		if (signal != null && !isAbortSignal(signal)) {
+			throw new TypeError('Expected signal to be an instanceof AbortSignal');
+		}
+
+		this[INTERNALS$2] = {
+			method,
+			redirect: init.redirect || input.redirect || 'follow',
+			headers,
+			parsedURL,
+			signal
+		};
+
+		// node-fetch-only options
+		this.follow = init.follow !== undefined ? init.follow : input.follow !== undefined ? input.follow : 20;
+		this.compress = init.compress !== undefined ? init.compress : input.compress !== undefined ? input.compress : true;
+		this.counter = init.counter || input.counter || 0;
+		this.agent = init.agent || input.agent;
+	}
+
+	get method() {
+		return this[INTERNALS$2].method;
+	}
+
+	get url() {
+		return format_url(this[INTERNALS$2].parsedURL);
+	}
+
+	get headers() {
+		return this[INTERNALS$2].headers;
+	}
+
+	get redirect() {
+		return this[INTERNALS$2].redirect;
+	}
+
+	get signal() {
+		return this[INTERNALS$2].signal;
+	}
+
+	/**
+  * Clone this request
+  *
+  * @return  Request
+  */
+	clone() {
+		return new Request(this);
+	}
+}
+
+Body.mixIn(Request.prototype);
+
+Object.defineProperty(Request.prototype, Symbol.toStringTag, {
+	value: 'Request',
+	writable: false,
+	enumerable: false,
+	configurable: true
+});
+
+Object.defineProperties(Request.prototype, {
+	method: { enumerable: true },
+	url: { enumerable: true },
+	headers: { enumerable: true },
+	redirect: { enumerable: true },
+	clone: { enumerable: true },
+	signal: { enumerable: true }
+});
+
+/**
+ * Convert a Request to Node.js http request options.
+ *
+ * @param   Request  A Request instance
+ * @return  Object   The options object to be passed to http.request
+ */
+function getNodeRequestOptions(request) {
+	const parsedURL = request[INTERNALS$2].parsedURL;
+	const headers = new Headers(request[INTERNALS$2].headers);
+
+	// fetch step 1.3
+	if (!headers.has('Accept')) {
+		headers.set('Accept', '*/*');
+	}
+
+	// Basic fetch
+	if (!parsedURL.protocol || !parsedURL.hostname) {
+		throw new TypeError('Only absolute URLs are supported');
+	}
+
+	if (!/^https?:$/.test(parsedURL.protocol)) {
+		throw new TypeError('Only HTTP(S) protocols are supported');
+	}
+
+	if (request.signal && request.body instanceof Stream.Readable && !streamDestructionSupported) {
+		throw new Error('Cancellation of streamed requests with AbortSignal is not supported in node < 8');
+	}
+
+	// HTTP-network-or-cache fetch steps 2.4-2.7
+	let contentLengthValue = null;
+	if (request.body == null && /^(POST|PUT)$/i.test(request.method)) {
+		contentLengthValue = '0';
+	}
+	if (request.body != null) {
+		const totalBytes = getTotalBytes(request);
+		if (typeof totalBytes === 'number') {
+			contentLengthValue = String(totalBytes);
+		}
+	}
+	if (contentLengthValue) {
+		headers.set('Content-Length', contentLengthValue);
+	}
+
+	// HTTP-network-or-cache fetch step 2.11
+	if (!headers.has('User-Agent')) {
+		headers.set('User-Agent', 'node-fetch/1.0 (+https://github.com/bitinn/node-fetch)');
+	}
+
+	// HTTP-network-or-cache fetch step 2.15
+	if (request.compress && !headers.has('Accept-Encoding')) {
+		headers.set('Accept-Encoding', 'gzip,deflate');
+	}
+
+	let agent = request.agent;
+	if (typeof agent === 'function') {
+		agent = agent(parsedURL);
+	}
+
+	if (!headers.has('Connection') && !agent) {
+		headers.set('Connection', 'close');
+	}
+
+	// HTTP-network fetch step 4.2
+	// chunked encoding is handled by Node.js
+
+	return Object.assign({}, parsedURL, {
+		method: request.method,
+		headers: exportNodeCompatibleHeaders(headers),
+		agent
+	});
+}
+
+/**
+ * abort-error.js
+ *
+ * AbortError interface for cancelled requests
+ */
+
+/**
+ * Create AbortError instance
+ *
+ * @param   String      message      Error message for human
+ * @return  AbortError
+ */
+function AbortError(message) {
+  Error.call(this, message);
+
+  this.type = 'aborted';
+  this.message = message;
+
+  // hide custom error implementation details from end-users
+  Error.captureStackTrace(this, this.constructor);
+}
+
+AbortError.prototype = Object.create(Error.prototype);
+AbortError.prototype.constructor = AbortError;
+AbortError.prototype.name = 'AbortError';
+
+// fix an issue where "PassThrough", "resolve" aren't a named export for node <10
+const PassThrough$1 = Stream.PassThrough;
+const resolve_url = Url.resolve;
+
+/**
+ * Fetch function
+ *
+ * @param   Mixed    url   Absolute url or Request instance
+ * @param   Object   opts  Fetch options
+ * @return  Promise
+ */
+function fetch(url, opts) {
+
+	// allow custom promise
+	if (!fetch.Promise) {
+		throw new Error('native promise missing, set fetch.Promise to your favorite alternative');
+	}
+
+	Body.Promise = fetch.Promise;
+
+	// wrap http.request into fetch
+	return new fetch.Promise(function (resolve, reject) {
+		// build request object
+		const request = new Request(url, opts);
+		const options = getNodeRequestOptions(request);
+
+		const send = (options.protocol === 'https:' ? https : http).request;
+		const signal = request.signal;
+
+		let response = null;
+
+		const abort = function abort() {
+			let error = new AbortError('The user aborted a request.');
+			reject(error);
+			if (request.body && request.body instanceof Stream.Readable) {
+				request.body.destroy(error);
+			}
+			if (!response || !response.body) return;
+			response.body.emit('error', error);
+		};
+
+		if (signal && signal.aborted) {
+			abort();
+			return;
+		}
+
+		const abortAndFinalize = function abortAndFinalize() {
+			abort();
+			finalize();
+		};
+
+		// send request
+		const req = send(options);
+		let reqTimeout;
+
+		if (signal) {
+			signal.addEventListener('abort', abortAndFinalize);
+		}
+
+		function finalize() {
+			req.abort();
+			if (signal) signal.removeEventListener('abort', abortAndFinalize);
+			clearTimeout(reqTimeout);
+		}
+
+		if (request.timeout) {
+			req.once('socket', function (socket) {
+				reqTimeout = setTimeout(function () {
+					reject(new FetchError(`network timeout at: ${request.url}`, 'request-timeout'));
+					finalize();
+				}, request.timeout);
+			});
+		}
+
+		req.on('error', function (err) {
+			reject(new FetchError(`request to ${request.url} failed, reason: ${err.message}`, 'system', err));
+			finalize();
+		});
+
+		req.on('response', function (res) {
+			clearTimeout(reqTimeout);
+
+			const headers = createHeadersLenient(res.headers);
+
+			// HTTP fetch step 5
+			if (fetch.isRedirect(res.statusCode)) {
+				// HTTP fetch step 5.2
+				const location = headers.get('Location');
+
+				// HTTP fetch step 5.3
+				const locationURL = location === null ? null : resolve_url(request.url, location);
+
+				// HTTP fetch step 5.5
+				switch (request.redirect) {
+					case 'error':
+						reject(new FetchError(`uri requested responds with a redirect, redirect mode is set to error: ${request.url}`, 'no-redirect'));
+						finalize();
+						return;
+					case 'manual':
+						// node-fetch-specific step: make manual redirect a bit easier to use by setting the Location header value to the resolved URL.
+						if (locationURL !== null) {
+							// handle corrupted header
+							try {
+								headers.set('Location', locationURL);
+							} catch (err) {
+								// istanbul ignore next: nodejs server prevent invalid response headers, we can't test this through normal request
+								reject(err);
+							}
+						}
+						break;
+					case 'follow':
+						// HTTP-redirect fetch step 2
+						if (locationURL === null) {
+							break;
+						}
+
+						// HTTP-redirect fetch step 5
+						if (request.counter >= request.follow) {
+							reject(new FetchError(`maximum redirect reached at: ${request.url}`, 'max-redirect'));
+							finalize();
+							return;
+						}
+
+						// HTTP-redirect fetch step 6 (counter increment)
+						// Create a new Request object.
+						const requestOpts = {
+							headers: new Headers(request.headers),
+							follow: request.follow,
+							counter: request.counter + 1,
+							agent: request.agent,
+							compress: request.compress,
+							method: request.method,
+							body: request.body,
+							signal: request.signal,
+							timeout: request.timeout,
+							size: request.size
+						};
+
+						// HTTP-redirect fetch step 9
+						if (res.statusCode !== 303 && request.body && getTotalBytes(request) === null) {
+							reject(new FetchError('Cannot follow redirect with body being a readable stream', 'unsupported-redirect'));
+							finalize();
+							return;
+						}
+
+						// HTTP-redirect fetch step 11
+						if (res.statusCode === 303 || (res.statusCode === 301 || res.statusCode === 302) && request.method === 'POST') {
+							requestOpts.method = 'GET';
+							requestOpts.body = undefined;
+							requestOpts.headers.delete('content-length');
+						}
+
+						// HTTP-redirect fetch step 15
+						resolve(fetch(new Request(locationURL, requestOpts)));
+						finalize();
+						return;
+				}
+			}
+
+			// prepare response
+			res.once('end', function () {
+				if (signal) signal.removeEventListener('abort', abortAndFinalize);
+			});
+			let body = res.pipe(new PassThrough$1());
+
+			const response_options = {
+				url: request.url,
+				status: res.statusCode,
+				statusText: res.statusMessage,
+				headers: headers,
+				size: request.size,
+				timeout: request.timeout,
+				counter: request.counter
+			};
+
+			// HTTP-network fetch step 12.1.1.3
+			const codings = headers.get('Content-Encoding');
+
+			// HTTP-network fetch step 12.1.1.4: handle content codings
+
+			// in following scenarios we ignore compression support
+			// 1. compression support is disabled
+			// 2. HEAD request
+			// 3. no Content-Encoding header
+			// 4. no content response (204)
+			// 5. content not modified response (304)
+			if (!request.compress || request.method === 'HEAD' || codings === null || res.statusCode === 204 || res.statusCode === 304) {
+				response = new Response(body, response_options);
+				resolve(response);
+				return;
+			}
+
+			// For Node v6+
+			// Be less strict when decoding compressed responses, since sometimes
+			// servers send slightly invalid responses that are still accepted
+			// by common browsers.
+			// Always using Z_SYNC_FLUSH is what cURL does.
+			const zlibOptions = {
+				flush: zlib.Z_SYNC_FLUSH,
+				finishFlush: zlib.Z_SYNC_FLUSH
+			};
+
+			// for gzip
+			if (codings == 'gzip' || codings == 'x-gzip') {
+				body = body.pipe(zlib.createGunzip(zlibOptions));
+				response = new Response(body, response_options);
+				resolve(response);
+				return;
+			}
+
+			// for deflate
+			if (codings == 'deflate' || codings == 'x-deflate') {
+				// handle the infamous raw deflate response from old servers
+				// a hack for old IIS and Apache servers
+				const raw = res.pipe(new PassThrough$1());
+				raw.once('data', function (chunk) {
+					// see http://stackoverflow.com/questions/37519828
+					if ((chunk[0] & 0x0F) === 0x08) {
+						body = body.pipe(zlib.createInflate());
+					} else {
+						body = body.pipe(zlib.createInflateRaw());
+					}
+					response = new Response(body, response_options);
+					resolve(response);
+				});
+				return;
+			}
+
+			// for br
+			if (codings == 'br' && typeof zlib.createBrotliDecompress === 'function') {
+				body = body.pipe(zlib.createBrotliDecompress());
+				response = new Response(body, response_options);
+				resolve(response);
+				return;
+			}
+
+			// otherwise, use response as-is
+			response = new Response(body, response_options);
+			resolve(response);
+		});
+
+		writeToStream(req, request);
+	});
+}
+/**
+ * Redirect code matching
+ *
+ * @param   Number   code  Status code
+ * @return  Boolean
+ */
+fetch.isRedirect = function (code) {
+	return code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
+};
+
+// expose Promise
+fetch.Promise = global.Promise;
+
+module.exports = exports = fetch;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = exports;
+exports.Headers = Headers;
+exports.Request = Request;
+exports.Response = Response;
+exports.FetchError = FetchError;
+
+
+/***/ }),
+/* 455 */,
+/* 456 */,
+/* 457 */,
+/* 458 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ReadMe = void 0;
+class ReadMe {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        const minorVersion = this.version.split('.').slice(0, 2).join('.');
+        return content.replace(/version = "~> [\d]+.[\d]+"/, `version = "~> ${minorVersion}"`);
+    }
+}
+exports.ReadMe = ReadMe;
+//# sourceMappingURL=readme.js.map
+
+/***/ }),
+/* 459 */,
+/* 460 */,
+/* 461 */,
+/* 462 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+const SemVer = __webpack_require__(65)
+const Comparator = __webpack_require__(174)
+const {ANY} = Comparator
+const Range = __webpack_require__(124)
+const satisfies = __webpack_require__(310)
+const gt = __webpack_require__(486)
+const lt = __webpack_require__(586)
+const lte = __webpack_require__(898)
+const gte = __webpack_require__(167)
+
+const outside = (version, range, hilo, options) => {
+  version = new SemVer(version, options)
+  range = new Range(range, options)
+
+  let gtfn, ltefn, ltfn, comp, ecomp
+  switch (hilo) {
+    case '>':
+      gtfn = gt
+      ltefn = lte
+      ltfn = lt
+      comp = '>'
+      ecomp = '>='
+      break
+    case '<':
+      gtfn = lt
+      ltefn = gte
+      ltfn = gt
+      comp = '<'
+      ecomp = '<='
+      break
+    default:
+      throw new TypeError('Must provide a hilo val of "<" or ">"')
+  }
+
+  // If it satisifes the range it is not outside
+  if (satisfies(version, range, options)) {
+    return false
+  }
+
+  // From now on, variable terms are as if we're in "gtr" mode.
+  // but note that everything is flipped for the "ltr" function.
+
+  for (let i = 0; i < range.set.length; ++i) {
+    const comparators = range.set[i]
+
+    let high = null
+    let low = null
+
+    comparators.forEach((comparator) => {
+      if (comparator.semver === ANY) {
+        comparator = new Comparator('>=0.0.0')
+      }
+      high = high || comparator
+      low = low || comparator
+      if (gtfn(comparator.semver, high.semver, options)) {
+        high = comparator
+      } else if (ltfn(comparator.semver, low.semver, options)) {
+        low = comparator
+      }
+    })
+
+    // If the edge version comparator has a operator then our version
+    // isn't outside it
+    if (high.operator === comp || high.operator === ecomp) {
+      return false
+    }
+
+    // If the lowest version comparator has an operator and our version
+    // is less than it then it isn't higher than the range
+    if ((!low.operator || low.operator === comp) &&
+        ltefn(version, low.semver)) {
+      return false
+    } else if (low.operator === ecomp && ltfn(version, low.semver)) {
+      return false
+    }
+  }
+  return true
+}
+
+module.exports = outside
+
+
+/***/ }),
+/* 463 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var deprecation = __webpack_require__(692);
+var once = _interopDefault(__webpack_require__(49));
+
+const logOnce = once(deprecation => console.warn(deprecation));
+/**
+ * Error with extra properties to help with debugging
+ */
+
+class RequestError extends Error {
+  constructor(message, statusCode, options) {
+    super(message); // Maintains proper stack trace (only available on V8)
+
+    /* istanbul ignore next */
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+
+    this.name = "HttpError";
+    this.status = statusCode;
+    Object.defineProperty(this, "code", {
+      get() {
+        logOnce(new deprecation.Deprecation("[@octokit/request-error] `error.code` is deprecated, use `error.status`."));
+        return statusCode;
+      }
+
+    });
+    this.headers = options.headers || {}; // redact request credentials without mutating original request options
+
+    const requestCopy = Object.assign({}, options.request);
+
+    if (options.request.headers.authorization) {
+      requestCopy.headers = Object.assign({}, options.request.headers, {
+        authorization: options.request.headers.authorization.replace(/ .*$/, " [REDACTED]")
+      });
+    }
+
+    requestCopy.url = requestCopy.url // client_id & client_secret can be passed as URL query parameters to increase rate limit
+    // see https://developer.github.com/v3/#increasing-the-unauthenticated-rate-limit-for-oauth-applications
+    .replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]") // OAuth tokens can be passed as URL query parameters, although it is not recommended
+    // see https://developer.github.com/v3/#oauth2-token-sent-in-a-header
+    .replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
+    this.request = requestCopy;
+  }
+
+}
+
+exports.RequestError = RequestError;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+/* 464 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+const compareBuild = __webpack_require__(16)
+const rsort = (list, loose) => list.sort((a, b) => compareBuild(b, a, loose))
+module.exports = rsort
+
+
+/***/ }),
+/* 465 */,
+/* 466 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.__esModule = true;
+
+var _utils = __webpack_require__(423);
+
+exports['default'] = function (instance) {
+  instance.registerDecorator('inline', function (fn, props, container, options) {
+    var ret = fn;
+    if (!props.partials) {
+      props.partials = {};
+      ret = function (context, options) {
+        // Create a new partials stack frame prior to exec.
+        var original = container.partials;
+        container.partials = _utils.extend({}, original, props.partials);
+        var ret = fn(context, options);
+        container.partials = original;
+        return ret;
+      };
+    }
+
+    props.partials[options.args[0]] = options.fn;
+
+    return ret;
+  });
+};
+
+module.exports = exports['default'];
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2RlY29yYXRvcnMvaW5saW5lLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7cUJBQXVCLFVBQVU7O3FCQUVsQixVQUFTLFFBQVEsRUFBRTtBQUNoQyxVQUFRLENBQUMsaUJBQWlCLENBQUMsUUFBUSxFQUFFLFVBQVMsRUFBRSxFQUFFLEtBQUssRUFBRSxTQUFTLEVBQUUsT0FBTyxFQUFFO0FBQzNFLFFBQUksR0FBRyxHQUFHLEVBQUUsQ0FBQztBQUNiLFFBQUksQ0FBQyxLQUFLLENBQUMsUUFBUSxFQUFFO0FBQ25CLFdBQUssQ0FBQyxRQUFRLEdBQUcsRUFBRSxDQUFDO0FBQ3BCLFNBQUcsR0FBRyxVQUFTLE9BQU8sRUFBRSxPQUFPLEVBQUU7O0FBRS9CLFlBQUksUUFBUSxHQUFHLFNBQVMsQ0FBQyxRQUFRLENBQUM7QUFDbEMsaUJBQVMsQ0FBQyxRQUFRLEdBQUcsY0FBTyxFQUFFLEVBQUUsUUFBUSxFQUFFLEtBQUssQ0FBQyxRQUFRLENBQUMsQ0FBQztBQUMxRCxZQUFJLEdBQUcsR0FBRyxFQUFFLENBQUMsT0FBTyxFQUFFLE9BQU8sQ0FBQyxDQUFDO0FBQy9CLGlCQUFTLENBQUMsUUFBUSxHQUFHLFFBQVEsQ0FBQztBQUM5QixlQUFPLEdBQUcsQ0FBQztPQUNaLENBQUM7S0FDSDs7QUFFRCxTQUFLLENBQUMsUUFBUSxDQUFDLE9BQU8sQ0FBQyxJQUFJLENBQUMsQ0FBQyxDQUFDLENBQUMsR0FBRyxPQUFPLENBQUMsRUFBRSxDQUFDOztBQUU3QyxXQUFPLEdBQUcsQ0FBQztHQUNaLENBQUMsQ0FBQztDQUNKIiwiZmlsZSI6ImlubGluZS5qcyIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IGV4dGVuZCB9IGZyb20gJy4uL3V0aWxzJztcblxuZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24oaW5zdGFuY2UpIHtcbiAgaW5zdGFuY2UucmVnaXN0ZXJEZWNvcmF0b3IoJ2lubGluZScsIGZ1bmN0aW9uKGZuLCBwcm9wcywgY29udGFpbmVyLCBvcHRpb25zKSB7XG4gICAgbGV0IHJldCA9IGZuO1xuICAgIGlmICghcHJvcHMucGFydGlhbHMpIHtcbiAgICAgIHByb3BzLnBhcnRpYWxzID0ge307XG4gICAgICByZXQgPSBmdW5jdGlvbihjb250ZXh0LCBvcHRpb25zKSB7XG4gICAgICAgIC8vIENyZWF0ZSBhIG5ldyBwYXJ0aWFscyBzdGFjayBmcmFtZSBwcmlvciB0byBleGVjLlxuICAgICAgICBsZXQgb3JpZ2luYWwgPSBjb250YWluZXIucGFydGlhbHM7XG4gICAgICAgIGNvbnRhaW5lci5wYXJ0aWFscyA9IGV4dGVuZCh7fSwgb3JpZ2luYWwsIHByb3BzLnBhcnRpYWxzKTtcbiAgICAgICAgbGV0IHJldCA9IGZuKGNvbnRleHQsIG9wdGlvbnMpO1xuICAgICAgICBjb250YWluZXIucGFydGlhbHMgPSBvcmlnaW5hbDtcbiAgICAgICAgcmV0dXJuIHJldDtcbiAgICAgIH07XG4gICAgfVxuXG4gICAgcHJvcHMucGFydGlhbHNbb3B0aW9ucy5hcmdzWzBdXSA9IG9wdGlvbnMuZm47XG5cbiAgICByZXR1cm4gcmV0O1xuICB9KTtcbn1cbiJdfQ==
+
+
+/***/ }),
+/* 467 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const rx = __webpack_require__(789)
+
+module.exports = parse
+
+function parse ({ paths }) {
+  const wildcards = []
+  var wcLen = 0
+  const secret = paths.reduce(function (o, strPath, ix) {
+    var path = strPath.match(rx).map((p) => p.replace(/'|"|`/g, ''))
+    const leadingBracket = strPath[0] === '['
+    path = path.map((p) => {
+      if (p[0] === '[') return p.substr(1, p.length - 2)
+      else return p
+    })
+    const star = path.indexOf('*')
+    if (star > -1) {
+      const before = path.slice(0, star)
+      const beforeStr = before.join('.')
+      const after = path.slice(star + 1, path.length)
+      if (after.indexOf('*') > -1) throw Error('fast-redact – Only one wildcard per path is supported')
+      const nested = after.length > 0
+      wcLen++
+      wildcards.push({
+        before,
+        beforeStr,
+        after,
+        nested
+      })
+    } else {
+      o[strPath] = {
+        path: path,
+        val: undefined,
+        precensored: false,
+        circle: '',
+        escPath: JSON.stringify(strPath),
+        leadingBracket: leadingBracket
+      }
+    }
+    return o
+  }, {})
+
+  return { wildcards, wcLen, secret }
+}
+
+
+/***/ }),
+/* 468 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const validator = __webpack_require__(205)
+const parse = __webpack_require__(467)
+const redactor = __webpack_require__(519)
+const restorer = __webpack_require__(948)
+const { groupRedact, nestedRedact } = __webpack_require__(239)
+const state = __webpack_require__(525)
+const rx = __webpack_require__(789)
+const validate = validator()
+const noop = (o) => o
+noop.restore = noop
+
+const DEFAULT_CENSOR = '[REDACTED]'
+fastRedact.rx = rx
+fastRedact.validator = validator
+
+module.exports = fastRedact
+
+function fastRedact (opts = {}) {
+  const paths = Array.from(new Set(opts.paths || []))
+  const serialize = 'serialize' in opts ? (
+    opts.serialize === false ? opts.serialize
+      : (typeof opts.serialize === 'function' ? opts.serialize : JSON.stringify)
+  ) : JSON.stringify
+  const remove = opts.remove
+  if (remove === true && serialize !== JSON.stringify) {
+    throw Error('fast-redact – remove option may only be set when serializer is JSON.stringify')
+  }
+  const censor = remove === true
+    ? undefined
+    : 'censor' in opts ? opts.censor : DEFAULT_CENSOR
+
+  const isCensorFct = typeof censor === 'function'
+  const censorFctTakesPath = isCensorFct && censor.length > 1
+
+  if (paths.length === 0) return serialize || noop
+
+  validate({ paths, serialize, censor })
+
+  const { wildcards, wcLen, secret } = parse({ paths, censor })
+
+  const compileRestore = restorer({ secret, wcLen })
+  const strict = 'strict' in opts ? opts.strict : true
+
+  return redactor({ secret, wcLen, serialize, strict, isCensorFct, censorFctTakesPath }, state({
+    secret,
+    censor,
+    compileRestore,
+    serialize,
+    groupRedact,
+    nestedRedact,
+    wildcards,
+    wcLen
+  }))
+}
+
+
+/***/ }),
+/* 469 */,
+/* 470 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const command_1 = __webpack_require__(431);
+const file_command_1 = __webpack_require__(102);
+const utils_1 = __webpack_require__(82);
+const os = __importStar(__webpack_require__(87));
+const path = __importStar(__webpack_require__(622));
+/**
+ * The code to exit an action
+ */
+var ExitCode;
+(function (ExitCode) {
+    /**
+     * A code indicating that the action was successful
+     */
+    ExitCode[ExitCode["Success"] = 0] = "Success";
+    /**
+     * A code indicating that the action was a failure
+     */
+    ExitCode[ExitCode["Failure"] = 1] = "Failure";
+})(ExitCode = exports.ExitCode || (exports.ExitCode = {}));
+//-----------------------------------------------------------------------
+// Variables
+//-----------------------------------------------------------------------
+/**
+ * Sets env variable for this action and future actions in the job
+ * @param name the name of the variable to set
+ * @param val the value of the variable. Non-string values will be converted to a string via JSON.stringify
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function exportVariable(name, val) {
+    const convertedVal = utils_1.toCommandValue(val);
+    process.env[name] = convertedVal;
+    const filePath = process.env['GITHUB_ENV'] || '';
+    if (filePath) {
+        const delimiter = '_GitHubActionsFileCommandDelimeter_';
+        const commandValue = `${name}<<${delimiter}${os.EOL}${convertedVal}${os.EOL}${delimiter}`;
+        file_command_1.issueCommand('ENV', commandValue);
+    }
+    else {
+        command_1.issueCommand('set-env', { name }, convertedVal);
+    }
+}
+exports.exportVariable = exportVariable;
+/**
+ * Registers a secret which will get masked from logs
+ * @param secret value of the secret
+ */
+function setSecret(secret) {
+    command_1.issueCommand('add-mask', {}, secret);
+}
+exports.setSecret = setSecret;
+/**
+ * Prepends inputPath to the PATH (for this action and future actions)
+ * @param inputPath
+ */
+function addPath(inputPath) {
+    const filePath = process.env['GITHUB_PATH'] || '';
+    if (filePath) {
+        file_command_1.issueCommand('PATH', inputPath);
+    }
+    else {
+        command_1.issueCommand('add-path', {}, inputPath);
+    }
+    process.env['PATH'] = `${inputPath}${path.delimiter}${process.env['PATH']}`;
+}
+exports.addPath = addPath;
+/**
+ * Gets the value of an input.  The value is also trimmed.
+ *
+ * @param     name     name of the input to get
+ * @param     options  optional. See InputOptions.
+ * @returns   string
+ */
+function getInput(name, options) {
+    const val = process.env[`INPUT_${name.replace(/ /g, '_').toUpperCase()}`] || '';
+    if (options && options.required && !val) {
+        throw new Error(`Input required and not supplied: ${name}`);
+    }
+    return val.trim();
+}
+exports.getInput = getInput;
+/**
+ * Sets the value of an output.
+ *
+ * @param     name     name of the output to set
+ * @param     value    value to store. Non-string values will be converted to a string via JSON.stringify
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function setOutput(name, value) {
+    command_1.issueCommand('set-output', { name }, value);
+}
+exports.setOutput = setOutput;
+/**
+ * Enables or disables the echoing of commands into stdout for the rest of the step.
+ * Echoing is disabled by default if ACTIONS_STEP_DEBUG is not set.
+ *
+ */
+function setCommandEcho(enabled) {
+    command_1.issue('echo', enabled ? 'on' : 'off');
+}
+exports.setCommandEcho = setCommandEcho;
+//-----------------------------------------------------------------------
+// Results
+//-----------------------------------------------------------------------
+/**
+ * Sets the action status to failed.
+ * When the action exits it will be with an exit code of 1
+ * @param message add error issue message
+ */
+function setFailed(message) {
+    process.exitCode = ExitCode.Failure;
+    error(message);
+}
+exports.setFailed = setFailed;
+//-----------------------------------------------------------------------
+// Logging Commands
+//-----------------------------------------------------------------------
+/**
+ * Gets whether Actions Step Debug is on or not
+ */
+function isDebug() {
+    return process.env['RUNNER_DEBUG'] === '1';
+}
+exports.isDebug = isDebug;
+/**
+ * Writes debug message to user log
+ * @param message debug message
+ */
+function debug(message) {
+    command_1.issueCommand('debug', {}, message);
+}
+exports.debug = debug;
+/**
+ * Adds an error issue
+ * @param message error issue message. Errors will be converted to string via toString()
+ */
+function error(message) {
+    command_1.issue('error', message instanceof Error ? message.toString() : message);
+}
+exports.error = error;
+/**
+ * Adds an warning issue
+ * @param message warning issue message. Errors will be converted to string via toString()
+ */
+function warning(message) {
+    command_1.issue('warning', message instanceof Error ? message.toString() : message);
+}
+exports.warning = warning;
+/**
+ * Writes info to log with console.log.
+ * @param message info message
+ */
+function info(message) {
+    process.stdout.write(message + os.EOL);
+}
+exports.info = info;
+/**
+ * Begin an output group.
+ *
+ * Output until the next `groupEnd` will be foldable in this group
+ *
+ * @param name The name of the output group
+ */
+function startGroup(name) {
+    command_1.issue('group', name);
+}
+exports.startGroup = startGroup;
+/**
+ * End an output group.
+ */
+function endGroup() {
+    command_1.issue('endgroup');
+}
+exports.endGroup = endGroup;
+/**
+ * Wrap an asynchronous function call in a group.
+ *
+ * Returns the same type as the function itself.
+ *
+ * @param name The name of the group
+ * @param fn The function to wrap in the group
+ */
+function group(name, fn) {
+    return __awaiter(this, void 0, void 0, function* () {
+        startGroup(name);
+        let result;
+        try {
+            result = yield fn();
+        }
+        finally {
+            endGroup();
+        }
+        return result;
+    });
+}
+exports.group = group;
+//-----------------------------------------------------------------------
+// Wrapper action state
+//-----------------------------------------------------------------------
+/**
+ * Saves state for current action, the state can only be retrieved by this action's post job execution.
+ *
+ * @param     name     name of the state to store
+ * @param     value    value to store. Non-string values will be converted to a string via JSON.stringify
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function saveState(name, value) {
+    command_1.issueCommand('save-state', { name }, value);
+}
+exports.saveState = saveState;
+/**
+ * Gets the value of an state set by this action's main execution.
+ *
+ * @param     name     name of the state to get
+ * @returns   string
+ */
+function getState(name) {
+    return process.env[`STATE_${name}`] || '';
+}
+exports.getState = getState;
+//# sourceMappingURL=core.js.map
+
+/***/ }),
+/* 471 */,
+/* 472 */,
+/* 473 */,
+/* 474 */
+/***/ (function(module, exports) {
+
+"use strict";
+// Build out our basic SafeString type
+
+
+exports.__esModule = true;
+function SafeString(string) {
+  this.string = string;
+}
+
+SafeString.prototype.toString = SafeString.prototype.toHTML = function () {
+  return '' + this.string;
+};
+
+exports['default'] = SafeString;
+module.exports = exports['default'];
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL3NhZmUtc3RyaW5nLmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7QUFDQSxTQUFTLFVBQVUsQ0FBQyxNQUFNLEVBQUU7QUFDMUIsTUFBSSxDQUFDLE1BQU0sR0FBRyxNQUFNLENBQUM7Q0FDdEI7O0FBRUQsVUFBVSxDQUFDLFNBQVMsQ0FBQyxRQUFRLEdBQUcsVUFBVSxDQUFDLFNBQVMsQ0FBQyxNQUFNLEdBQUcsWUFBVztBQUN2RSxTQUFPLEVBQUUsR0FBRyxJQUFJLENBQUMsTUFBTSxDQUFDO0NBQ3pCLENBQUM7O3FCQUVhLFVBQVUiLCJmaWxlIjoic2FmZS1zdHJpbmcuanMiLCJzb3VyY2VzQ29udGVudCI6WyIvLyBCdWlsZCBvdXQgb3VyIGJhc2ljIFNhZmVTdHJpbmcgdHlwZVxuZnVuY3Rpb24gU2FmZVN0cmluZyhzdHJpbmcpIHtcbiAgdGhpcy5zdHJpbmcgPSBzdHJpbmc7XG59XG5cblNhZmVTdHJpbmcucHJvdG90eXBlLnRvU3RyaW5nID0gU2FmZVN0cmluZy5wcm90b3R5cGUudG9IVE1MID0gZnVuY3Rpb24oKSB7XG4gIHJldHVybiAnJyArIHRoaXMuc3RyaW5nO1xufTtcblxuZXhwb3J0IGRlZmF1bHQgU2FmZVN0cmluZztcbiJdfQ==
+
+
+/***/ }),
+/* 475 */,
+/* 476 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.__esModule = true;
+exports.createProtoAccessControl = createProtoAccessControl;
+exports.resultIsAllowed = resultIsAllowed;
+exports.resetLoggedProperties = resetLoggedProperties;
+// istanbul ignore next
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
+
+var _createNewLookupObject = __webpack_require__(912);
+
+var _logger = __webpack_require__(979);
+
+var logger = _interopRequireWildcard(_logger);
+
+var loggedProperties = Object.create(null);
+
+function createProtoAccessControl(runtimeOptions) {
+  var defaultMethodWhiteList = Object.create(null);
+  defaultMethodWhiteList['constructor'] = false;
+  defaultMethodWhiteList['__defineGetter__'] = false;
+  defaultMethodWhiteList['__defineSetter__'] = false;
+  defaultMethodWhiteList['__lookupGetter__'] = false;
+
+  var defaultPropertyWhiteList = Object.create(null);
+  // eslint-disable-next-line no-proto
+  defaultPropertyWhiteList['__proto__'] = false;
+
+  return {
+    properties: {
+      whitelist: _createNewLookupObject.createNewLookupObject(defaultPropertyWhiteList, runtimeOptions.allowedProtoProperties),
+      defaultValue: runtimeOptions.allowProtoPropertiesByDefault
+    },
+    methods: {
+      whitelist: _createNewLookupObject.createNewLookupObject(defaultMethodWhiteList, runtimeOptions.allowedProtoMethods),
+      defaultValue: runtimeOptions.allowProtoMethodsByDefault
+    }
+  };
+}
+
+function resultIsAllowed(result, protoAccessControl, propertyName) {
+  if (typeof result === 'function') {
+    return checkWhiteList(protoAccessControl.methods, propertyName);
+  } else {
+    return checkWhiteList(protoAccessControl.properties, propertyName);
+  }
+}
+
+function checkWhiteList(protoAccessControlForType, propertyName) {
+  if (protoAccessControlForType.whitelist[propertyName] !== undefined) {
+    return protoAccessControlForType.whitelist[propertyName] === true;
+  }
+  if (protoAccessControlForType.defaultValue !== undefined) {
+    return protoAccessControlForType.defaultValue;
+  }
+  logUnexpecedPropertyAccessOnce(propertyName);
+  return false;
+}
+
+function logUnexpecedPropertyAccessOnce(propertyName) {
+  if (loggedProperties[propertyName] !== true) {
+    loggedProperties[propertyName] = true;
+    logger.log('error', 'Handlebars: Access has been denied to resolve the property "' + propertyName + '" because it is not an "own property" of its parent.\n' + 'You can add a runtime option to disable the check or this warning:\n' + 'See https://handlebarsjs.com/api-reference/runtime-options.html#options-to-control-prototype-access for details');
+  }
+}
+
+function resetLoggedProperties() {
+  Object.keys(loggedProperties).forEach(function (propertyName) {
+    delete loggedProperties[propertyName];
+  });
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2ludGVybmFsL3Byb3RvLWFjY2Vzcy5qcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7O3FDQUFzQyw0QkFBNEI7O3NCQUMxQyxXQUFXOztJQUF2QixNQUFNOztBQUVsQixJQUFNLGdCQUFnQixHQUFHLE1BQU0sQ0FBQyxNQUFNLENBQUMsSUFBSSxDQUFDLENBQUM7O0FBRXRDLFNBQVMsd0JBQXdCLENBQUMsY0FBYyxFQUFFO0FBQ3ZELE1BQUksc0JBQXNCLEdBQUcsTUFBTSxDQUFDLE1BQU0sQ0FBQyxJQUFJLENBQUMsQ0FBQztBQUNqRCx3QkFBc0IsQ0FBQyxhQUFhLENBQUMsR0FBRyxLQUFLLENBQUM7QUFDOUMsd0JBQXNCLENBQUMsa0JBQWtCLENBQUMsR0FBRyxLQUFLLENBQUM7QUFDbkQsd0JBQXNCLENBQUMsa0JBQWtCLENBQUMsR0FBRyxLQUFLLENBQUM7QUFDbkQsd0JBQXNCLENBQUMsa0JBQWtCLENBQUMsR0FBRyxLQUFLLENBQUM7O0FBRW5ELE1BQUksd0JBQXdCLEdBQUcsTUFBTSxDQUFDLE1BQU0sQ0FBQyxJQUFJLENBQUMsQ0FBQzs7QUFFbkQsMEJBQXdCLENBQUMsV0FBVyxDQUFDLEdBQUcsS0FBSyxDQUFDOztBQUU5QyxTQUFPO0FBQ0wsY0FBVSxFQUFFO0FBQ1YsZUFBUyxFQUFFLDZDQUNULHdCQUF3QixFQUN4QixjQUFjLENBQUMsc0JBQXNCLENBQ3RDO0FBQ0Qsa0JBQVksRUFBRSxjQUFjLENBQUMsNkJBQTZCO0tBQzNEO0FBQ0QsV0FBTyxFQUFFO0FBQ1AsZUFBUyxFQUFFLDZDQUNULHNCQUFzQixFQUN0QixjQUFjLENBQUMsbUJBQW1CLENBQ25DO0FBQ0Qsa0JBQVksRUFBRSxjQUFjLENBQUMsMEJBQTBCO0tBQ3hEO0dBQ0YsQ0FBQztDQUNIOztBQUVNLFNBQVMsZUFBZSxDQUFDLE1BQU0sRUFBRSxrQkFBa0IsRUFBRSxZQUFZLEVBQUU7QUFDeEUsTUFBSSxPQUFPLE1BQU0sS0FBSyxVQUFVLEVBQUU7QUFDaEMsV0FBTyxjQUFjLENBQUMsa0JBQWtCLENBQUMsT0FBTyxFQUFFLFlBQVksQ0FBQyxDQUFDO0dBQ2pFLE1BQU07QUFDTCxXQUFPLGNBQWMsQ0FBQyxrQkFBa0IsQ0FBQyxVQUFVLEVBQUUsWUFBWSxDQUFDLENBQUM7R0FDcEU7Q0FDRjs7QUFFRCxTQUFTLGNBQWMsQ0FBQyx5QkFBeUIsRUFBRSxZQUFZLEVBQUU7QUFDL0QsTUFBSSx5QkFBeUIsQ0FBQyxTQUFTLENBQUMsWUFBWSxDQUFDLEtBQUssU0FBUyxFQUFFO0FBQ25FLFdBQU8seUJBQXlCLENBQUMsU0FBUyxDQUFDLFlBQVksQ0FBQyxLQUFLLElBQUksQ0FBQztHQUNuRTtBQUNELE1BQUkseUJBQXlCLENBQUMsWUFBWSxLQUFLLFNBQVMsRUFBRTtBQUN4RCxXQUFPLHlCQUF5QixDQUFDLFlBQVksQ0FBQztHQUMvQztBQUNELGdDQUE4QixDQUFDLFlBQVksQ0FBQyxDQUFDO0FBQzdDLFNBQU8sS0FBSyxDQUFDO0NBQ2Q7O0FBRUQsU0FBUyw4QkFBOEIsQ0FBQyxZQUFZLEVBQUU7QUFDcEQsTUFBSSxnQkFBZ0IsQ0FBQyxZQUFZLENBQUMsS0FBSyxJQUFJLEVBQUU7QUFDM0Msb0JBQWdCLENBQUMsWUFBWSxDQUFDLEdBQUcsSUFBSSxDQUFDO0FBQ3RDLFVBQU0sQ0FBQyxHQUFHLENBQ1IsT0FBTyxFQUNQLGlFQUErRCxZQUFZLG9JQUNILG9IQUMyQyxDQUNwSCxDQUFDO0dBQ0g7Q0FDRjs7QUFFTSxTQUFTLHFCQUFxQixHQUFHO0FBQ3RDLFFBQU0sQ0FBQyxJQUFJLENBQUMsZ0JBQWdCLENBQUMsQ0FBQyxPQUFPLENBQUMsVUFBQSxZQUFZLEVBQUk7QUFDcEQsV0FBTyxnQkFBZ0IsQ0FBQyxZQUFZLENBQUMsQ0FBQztHQUN2QyxDQUFDLENBQUM7Q0FDSiIsImZpbGUiOiJwcm90by1hY2Nlc3MuanMiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBjcmVhdGVOZXdMb29rdXBPYmplY3QgfSBmcm9tICcuL2NyZWF0ZS1uZXctbG9va3VwLW9iamVjdCc7XG5pbXBvcnQgKiBhcyBsb2dnZXIgZnJvbSAnLi4vbG9nZ2VyJztcblxuY29uc3QgbG9nZ2VkUHJvcGVydGllcyA9IE9iamVjdC5jcmVhdGUobnVsbCk7XG5cbmV4cG9ydCBmdW5jdGlvbiBjcmVhdGVQcm90b0FjY2Vzc0NvbnRyb2wocnVudGltZU9wdGlvbnMpIHtcbiAgbGV0IGRlZmF1bHRNZXRob2RXaGl0ZUxpc3QgPSBPYmplY3QuY3JlYXRlKG51bGwpO1xuICBkZWZhdWx0TWV0aG9kV2hpdGVMaXN0Wydjb25zdHJ1Y3RvciddID0gZmFsc2U7XG4gIGRlZmF1bHRNZXRob2RXaGl0ZUxpc3RbJ19fZGVmaW5lR2V0dGVyX18nXSA9IGZhbHNlO1xuICBkZWZhdWx0TWV0aG9kV2hpdGVMaXN0WydfX2RlZmluZVNldHRlcl9fJ10gPSBmYWxzZTtcbiAgZGVmYXVsdE1ldGhvZFdoaXRlTGlzdFsnX19sb29rdXBHZXR0ZXJfXyddID0gZmFsc2U7XG5cbiAgbGV0IGRlZmF1bHRQcm9wZXJ0eVdoaXRlTGlzdCA9IE9iamVjdC5jcmVhdGUobnVsbCk7XG4gIC8vIGVzbGludC1kaXNhYmxlLW5leHQtbGluZSBuby1wcm90b1xuICBkZWZhdWx0UHJvcGVydHlXaGl0ZUxpc3RbJ19fcHJvdG9fXyddID0gZmFsc2U7XG5cbiAgcmV0dXJuIHtcbiAgICBwcm9wZXJ0aWVzOiB7XG4gICAgICB3aGl0ZWxpc3Q6IGNyZWF0ZU5ld0xvb2t1cE9iamVjdChcbiAgICAgICAgZGVmYXVsdFByb3BlcnR5V2hpdGVMaXN0LFxuICAgICAgICBydW50aW1lT3B0aW9ucy5hbGxvd2VkUHJvdG9Qcm9wZXJ0aWVzXG4gICAgICApLFxuICAgICAgZGVmYXVsdFZhbHVlOiBydW50aW1lT3B0aW9ucy5hbGxvd1Byb3RvUHJvcGVydGllc0J5RGVmYXVsdFxuICAgIH0sXG4gICAgbWV0aG9kczoge1xuICAgICAgd2hpdGVsaXN0OiBjcmVhdGVOZXdMb29rdXBPYmplY3QoXG4gICAgICAgIGRlZmF1bHRNZXRob2RXaGl0ZUxpc3QsXG4gICAgICAgIHJ1bnRpbWVPcHRpb25zLmFsbG93ZWRQcm90b01ldGhvZHNcbiAgICAgICksXG4gICAgICBkZWZhdWx0VmFsdWU6IHJ1bnRpbWVPcHRpb25zLmFsbG93UHJvdG9NZXRob2RzQnlEZWZhdWx0XG4gICAgfVxuICB9O1xufVxuXG5leHBvcnQgZnVuY3Rpb24gcmVzdWx0SXNBbGxvd2VkKHJlc3VsdCwgcHJvdG9BY2Nlc3NDb250cm9sLCBwcm9wZXJ0eU5hbWUpIHtcbiAgaWYgKHR5cGVvZiByZXN1bHQgPT09ICdmdW5jdGlvbicpIHtcbiAgICByZXR1cm4gY2hlY2tXaGl0ZUxpc3QocHJvdG9BY2Nlc3NDb250cm9sLm1ldGhvZHMsIHByb3BlcnR5TmFtZSk7XG4gIH0gZWxzZSB7XG4gICAgcmV0dXJuIGNoZWNrV2hpdGVMaXN0KHByb3RvQWNjZXNzQ29udHJvbC5wcm9wZXJ0aWVzLCBwcm9wZXJ0eU5hbWUpO1xuICB9XG59XG5cbmZ1bmN0aW9uIGNoZWNrV2hpdGVMaXN0KHByb3RvQWNjZXNzQ29udHJvbEZvclR5cGUsIHByb3BlcnR5TmFtZSkge1xuICBpZiAocHJvdG9BY2Nlc3NDb250cm9sRm9yVHlwZS53aGl0ZWxpc3RbcHJvcGVydHlOYW1lXSAhPT0gdW5kZWZpbmVkKSB7XG4gICAgcmV0dXJuIHByb3RvQWNjZXNzQ29udHJvbEZvclR5cGUud2hpdGVsaXN0W3Byb3BlcnR5TmFtZV0gPT09IHRydWU7XG4gIH1cbiAgaWYgKHByb3RvQWNjZXNzQ29udHJvbEZvclR5cGUuZGVmYXVsdFZhbHVlICE9PSB1bmRlZmluZWQpIHtcbiAgICByZXR1cm4gcHJvdG9BY2Nlc3NDb250cm9sRm9yVHlwZS5kZWZhdWx0VmFsdWU7XG4gIH1cbiAgbG9nVW5leHBlY2VkUHJvcGVydHlBY2Nlc3NPbmNlKHByb3BlcnR5TmFtZSk7XG4gIHJldHVybiBmYWxzZTtcbn1cblxuZnVuY3Rpb24gbG9nVW5leHBlY2VkUHJvcGVydHlBY2Nlc3NPbmNlKHByb3BlcnR5TmFtZSkge1xuICBpZiAobG9nZ2VkUHJvcGVydGllc1twcm9wZXJ0eU5hbWVdICE9PSB0cnVlKSB7XG4gICAgbG9nZ2VkUHJvcGVydGllc1twcm9wZXJ0eU5hbWVdID0gdHJ1ZTtcbiAgICBsb2dnZXIubG9nKFxuICAgICAgJ2Vycm9yJyxcbiAgICAgIGBIYW5kbGViYXJzOiBBY2Nlc3MgaGFzIGJlZW4gZGVuaWVkIHRvIHJlc29sdmUgdGhlIHByb3BlcnR5IFwiJHtwcm9wZXJ0eU5hbWV9XCIgYmVjYXVzZSBpdCBpcyBub3QgYW4gXCJvd24gcHJvcGVydHlcIiBvZiBpdHMgcGFyZW50LlxcbmAgK1xuICAgICAgICBgWW91IGNhbiBhZGQgYSBydW50aW1lIG9wdGlvbiB0byBkaXNhYmxlIHRoZSBjaGVjayBvciB0aGlzIHdhcm5pbmc6XFxuYCArXG4gICAgICAgIGBTZWUgaHR0cHM6Ly9oYW5kbGViYXJzanMuY29tL2FwaS1yZWZlcmVuY2UvcnVudGltZS1vcHRpb25zLmh0bWwjb3B0aW9ucy10by1jb250cm9sLXByb3RvdHlwZS1hY2Nlc3MgZm9yIGRldGFpbHNgXG4gICAgKTtcbiAgfVxufVxuXG5leHBvcnQgZnVuY3Rpb24gcmVzZXRMb2dnZWRQcm9wZXJ0aWVzKCkge1xuICBPYmplY3Qua2V5cyhsb2dnZWRQcm9wZXJ0aWVzKS5mb3JFYWNoKHByb3BlcnR5TmFtZSA9PiB7XG4gICAgZGVsZXRlIGxvZ2dlZFByb3BlcnRpZXNbcHJvcGVydHlOYW1lXTtcbiAgfSk7XG59XG4iXX0=
+
+
+/***/ }),
+/* 477 */,
+/* 478 */,
+/* 479 */,
+/* 480 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+const Range = __webpack_require__(124)
+const validRange = (range, options) => {
+  try {
+    // Return '*' instead of '' so that truthiness works.
+    // This will throw if it's invalid anyway
+    return new Range(range, options).range || '*'
+  } catch (er) {
+    return null
+  }
+}
+module.exports = validRange
+
+
+/***/ }),
+/* 481 */,
+/* 482 */,
+/* 483 */,
+/* 484 */,
+/* 485 */,
+/* 486 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+const compare = __webpack_require__(874)
+const gt = (a, b, loose) => compare(a, b, loose) > 0
+module.exports = gt
+
+
+/***/ }),
+/* 487 */,
+/* 488 */,
+/* 489 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+const SemVer = __webpack_require__(65)
+const patch = (a, loose) => new SemVer(a, loose).patch
+module.exports = patch
+
+
+/***/ }),
+/* 490 */,
+/* 491 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = Diff;
+
+/*istanbul ignore end*/
+function Diff() {}
+
+Diff.prototype = {
+  /*istanbul ignore start*/
+
+  /*istanbul ignore end*/
+  diff: function diff(oldString, newString) {
+    /*istanbul ignore start*/
+    var
+    /*istanbul ignore end*/
+    options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+    var callback = options.callback;
+
+    if (typeof options === 'function') {
+      callback = options;
+      options = {};
+    }
+
+    this.options = options;
+    var self = this;
+
+    function done(value) {
+      if (callback) {
+        setTimeout(function () {
+          callback(undefined, value);
+        }, 0);
+        return true;
+      } else {
+        return value;
+      }
+    } // Allow subclasses to massage the input prior to running
+
+
+    oldString = this.castInput(oldString);
+    newString = this.castInput(newString);
+    oldString = this.removeEmpty(this.tokenize(oldString));
+    newString = this.removeEmpty(this.tokenize(newString));
+    var newLen = newString.length,
+        oldLen = oldString.length;
+    var editLength = 1;
+    var maxEditLength = newLen + oldLen;
+    var bestPath = [{
+      newPos: -1,
+      components: []
+    }]; // Seed editLength = 0, i.e. the content starts with the same values
+
+    var oldPos = this.extractCommon(bestPath[0], newString, oldString, 0);
+
+    if (bestPath[0].newPos + 1 >= newLen && oldPos + 1 >= oldLen) {
+      // Identity per the equality and tokenizer
+      return done([{
+        value: this.join(newString),
+        count: newString.length
+      }]);
+    } // Main worker method. checks all permutations of a given edit length for acceptance.
+
+
+    function execEditLength() {
+      for (var diagonalPath = -1 * editLength; diagonalPath <= editLength; diagonalPath += 2) {
+        var basePath =
+        /*istanbul ignore start*/
+        void 0
+        /*istanbul ignore end*/
+        ;
+
+        var addPath = bestPath[diagonalPath - 1],
+            removePath = bestPath[diagonalPath + 1],
+            _oldPos = (removePath ? removePath.newPos : 0) - diagonalPath;
+
+        if (addPath) {
+          // No one else is going to attempt to use this value, clear it
+          bestPath[diagonalPath - 1] = undefined;
+        }
+
+        var canAdd = addPath && addPath.newPos + 1 < newLen,
+            canRemove = removePath && 0 <= _oldPos && _oldPos < oldLen;
+
+        if (!canAdd && !canRemove) {
+          // If this path is a terminal then prune
+          bestPath[diagonalPath] = undefined;
+          continue;
+        } // Select the diagonal that we want to branch from. We select the prior
+        // path whose position in the new string is the farthest from the origin
+        // and does not pass the bounds of the diff graph
+
+
+        if (!canAdd || canRemove && addPath.newPos < removePath.newPos) {
+          basePath = clonePath(removePath);
+          self.pushComponent(basePath.components, undefined, true);
+        } else {
+          basePath = addPath; // No need to clone, we've pulled it from the list
+
+          basePath.newPos++;
+          self.pushComponent(basePath.components, true, undefined);
+        }
+
+        _oldPos = self.extractCommon(basePath, newString, oldString, diagonalPath); // If we have hit the end of both strings, then we are done
+
+        if (basePath.newPos + 1 >= newLen && _oldPos + 1 >= oldLen) {
+          return done(buildValues(self, basePath.components, newString, oldString, self.useLongestToken));
+        } else {
+          // Otherwise track this path as a potential candidate and continue.
+          bestPath[diagonalPath] = basePath;
+        }
+      }
+
+      editLength++;
+    } // Performs the length of edit iteration. Is a bit fugly as this has to support the
+    // sync and async mode which is never fun. Loops over execEditLength until a value
+    // is produced.
+
+
+    if (callback) {
+      (function exec() {
+        setTimeout(function () {
+          // This should not happen, but we want to be safe.
+
+          /* istanbul ignore next */
+          if (editLength > maxEditLength) {
+            return callback();
+          }
+
+          if (!execEditLength()) {
+            exec();
+          }
+        }, 0);
+      })();
+    } else {
+      while (editLength <= maxEditLength) {
+        var ret = execEditLength();
+
+        if (ret) {
+          return ret;
+        }
+      }
+    }
+  },
+
+  /*istanbul ignore start*/
+
+  /*istanbul ignore end*/
+  pushComponent: function pushComponent(components, added, removed) {
+    var last = components[components.length - 1];
+
+    if (last && last.added === added && last.removed === removed) {
+      // We need to clone here as the component clone operation is just
+      // as shallow array clone
+      components[components.length - 1] = {
+        count: last.count + 1,
+        added: added,
+        removed: removed
+      };
+    } else {
+      components.push({
+        count: 1,
+        added: added,
+        removed: removed
+      });
+    }
+  },
+
+  /*istanbul ignore start*/
+
+  /*istanbul ignore end*/
+  extractCommon: function extractCommon(basePath, newString, oldString, diagonalPath) {
+    var newLen = newString.length,
+        oldLen = oldString.length,
+        newPos = basePath.newPos,
+        oldPos = newPos - diagonalPath,
+        commonCount = 0;
+
+    while (newPos + 1 < newLen && oldPos + 1 < oldLen && this.equals(newString[newPos + 1], oldString[oldPos + 1])) {
+      newPos++;
+      oldPos++;
+      commonCount++;
+    }
+
+    if (commonCount) {
+      basePath.components.push({
+        count: commonCount
+      });
+    }
+
+    basePath.newPos = newPos;
+    return oldPos;
+  },
+
+  /*istanbul ignore start*/
+
+  /*istanbul ignore end*/
+  equals: function equals(left, right) {
+    if (this.options.comparator) {
+      return this.options.comparator(left, right);
+    } else {
+      return left === right || this.options.ignoreCase && left.toLowerCase() === right.toLowerCase();
+    }
+  },
+
+  /*istanbul ignore start*/
+
+  /*istanbul ignore end*/
+  removeEmpty: function removeEmpty(array) {
+    var ret = [];
+
+    for (var i = 0; i < array.length; i++) {
+      if (array[i]) {
+        ret.push(array[i]);
+      }
+    }
+
+    return ret;
+  },
+
+  /*istanbul ignore start*/
+
+  /*istanbul ignore end*/
+  castInput: function castInput(value) {
+    return value;
+  },
+
+  /*istanbul ignore start*/
+
+  /*istanbul ignore end*/
+  tokenize: function tokenize(value) {
+    return value.split('');
+  },
+
+  /*istanbul ignore start*/
+
+  /*istanbul ignore end*/
+  join: function join(chars) {
+    return chars.join('');
+  }
+};
+
+function buildValues(diff, components, newString, oldString, useLongestToken) {
+  var componentPos = 0,
+      componentLen = components.length,
+      newPos = 0,
+      oldPos = 0;
+
+  for (; componentPos < componentLen; componentPos++) {
+    var component = components[componentPos];
+
+    if (!component.removed) {
+      if (!component.added && useLongestToken) {
+        var value = newString.slice(newPos, newPos + component.count);
+        value = value.map(function (value, i) {
+          var oldValue = oldString[oldPos + i];
+          return oldValue.length > value.length ? oldValue : value;
+        });
+        component.value = diff.join(value);
+      } else {
+        component.value = diff.join(newString.slice(newPos, newPos + component.count));
+      }
+
+      newPos += component.count; // Common case
+
+      if (!component.added) {
+        oldPos += component.count;
+      }
+    } else {
+      component.value = diff.join(oldString.slice(oldPos, oldPos + component.count));
+      oldPos += component.count; // Reverse add and remove so removes are output first to match common convention
+      // The diffing algorithm is tied to add then remove output and this is the simplest
+      // route to get the desired output with minimal overhead.
+
+      if (componentPos && components[componentPos - 1].added) {
+        var tmp = components[componentPos - 1];
+        components[componentPos - 1] = components[componentPos];
+        components[componentPos] = tmp;
+      }
+    }
+  } // Special case handle for when one terminal is ignored (i.e. whitespace).
+  // For this case we merge the terminal into the prior string and drop the change.
+  // This is only available for string mode.
+
+
+  var lastComponent = components[componentLen - 1];
+
+  if (componentLen > 1 && typeof lastComponent.value === 'string' && (lastComponent.added || lastComponent.removed) && diff.equals('', lastComponent.value)) {
+    components[componentLen - 2].value += lastComponent.value;
+    components.pop();
+  }
+
+  return components;
+}
+
+function clonePath(path) {
+  return {
+    newPos: path.newPos,
+    components: path.components.slice(0)
+  };
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9kaWZmL2Jhc2UuanMiXSwibmFtZXMiOlsiRGlmZiIsInByb3RvdHlwZSIsImRpZmYiLCJvbGRTdHJpbmciLCJuZXdTdHJpbmciLCJvcHRpb25zIiwiY2FsbGJhY2siLCJzZWxmIiwiZG9uZSIsInZhbHVlIiwic2V0VGltZW91dCIsInVuZGVmaW5lZCIsImNhc3RJbnB1dCIsInJlbW92ZUVtcHR5IiwidG9rZW5pemUiLCJuZXdMZW4iLCJsZW5ndGgiLCJvbGRMZW4iLCJlZGl0TGVuZ3RoIiwibWF4RWRpdExlbmd0aCIsImJlc3RQYXRoIiwibmV3UG9zIiwiY29tcG9uZW50cyIsIm9sZFBvcyIsImV4dHJhY3RDb21tb24iLCJqb2luIiwiY291bnQiLCJleGVjRWRpdExlbmd0aCIsImRpYWdvbmFsUGF0aCIsImJhc2VQYXRoIiwiYWRkUGF0aCIsInJlbW92ZVBhdGgiLCJjYW5BZGQiLCJjYW5SZW1vdmUiLCJjbG9uZVBhdGgiLCJwdXNoQ29tcG9uZW50IiwiYnVpbGRWYWx1ZXMiLCJ1c2VMb25nZXN0VG9rZW4iLCJleGVjIiwicmV0IiwiYWRkZWQiLCJyZW1vdmVkIiwibGFzdCIsInB1c2giLCJjb21tb25Db3VudCIsImVxdWFscyIsImxlZnQiLCJyaWdodCIsImNvbXBhcmF0b3IiLCJpZ25vcmVDYXNlIiwidG9Mb3dlckNhc2UiLCJhcnJheSIsImkiLCJzcGxpdCIsImNoYXJzIiwiY29tcG9uZW50UG9zIiwiY29tcG9uZW50TGVuIiwiY29tcG9uZW50Iiwic2xpY2UiLCJtYXAiLCJvbGRWYWx1ZSIsInRtcCIsImxhc3RDb21wb25lbnQiLCJwb3AiLCJwYXRoIl0sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7QUFBZSxTQUFTQSxJQUFULEdBQWdCLENBQUU7O0FBRWpDQSxJQUFJLENBQUNDLFNBQUwsR0FBaUI7QUFBQTs7QUFBQTtBQUNmQyxFQUFBQSxJQURlLGdCQUNWQyxTQURVLEVBQ0NDLFNBREQsRUFDMEI7QUFBQTtBQUFBO0FBQUE7QUFBZEMs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QUcsQ0FBZixJQUNHLE9BQU9NLGFBQWEsQ0FBQ3JELEtBQXJCLEtBQStCLFFBRGxDLEtBRUlxRCxhQUFhLENBQUN0QixLQUFkLElBQXVCc0IsYUFBYSxDQUFDckIsT0FGekMsS0FHR3ZDLElBQUksQ0FBQzJDLE1BQUwsQ0FBWSxFQUFaLEVBQWdCaUIsYUFBYSxDQUFDckQsS0FBOUIsQ0FIUCxFQUc2QztBQUMzQ2EsSUFBQUEsVUFBVSxDQUFDa0MsWUFBWSxHQUFHLENBQWhCLENBQVYsQ0FBNkIvQyxLQUE3QixJQUFzQ3FELGFBQWEsQ0FBQ3JELEtBQXBEO0FBQ0FhLElBQUFBLFVBQVUsQ0FBQ3lDLEdBQVg7QUFDRDs7QUFFRCxTQUFPekMsVUFBUDtBQUNEOztBQUVELFNBQVNZLFNBQVQsQ0FBbUI4QixJQUFuQixFQUF5QjtBQUN2QixTQUFPO0FBQUUzQyxJQUFBQSxNQUFNLEVBQUUyQyxJQUFJLENBQUMzQyxNQUFmO0FBQXVCQyxJQUFBQSxVQUFVLEVBQUUwQyxJQUFJLENBQUMxQyxVQUFMLENBQWdCb0MsS0FBaEIsQ0FBc0IsQ0FBdEI7QUFBbkMsR0FBUDtBQUNEIiwic291cmNlc0NvbnRlbnQiOlsiZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24gRGlmZigpIHt9XG5cbkRpZmYucHJvdG90eXBlID0ge1xuICBkaWZmKG9sZFN0cmluZywgbmV3U3RyaW5nLCBvcHRpb25zID0ge30pIHtcbiAgICBsZXQgY2FsbGJhY2sgPSBvcHRpb25zLmNhbGxiYWNrO1xuICAgIGlmICh0eXBlb2Ygb3B0aW9ucyA9PT0gJ2Z1bmN0aW9uJykge1xuICAgICAgY2FsbGJhY2sgPSBvcHRpb25zO1xuICAgICAgb3B0aW9ucyA9IHt9O1xuICAgIH1cbiAgICB0aGlzLm9wdGlvbnMgPSBvcHRpb25zO1xuXG4gICAgbGV0IHNlbGYgPSB0aGlzO1xuXG4gICAgZnVuY3Rpb24gZG9uZSh2YWx1ZSkge1xuICAgICAgaWYgKGNhbGxiYWNrKSB7XG4gICAgICAgIHNldFRpbWVvdXQoZnVuY3Rpb24oKSB7IGNhbGxiYWNrKHVuZGVmaW5lZCwgdmFsdWUpOyB9LCAwKTtcbiAgICAgICAgcmV0dXJuIHRydWU7XG4gICAgICB9IGVsc2Uge1xuICAgICAgICByZXR1cm4gdmFsdWU7XG4gICAgICB9XG4gICAgfVxuXG4gICAgLy8gQWxsb3cgc3ViY2xhc3NlcyB0byBtYXNzYWdlIHRoZSBpbnB1dCBwcmlvciB0byBydW5uaW5nXG4gICAgb2xkU3RyaW5nID0gdGhpcy5jYXN0SW5wdXQob2xkU3RyaW5nKTtcbiAgICBuZXdTdHJpbmcgPSB0aGlzLmNhc3RJbnB1dChuZXdTdHJpbmcpO1xuXG4gICAgb2xkU3RyaW5nID0gdGhpcy5yZW1vdmVFbXB0eSh0aGlzLnRva2VuaXplKG9sZFN0cmluZykpO1xuICAgIG5ld1N0cmluZyA9IHRoaXMucmVtb3ZlRW1wdHkodGhpcy50b2tlbml6ZShuZXdTdHJpbmcpKTtcblxuICAgIGxldCBuZXdMZW4gPSBuZXdTdHJpbmcubGVuZ3RoLCBvbGRMZW4gPSBvbGRTdHJpbmcubGVuZ3RoO1xuICAgIGxldCBlZGl0TGVuZ3RoID0gMTtcbiAgICBsZXQgbWF4RWRpdExlbmd0aCA9IG5ld0xlbiArIG9sZExlbjtcbiAgICBsZXQgYmVzdFBhdGggPSBbeyBuZXdQb3M6IC0xLCBjb21wb25lbnRzOiBbXSB9XTtcblxuICAgIC8vIFNlZWQgZWRpdExlbmd0aCA9IDAsIGkuZS4gdGhlIGNvbnRlbnQgc3RhcnRzIHdpdGggdGhlIHNhbWUgdmFsdWVzXG4gICAgbGV0IG9sZFBvcyA9IHRoaXMuZXh0cmFjdENvbW1vbihiZXN0UGF0aFswXSwgbmV3U3RyaW5nLCBvbGRTdHJpbmcsIDApO1xuICAgIGlmIChiZXN0UGF0aFswXS5uZXdQb3MgKyAxID49IG5ld0xlbiAmJiBvbGRQb3MgKyAxID49IG9sZExlbikge1xuICAgICAgLy8gSWRlbnRpdHkgcGVyIHRoZSBlcXVhbGl0eSBhbmQgdG9rZW5pemVyXG4gICAgICByZXR1cm4gZG9uZShbe3ZhbHVlOiB0aGlzLmpvaW4obmV3U3RyaW5nKSwgY291bnQ6IG5ld1N0cmluZy5sZW5ndGh9XSk7XG4gICAgfVxuXG4gICAgLy8gTWFpbiB3b3JrZXIgbWV0aG9kLiBjaGVja3MgYWxsIHBlcm11dGF0aW9ucyBvZiBhIGdpdmVuIGVkaXQgbGVuZ3RoIGZvciBhY2NlcHRhbmNlLlxuICAgIGZ1bmN0aW9uIGV4ZWNFZGl0TGVuZ3RoKCkge1xuICAgICAgZm9yIChsZXQgZGlhZ29uYWxQYXRoID0gLTEgKiBlZGl0TGVuZ3RoOyBkaWFnb25hbFBhdGggPD0gZWRpdExlbmd0aDsgZGlhZ29uYWxQYXRoICs9IDIpIHtcbiAgICAgICAgbGV0IGJhc2VQYXRoO1xuICAgICAgICBsZXQgYWRkUGF0aCA9IGJlc3RQYXRoW2RpYWdvbmFsUGF0aCAtIDFdLFxuICAgICAgICAgICAgcmVtb3ZlUGF0aCA9IGJlc3RQYXRoW2RpYWdvbmFsUGF0aCArIDFdLFxuICAgICAgICAgICAgb2xkUG9zID0gKHJlbW92ZVBhdGggPyByZW1vdmVQYXRoLm5ld1BvcyA6IDApIC0gZGlhZ29uYWxQYXRoO1xuICAgICAgICBpZiAoYWRkUGF0aCkge1xuICAgICAgICAgIC8vIE5vIG9uZSBlbHNlIGlzIGdvaW5nIHRvIGF0dGVtcHQgdG8gdXNlIHRoaXMgdmFsdWUsIGNsZWFyIGl0XG4gICAgICAgICAgYmVzdFBhdGhbZGlhZ29uYWxQYXRoIC0gMV0gPSB1bmRlZmluZWQ7XG4gICAgICAgIH1cblxuICAgICAgICBsZXQgY2FuQWRkID0gYWRkUGF0aCAmJiBhZGRQYXRoLm5ld1BvcyArIDEgPCBuZXdMZW4sXG4gICAgICAgICAgICBjYW5SZW1vdmUgPSByZW1vdmVQYXRoICYmIDAgPD0gb2xkUG9zICYmIG9sZFBvcyA8IG9sZExlbjtcbiAgICAgICAgaWYgKCFjYW5BZGQgJiYgIWNhblJlbW92ZSkge1xuICAgICAgICAgIC8vIElmIHRoaXMgcGF0aCBpcyBhIHRlcm1pbmFsIHRoZW4gcHJ1bmVcbiAgICAgICAgICBiZXN0UGF0aFtkaWFnb25hbFBhdGhdID0gdW5kZWZpbmVkO1xuICAgICAgICAgIGNvbnRpbnVlO1xuICAgICAgICB9XG5cbiAgICAgICAgLy8gU2VsZWN0IHRoZSBkaWFnb25hbCB0aGF0IHdlIHdhbnQgdG8gYnJhbmNoIGZyb20uIFdlIHNlbGVjdCB0aGUgcHJpb3JcbiAgICAgICAgLy8gcGF0aCB3aG9zZSBwb3NpdGlvbiBpbiB0aGUgbmV3IHN0cmluZyBpcyB0aGUgZmFydGhlc3QgZnJvbSB0aGUgb3JpZ2luXG4gICAgICAgIC8vIGFuZCBkb2VzIG5vdCBwYXNzIHRoZSBib3VuZHMgb2YgdGhlIGRpZmYgZ3JhcGhcbiAgICAgICAgaWYgKCFjYW5BZGQgfHwgKGNhblJlbW92ZSAmJiBhZGRQYXRoLm5ld1BvcyA8IHJlbW92ZVBhdGgubmV3UG9zKSkge1xuICAgICAgICAgIGJhc2VQYXRoID0gY2xvbmVQYXRoKHJlbW92ZVBhdGgpO1xuICAgICAgICAgIHNlbGYucHVzaENvbXBvbmVudChiYXNlUGF0aC5jb21wb25lbnRzLCB1bmRlZmluZWQsIHRydWUpO1xuICAgICAgICB9IGVsc2Uge1xuICAgICAgICAgIGJhc2VQYXRoID0gYWRkUGF0aDsgLy8gTm8gbmVlZCB0byBjbG9uZSwgd2UndmUgcHVsbGVkIGl0IGZyb20gdGhlIGxpc3RcbiAgICAgICAgICBiYXNlUGF0aC5uZXdQb3MrKztcbiAgICAgICAgICBzZWxmLnB1c2hDb21wb25lbnQoYmFzZVBhdGguY29tcG9uZW50cywgdHJ1ZSwgdW5kZWZpbmVkKTtcbiAgICAgICAgfVxuXG4gICAgICAgIG9sZFBvcyA9IHNlbGYuZXh0cmFjdENvbW1vbihiYXNlUGF0aCwgbmV3U3RyaW5nLCBvbGRTdHJpbmcsIGRpYWdvbmFsUGF0aCk7XG5cbiAgICAgICAgLy8gSWYgd2UgaGF2ZSBoaXQgdGhlIGVuZCBvZiBib3RoIHN0cmluZ3MsIHRoZW4gd2UgYXJlIGRvbmVcbiAgICAgICAgaWYgKGJhc2VQYXRoLm5ld1BvcyArIDEgPj0gbmV3TGVuICYmIG9sZFBvcyArIDEgPj0gb2xkTGVuKSB7XG4gICAgICAgICAgcmV0dXJuIGRvbmUoYnVpbGRWYWx1ZXMoc2VsZiwgYmFzZVBhdGguY29tcG9uZW50cywgbmV3U3RyaW5nLCBvbGRTdHJpbmcsIHNlbGYudXNlTG9uZ2VzdFRva2VuKSk7XG4gICAgICAgIH0gZWxzZSB7XG4gICAgICAgICAgLy8gT3RoZXJ3aXNlIHRyYWNrIHRoaXMgcGF0aCBhcyBhIHBvdGVudGlhbCBjYW5kaWRhdGUgYW5kIGNvbnRpbnVlLlxuICAgICAgICAgIGJlc3RQYXRoW2RpYWdvbmFsUGF0aF0gPSBiYXNlUGF0aDtcbiAgICAgICAgfVxuICAgICAgfVxuXG4gICAgICBlZGl0TGVuZ3RoKys7XG4gICAgfVxuXG4gICAgLy8gUGVyZm9ybXMgdGhlIGxlbmd0aCBvZiBlZGl0IGl0ZXJhdGlvbi4gSXMgYSBiaXQgZnVnbHkgYXMgdGhpcyBoYXMgdG8gc3VwcG9ydCB0aGVcbiAgICAvLyBzeW5jIGFuZCBhc3luYyBtb2RlIHdoaWNoIGlzIG5ldmVyIGZ1bi4gTG9vcHMgb3ZlciBleGVjRWRpdExlbmd0aCB1bnRpbCBhIHZhbHVlXG4gICAgLy8gaXMgcHJvZHVjZWQuXG4gICAgaWYgKGNhbGxiYWNrKSB7XG4gICAgICAoZnVuY3Rpb24gZXhlYygpIHtcbiAgICAgICAgc2V0VGltZW91dChmdW5jdGlvbigpIHtcbiAgICAgICAgICAvLyBUaGlzIHNob3VsZCBub3QgaGFwcGVuLCBidXQgd2Ugd2FudCB0byBiZSBzYWZlLlxuICAgICAgICAgIC8qIGlzdGFuYnVsIGlnbm9yZSBuZXh0ICovXG4gICAgICAgICAgaWYgKGVkaXRMZW5ndGggPiBtYXhFZGl0TGVuZ3RoKSB7XG4gICAgICAgICAgICByZXR1cm4gY2FsbGJhY2soKTtcbiAgICAgICAgICB9XG5cbiAgICAgICAgICBpZiAoIWV4ZWNFZGl0TGVuZ3RoKCkpIHtcbiAgICAgICAgICAgIGV4ZWMoKTtcbiAgICAgICAgICB9XG4gICAgICAgIH0sIDApO1xuICAgICAgfSgpKTtcbiAgICB9IGVsc2Uge1xuICAgICAgd2hpbGUgKGVkaXRMZW5ndGggPD0gbWF4RWRpdExlbmd0aCkge1xuICAgICAgICBsZXQgcmV0ID0gZXhlY0VkaXRMZW5ndGgoKTtcbiAgICAgICAgaWYgKHJldCkge1xuICAgICAgICAgIHJldHVybiByZXQ7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH0sXG5cbiAgcHVzaENvbXBvbmVudChjb21wb25lbnRzLCBhZGRlZCwgcmVtb3ZlZCkge1xuICAgIGxldCBsYXN0ID0gY29tcG9uZW50c1tjb21wb25lbnRzLmxlbmd0aCAtIDFdO1xuICAgIGlmIChsYXN0ICYmIGxhc3QuYWRkZWQgPT09IGFkZGVkICYmIGxhc3QucmVtb3ZlZCA9PT0gcmVtb3ZlZCkge1xuICAgICAgLy8gV2UgbmVlZCB0byBjbG9uZSBoZXJlIGFzIHRoZSBjb21wb25lbnQgY2xvbmUgb3BlcmF0aW9uIGlzIGp1c3RcbiAgICAgIC8vIGFzIHNoYWxsb3cgYXJyYXkgY2xvbmVcbiAgICAgIGNvbXBvbmVudHNbY29tcG9uZW50cy5sZW5ndGggLSAxXSA9IHtjb3VudDogbGFzdC5jb3VudCArIDEsIGFkZGVkOiBhZGRlZCwgcmVtb3ZlZDogcmVtb3ZlZCB9O1xuICAgIH0gZWxzZSB7XG4gICAgICBjb21wb25lbnRzLnB1c2goe2NvdW50OiAxLCBhZGRlZDogYWRkZWQsIHJlbW92ZWQ6IHJlbW92ZWQgfSk7XG4gICAgfVxuICB9LFxuICBleHRyYWN0Q29tbW9uKGJhc2VQYXRoLCBuZXdTdHJpbmcsIG9sZFN0cmluZywgZGlhZ29uYWxQYXRoKSB7XG4gICAgbGV0IG5ld0xlbiA9IG5ld1N0cmluZy5sZW5ndGgsXG4gICAgICAgIG9sZExlbiA9IG9sZFN0cmluZy5sZW5ndGgsXG4gICAgICAgIG5ld1BvcyA9IGJhc2VQYXRoLm5ld1BvcyxcbiAgICAgICAgb2xkUG9zID0gbmV3UG9zIC0gZGlhZ29uYWxQYXRoLFxuXG4gICAgICAgIGNvbW1vbkNvdW50ID0gMDtcbiAgICB3aGlsZSAobmV3UG9zICsgMSA8IG5ld0xlbiAmJiBvbGRQb3MgKyAxIDwgb2xkTGVuICYmIHRoaXMuZXF1YWxzKG5ld1N0cmluZ1tuZXdQb3MgKyAxXSwgb2xkU3RyaW5nW29sZFBvcyArIDFdKSkge1xuICAgICAgbmV3UG9zKys7XG4gICAgICBvbGRQb3MrKztcbiAgICAgIGNvbW1vbkNvdW50Kys7XG4gICAgfVxuXG4gICAgaWYgKGNvbW1vbkNvdW50KSB7XG4gICAgICBiYXNlUGF0aC5jb21wb25lbnRzLnB1c2goe2NvdW50OiBjb21tb25Db3VudH0pO1xuICAgIH1cblxuICAgIGJhc2VQYXRoLm5ld1BvcyA9IG5ld1BvcztcbiAgICByZXR1cm4gb2xkUG9zO1xuICB9LFxuXG4gIGVxdWFscyhsZWZ0LCByaWdodCkge1xuICAgIGlmICh0aGlzLm9wdGlvbnMuY29tcGFyYXRvcikge1xuICAgICAgcmV0dXJuIHRoaXMub3B0aW9ucy5jb21wYXJhdG9yKGxlZnQsIHJpZ2h0KTtcbiAgICB9IGVsc2Uge1xuICAgICAgcmV0dXJuIGxlZnQgPT09IHJpZ2h0XG4gICAgICAgIHx8ICh0aGlzLm9wdGlvbnMuaWdub3JlQ2FzZSAmJiBsZWZ0LnRvTG93ZXJDYXNlKCkgPT09IHJpZ2h0LnRvTG93ZXJDYXNlKCkpO1xuICAgIH1cbiAgfSxcbiAgcmVtb3ZlRW1wdHkoYXJyYXkpIHtcbiAgICBsZXQgcmV0ID0gW107XG4gICAgZm9yIChsZXQgaSA9IDA7IGkgPCBhcnJheS5sZW5ndGg7IGkrKykge1xuICAgICAgaWYgKGFycmF5W2ldKSB7XG4gICAgICAgIHJldC5wdXNoKGFycmF5W2ldKTtcbiAgICAgIH1cbiAgICB9XG4gICAgcmV0dXJuIHJldDtcbiAgfSxcbiAgY2FzdElucHV0KHZhbHVlKSB7XG4gICAgcmV0dXJuIHZhbHVlO1xuICB9LFxuICB0b2tlbml6ZSh2YWx1ZSkge1xuICAgIHJldHVybiB2YWx1ZS5zcGxpdCgnJyk7XG4gIH0sXG4gIGpvaW4oY2hhcnMpIHtcbiAgICByZXR1cm4gY2hhcnMuam9pbignJyk7XG4gIH1cbn07XG5cbmZ1bmN0aW9uIGJ1aWxkVmFsdWVzKGRpZmYsIGNvbXBvbmVudHMsIG5ld1N0cmluZywgb2xkU3RyaW5nLCB1c2VMb25nZXN0VG9rZW4pIHtcbiAgbGV0IGNvbXBvbmVudFBvcyA9IDAsXG4gICAgICBjb21wb25lbnRMZW4gPSBjb21wb25lbnRzLmxlbmd0aCxcbiAgICAgIG5ld1BvcyA9IDAsXG4gICAgICBvbGRQb3MgPSAwO1xuXG4gIGZvciAoOyBjb21wb25lbnRQb3MgPCBjb21wb25lbnRMZW47IGNvbXBvbmVudFBvcysrKSB7XG4gICAgbGV0IGNvbXBvbmVudCA9IGNvbXBvbmVudHNbY29tcG9uZW50UG9zXTtcbiAgICBpZiAoIWNvbXBvbmVudC5yZW1vdmVkKSB7XG4gICAgICBpZiAoIWNvbXBvbmVudC5hZGRlZCAmJiB1c2VMb25nZXN0VG9rZW4pIHtcbiAgICAgICAgbGV0IHZhbHVlID0gbmV3U3RyaW5nLnNsaWNlKG5ld1BvcywgbmV3UG9zICsgY29tcG9uZW50LmNvdW50KTtcbiAgICAgICAgdmFsdWUgPSB2YWx1ZS5tYXAoZnVuY3Rpb24odmFsdWUsIGkpIHtcbiAgICAgICAgICBsZXQgb2xkVmFsdWUgPSBvbGRTdHJpbmdbb2xkUG9zICsgaV07XG4gICAgICAgICAgcmV0dXJuIG9sZFZhbHVlLmxlbmd0aCA+IHZhbHVlLmxlbmd0aCA/IG9sZFZhbHVlIDogdmFsdWU7XG4gICAgICAgIH0pO1xuXG4gICAgICAgIGNvbXBvbmVudC52YWx1ZSA9IGRpZmYuam9pbih2YWx1ZSk7XG4gICAgICB9IGVsc2Uge1xuICAgICAgICBjb21wb25lbnQudmFsdWUgPSBkaWZmLmpvaW4obmV3U3RyaW5nLnNsaWNlKG5ld1BvcywgbmV3UG9zICsgY29tcG9uZW50LmNvdW50KSk7XG4gICAgICB9XG4gICAgICBuZXdQb3MgKz0gY29tcG9uZW50LmNvdW50O1xuXG4gICAgICAvLyBDb21tb24gY2FzZVxuICAgICAgaWYgKCFjb21wb25lbnQuYWRkZWQpIHtcbiAgICAgICAgb2xkUG9zICs9IGNvbXBvbmVudC5jb3VudDtcbiAgICAgIH1cbiAgICB9IGVsc2Uge1xuICAgICAgY29tcG9uZW50LnZhbHVlID0gZGlmZi5qb2luKG9sZFN0cmluZy5zbGljZShvbGRQb3MsIG9sZFBvcyArIGNvbXBvbmVudC5jb3VudCkpO1xuICAgICAgb2xkUG9zICs9IGNvbXBvbmVudC5jb3VudDtcblxuICAgICAgLy8gUmV2ZXJzZSBhZGQgYW5kIHJlbW92ZSBzbyByZW1vdmVzIGFyZSBvdXRwdXQgZmlyc3QgdG8gbWF0Y2ggY29tbW9uIGNvbnZlbnRpb25cbiAgICAgIC8vIFRoZSBkaWZmaW5nIGFsZ29yaXRobSBpcyB0aWVkIHRvIGFkZCB0aGVuIHJlbW92ZSBvdXRwdXQgYW5kIHRoaXMgaXMgdGhlIHNpbXBsZXN0XG4gICAgICAvLyByb3V0ZSB0byBnZXQgdGhlIGRlc2lyZWQgb3V0cHV0IHdpdGggbWluaW1hbCBvdmVyaGVhZC5cbiAgICAgIGlmIChjb21wb25lbnRQb3MgJiYgY29tcG9uZW50c1tjb21wb25lbnRQb3MgLSAxXS5hZGRlZCkge1xuICAgICAgICBsZXQgdG1wID0gY29tcG9uZW50c1tjb21wb25lbnRQb3MgLSAxXTtcbiAgICAgICAgY29tcG9uZW50c1tjb21wb25lbnRQb3MgLSAxXSA9IGNvbXBvbmVudHNbY29tcG9uZW50UG9zXTtcbiAgICAgICAgY29tcG9uZW50c1tjb21wb25lbnRQb3NdID0gdG1wO1xuICAgICAgfVxuICAgIH1cbiAgfVxuXG4gIC8vIFNwZWNpYWwgY2FzZSBoYW5kbGUgZm9yIHdoZW4gb25lIHRlcm1pbmFsIGlzIGlnbm9yZWQgKGkuZS4gd2hpdGVzcGFjZSkuXG4gIC8vIEZvciB0aGlzIGNhc2Ugd2UgbWVyZ2UgdGhlIHRlcm1pbmFsIGludG8gdGhlIHByaW9yIHN0cmluZyBhbmQgZHJvcCB0aGUgY2hhbmdlLlxuICAvLyBUaGlzIGlzIG9ubHkgYXZhaWxhYmxlIGZvciBzdHJpbmcgbW9kZS5cbiAgbGV0IGxhc3RDb21wb25lbnQgPSBjb21wb25lbnRzW2NvbXBvbmVudExlbiAtIDFdO1xuICBpZiAoY29tcG9uZW50TGVuID4gMVxuICAgICAgJiYgdHlwZW9mIGxhc3RDb21wb25lbnQudmFsdWUgPT09ICdzdHJpbmcnXG4gICAgICAmJiAobGFzdENvbXBvbmVudC5hZGRlZCB8fCBsYXN0Q29tcG9uZW50LnJlbW92ZWQpXG4gICAgICAmJiBkaWZmLmVxdWFscygnJywgbGFzdENvbXBvbmVudC52YWx1ZSkpIHtcbiAgICBjb21wb25lbnRzW2NvbXBvbmVudExlbiAtIDJdLnZhbHVlICs9IGxhc3RDb21wb25lbnQudmFsdWU7XG4gICAgY29tcG9uZW50cy5wb3AoKTtcbiAgfVxuXG4gIHJldHVybiBjb21wb25lbnRzO1xufVxuXG5mdW5jdGlvbiBjbG9uZVBhdGgocGF0aCkge1xuICByZXR1cm4geyBuZXdQb3M6IHBhdGgubmV3UG9zLCBjb21wb25lbnRzOiBwYXRoLmNvbXBvbmVudHMuc2xpY2UoMCkgfTtcbn1cbiJdfQ==
+
+
+/***/ }),
+/* 492 */,
+/* 493 */,
+/* 494 */,
+/* 495 */,
+/* 496 */,
+/* 497 */,
+/* 498 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+exports.__esModule = true;
+// istanbul ignore next
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
+
+var _utils = __webpack_require__(423);
+
+var _exception = __webpack_require__(311);
+
+var _exception2 = _interopRequireDefault(_exception);
+
+exports['default'] = function (instance) {
+  instance.registerHelper('each', function (context, options) {
+    if (!options) {
+      throw new _exception2['default']('Must pass iterator to #each');
+    }
+
+    var fn = options.fn,
+        inverse = options.inverse,
+        i = 0,
+        ret = '',
+        data = undefined,
+        contextPath = undefined;
+
+    if (options.data && options.ids) {
+      contextPath = _utils.appendContextPath(options.data.contextPath, options.ids[0]) + '.';
+    }
+
+    if (_utils.isFunction(context)) {
+      context = context.call(this);
+    }
+
+    if (options.data) {
+      data = _utils.createFrame(options.data);
+    }
+
+    function execIteration(field, index, last) {
+      if (data) {
+        data.key = field;
+        data.index = index;
+        data.first = index === 0;
+        data.last = !!last;
+
+        if (contextPath) {
+          data.contextPath = contextPath + field;
+        }
+      }
+
+      ret = ret + fn(context[field], {
+        data: data,
+        blockParams: _utils.blockParams([context[field], field], [contextPath + field, null])
+      });
+    }
+
+    if (context && typeof context === 'object') {
+      if (_utils.isArray(context)) {
+        for (var j = context.length; i < j; i++) {
+          if (i in context) {
+            execIteration(i, i, i === context.length - 1);
+          }
+        }
+      } else if (global.Symbol && context[global.Symbol.iterator]) {
+        var newContext = [];
+        var iterator = context[global.Symbol.iterator]();
+        for (var it = iterator.next(); !it.done; it = iterator.next()) {
+          newContext.push(it.value);
+        }
+        context = newContext;
+        for (var j = context.length; i < j; i++) {
+          execIteration(i, i, i === context.length - 1);
+        }
+      } else {
+        (function () {
+          var priorKey = undefined;
+
+          Object.keys(context).forEach(function (key) {
+            // We're running the iterations one step out of sync so we can detect
+            // the last iteration without have to scan the object twice and create
+            // an itermediate keys array.
+            if (priorKey !== undefined) {
+              execIteration(priorKey, i - 1);
+            }
+            priorKey = key;
+            i++;
+          });
+          if (priorKey !== undefined) {
+            execIteration(priorKey, i - 1, true);
+          }
+        })();
+      }
+    }
+
+    if (i === 0) {
+      ret = inverse(this);
+    }
+
+    return ret;
+  });
+};
+
+module.exports = exports['default'];
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uLy4uLy4uL2xpYi9oYW5kbGViYXJzL2hlbHBlcnMvZWFjaC5qcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7Ozs7O3FCQU1PLFVBQVU7O3lCQUNLLGNBQWM7Ozs7cUJBRXJCLFVBQVMsUUFBUSxFQUFFO0FBQ2hDLFVBQVEsQ0FBQyxjQUFjLENBQUMsTUFBTSxFQUFFLFVBQVMsT0FBTyxFQUFFLE9BQU8sRUFBRTtBQUN6RCxRQUFJLENBQUMsT0FBTyxFQUFFO0FBQ1osWUFBTSwyQkFBYyw2QkFBNkIsQ0FBQyxDQUFDO0tBQ3BEOztBQUVELFFBQUksRUFBRSxHQUFHLE9BQU8sQ0FBQyxFQUFFO1FBQ2pCLE9BQU8sR0FBRyxPQUFPLENBQUMsT0FBTztRQUN6QixDQUFDLEdBQUcsQ0FBQztRQUNMLEdBQUcsR0FBRyxFQUFFO1FBQ1IsSUFBSSxZQUFBO1FBQ0osV0FBVyxZQUFBLENBQUM7O0FBRWQsUUFBSSxPQUFPLENBQUMsSUFBSSxJQUFJLE9BQU8sQ0FBQyxHQUFHLEVBQUU7QUFDL0IsaUJBQVcsR0FDVCx5QkFBa0IsT0FBTyxDQUFDLElBQUksQ0FBQyxXQUFXLEVBQUUsT0FBTyxDQUFDLEdBQUcsQ0FBQyxDQUFDLENBQUMsQ0FBQyxHQUFHLEdBQUcsQ0FBQztLQUNyRTs7QUFFRCxRQUFJLGtCQUFXLE9BQU8sQ0FBQyxFQUFFO0FBQ3ZCLGFBQU8sR0FBRyxPQUFPLENBQUMsSUFBSSxDQUFDLElBQUksQ0FBQyxDQUFDO0tBQzlCOztBQUVELFFBQUksT0FBTyxDQUFDLElBQUksRUFBRTtBQUNoQixVQUFJLEdBQUcsbUJBQVksT0FBTyxDQUFDLElBQUksQ0FBQyxDQUFDO0tBQ2xDOztBQUVELGFBQVMsYUFBYSxDQUFDLEtBQUssRUFBRSxLQUFLLEVBQUUsSUFBSSxFQUFFO0FBQ3pDLFVBQUksSUFBSSxFQUFFO0FBQ1IsWUFBSSxDQUFDLEdBQUcsR0FBRyxLQUFLLENBQUM7QUFDakIsWUFBSSxDQUFDLEtBQUssR0FBRyxLQUFLLENBQUM7QUFDbkIsWUFBSSxDQUFDLEtBQUssR0FBRyxLQUFLLEtBQUssQ0FBQyxDQUFDO0FBQ3pCLFlBQUksQ0FBQyxJQUFJLEdBQUcsQ0FBQyxDQUFDLElBQUksQ0FBQzs7QUFFbkIsWUFBSSxXQUFXLEVBQUU7QUFDZixjQUFJLENBQUMsV0FBVyxHQUFHLFdBQVcsR0FBRyxLQUFLLENBQUM7U0FDeEM7T0FDRjs7QUFFRCxTQUFHLEdBQ0QsR0FBRyxHQUNILEVBQUUsQ0FBQyxPQUFPLENBQUMsS0FBSyxDQUFDLEVBQUU7QUFDakIsWUFBSSxFQUFFLElBQUk7QUFDVixtQkFBVyxFQUFFLG1CQUNYLENBQUMsT0FBTyxDQUFDLEtBQUssQ0FBQyxFQUFFLEtBQUssQ0FBQyxFQUN2QixDQUFDLFdBQVcsR0FBRyxLQUFLLEVBQUUsSUFBSSxDQUFDLENBQzVCO09BQ0YsQ0FBQyxDQUFDO0tBQ047O0FBRUQsUUFBSSxPQUFPLElBQUksT0FBTyxPQUFPLEtBQUssUUFBUSxFQUFFO0FBQzFDLFVBQUksZUFBUSxPQUFPLENBQUMsRUFBRTtBQUNwQixhQUFLLElBQUksQ0FBQyxHQUFHLE9BQU8sQ0FBQyxNQUFNLEVBQUUsQ0FBQyxHQUFHLENBQUMsRUFBRSxDQUFDLEVBQUUsRUFBRTtBQUN2QyxjQUFJLENBQUMsSUFBSSxPQUFPLEVBQUU7QUFDaEIseUJBQWEsQ0FBQyxDQUFDLEVBQUUsQ0FBQyxFQUFFLENBQUMsS0FBSyxPQUFPLENBQUMsTUFBTSxHQUFHLENBQUMsQ0FBQyxDQUFDO1dBQy9DO1NBQ0Y7T0FDRixNQUFNLElBQUksTUFBTSxDQUFDLE1BQU0sSUFBSSxPQUFPLENBQUMsTUFBTSxDQUFDLE1BQU0sQ0FBQyxRQUFRLENBQUMsRUFBRTtBQUMzRCxZQUFNLFVBQVUsR0FBRyxFQUFFLENBQUM7QUFDdEIsWUFBTSxRQUFRLEdBQUcsT0FBTyxDQUFDLE1BQU0sQ0FBQyxNQUFNLENBQUMsUUFBUSxDQUFDLEVBQUUsQ0FBQztBQUNuRCxhQUFLLElBQUksRUFBRSxHQUFHLFFBQVEsQ0FBQyxJQUFJLEVBQUUsRUFBRSxDQUFDLEVBQUUsQ0FBQyxJQUFJLEVBQUUsRUFBRSxHQUFHLFFBQVEsQ0FBQyxJQUFJLEVBQUUsRUFBRTtBQUM3RCxvQkFBVSxDQUFDLElBQUksQ0FBQyxFQUFFLENBQUMsS0FBSyxDQUFDLENBQUM7U0FDM0I7QUFDRCxlQUFPLEdBQUcsVUFBVSxDQUFDO0FBQ3JCLGFBQUssSUFBSSxDQUFDLEdBQUcsT0FBTyxDQUFDLE1BQU0sRUFBRSxDQUFDLEdBQUcsQ0FBQyxFQUFFLENBQUMsRUFBRSxFQUFFO0FBQ3ZDLHVCQUFhLENBQUMsQ0FBQyxFQUFFLENBQUMsRUFBRSxDQUFDLEtBQUssT0FBTyxDQUFDLE1BQU0sR0FBRyxDQUFDLENBQUMsQ0FBQztTQUMvQztPQUNGLE1BQU07O0FBQ0wsY0FBSSxRQUFRLFlBQUEsQ0FBQzs7QUFFYixnQkFBTSxDQUFDLElBQUksQ0FBQyxPQUFPLENBQUMsQ0FBQyxPQUFPLENBQUMsVUFBQSxHQUFHLEVBQUk7Ozs7QUFJbEMsZ0JBQUksUUFBUSxLQUFLLFNBQVMsRUFBRTtBQUMxQiwyQkFBYSxDQUFDLFFBQVEsRUFBRSxDQUFDLEdBQUcsQ0FBQyxDQUFDLENBQUM7YUFDaEM7QUFDRCxvQkFBUSxHQUFHLEdBQUcsQ0FBQztBQUNmLGFBQUMsRUFBRSxDQUFDO1dBQ0wsQ0FBQyxDQUFDO0FBQ0gsY0FBSSxRQUFRLEtBQUssU0FBUyxFQUFFO0FBQzFCLHlCQUFhLENBQUMsUUFBUSxFQUFFLENBQUMsR0FBRyxDQUFDLEVBQUUsSUFBSSxDQUFDLENBQUM7V0FDdEM7O09BQ0Y7S0FDRjs7QUFFRCxRQUFJLENBQUMsS0FBSyxDQUFDLEVBQUU7QUFDWCxTQUFHLEdBQUcsT0FBTyxDQUFDLElBQUksQ0FBQyxDQUFDO0tBQ3JCOztBQUVELFdBQU8sR0FBRyxDQUFDO0dBQ1osQ0FBQyxDQUFDO0NBQ0oiLCJmaWxlIjoiZWFjaC5qcyIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7XG4gIGFwcGVuZENvbnRleHRQYXRoLFxuICBibG9ja1BhcmFtcyxcbiAgY3JlYXRlRnJhbWUsXG4gIGlzQXJyYXksXG4gIGlzRnVuY3Rpb25cbn0gZnJvbSAnLi4vdXRpbHMnO1xuaW1wb3J0IEV4Y2VwdGlvbiBmcm9tICcuLi9leGNlcHRpb24nO1xuXG5leHBvcnQgZGVmYXVsdCBmdW5jdGlvbihpbnN0YW5jZSkge1xuICBpbnN0YW5jZS5yZWdpc3RlckhlbHBlcignZWFjaCcsIGZ1bmN0aW9uKGNvbnRleHQsIG9wdGlvbnMpIHtcbiAgICBpZiAoIW9wdGlvbnMpIHtcbiAgICAgIHRocm93IG5ldyBFeGNlcHRpb24oJ011c3QgcGFzcyBpdGVyYXRvciB0byAjZWFjaCcpO1xuICAgIH1cblxuICAgIGxldCBmbiA9IG9wdGlvbnMuZm4sXG4gICAgICBpbnZlcnNlID0gb3B0aW9ucy5pbnZlcnNlLFxuICAgICAgaSA9IDAsXG4gICAgICByZXQgPSAnJyxcbiAgICAgIGRhdGEsXG4gICAgICBjb250ZXh0UGF0aDtcblxuICAgIGlmIChvcHRpb25zLmRhdGEgJiYgb3B0aW9ucy5pZHMpIHtcbiAgICAgIGNvbnRleHRQYXRoID1cbiAgICAgICAgYXBwZW5kQ29udGV4dFBhdGgob3B0aW9ucy5kYXRhLmNvbnRleHRQYXRoLCBvcHRpb25zLmlkc1swXSkgKyAnLic7XG4gICAgfVxuXG4gICAgaWYgKGlzRnVuY3Rpb24oY29udGV4dCkpIHtcbiAgICAgIGNvbnRleHQgPSBjb250ZXh0LmNhbGwodGhpcyk7XG4gICAgfVxuXG4gICAgaWYgKG9wdGlvbnMuZGF0YSkge1xuICAgICAgZGF0YSA9IGNyZWF0ZUZyYW1lKG9wdGlvbnMuZGF0YSk7XG4gICAgfVxuXG4gICAgZnVuY3Rpb24gZXhlY0l0ZXJhdGlvbihmaWVsZCwgaW5kZXgsIGxhc3QpIHtcbiAgICAgIGlmIChkYXRhKSB7XG4gICAgICAgIGRhdGEua2V5ID0gZmllbGQ7XG4gICAgICAgIGRhdGEuaW5kZXggPSBpbmRleDtcbiAgICAgICAgZGF0YS5maXJzdCA9IGluZGV4ID09PSAwO1xuICAgICAgICBkYXRhLmxhc3QgPSAhIWxhc3Q7XG5cbiAgICAgICAgaWYgKGNvbnRleHRQYXRoKSB7XG4gICAgICAgICAgZGF0YS5jb250ZXh0UGF0aCA9IGNvbnRleHRQYXRoICsgZmllbGQ7XG4gICAgICAgIH1cbiAgICAgIH1cblxuICAgICAgcmV0ID1cbiAgICAgICAgcmV0ICtcbiAgICAgICAgZm4oY29udGV4dFtmaWVsZF0sIHtcbiAgICAgICAgICBkYXRhOiBkYXRhLFxuICAgICAgICAgIGJsb2NrUGFyYW1zOiBibG9ja1BhcmFtcyhcbiAgICAgICAgICAgIFtjb250ZXh0W2ZpZWxkXSwgZmllbGRdLFxuICAgICAgICAgICAgW2NvbnRleHRQYXRoICsgZmllbGQsIG51bGxdXG4gICAgICAgICAgKVxuICAgICAgICB9KTtcbiAgICB9XG5cbiAgICBpZiAoY29udGV4dCAmJiB0eXBlb2YgY29udGV4dCA9PT0gJ29iamVjdCcpIHtcbiAgICAgIGlmIChpc0FycmF5KGNvbnRleHQpKSB7XG4gICAgICAgIGZvciAobGV0IGogPSBjb250ZXh0Lmxlbmd0aDsgaSA8IGo7IGkrKykge1xuICAgICAgICAgIGlmIChpIGluIGNvbnRleHQpIHtcbiAgICAgICAgICAgIGV4ZWNJdGVyYXRpb24oaSwgaSwgaSA9PT0gY29udGV4dC5sZW5ndGggLSAxKTtcbiAgICAgICAgICB9XG4gICAgICAgIH1cbiAgICAgIH0gZWxzZSBpZiAoZ2xvYmFsLlN5bWJvbCAmJiBjb250ZXh0W2dsb2JhbC5TeW1ib2wuaXRlcmF0b3JdKSB7XG4gICAgICAgIGNvbnN0IG5ld0NvbnRleHQgPSBbXTtcbiAgICAgICAgY29uc3QgaXRlcmF0b3IgPSBjb250ZXh0W2dsb2JhbC5TeW1ib2wuaXRlcmF0b3JdKCk7XG4gICAgICAgIGZvciAobGV0IGl0ID0gaXRlcmF0b3IubmV4dCgpOyAhaXQuZG9uZTsgaXQgPSBpdGVyYXRvci5uZXh0KCkpIHtcbiAgICAgICAgICBuZXdDb250ZXh0LnB1c2goaXQudmFsdWUpO1xuICAgICAgICB9XG4gICAgICAgIGNvbnRleHQgPSBuZXdDb250ZXh0O1xuICAgICAgICBmb3IgKGxldCBqID0gY29udGV4dC5sZW5ndGg7IGkgPCBqOyBpKyspIHtcbiAgICAgICAgICBleGVjSXRlcmF0aW9uKGksIGksIGkgPT09IGNvbnRleHQubGVuZ3RoIC0gMSk7XG4gICAgICAgIH1cbiAgICAgIH0gZWxzZSB7XG4gICAgICAgIGxldCBwcmlvcktleTtcblxuICAgICAgICBPYmplY3Qua2V5cyhjb250ZXh0KS5mb3JFYWNoKGtleSA9PiB7XG4gICAgICAgICAgLy8gV2UncmUgcnVubmluZyB0aGUgaXRlcmF0aW9ucyBvbmUgc3RlcCBvdXQgb2Ygc3luYyBzbyB3ZSBjYW4gZGV0ZWN0XG4gICAgICAgICAgLy8gdGhlIGxhc3QgaXRlcmF0aW9uIHdpdGhvdXQgaGF2ZSB0byBzY2FuIHRoZSBvYmplY3QgdHdpY2UgYW5kIGNyZWF0ZVxuICAgICAgICAgIC8vIGFuIGl0ZXJtZWRpYXRlIGtleXMgYXJyYXkuXG4gICAgICAgICAgaWYgKHByaW9yS2V5ICE9PSB1bmRlZmluZWQpIHtcbiAgICAgICAgICAgIGV4ZWNJdGVyYXRpb24ocHJpb3JLZXksIGkgLSAxKTtcbiAgICAgICAgICB9XG4gICAgICAgICAgcHJpb3JLZXkgPSBrZXk7XG4gICAgICAgICAgaSsrO1xuICAgICAgICB9KTtcbiAgICAgICAgaWYgKHByaW9yS2V5ICE9PSB1bmRlZmluZWQpIHtcbiAgICAgICAgICBleGVjSXRlcmF0aW9uKHByaW9yS2V5LCBpIC0gMSwgdHJ1ZSk7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG5cbiAgICBpZiAoaSA9PT0gMCkge1xuICAgICAgcmV0ID0gaW52ZXJzZSh0aGlzKTtcbiAgICB9XG5cbiAgICByZXR1cm4gcmV0O1xuICB9KTtcbn1cbiJdfQ==
+
+
+/***/ }),
+/* 499 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+const SemVer = __webpack_require__(65)
+const parse = __webpack_require__(830)
+const {re, t} = __webpack_require__(976)
+
+const coerce = (version, options) => {
+  if (version instanceof SemVer) {
+    return version
+  }
+
+  if (typeof version === 'number') {
+    version = String(version)
+  }
+
+  if (typeof version !== 'string') {
+    return null
+  }
+
+  options = options || {}
+
+  let match = null
+  if (!options.rtl) {
+    match = version.match(re[t.COERCE])
+  } else {
+    // Find the right-most coercible string that does not share
+    // a terminus with a more left-ward coercible string.
+    // Eg, '1.2.3.4' wants to coerce '2.3.4', not '3.4' or '4'
+    //
+    // Walk through the string checking with a /g regexp
+    // Manually set the index so as to pick up overlapping matches.
+    // Stop when we get a match that ends at the string end, since no
+    // coercible string can be more right-ward without the same terminus.
+    let next
+    while ((next = re[t.COERCERTL].exec(version)) &&
+        (!match || match.index + match[0].length !== version.length)
+    ) {
+      if (!match ||
+            next.index + next[0].length !== match.index + match[0].length) {
+        match = next
+      }
+      re[t.COERCERTL].lastIndex = next.index + next[1].length + next[2].length
+    }
+    // leave it in a clean state
+    re[t.COERCERTL].lastIndex = -1
+  }
+
+  if (match === null)
+    return null
+
+  return parse(`${match[2]}.${match[3] || '0'}.${match[4] || '0'}`, options)
+}
+module.exports = coerce
+
+
+/***/ }),
+/* 500 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+var register = __webpack_require__(280)
+var addHook = __webpack_require__(510)
+var removeHook = __webpack_require__(866)
+
+// bind with array of arguments: https://stackoverflow.com/a/21792913
+var bind = Function.bind
+var bindable = bind.bind(bind)
+
+function bindApi (hook, state, name) {
+  var removeHookRef = bindable(removeHook, null).apply(null, name ? [state, name] : [state])
+  hook.api = { remove: removeHookRef }
+  hook.remove = removeHookRef
+
+  ;['before', 'error', 'after', 'wrap'].forEach(function (kind) {
+    var args = name ? [state, kind, name] : [state, kind]
+    hook[kind] = hook.api[kind] = bindable(addHook, null).apply(null, args)
+  })
+}
+
+function HookSingular () {
+  var singularHookName = 'h'
+  var singularHookState = {
+    registry: {}
+  }
+  var singularHook = register.bind(null, singularHookState, singularHookName)
+  bindApi(singularHook, singularHookState, singularHookName)
+  return singularHook
+}
+
+function HookCollection () {
+  var state = {
+    registry: {}
+  }
+
+  var hook = register.bind(null, state)
+  bindApi(hook, state)
+
+  return hook
+}
+
+var collectionHookDeprecationMessageDisplayed = false
+function Hook () {
+  if (!collectionHookDeprecationMessageDisplayed) {
+    console.warn('[before-after-hook]: "Hook()" repurposing warning, use "Hook.Collection()". Read more: https://git.io/upgrade-before-after-hook-to-1.4')
+    collectionHookDeprecationMessageDisplayed = true
+  }
+  return HookCollection()
+}
+
+Hook.Singular = HookSingular.bind()
+Hook.Collection = HookCollection.bind()
+
+module.exports = Hook
+// expose constructors as a named property for TypeScript
+module.exports.Hook = Hook
+module.exports.Singular = Hook.Singular
+module.exports.Collection = Hook.Collection
+
+
+/***/ }),
+/* 501 */
+/***/ (function(module) {
+
+var toString = Object.prototype.toString
+
+var isModern = (
+  typeof Buffer.alloc === 'function' &&
+  typeof Buffer.allocUnsafe === 'function' &&
+  typeof Buffer.from === 'function'
+)
+
+function isArrayBuffer (input) {
+  return toString.call(input).slice(8, -1) === 'ArrayBuffer'
+}
+
+function fromArrayBuffer (obj, byteOffset, length) {
+  byteOffset >>>= 0
+
+  var maxLength = obj.byteLength - byteOffset
+
+  if (maxLength < 0) {
+    throw new RangeError("'offset' is out of bounds")
+  }
+
+  if (length === undefined) {
+    length = maxLength
+  } else {
+    length >>>= 0
+
+    if (length > maxLength) {
+      throw new RangeError("'length' is out of bounds")
+    }
+  }
+
+  return isModern
+    ? Buffer.from(obj.slice(byteOffset, byteOffset + length))
+    : new Buffer(new Uint8Array(obj.slice(byteOffset, byteOffset + length)))
+}
+
+function fromString (string, encoding) {
+  if (typeof encoding !== 'string' || encoding === '') {
+    encoding = 'utf8'
+  }
+
+  if (!Buffer.isEncoding(encoding)) {
+    throw new TypeError('"encoding" must be a valid string encoding')
+  }
+
+  return isModern
+    ? Buffer.from(string, encoding)
+    : new Buffer(string, encoding)
+}
+
+function bufferFrom (value, encodingOrOffset, length) {
+  if (typeof value === 'number') {
+    throw new TypeError('"value" argument must not be a number')
+  }
+
+  if (isArrayBuffer(value)) {
+    return fromArrayBuffer(value, encodingOrOffset, length)
+  }
+
+  if (typeof value === 'string') {
+    return fromString(value, encodingOrOffset)
+  }
+
+  return isModern
+    ? Buffer.from(value)
+    : new Buffer(value)
+}
+
+module.exports = bufferFrom
+
+
+/***/ }),
+/* 502 */,
+/* 503 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+const parse = __webpack_require__(830)
+const clean = (version, options) => {
+  const s = parse(version.trim().replace(/^[=v]+/, ''), options)
+  return s ? s.version : null
+}
+module.exports = clean
+
+
+/***/ }),
+/* 504 */,
+/* 505 */,
+/* 506 */,
+/* 507 */,
+/* 508 */,
+/* 509 */,
+/* 510 */
+/***/ (function(module) {
+
+module.exports = addHook
+
+function addHook (state, kind, name, hook) {
+  var orig = hook
+  if (!state.registry[name]) {
+    state.registry[name] = []
+  }
+
+  if (kind === 'before') {
+    hook = function (method, options) {
+      return Promise.resolve()
+        .then(orig.bind(null, options))
+        .then(method.bind(null, options))
+    }
+  }
+
+  if (kind === 'after') {
+    hook = function (method, options) {
+      var result
+      return Promise.resolve()
+        .then(method.bind(null, options))
+        .then(function (result_) {
+          result = result_
+          return orig(result, options)
+        })
+        .then(function () {
+          return result
+        })
+    }
+  }
+
+  if (kind === 'error') {
+    hook = function (method, options) {
+      return Promise.resolve()
+        .then(method.bind(null, options))
+        .catch(function (error) {
+          return orig(error, options)
+        })
+    }
+  }
+
+  state.registry[name].push({
+    hook: hook,
+    orig: orig
+  })
+}
+
+
+/***/ }),
+/* 511 */,
+/* 512 */,
+/* 513 */
+/***/ (function(module) {
+
+"use strict";
+
+module.exports = function (obj, modifier) {
+	var key;
+	var val;
+	var ret = {};
+	var keys = Object.keys(Object(obj));
+
+	for (var i = 0; i < keys.length; i++) {
+		key = keys[i];
+		val = obj[key];
+		ret[key] = modifier(val, key);
+	}
+
+	return ret;
+};
+
+
+/***/ }),
+/* 514 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.ConventionalCommits = void 0;
+const chalk = __webpack_require__(843);
+const semver = __webpack_require__(876);
+const stream_1 = __webpack_require__(413);
+const checkpoint_1 = __webpack_require__(923);
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const concat = __webpack_require__(596);
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const conventionalCommitsFilter = __webpack_require__(304);
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const conventionalCommitsParser = __webpack_require__(549);
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const conventionalChangelogWriter = __webpack_require__(142);
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const parseGithubRepoUrl = __webpack_require__(345);
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const presetFactory = __webpack_require__(851);
+// Perform some post processing on the commits parsed by conventional commits:
+// 1. don't allow BREAKING CHANGES to have two newlines:
+const stream_2 = __webpack_require__(413);
+class PostProcessCommits extends stream_2.Transform {
+    _transform(chunk, _encoding, done) {
+        chunk.notes.forEach(note => {
+            note.text = note.text.split(/\r?\n/)[0];
+        });
+        this.push(JSON.stringify(chunk, null, 4) + '\n');
+        done();
+    }
+}
+class ConventionalCommits {
+    constructor(options) {
+        const parsedGithubRepoUrl = parseGithubRepoUrl(options.githubRepoUrl);
+        if (!parsedGithubRepoUrl)
+            throw Error('could not parse githubRepoUrl');
+        const [owner, repository] = parsedGithubRepoUrl;
+        this.commits = options.commits;
+        this.bumpMinorPreMajor = options.bumpMinorPreMajor || false;
+        this.host = options.host || 'https://www.github.com';
+        this.owner = owner;
+        this.repository = repository;
+        // we allow some languages (currently Ruby) to provide their own
+        // template style:
+        this.commitPartial = options.commitPartial;
+        this.headerPartial = options.headerPartial;
+        this.mainTemplate = options.mainTemplate;
+        this.changelogSections = options.changelogSections;
+    }
+    async suggestBump(version) {
+        const preMajor = this.bumpMinorPreMajor
+            ? semver.lt(version, 'v1.0.0')
+            : false;
+        const bump = await this.guessReleaseType(preMajor);
+        checkpoint_1.checkpoint(`release as ${chalk.green(bump.releaseType)}: ${chalk.yellow(bump.reason)}`, checkpoint_1.CheckpointType.Success);
+        return bump;
+    }
+    async generateChangelogEntry(options) {
+        const context = {
+            host: this.host,
+            owner: this.owner,
+            repository: this.repository,
+            version: options.version,
+            previousTag: options.previousTag,
+            currentTag: options.currentTag,
+            linkCompare: !!options.previousTag,
+        };
+        // allows the sections displayed in the CHANGELOG to be configured
+        // as an example, Ruby displays docs:
+        const config = {};
+        if (this.changelogSections) {
+            config.types = this.changelogSections;
+        }
+        const preset = await presetFactory(config);
+        preset.writerOpts.commitPartial =
+            this.commitPartial || preset.writerOpts.commitPartial;
+        preset.writerOpts.headerPartial =
+            this.headerPartial || preset.writerOpts.headerPartial;
+        preset.writerOpts.mainTemplate =
+            this.mainTemplate || preset.writerOpts.mainTemplate;
+        return new Promise((resolve, reject) => {
+            let content = '';
+            const stream = this.commitsReadable()
+                .pipe(conventionalCommitsParser(preset.parserOpts))
+                .pipe(new PostProcessCommits({ objectMode: true }))
+                .pipe(conventionalChangelogWriter(context, preset.writerOpts));
+            stream.on('error', (err) => {
+                return reject(err);
+            });
+            stream.on('data', (buffer) => {
+                content += buffer.toString('utf8');
+            });
+            stream.on('end', () => {
+                return resolve(content.trim());
+            });
+        });
+    }
+    async guessReleaseType(preMajor) {
+        const VERSIONS = ['major', 'minor', 'patch'];
+        const preset = await presetFactory({ preMajor });
+        return new Promise((resolve, reject) => {
+            const stream = this.commitsReadable()
+                .pipe(conventionalCommitsParser(preset.parserOpts))
+                .pipe(concat((data) => {
+                const commits = conventionalCommitsFilter(data);
+                let result = preset.recommendedBumpOpts.whatBump(commits, preset.recommendedBumpOpts);
+                if (result && result.level !== null) {
+                    result.releaseType = VERSIONS[result.level];
+                }
+                else if (result === null) {
+                    result = {};
+                }
+                // we have slightly different logic than the default of conventional commits,
+                // the minor should be bumped when features are introduced for pre 1.x.x libs:
+                if (result.reason.indexOf(' 0 features') === -1 &&
+                    result.releaseType === 'patch') {
+                    result.releaseType = 'minor';
+                }
+                return resolve(result);
+            }));
+            stream.on('error', (err) => {
+                return reject(err);
+            });
+        });
+    }
+    commitsReadable() {
+        // The conventional commits parser expects an array of string commit
+        // messages terminated by `-hash-` followed by the commit sha. We
+        // piggyback off of this, and use this sha when choosing a
+        // point to branch from for PRs.
+        const commitsReadable = new stream_1.Readable();
+        this.commits.forEach((commit) => {
+            commitsReadable.push(`${commit.message}\n-hash-\n${commit.sha ? commit.sha : ''}`);
+        });
+        commitsReadable.push(null);
+        return commitsReadable;
+    }
+}
+exports.ConventionalCommits = ConventionalCommits;
+//# sourceMappingURL=conventional-commits.js.map
+
+/***/ }),
+/* 515 */,
+/* 516 */,
+/* 517 */
+/***/ (function(module) {
+
+"use strict";
+
+
+/* global SharedArrayBuffer, Atomics */
+
+if (typeof SharedArrayBuffer !== 'undefined' && typeof Atomics !== 'undefined') {
+  const nil = new Int32Array(new SharedArrayBuffer(4))
+
+  function sleep (ms) {
+    // also filters out NaN, non-number types, including empty strings, but allows bigints
+    const valid = ms > 0 && ms < Infinity 
+    if (valid === false) {
+      if (typeof ms !== 'number' && typeof ms !== 'bigint') {
+        throw TypeError('sleep: ms must be a number')
+      }
+      throw RangeError('sleep: ms must be a number that is greater than 0 but less than Infinity')
+    }
+
+    Atomics.wait(nil, 0, 0, Number(ms))
+  }
+  module.exports = sleep
+} else {
+
+  function sleep (ms) {
+    // also filters out NaN, non-number types, including empty strings, but allows bigints
+    const valid = ms > 0 && ms < Infinity 
+    if (valid === false) {
+      if (typeof ms !== 'number' && typeof ms !== 'bigint') {
+        throw TypeError('sleep: ms must be a number')
+      }
+      throw RangeError('sleep: ms must be a number that is greater than 0 but less than Infinity')
+    }
+    const target = Date.now() + Number(ms)
+    while (target > Date.now()){}
+  }
+
+  module.exports = sleep
+
+}
+
+
+/***/ }),
+/* 518 */,
+/* 519 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+const rx = __webpack_require__(789)
+
+module.exports = redactor
+
+function redactor ({ secret, serialize, wcLen, strict, isCensorFct, censorFctTakesPath }, state) {
+  /* eslint-disable-next-line */
+  const redact = Function('o', `
+    if (typeof o !== 'object' || o == null) {
+      ${strictImpl(strict, serialize)}
+    }
+    const { censor, secret } = this
+    ${redactTmpl(secret, isCensorFct, censorFctTakesPath)}
+    this.compileRestore()
+    ${dynamicRedactTmpl(wcLen > 0, isCensorFct, censorFctTakesPath)}
+    ${resultTmpl(serialize)}
+  `).bind(state)
+
+  if (serialize === false) {
+    redact.restore = (o) => state.restore(o)
+  }
+
+  return redact
+}
+
+function redactTmpl (secret, isCensorFct, censorFctTakesPath) {
+  return Object.keys(secret).map((path) => {
+    const { escPath, leadingBracket, path: arrPath } = secret[path]
+    const skip = leadingBracket ? 1 : 0
+    const delim = leadingBracket ? '' : '.'
+    const hops = []
+    var match
+    while ((match = rx.exec(path)) !== null) {
+      const [ , ix ] = match
+      const { index, input } = match
+      if (index > skip) hops.push(input.substring(0, index - (ix ? 0 : 1)))
+    }
+    var existence = hops.map((p) => `o${delim}${p}`).join(' && ')
+    if (existence.length === 0) existence += `o${delim}${path} != null`
+    else existence += ` && o${delim}${path} != null`
+
+    const circularDetection = `
+      switch (true) {
+        ${hops.reverse().map((p) => `
+          case o${delim}${p} === censor:
+            secret[${escPath}].circle = ${JSON.stringify(p)}
+            break
+        `).join('\n')}
+      }
+    `
+
+    const censorArgs = censorFctTakesPath
+      ? `val, ${JSON.stringify(arrPath)}`
+      : `val`
+
+    return `
+      if (${existence}) {
+        const val = o${delim}${path}
+        if (val === censor) {
+          secret[${escPath}].precensored = true
+        } else {
+          secret[${escPath}].val = val
+          o${delim}${path} = ${isCensorFct ? `censor(${censorArgs})` : 'censor'}
+          ${circularDetection}
+        }
+      }
+    `
+  }).join('\n')
+}
+
+function dynamicRedactTmpl (hasWildcards, isCensorFct, censorFctTakesPath) {
+  return hasWildcards === true ? `
+    {
+      const { wildcards, wcLen, groupRedact, nestedRedact } = this
+      for (var i = 0; i < wcLen; i++) {
+        const { before, beforeStr, after, nested } = wildcards[i]
+        if (nested === true) {
+          secret[beforeStr] = secret[beforeStr] || []
+          nestedRedact(secret[beforeStr], o, before, after, censor, ${isCensorFct}, ${censorFctTakesPath})
+        } else secret[beforeStr] = groupRedact(o, before, censor, ${isCensorFct}, ${censorFctTakesPath})
+      }
+    }
+  ` : ''
+}
+
+function resultTmpl (serialize) {
+  return serialize === false ? `return o` : `
+    var s = this.serialize(o)
+    this.restore(o)
+    return s
+  `
+}
+
+function strictImpl (strict, serialize) {
+  return strict === true
+    ? `throw Error('fast-redact: primitives cannot be redacted')`
+    : serialize === false ? `return o` : `return this.serialize(o)`
+}
+
+
+/***/ }),
+/* 520 */,
+/* 521 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PatchSyntaxError = exports.FileData = void 0;
+/**
+ * The content and the mode of a file.
+ * Default file mode is a text file which has code '100644'.
+ * If `content` is not null, then `content` must be the entire file content.
+ * See https://developer.github.com/v3/git/trees/#tree-object for details on mode.
+ */
+class FileData {
+    constructor(content, mode = '100644') {
+        this.mode = mode;
+        this.content = content;
+    }
+}
+exports.FileData = FileData;
+class PatchSyntaxError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'PatchSyntaxError';
+    }
+}
+exports.PatchSyntaxError = PatchSyntaxError;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+/* 522 */,
+/* 523 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+// Packages
+var retrier = __webpack_require__(560);
+
+function retry(fn, opts) {
+  function run(resolve, reject) {
+    var options = opts || {};
+
+    // Default `randomize` to true
+    if (!('randomize' in options)) {
+      options.randomize = true;
+    }
+
+    var op = retrier.operation(options);
+
+    // We allow the user to abort retrying
+    // this makes sense in the cases where
+    // knowledge is obtained that retrying
+    // would be futile (e.g.: auth errors)
+
+    function bail(err) {
+      reject(err || new Error('Aborted'));
+    }
+
+    function onError(err, num) {
+      if (err.bail) {
+        bail(err);
+        return;
+      }
+
+      if (!op.retry(err)) {
+        reject(op.mainError());
+      } else if (options.onRetry) {
+        options.onRetry(err, num);
+      }
+    }
+
+    function runAttempt(num) {
+      var val;
+
+      try {
+        val = fn(bail, num);
+      } catch (err) {
+        onError(err, num);
+        return;
+      }
+
+      Promise.resolve(val)
+        .then(resolve)
+        .catch(function catchIt(err) {
+          onError(err, num);
+        });
+    }
+
+    op.attempt(runAttempt);
+  }
+
+  return new Promise(run);
+}
+
+module.exports = retry;
+
+
+/***/ }),
+/* 524 */,
+/* 525 */
+/***/ (function(module) {
+
+"use strict";
+
+
+module.exports = state
+
+function state (o) {
+  const {
+    secret,
+    censor,
+    compileRestore,
+    serialize,
+    groupRedact,
+    nestedRedact,
+    wildcards,
+    wcLen
+  } = o
+  const builder = [{ secret, censor, compileRestore }]
+  if (serialize !== false) builder.push({ serialize })
+  if (wcLen > 0) builder.push({ groupRedact, nestedRedact, wildcards, wcLen })
+  return Object.assign(...builder)
+}
+
+
+/***/ }),
+/* 526 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+function getUserAgent() {
+  if (typeof navigator === "object" && "userAgent" in navigator) {
+    return navigator.userAgent;
+  }
+
+  if (typeof process === "object" && "version" in process) {
+    return `Node.js/${process.version.substr(1)} (${process.platform}; ${process.arch})`;
+  }
+
+  return "<environment undetectable>";
+}
+
+exports.getUserAgent = getUserAgent;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+/* 527 */,
+/* 528 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = _default;
+
+/*istanbul ignore end*/
+// Iterator that traverses in the range of [min, max], stepping
+// by distance from a given start position. I.e. for [0, 4], with
+// start of 2, this will iterate 2, 3, 1, 4, 0.
+function
+/*istanbul ignore start*/
+_default
+/*istanbul ignore end*/
+(start, minLine, maxLine) {
+  var wantForward = true,
+      backwardExhausted = false,
+      forwardExhausted = false,
+      localOffset = 1;
+  return function iterator() {
+    if (wantForward && !forwardExhausted) {
+      if (backwardExhausted) {
+        localOffset++;
+      } else {
+        wantForward = false;
+      } // Check if trying to fit beyond text length, and if not, check it fits
+      // after offset location (or desired location on first iteration)
+
+
+      if (start + localOffset <= maxLine) {
+        return localOffset;
+      }
+
+      forwardExhausted = true;
+    }
+
+    if (!backwardExhausted) {
+      if (!forwardExhausted) {
+        wantForward = true;
+      } // Check if trying to fit before text beginning, and if not, check it fits
+      // before offset location
+
+
+      if (minLine <= start - localOffset) {
+        return -localOffset++;
+      }
+
+      backwardExhausted = true;
+      return iterator();
+    } // We tried to fit hunk before text beginning and beyond text length, then
+    // hunk can't fit on the text. Return undefined
+
+  };
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy91dGlsL2Rpc3RhbmNlLWl0ZXJhdG9yLmpzIl0sIm5hbWVzIjpbInN0YXJ0IiwibWluTGluZSIsIm1heExpbmUiLCJ3YW50Rm9yd2FyZCIsImJhY2t3YXJkRXhoYXVzdGVkIiwiZm9yd2FyZEV4aGF1c3RlZCIsImxvY2FsT2Zmc2V0IiwiaXRlcmF0b3IiXSwibWFwcGluZ3MiOiI7Ozs7Ozs7OztBQUFBO0FBQ0E7QUFDQTtBQUNlO0FBQUE7QUFBQTtBQUFBO0FBQUEsQ0FBU0EsS0FBVCxFQUFnQkMsT0FBaEIsRUFBeUJDLE9BQXpCLEVBQWtDO0FBQy9DLE1BQUlDLFdBQVcsR0FBRyxJQUFsQjtBQUFBLE1BQ0lDLGlCQUFpQixHQUFHLEtBRHhCO0FBQUEsTUFFSUMsZ0JBQWdCLEdBQUcsS0FGdkI7QUFBQSxNQUdJQyxXQUFXLEdBQUcsQ0FIbEI7QUFLQSxTQUFPLFNBQVNDLFFBQVQsR0FBb0I7QUFDekIsUUFBSUosV0FBVyxJQUFJLENBQUNFLGdCQUFwQixFQUFzQztBQUNwQyxVQUFJRCxpQkFBSixFQUF1QjtBQUNyQkUsUUFBQUEsV0FBVztBQUNaLE9BRkQsTUFFTztBQUNMSCxRQUFBQSxXQUFXLEdBQUcsS0FBZDtBQUNELE9BTG1DLENBT3BDO0FBQ0E7OztBQUNBLFVBQUlILEtBQUssR0FBR00sV0FBUixJQUF1QkosT0FBM0IsRUFBb0M7QUFDbEMsZUFBT0ksV0FBUDtBQUNEOztBQUVERCxNQUFBQSxnQkFBZ0IsR0FBRyxJQUFuQjtBQUNEOztBQUVELFFBQUksQ0FBQ0QsaUJBQUwsRUFBd0I7QUFDdEIsVUFBSSxDQUFDQyxnQkFBTCxFQUF1QjtBQUNyQkYsUUFBQUEsV0FBVyxHQUFHLElBQWQ7QUFDRCxPQUhxQixDQUt0QjtBQUNBOzs7QUFDQSxVQUFJRixPQUFPLElBQUlELEtBQUssR0FBR00sV0FBdkIsRUFBb0M7QUFDbEMsZUFBTyxDQUFDQSxXQUFXLEVBQW5CO0FBQ0Q7O0FBRURGLE1BQUFBLGlCQUFpQixHQUFHLElBQXBCO0FBQ0EsYUFBT0csUUFBUSxFQUFmO0FBQ0QsS0E5QndCLENBZ0N6QjtBQUNBOztBQUNELEdBbENEO0FBbUNEIiwic291cmNlc0NvbnRlbnQiOlsiLy8gSXRlcmF0b3IgdGhhdCB0cmF2ZXJzZXMgaW4gdGhlIHJhbmdlIG9mIFttaW4sIG1heF0sIHN0ZXBwaW5nXG4vLyBieSBkaXN0YW5jZSBmcm9tIGEgZ2l2ZW4gc3RhcnQgcG9zaXRpb24uIEkuZS4gZm9yIFswLCA0XSwgd2l0aFxuLy8gc3RhcnQgb2YgMiwgdGhpcyB3aWxsIGl0ZXJhdGUgMiwgMywgMSwgNCwgMC5cbmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uKHN0YXJ0LCBtaW5MaW5lLCBtYXhMaW5lKSB7XG4gIGxldCB3YW50Rm9yd2FyZCA9IHRydWUsXG4gICAgICBiYWNrd2FyZEV4aGF1c3RlZCA9IGZhbHNlLFxuICAgICAgZm9yd2FyZEV4aGF1c3RlZCA9IGZhbHNlLFxuICAgICAgbG9jYWxPZmZzZXQgPSAxO1xuXG4gIHJldHVybiBmdW5jdGlvbiBpdGVyYXRvcigpIHtcbiAgICBpZiAod2FudEZvcndhcmQgJiYgIWZvcndhcmRFeGhhdXN0ZWQpIHtcbiAgICAgIGlmIChiYWNrd2FyZEV4aGF1c3RlZCkge1xuICAgICAgICBsb2NhbE9mZnNldCsrO1xuICAgICAgfSBlbHNlIHtcbiAgICAgICAgd2FudEZvcndhcmQgPSBmYWxzZTtcbiAgICAgIH1cblxuICAgICAgLy8gQ2hlY2sgaWYgdHJ5aW5nIHRvIGZpdCBiZXlvbmQgdGV4dCBsZW5ndGgsIGFuZCBpZiBub3QsIGNoZWNrIGl0IGZpdHNcbiAgICAgIC8vIGFmdGVyIG9mZnNldCBsb2NhdGlvbiAob3IgZGVzaXJlZCBsb2NhdGlvbiBvbiBmaXJzdCBpdGVyYXRpb24pXG4gICAgICBpZiAoc3RhcnQgKyBsb2NhbE9mZnNldCA8PSBtYXhMaW5lKSB7XG4gICAgICAgIHJldHVybiBsb2NhbE9mZnNldDtcbiAgICAgIH1cblxuICAgICAgZm9yd2FyZEV4aGF1c3RlZCA9IHRydWU7XG4gICAgfVxuXG4gICAgaWYgKCFiYWNrd2FyZEV4aGF1c3RlZCkge1xuICAgICAgaWYgKCFmb3J3YXJkRXhoYXVzdGVkKSB7XG4gICAgICAgIHdhbnRGb3J3YXJkID0gdHJ1ZTtcbiAgICAgIH1cblxuICAgICAgLy8gQ2hlY2sgaWYgdHJ5aW5nIHRvIGZpdCBiZWZvcmUgdGV4dCBiZWdpbm5pbmcsIGFuZCBpZiBub3QsIGNoZWNrIGl0IGZpdHNcbiAgICAgIC8vIGJlZm9yZSBvZmZzZXQgbG9jYXRpb25cbiAgICAgIGlmIChtaW5MaW5lIDw9IHN0YXJ0IC0gbG9jYWxPZmZzZXQpIHtcbiAgICAgICAgcmV0dXJuIC1sb2NhbE9mZnNldCsrO1xuICAgICAgfVxuXG4gICAgICBiYWNrd2FyZEV4aGF1c3RlZCA9IHRydWU7XG4gICAgICByZXR1cm4gaXRlcmF0b3IoKTtcbiAgICB9XG5cbiAgICAvLyBXZSB0cmllZCB0byBmaXQgaHVuayBiZWZvcmUgdGV4dCBiZWdpbm5pbmcgYW5kIGJleW9uZCB0ZXh0IGxlbmd0aCwgdGhlblxuICAgIC8vIGh1bmsgY2FuJ3QgZml0IG9uIHRoZSB0ZXh0LiBSZXR1cm4gdW5kZWZpbmVkXG4gIH07XG59XG4iXX0=
+
+
+/***/ }),
+/* 529 */,
+/* 530 */,
+/* 531 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+// Determine if version is greater than all the versions possible in the range.
+const outside = __webpack_require__(462)
+const gtr = (version, range, options) => outside(version, range, '>', options)
+module.exports = gtr
+
+
+/***/ }),
+/* 532 */,
+/* 533 */,
+/* 534 */,
+/* 535 */,
+/* 536 */,
+/* 537 */,
+/* 538 */,
+/* 539 */,
+/* 540 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Python = void 0;
+const release_pr_1 = __webpack_require__(93);
+const conventional_commits_1 = __webpack_require__(514);
+const checkpoint_1 = __webpack_require__(923);
+// Generic
+const changelog_1 = __webpack_require__(261);
+// Python specific.
+const setup_py_1 = __webpack_require__(910);
+const setup_cfg_1 = __webpack_require__(201);
+const version_py_1 = __webpack_require__(218);
+const CHANGELOG_SECTIONS = [
+    { type: 'feat', section: 'Features' },
+    { type: 'fix', section: 'Bug Fixes' },
+    { type: 'perf', section: 'Performance Improvements' },
+    { type: 'deps', section: 'Dependencies' },
+    { type: 'revert', section: 'Reverts' },
+    { type: 'docs', section: 'Documentation' },
+    { type: 'style', section: 'Styles', hidden: true },
+    { type: 'chore', section: 'Miscellaneous Chores', hidden: true },
+    { type: 'refactor', section: 'Code Refactoring', hidden: true },
+    { type: 'test', section: 'Tests', hidden: true },
+    { type: 'build', section: 'Build System', hidden: true },
+    { type: 'ci', section: 'Continuous Integration', hidden: true },
+];
+class Python extends release_pr_1.ReleasePR {
+    async _run() {
+        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}-` : undefined);
+        const commits = await this.commits({
+            sha: latestTag ? latestTag.sha : undefined,
+            path: this.path,
+        });
+        const cc = new conventional_commits_1.ConventionalCommits({
+            commits,
+            githubRepoUrl: this.repoUrl,
+            bumpMinorPreMajor: this.bumpMinorPreMajor,
+            changelogSections: this.changelogSections || CHANGELOG_SECTIONS,
+        });
+        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
+        const changelogEntry = await cc.generateChangelogEntry({
+            version: candidate.version,
+            currentTag: `v${candidate.version}`,
+            previousTag: candidate.previousTag,
+        });
+        // don't create a release candidate until user facing changes
+        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
+        // one line is a good indicator that there were no interesting commits.
+        if (this.changelogEmpty(changelogEntry)) {
+            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            return;
+        }
+        const updates = [];
+        updates.push(new changelog_1.Changelog({
+            path: this.addPath('CHANGELOG.md'),
+            changelogEntry,
+            version: candidate.version,
+            packageName: this.packageName,
+        }));
+        updates.push(new setup_cfg_1.SetupCfg({
+            path: this.addPath('setup.cfg'),
+            changelogEntry,
+            version: candidate.version,
+            packageName: this.packageName,
+        }));
+        updates.push(new setup_py_1.SetupPy({
+            path: this.addPath('setup.py'),
+            changelogEntry,
+            version: candidate.version,
+            packageName: this.packageName,
+        }));
+        // There should be only one version.py, but foreach in case that is incorrect
+        const versionPyFilesSearch = this.gh.findFilesByFilename('version.py');
+        const versionPyFiles = await versionPyFilesSearch;
+        versionPyFiles.forEach(path => {
+            updates.push(new version_py_1.VersionPy({
+                path: this.addPath(path),
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+        });
+        await this.openPR({
+            sha: commits[0].sha,
+            changelogEntry: `${changelogEntry}\n---\n`,
+            updates,
+            version: candidate.version,
+            includePackageName: this.monorepoTags,
+        });
+    }
+    defaultInitialVersion() {
+        return '0.1.0';
+    }
+}
+exports.Python = Python;
+Python.releaserName = 'python';
+//# sourceMappingURL=python.js.map
+
+/***/ }),
+/* 541 */,
+/* 542 */,
+/* 543 */,
+/* 544 */,
+/* 545 */,
+/* 546 */,
+/* 547 */,
+/* 548 */
+/***/ (function(module) {
+
+const debug = (
+  typeof process === 'object' &&
+  process.env &&
+  process.env.NODE_DEBUG &&
+  /\bsemver\b/i.test(process.env.NODE_DEBUG)
+) ? (...args) => console.error('SEMVER', ...args)
+  : () => {}
+
+module.exports = debug
+
+
+/***/ }),
+/* 549 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+"use strict";
+
+
+var parser = __webpack_require__(320)
+var regex = __webpack_require__(970)
+var through = __webpack_require__(576)
+var _ = __webpack_require__(288)
+
+function assignOpts (options) {
+  options = _.extend({
+    headerPattern: /^(\w*)(?:\(([\w$.\-*/ ]*)\))?: (.*)$/,
+    headerCorrespondence: ['type', 'scope', 'subject'],
+    referenceActions: [
+      'close',
+      'closes',
+      'closed',
+      'fix',
+      'fixes',
+      'fixed',
+      'resolve',
+      'resolves',
+      'resolved'
+    ],
+    issuePrefixes: ['#'],
+    noteKeywords: ['BREAKING CHANGE'],
+    fieldPattern: /^-(.*?)-$/,
+    revertPattern: /^Revert\s"([\s\S]*)"\s*This reverts commit (\w*)\./,
+    revertCorrespondence: ['header', 'hash'],
+    warn: function () {},
+    mergePattern: null,
+    mergeCorrespondence: null
+  }, options)
+
+  if (typeof options.headerPattern === 'string') {
+    options.headerPattern = new RegExp(options.headerPattern)
+  }
+
+  if (typeof options.headerCorrespondence === 'string') {
+    options.headerCorrespondence = options.headerCorrespondence.split(',')
+  }
+
+  if (typeof options.referenceActions === 'string') {
+    options.referenceActions = options.referenceActions.split(',')
+  }
+
+  if (typeof options.issuePrefixes === 'string') {
+    options.issuePrefixes = options.issuePrefixes.split(',')
+  }
+
+  if (typeof options.noteKeywords === 'string') {
+    options.noteKeywords = options.noteKeywords.split(',')
+  }
+
+  if (typeof options.fieldPattern === 'string') {
+    options.fieldPattern = new RegExp(options.fieldPattern)
+  }
+
+  if (typeof options.revertPattern === 'string') {
+    options.revertPattern = new RegExp(options.revertPattern)
+  }
+
+  if (typeof options.revertCorrespondence === 'string') {
+    options.revertCorrespondence = options.revertCorrespondence.split(',')
+  }
+
+  if (typeof options.mergePattern === 'string') {
+    options.mergePattern = new RegExp(options.mergePattern)
+  }
+
+  return options
+}
+
+function conventionalCommitsParser (options) {
+  options = assignOpts(options)
+  var reg = regex(options)
+
+  return through.obj(function (data, enc, cb) {
+    var commit
+
+    try {
+      commit = parser(data.toString(), options, reg)
+      cb(null, commit)
+    } catch (err) {
+      if (options.warn === true) {
+        cb(err)
+      } else {
+        options.warn(err.toString())
+        cb(null, '')
+      }
+    }
+  })
+}
+
+function sync (commit, options) {
+  options = assignOpts(options)
+  var reg = regex(options)
+
+  return parser(commit, options, reg)
+}
+
+module.exports = conventionalCommitsParser
+module.exports.sync = sync
+
+
+/***/ }),
+/* 550 */,
+/* 551 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.generateOptions = generateOptions;
+
+/*istanbul ignore end*/
+function generateOptions(options, defaults) {
+  if (typeof options === 'function') {
+    defaults.callback = options;
+  } else if (options) {
+    for (var name in options) {
+      /* istanbul ignore else */
+      if (options.hasOwnProperty(name)) {
+        defaults[name] = options[name];
+      }
+    }
+  }
+
+  return defaults;
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy91dGlsL3BhcmFtcy5qcyJdLCJuYW1lcyI6WyJnZW5lcmF0ZU9wdGlvbnMiLCJvcHRpb25zIiwiZGVmYXVsdHMiLCJjYWxsYmFjayIsIm5hbWUiLCJoYXNPd25Qcm9wZXJ0eSJdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7O0FBQU8sU0FBU0EsZUFBVCxDQUF5QkMsT0FBekIsRUFBa0NDLFFBQWxDLEVBQTRDO0FBQ2pELE1BQUksT0FBT0QsT0FBUCxLQUFtQixVQUF2QixFQUFtQztBQUNqQ0MsSUFBQUEsUUFBUSxDQUFDQyxRQUFULEdBQW9CRixPQUFwQjtBQUNELEdBRkQsTUFFTyxJQUFJQSxPQUFKLEVBQWE7QUFDbEIsU0FBSyxJQUFJRyxJQUFULElBQWlCSCxPQUFqQixFQUEwQjtBQUN4QjtBQUNBLFVBQUlBLE9BQU8sQ0FBQ0ksY0FBUixDQUF1QkQsSUFBdkIsQ0FBSixFQUFrQztBQUNoQ0YsUUFBQUEsUUFBUSxDQUFDRSxJQUFELENBQVIsR0FBaUJILE9BQU8sQ0FBQ0csSUFBRCxDQUF4QjtBQUNEO0FBQ0Y7QUFDRjs7QUFDRCxTQUFPRixRQUFQO0FBQ0QiLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgZnVuY3Rpb24gZ2VuZXJhdGVPcHRpb25zKG9wdGlvbnMsIGRlZmF1bHRzKSB7XG4gIGlmICh0eXBlb2Ygb3B0aW9ucyA9PT0gJ2Z1bmN0aW9uJykge1xuICAgIGRlZmF1bHRzLmNhbGxiYWNrID0gb3B0aW9ucztcbiAgfSBlbHNlIGlmIChvcHRpb25zKSB7XG4gICAgZm9yIChsZXQgbmFtZSBpbiBvcHRpb25zKSB7XG4gICAgICAvKiBpc3RhbmJ1bCBpZ25vcmUgZWxzZSAqL1xuICAgICAgaWYgKG9wdGlvbnMuaGFzT3duUHJvcGVydHkobmFtZSkpIHtcbiAgICAgICAgZGVmYXVsdHNbbmFtZV0gPSBvcHRpb25zW25hbWVdO1xuICAgICAgfVxuICAgIH1cbiAgfVxuICByZXR1cm4gZGVmYXVsdHM7XG59XG4iXX0=
+
+
+/***/ }),
+/* 552 */,
+/* 553 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.diffLines = diffLines;
+exports.diffTrimmedLines = diffTrimmedLines;
+exports.lineDiff = void 0;
+
+/*istanbul ignore end*/
+var
+/*istanbul ignore start*/
+_base = _interopRequireDefault(__webpack_require__(491))
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_params = __webpack_require__(551)
+/*istanbul ignore end*/
+;
+
+/*istanbul ignore start*/ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/*istanbul ignore end*/
+var lineDiff = new
+/*istanbul ignore start*/
+_base
+/*istanbul ignore end*/
+.
+/*istanbul ignore start*/
+default
+/*istanbul ignore end*/
+();
+
+/*istanbul ignore start*/
+exports.lineDiff = lineDiff;
+
+/*istanbul ignore end*/
+lineDiff.tokenize = function (value) {
+  var retLines = [],
+      linesAndNewlines = value.split(/(\n|\r\n)/); // Ignore the final empty token that occurs if the string ends with a new line
+
+  if (!linesAndNewlines[linesAndNewlines.length - 1]) {
+    linesAndNewlines.pop();
+  } // Merge the content and line separators into single tokens
+
+
+  for (var i = 0; i < linesAndNewlines.length; i++) {
+    var line = linesAndNewlines[i];
+
+    if (i % 2 && !this.options.newlineIsToken) {
+      retLines[retLines.length - 1] += line;
+    } else {
+      if (this.options.ignoreWhitespace) {
+        line = line.trim();
+      }
+
+      retLines.push(line);
+    }
+  }
+
+  return retLines;
+};
+
+function diffLines(oldStr, newStr, callback) {
+  return lineDiff.diff(oldStr, newStr, callback);
+}
+
+function diffTrimmedLines(oldStr, newStr, callback) {
+  var options =
+  /*istanbul ignore start*/
+  (0,
+  /*istanbul ignore end*/
+
+  /*istanbul ignore start*/
+  _params
+  /*istanbul ignore end*/
+  .
+  /*istanbul ignore start*/
+  generateOptions)
+  /*istanbul ignore end*/
+  (callback, {
+    ignoreWhitespace: true
+  });
+  return lineDiff.diff(oldStr, newStr, options);
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9kaWZmL2xpbmUuanMiXSwibmFtZXMiOlsibGluZURpZmYiLCJEaWZmIiwidG9rZW5pemUiLCJ2YWx1ZSIsInJldExpbmVzIiwibGluZXNBbmROZXdsaW5lcyIsInNwbGl0IiwibGVuZ3RoIiwicG9wIiwiaSIsImxpbmUiLCJvcHRpb25zIiwibmV3bGluZUlzVG9rZW4iLCJpZ25vcmVXaGl0ZXNwYWNlIiwidHJpbSIsInB1c2giLCJkaWZmTGluZXMiLCJvbGRTdHIiLCJuZXdTdHIiLCJjYWxsYmFjayIsImRpZmYiLCJkaWZmVHJpbW1lZExpbmVzIiwiZ2VuZXJhdGVPcHRpb25zIl0sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7OztBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7O0FBQ0E7QUFBQTtBQUFBO0FBQUE7QUFBQTs7Ozs7QUFFTyxJQUFNQSxRQUFRLEdBQUc7QUFBSUM7QUFBQUE7QUFBQUE7QUFBQUE7QUFBQUE7QUFBQUE7QUFBSjtBQUFBLEVBQWpCOzs7Ozs7QUFDUEQsUUFBUSxDQUFDRSxRQUFULEdBQW9CLFVBQVNDLEtBQVQsRUFBZ0I7QUFDbEMsTUFBSUMsUUFBUSxHQUFHLEVBQWY7QUFBQSxNQUNJQyxnQkFBZ0IsR0FBR0YsS0FBSyxDQUFDRyxLQUFOLENBQVksV0FBWixDQUR2QixDQURrQyxDQUlsQzs7QUFDQSxNQUFJLENBQUNELGdCQUFnQixDQUFDQSxnQkFBZ0IsQ0FBQ0UsTUFBakIsR0FBMEIsQ0FBM0IsQ0FBckIsRUFBb0Q7QUFDbERGLElBQUFBLGdCQUFnQixDQUFDRyxHQUFqQjtBQUNELEdBUGlDLENBU2xDOzs7QUFDQSxPQUFLLElBQUlDLENBQUMsR0FBRyxDQUFiLEVBQWdCQSxDQUFDLEdBQUdKLGdCQUFnQixDQUFDRSxNQUFyQyxFQUE2Q0UsQ0FBQyxFQUE5QyxFQUFrRDtBQUNoRCxRQUFJQyxJQUFJLEdBQUdMLGdCQUFnQixDQUFDSSxDQUFELENBQTNCOztBQUVBLFFBQUlBLENBQUMsR0FBRyxDQUFKLElBQVMsQ0FBQyxLQUFLRSxPQUFMLENBQWFDLGNBQTNCLEVBQTJDO0FBQ3pDUixNQUFBQSxRQUFRLENBQUNBLFFBQVEsQ0FBQ0csTUFBVCxHQUFrQixDQUFuQixDQUFSLElBQWlDRyxJQUFqQztBQUNELEtBRkQsTUFFTztBQUNMLFVBQUksS0FBS0MsT0FBTCxDQUFhRSxnQkFBakIsRUFBbUM7QUFDakNILFFBQUFBLElBQUksR0FBR0EsSUFBSSxDQUFDSSxJQUFMLEVBQVA7QUFDRDs7QUFDRFYsTUFBQUEsUUFBUSxDQUFDVyxJQUFULENBQWNMLElBQWQ7QUFDRDtBQUNGOztBQUVELFNBQU9OLFFBQVA7QUFDRCxDQXhCRDs7QUEwQk8sU0FBU1ksU0FBVCxDQUFtQkMsTUFBbkIsRUFBMkJDLE1BQTNCLEVBQW1DQyxRQUFuQyxFQUE2QztBQUFFLFNBQU9uQixRQUFRLENBQUNvQixJQUFULENBQWNILE1BQWQsRUFBc0JDLE1BQXRCLEVBQThCQyxRQUE5QixDQUFQO0FBQWlEOztBQUNoRyxTQUFTRSxnQkFBVCxDQUEwQkosTUFBMUIsRUFBa0NDLE1BQWxDLEVBQTBDQyxRQUExQyxFQUFvRDtBQUN6RCxNQUFJUixPQUFPO0FBQUc7QUFBQTtBQUFBOztBQUFBVztBQUFBQTtBQUFBQTtBQUFBQTtBQUFBQTtBQUFBQTtBQUFBO0FBQUEsR0FBZ0JILFFBQWhCLEVBQTBCO0FBQUNOLElBQUFBLGdCQUFnQixFQUFFO0FBQW5CLEdBQTFCLENBQWQ7QUFDQSxTQUFPYixRQUFRLENBQUNvQixJQUFULENBQWNILE1BQWQsRUFBc0JDLE1BQXRCLEVBQThCUCxPQUE5QixDQUFQO0FBQ0QiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgRGlmZiBmcm9tICcuL2Jhc2UnO1xuaW1wb3J0IHtnZW5lcmF0ZU9wdGlvbnN9IGZyb20gJy4uL3V0aWwvcGFyYW1zJztcblxuZXhwb3J0IGNvbnN0IGxpbmVEaWZmID0gbmV3IERpZmYoKTtcbmxpbmVEaWZmLnRva2VuaXplID0gZnVuY3Rpb24odmFsdWUpIHtcbiAgbGV0IHJldExpbmVzID0gW10sXG4gICAgICBsaW5lc0FuZE5ld2xpbmVzID0gdmFsdWUuc3BsaXQoLyhcXG58XFxyXFxuKS8pO1xuXG4gIC8vIElnbm9yZSB0aGUgZmluYWwgZW1wdHkgdG9rZW4gdGhhdCBvY2N1cnMgaWYgdGhlIHN0cmluZyBlbmRzIHdpdGggYSBuZXcgbGluZVxuICBpZiAoIWxpbmVzQW5kTmV3bGluZXNbbGluZXNBbmROZXdsaW5lcy5sZW5ndGggLSAxXSkge1xuICAgIGxpbmVzQW5kTmV3bGluZXMucG9wKCk7XG4gIH1cblxuICAvLyBNZXJnZSB0aGUgY29udGVudCBhbmQgbGluZSBzZXBhcmF0b3JzIGludG8gc2luZ2xlIHRva2Vuc1xuICBmb3IgKGxldCBpID0gMDsgaSA8IGxpbmVzQW5kTmV3bGluZXMubGVuZ3RoOyBpKyspIHtcbiAgICBsZXQgbGluZSA9IGxpbmVzQW5kTmV3bGluZXNbaV07XG5cbiAgICBpZiAoaSAlIDIgJiYgIXRoaXMub3B0aW9ucy5uZXdsaW5lSXNUb2tlbikge1xuICAgICAgcmV0TGluZXNbcmV0TGluZXMubGVuZ3RoIC0gMV0gKz0gbGluZTtcbiAgICB9IGVsc2Uge1xuICAgICAgaWYgKHRoaXMub3B0aW9ucy5pZ25vcmVXaGl0ZXNwYWNlKSB7XG4gICAgICAgIGxpbmUgPSBsaW5lLnRyaW0oKTtcbiAgICAgIH1cbiAgICAgIHJldExpbmVzLnB1c2gobGluZSk7XG4gICAgfVxuICB9XG5cbiAgcmV0dXJuIHJldExpbmVzO1xufTtcblxuZXhwb3J0IGZ1bmN0aW9uIGRpZmZMaW5lcyhvbGRTdHIsIG5ld1N0ciwgY2FsbGJhY2spIHsgcmV0dXJuIGxpbmVEaWZmLmRpZmYob2xkU3RyLCBuZXdTdHIsIGNhbGxiYWNrKTsgfVxuZXhwb3J0IGZ1bmN0aW9uIGRpZmZUcmltbWVkTGluZXMob2xkU3RyLCBuZXdTdHIsIGNhbGxiYWNrKSB7XG4gIGxldCBvcHRpb25zID0gZ2VuZXJhdGVPcHRpb25zKGNhbGxiYWNrLCB7aWdub3JlV2hpdGVzcGFjZTogdHJ1ZX0pO1xuICByZXR1cm4gbGluZURpZmYuZGlmZihvbGRTdHIsIG5ld1N0ciwgb3B0aW9ucyk7XG59XG4iXX0=
+
+
+/***/ }),
+/* 554 */,
+/* 555 */,
+/* 556 */,
+/* 557 */
+/***/ (function(module) {
+
+// Generated by CoffeeScript 2.5.1
+  // parses unified diff
+  // http://www.gnu.org/software/diffutils/manual/diffutils.html#Unified-Format
+var defaultToWhiteSpace, escapeRegExp, ltrim, makeString, parseFile, parseFileFallback, trimLeft,
+  slice = [].slice;
+
+module.exports = function(input) {
+  var add, chunk, current, del, deleted_file, eof, file, files, from_file, index, j, len, line, lines, ln_add, ln_del, new_file, normal, parse, restart, schema, start, to_file;
+  if (!input) {
+    return [];
+  }
+  if (input.match(/^\s+$/)) {
+    return [];
+  }
+  lines = input.split('\n');
+  if (lines.length === 0) {
+    return [];
+  }
+  files = [];
+  file = null;
+  ln_del = 0;
+  ln_add = 0;
+  current = null;
+  start = function(line) {
+    var fileNames;
+    file = {
+      chunks: [],
+      deletions: 0,
+      additions: 0
+    };
+    files.push(file);
+    if (!file.to && !file.from) {
+      fileNames = parseFile(line);
+      if (fileNames) {
+        file.from = fileNames[0];
+        return file.to = fileNames[1];
+      }
+    }
+  };
+  restart = function() {
+    if (!file || file.chunks.length) {
+      return start();
+    }
+  };
+  new_file = function() {
+    restart();
+    file.new = true;
+    return file.from = '/dev/null';
+  };
+  deleted_file = function() {
+    restart();
+    file.deleted = true;
+    return file.to = '/dev/null';
+  };
+  index = function(line) {
+    restart();
+    return file.index = line.split(' ').slice(1);
+  };
+  from_file = function(line) {
+    restart();
+    return file.from = parseFileFallback(line);
+  };
+  to_file = function(line) {
+    restart();
+    return file.to = parseFileFallback(line);
+  };
+  chunk = function(line, match) {
+    var newLines, newStart, oldLines, oldStart;
+    ln_del = oldStart = +match[1];
+    oldLines = +(match[2] || 1);
+    ln_add = newStart = +match[3];
+    newLines = +(match[4] || 1);
+    current = {
+      content: line,
+      changes: [],
+      oldStart,
+      oldLines,
+      newStart,
+      newLines
+    };
+    return file.chunks.push(current);
+  };
+  del = function(line) {
+    if (!current) {
+      return;
+    }
+    current.changes.push({
+      type: 'del',
+      del: true,
+      ln: ln_del++,
+      content: line
+    });
+    return file.deletions++;
+  };
+  add = function(line) {
+    if (!current) {
+      return;
+    }
+    current.changes.push({
+      type: 'add',
+      add: true,
+      ln: ln_add++,
+      content: line
+    });
+    return file.additions++;
+  };
+  normal = function(line) {
+    if (!current) {
+      return;
+    }
+    return current.changes.push({
+      type: 'normal',
+      normal: true,
+      ln1: ln_del++,
+      ln2: ln_add++,
+      content: line
+    });
+  };
+  eof = function(line) {
+    var recentChange, ref;
+    ref = current.changes, [recentChange] = slice.call(ref, -1);
+    return current.changes.push({
+      type: recentChange.type,
+      [`${recentChange.type}`]: true,
+      ln1: recentChange.ln1,
+      ln2: recentChange.ln2,
+      ln: recentChange.ln,
+      content: line
+    });
+  };
+  // todo beter regexp to avoid detect normal line starting with diff
+  schema = [[/^\s+/, normal], [/^diff\s/, start], [/^new file mode \d+$/, new_file], [/^deleted file mode \d+$/, deleted_file], [/^index\s[\da-zA-Z]+\.\.[\da-zA-Z]+(\s(\d+))?$/, index], [/^---\s/, from_file], [/^\+\+\+\s/, to_file], [/^@@\s+\-(\d+),?(\d+)?\s+\+(\d+),?(\d+)?\s@@/, chunk], [/^-/, del], [/^\+/, add], [/^\\ No newline at end of file$/, eof]];
+  parse = function(line) {
+    var j, len, m, p;
+    for (j = 0, len = schema.length; j < len; j++) {
+      p = schema[j];
+      m = line.match(p[0]);
+      if (m) {
+        p[1](line, m);
+        return true;
+      }
+    }
+    return false;
+  };
+  for (j = 0, len = lines.length; j < len; j++) {
+    line = lines[j];
+    parse(line);
+  }
+  return files;
+};
+
+parseFile = function(s) {
+  var fileNames;
+  if (!s) {
+    return;
+  }
+  fileNames = s.match(/a\/.*(?=["']? ["']?b\/)|b\/.*$/g);
+  fileNames.map(function(fileName, i) {
+    return fileNames[i] = fileName.replace(/^(a|b)\//, '').replace(/("|')$/, '');
+  });
+  return fileNames;
+};
+
+// fallback function to overwrite file.from and file.to if executed
+parseFileFallback = function(s) {
+  var t;
+  s = ltrim(s, '-');
+  s = ltrim(s, '+');
+  s = s.trim();
+  // ignore possible time stamp
+  t = /\t.*|\d{4}-\d\d-\d\d\s\d\d:\d\d:\d\d(.\d+)?\s(\+|-)\d\d\d\d/.exec(s);
+  if (t) {
+    s = s.substring(0, t.index).trim();
+  }
+  // ignore git prefixes a/ or b/
+  if (s.match(/^(a|b)\//)) {
+    return s.substr(2);
+  } else {
+    return s;
+  }
+};
+
+ltrim = function(s, chars) {
+  s = makeString(s);
+  if (!chars && trimLeft) {
+    return trimLeft.call(s);
+  }
+  chars = defaultToWhiteSpace(chars);
+  return s.replace(new RegExp('^' + chars + '+'), '');
+};
+
+makeString = function(s) {
+  if (s === null) {
+    return '';
+  } else {
+    return s + '';
+  }
+};
+
+trimLeft = String.prototype.trimLeft;
+
+defaultToWhiteSpace = function(chars) {
+  if (chars === null) {
+    return '\\s';
+  }
+  if (chars.source) {
+    return chars.source;
+  }
+  return '[' + escapeRegExp(chars) + ']';
+};
+
+escapeRegExp = function(s) {
+  return makeString(s).replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
+};
+
+
+/***/ }),
 /* 558 */,
 /* 559 */,
 /* 560 */
@@ -39464,7 +41880,84 @@ exports.getReleaserNames = getReleaserNames;
 //# sourceMappingURL=index.js.map
 
 /***/ }),
-/* 594 */,
+/* 594 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getSuggestedHunks = exports.parseHunks = void 0;
+const parseDiff = __webpack_require__(557);
+const diff_1 = __webpack_require__(799);
+/**
+ * Given a diff expressed in GNU diff format, return the range of lines
+ * from the original content that are changed.
+ * @param diff Diff expressed in GNU diff format.
+ * @returns Hunk[]
+ */
+function parseHunks(diff) {
+    const chunks = parseDiff(diff)[0].chunks;
+    return chunks.map(chunk => {
+        let oldStart = chunk.oldStart;
+        let newStart = chunk.newStart;
+        let normalLines = 0;
+        let changeSeen = false;
+        const newLines = [];
+        chunk.changes.forEach(change => {
+            if (change.type === 'normal') {
+                normalLines++;
+            }
+            else {
+                if (change.type === 'add') {
+                    // strip off leading '+' and trailing carriage return
+                    newLines.push(change.content.substring(1).replace(/[\n\r]+$/g, ''));
+                }
+                if (!changeSeen) {
+                    oldStart += normalLines;
+                    newStart += normalLines;
+                    changeSeen = true;
+                }
+            }
+        });
+        const newEnd = newStart + chunk.newLines - normalLines - 1;
+        const oldEnd = oldStart + chunk.oldLines - normalLines - 1;
+        return {
+            oldStart: oldStart,
+            oldEnd: oldEnd,
+            newStart: newStart,
+            newEnd: newEnd,
+            newContent: newLines,
+        };
+    });
+}
+exports.parseHunks = parseHunks;
+/**
+ * Given two texts, return the range of lines that are changed.
+ * @param oldContent The original content.
+ * @param newContent The new content.
+ * @returns Hunk[]
+ */
+function getSuggestedHunks(oldContent, newContent) {
+    const diff = diff_1.createPatch('unused', oldContent, newContent);
+    return parseHunks(diff);
+}
+exports.getSuggestedHunks = getSuggestedHunks;
+//# sourceMappingURL=diff-utils.js.map
+
+/***/ }),
 /* 595 */,
 /* 596 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
@@ -40650,7 +43143,7 @@ const chalk = __webpack_require__(843);
 const semver = __webpack_require__(876);
 const checkpoint_1 = __webpack_require__(923);
 const graphql_to_commits_1 = __webpack_require__(684);
-const VERSION_FROM_BRANCH_RE = /^.*:[^-]+-(.*)$/;
+const VERSION_FROM_BRANCH_RE = /^.*:release-(.*)$/;
 let probotMode = false;
 class GitHub {
     constructor(options) {
@@ -40734,40 +43227,45 @@ class GitHub {
         }
     }
     async commitsWithFiles(cursor = undefined, perPage = 32, path = null, maxFilesChanged = 64, retries = 0) {
+        const baseBranch = await this.getDefaultBranch();
         // The GitHub v3 API does not offer an elegant way to fetch commits
         // in conjucntion with the path that they modify. We lean on the graphql
         // API for this one task, fetching commits in descending chronological
         // order along with the file paths attached to them.
         try {
             const response = await this.graphqlRequest({
-                query: `query commitsWithFiles($cursor: String, $owner: String!, $repo: String!, $perPage: Int, $maxFilesChanged: Int, $path: String) {
+                query: `query commitsWithFiles($cursor: String, $owner: String!, $repo: String!, $baseBranch: String!, $perPage: Int, $maxFilesChanged: Int, $path: String) {
           repository(owner: $owner, name: $repo) {
-            defaultBranchRef {
-              target {
-                ... on Commit {
-                  history(first: $perPage, after: $cursor, path: $path) {
-                    edges{
-                      node {
-                        ... on Commit {
-                          message
-                          oid
-                          associatedPullRequests(first: 1) {
-                            edges {
-                              node {
-                                ... on PullRequest {
-                                  number
-                                  mergeCommit {
-                                    oid
-                                  }
-                                  files(first: $maxFilesChanged) {
-                                    edges {
-                                      node {
-                                        path
+            refs(first: 1, refPrefix: "refs/heads/", query: $baseBranch) {
+              edges {
+                node {
+                  target {
+                    ... on Commit {
+                      history(first: $perPage, after: $cursor, path: $path) {
+                        edges {
+                          node {
+                            ... on Commit {
+                              message
+                              oid
+                              associatedPullRequests(first: 1) {
+                                edges {
+                                  node {
+                                    ... on PullRequest {
+                                      number
+                                      mergeCommit {
+                                        oid
                                       }
-                                    }
-                                    pageInfo {
-                                      endCursor
-                                      hasNextPage
+                                      files(first: $maxFilesChanged) {
+                                        edges {
+                                          node {
+                                            path
+                                          }
+                                        }
+                                        pageInfo {
+                                          endCursor
+                                          hasNextPage
+                                        }
+                                      }
                                     }
                                   }
                                 }
@@ -40775,11 +43273,11 @@ class GitHub {
                             }
                           }
                         }
+                        pageInfo {
+                          endCursor
+                          hasNextPage
+                        }
                       }
-                    }
-                    pageInfo {
-                      endCursor
-                      hasNextPage
                     }
                   }
                 }
@@ -40793,6 +43291,7 @@ class GitHub {
                 path,
                 perPage,
                 repo: this.repo,
+                baseBranch,
             });
             return graphql_to_commits_1.graphqlToCommits(this, response);
         }
@@ -40809,31 +43308,36 @@ class GitHub {
         }
     }
     async commitsWithLabels(cursor = undefined, perPage = 32, path = null, maxLabels = 16, retries = 0) {
+        const baseBranch = await this.getDefaultBranch();
         try {
             const response = await this.graphqlRequest({
-                query: `query commitsWithLabels($cursor: String, $owner: String!, $repo: String!, $perPage: Int, $maxLabels: Int, $path: String) {
+                query: `query commitsWithLabels($cursor: String, $owner: String!, $repo: String!, $baseBranch: String!, $perPage: Int, $maxLabels: Int, $path: String) {
           repository(owner: $owner, name: $repo) {
-            defaultBranchRef {
-              target {
-                ... on Commit {
-                  history(first: $perPage, after: $cursor, path: $path) {
-                    edges{
-                      node {
-                        ... on Commit {
-                          message
-                          oid
-                          associatedPullRequests(first: 1) {
-                            edges {
-                              node {
-                                ... on PullRequest {
-                                  number
-                                  mergeCommit {
-                                    oid
-                                  }
-                                  labels(first: $maxLabels) {
-                                    edges {
-                                      node {
-                                        name
+            refs(first: 1, refPrefix: "refs/heads/", query: $baseBranch) {
+              edges {
+                node {
+                  target {
+                    ... on Commit {
+                      history(first: $perPage, after: $cursor, path: $path) {
+                        edges {
+                          node {
+                            ... on Commit {
+                              message
+                              oid
+                              associatedPullRequests(first: 1) {
+                                edges {
+                                  node {
+                                    ... on PullRequest {
+                                      number
+                                      mergeCommit {
+                                        oid
+                                      }
+                                      labels(first: $maxLabels) {
+                                        edges {
+                                          node {
+                                            name
+                                          }
+                                        }
                                       }
                                     }
                                   }
@@ -40842,11 +43346,11 @@ class GitHub {
                             }
                           }
                         }
+                        pageInfo {
+                          endCursor
+                          hasNextPage
+                        }
                       }
-                    }
-                    pageInfo {
-                      endCursor
-                      hasNextPage
                     }
                   }
                 }
@@ -40860,6 +43364,7 @@ class GitHub {
                 path,
                 perPage,
                 repo: this.repo,
+                baseBranch,
             });
             return graphql_to_commits_1.graphqlToCommits(this, response);
         }
@@ -40913,54 +43418,56 @@ class GitHub {
         }));
         return refResponse.data.object.sha;
     }
+    // This looks for the most recent matching release tag on
+    // the branch we're configured for.
     async latestTag(prefix, preRelease = false) {
-        const tags = await this.allTags(prefix);
-        const versions = Object.keys(tags).filter(t => {
-            // remove any pre-releases from the list:
-            return preRelease || !t.includes('-');
-        });
-        // no tags have been created yet.
-        if (versions.length === 0)
+        let regexpString = prefix || '';
+        if (!preRelease)
+            regexpString = `^${regexpString}[^-]*$`;
+        const regexp = regexpString ? new RegExp(regexpString) : null;
+        const pull = await this.findMergedReleasePR([], 100, regexp);
+        if (!pull)
             return undefined;
-        // We use a slightly modified version of semver's sorting algorithm, which
-        // prefixes the numeric part of a pre-release with '0's, so that
-        // 010 is greater than > 002.
-        versions.sort((v1, v2) => {
-            if (v1.includes('-')) {
-                const [prefix, suffix] = v1.split('-');
-                v1 = prefix + '-' + suffix.replace(/[a-zA-Z.]/, '').padStart(6, '0');
-            }
-            if (v2.includes('-')) {
-                const [prefix, suffix] = v2.split('-');
-                v2 = prefix + '-' + suffix.replace(/[a-zA-Z.]/, '').padStart(6, '0');
-            }
-            return semver.rcompare(v1, v2);
-        });
-        return {
-            name: tags[versions[0]].name,
-            sha: tags[versions[0]].sha,
-            version: tags[versions[0]].version,
+        const tag = {
+            name: `v${pull.version}`,
+            sha: pull.sha,
+            version: pull.version,
         };
+        return tag;
     }
-    async findMergedReleasePR(labels, perPage = 100) {
-        const pullsResponse = (await this.request(`GET /repos/:owner/:repo/pulls?state=closed&per_page=${perPage}${this.proxyKey ? `&key=${this.proxyKey}` : ''}`, {
+    // The default matcher will rule out pre-releases.
+    async findMergedReleasePR(labels, perPage = 100, matcher = /[^-]*/) {
+        const baseLabel = await this.getBaseLabel();
+        const pullsResponse = (await this.request(`GET /repos/:owner/:repo/pulls?state=closed&per_page=${perPage}${this.proxyKey ? `&key=${this.proxyKey}` : ''}&sort=updated&direction=desc`, {
             owner: this.owner,
             repo: this.repo,
         }));
         for (let i = 0, pull; i < pullsResponse.data.length; i++) {
             pull = pullsResponse.data[i];
-            if (this.hasAllLabels(labels, pull.labels.map(l => l.name))) {
+            if (labels.length === 0 ||
+                this.hasAllLabels(labels, pull.labels.map(l => l.name))) {
                 // it's expected that a release PR will have a
                 // HEAD matching the format repo:release-v1.0.0.
                 if (!pull.head)
                     continue;
+                // Verify that this PR was based against our base branch of interest.
+                if (!pull.base || pull.base.label !== baseLabel)
+                    continue;
                 const match = pull.head.label.match(VERSION_FROM_BRANCH_RE);
                 if (!match || !pull.merged_at)
+                    continue;
+                // Make sure we did get a valid semver.
+                const version = match[1];
+                const normalizedVersion = semver.valid(version);
+                if (!normalizedVersion)
+                    continue;
+                // Does its name match any passed matcher?
+                if (matcher && !matcher.test(normalizedVersion))
                     continue;
                 return {
                     number: pull.number,
                     sha: pull.merge_commit_sha,
-                    version: match[1],
+                    version: normalizedVersion,
                 };
             }
         }
@@ -40975,12 +43482,16 @@ class GitHub {
         return hasAll;
     }
     async findOpenReleasePRs(labels, perPage = 100) {
+        const baseLabel = await this.getBaseLabel();
         const openReleasePRs = [];
         const pullsResponse = (await this.request(`GET /repos/:owner/:repo/pulls?state=open&per_page=${perPage}${this.proxyKey ? `&key=${this.proxyKey}` : ''}`, {
             owner: this.owner,
             repo: this.repo,
         }));
         for (const pull of pullsResponse.data) {
+            // Verify that this PR was based against our base branch of interest.
+            if (!pull.base || pull.base.label !== baseLabel)
+                continue;
             let hasAllLabels = false;
             const observedLabels = pull.labels.map(l => l.name);
             for (const expectedLabel of labels) {
@@ -40996,25 +43507,6 @@ class GitHub {
                 openReleasePRs.push(pull);
         }
         return openReleasePRs;
-    }
-    async allTags(prefix) {
-        const tags = {};
-        for await (const response of this.octokit.paginate.iterator(this.decoratePaginateOpts({
-            method: 'GET',
-            url: `/repos/${this.owner}/${this.repo}/tags?per_page=100${this.proxyKey ? `&key=${this.proxyKey}` : ''}`,
-        }))) {
-            response.data.forEach((data) => {
-                // For monorepos, a prefix can be provided, indicating that only tags
-                // matching the prefix should be returned:
-                if (prefix && !data.name.startsWith(prefix))
-                    return;
-                let version = data.name.replace(prefix, '');
-                if ((version = semver.valid(version))) {
-                    tags[version] = { sha: data.commit.sha, name: data.name, version };
-                }
-            });
-        }
-        return tags;
     }
     async addLabels(labels, pr) {
         checkpoint_1.checkpoint(`adding label ${chalk.green(labels.join(','))} to https://github.com/${this.owner}/${this.repo}/pull/${pr}`, checkpoint_1.CheckpointType.Success);
@@ -41053,7 +43545,7 @@ class GitHub {
         return undefined;
     }
     async openPR(options) {
-        const defaultBranch = await this.getDefaultBranch(this.owner, this.repo);
+        const defaultBranch = await this.getDefaultBranch();
         // check if there's an existing PR, so that we can opt to update it
         // rather than creating a new PR.
         const refName = `refs/heads/${options.branch}`;
@@ -41065,8 +43557,7 @@ class GitHub {
                 break;
             }
         }
-        // short-circuit of there have been no changes to the
-        // pull-request body.
+        // Short-circuit if there have been no changes to the pull-request body.
         if (openReleasePR && openReleasePR.body === options.body) {
             checkpoint_1.checkpoint(`PR https://github.com/${this.owner}/${this.repo}/pull/${openReleasePR.number} remained the same`, checkpoint_1.CheckpointType.Failure);
             return 0;
@@ -41112,7 +43603,7 @@ class GitHub {
                     content = { data: update.contents };
                 }
                 else {
-                    const fileContent = await this.getFileContents(update.path, defaultBranch);
+                    const fileContent = await this.getFileContentsOnBranch(update.path, defaultBranch);
                     content = { data: fileContent };
                 }
             }
@@ -41139,13 +43630,18 @@ class GitHub {
         }
         return changes;
     }
-    async getDefaultBranch(owner, repo) {
+    // The base label is basically the default branch, attached to the owner.
+    async getBaseLabel() {
+        const baseBranch = await this.getDefaultBranch();
+        return `${this.owner}:${baseBranch}`;
+    }
+    async getDefaultBranch() {
         if (this.defaultBranch) {
             return this.defaultBranch;
         }
         const { data } = await this.octokit.repos.get({
-            repo,
-            owner,
+            repo: this.repo,
+            owner: this.owner,
             headers: {
                 Authorization: `${this.proxyKey ? '' : 'token '}${this.token}`,
             },
@@ -41161,15 +43657,26 @@ class GitHub {
             state: 'closed',
         });
     }
-    async getFileContentsWithSimpleAPI(path, defaultBranch) {
+    // Takes a potentially unqualified branch name, and turns it
+    // into a fully qualified ref.
+    //
+    // e.g. main -> refs/heads/main
+    static qualifyRef(refName) {
+        let final = refName;
+        if (final.indexOf('/') < 0) {
+            final = `refs/heads/${final}`;
+        }
+        return final;
+    }
+    async getFileContentsWithSimpleAPI(path, branch) {
+        const ref = GitHub.qualifyRef(branch);
         const options = {
             owner: this.owner,
             repo: this.repo,
             path,
         };
-        if (defaultBranch) {
-            options.ref = `refs/heads/${defaultBranch}`;
-        }
+        if (ref)
+            options.ref = ref;
         const resp = await this.request(`GET /repos/:owner/:repo/contents/:path${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, options);
         return {
             parsedContent: Buffer.from(resp.data.content, 'base64').toString('utf8'),
@@ -41177,13 +43684,17 @@ class GitHub {
             sha: resp.data.sha,
         };
     }
-    async getFileContentsWithDataAPI(path, defaultBranch) {
-        const repoTree = await this.request(`GET /repos/:owner/:repo/git/trees/:branch${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, {
+    async getFileContentsWithDataAPI(path, branch) {
+        const options = {
             owner: this.owner,
             repo: this.repo,
-            branch: defaultBranch,
-        });
-        const blobDescriptor = repoTree.data.tree.find((tree) => tree.path === path);
+            branch,
+        };
+        const repoTree = await this.request(`GET /repos/:owner/:repo/git/trees/:branch${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, options);
+        const blobDescriptor = repoTree.data.tree.find(tree => tree.path === path);
+        if (!blobDescriptor) {
+            throw new Error(`Could not find requested path: ${path}`);
+        }
         const resp = await this.request(`GET /repos/:owner/:repo/git/blobs/:sha${this.proxyKey ? `?key=${this.proxyKey}` : ''}`, {
             owner: this.owner,
             repo: this.repo,
@@ -41195,13 +43706,16 @@ class GitHub {
             sha: resp.data.sha,
         };
     }
-    async getFileContents(path, defaultBranch = undefined) {
+    async getFileContents(path) {
+        return await this.getFileContentsOnBranch(path, await this.getDefaultBranch());
+    }
+    async getFileContentsOnBranch(path, branch) {
         try {
-            return await this.getFileContentsWithSimpleAPI(path, defaultBranch);
+            return await this.getFileContentsWithSimpleAPI(path, branch);
         }
         catch (err) {
             if (err.status === 403) {
-                return await this.getFileContentsWithDataAPI(path, defaultBranch);
+                return await this.getFileContentsWithDataAPI(path, branch);
             }
             throw err;
         }
@@ -42659,7 +45173,256 @@ if ( true && require.extensions) {
 
 
 /***/ }),
-/* 636 */,
+/* 636 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.applyPatch = applyPatch;
+exports.applyPatches = applyPatches;
+
+/*istanbul ignore end*/
+var
+/*istanbul ignore start*/
+_parse = __webpack_require__(86)
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_distanceIterator = _interopRequireDefault(__webpack_require__(528))
+/*istanbul ignore end*/
+;
+
+/*istanbul ignore start*/ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/*istanbul ignore end*/
+function applyPatch(source, uniDiff) {
+  /*istanbul ignore start*/
+  var
+  /*istanbul ignore end*/
+  options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+  if (typeof uniDiff === 'string') {
+    uniDiff =
+    /*istanbul ignore start*/
+    (0,
+    /*istanbul ignore end*/
+
+    /*istanbul ignore start*/
+    _parse
+    /*istanbul ignore end*/
+    .
+    /*istanbul ignore start*/
+    parsePatch)
+    /*istanbul ignore end*/
+    (uniDiff);
+  }
+
+  if (Array.isArray(uniDiff)) {
+    if (uniDiff.length > 1) {
+      throw new Error('applyPatch only works with a single input.');
+    }
+
+    uniDiff = uniDiff[0];
+  } // Apply the diff to the input
+
+
+  var lines = source.split(/\r\n|[\n\v\f\r\x85]/),
+      delimiters = source.match(/\r\n|[\n\v\f\r\x85]/g) || [],
+      hunks = uniDiff.hunks,
+      compareLine = options.compareLine || function (lineNumber, line, operation, patchContent)
+  /*istanbul ignore start*/
+  {
+    return (
+      /*istanbul ignore end*/
+      line === patchContent
+    );
+  },
+      errorCount = 0,
+      fuzzFactor = options.fuzzFactor || 0,
+      minLine = 0,
+      offset = 0,
+      removeEOFNL,
+      addEOFNL;
+  /**
+   * Checks if the hunk exactly fits on the provided location
+   */
+
+
+  function hunkFits(hunk, toPos) {
+    for (var j = 0; j < hunk.lines.length; j++) {
+      var line = hunk.lines[j],
+          operation = line.length > 0 ? line[0] : ' ',
+          content = line.length > 0 ? line.substr(1) : line;
+
+      if (operation === ' ' || operation === '-') {
+        // Context sanity check
+        if (!compareLine(toPos + 1, lines[toPos], operation, content)) {
+          errorCount++;
+
+          if (errorCount > fuzzFactor) {
+            return false;
+          }
+        }
+
+        toPos++;
+      }
+    }
+
+    return true;
+  } // Search best fit offsets for each hunk based on the previous ones
+
+
+  for (var i = 0; i < hunks.length; i++) {
+    var hunk = hunks[i],
+        maxLine = lines.length - hunk.oldLines,
+        localOffset = 0,
+        toPos = offset + hunk.oldStart - 1;
+    var iterator =
+    /*istanbul ignore start*/
+    (0,
+    /*istanbul ignore end*/
+
+    /*istanbul ignore start*/
+    _distanceIterator
+    /*istanbul ignore end*/
+    .
+    /*istanbul ignore start*/
+    default)
+    /*istanbul ignore end*/
+    (toPos, minLine, maxLine);
+
+    for (; localOffset !== undefined; localOffset = iterator()) {
+      if (hunkFits(hunk, toPos + localOffset)) {
+        hunk.offset = offset += localOffset;
+        break;
+      }
+    }
+
+    if (localOffset === undefined) {
+      return false;
+    } // Set lower text limit to end of the current hunk, so next ones don't try
+    // to fit over already patched text
+
+
+    minLine = hunk.offset + hunk.oldStart + hunk.oldLines;
+  } // Apply patch hunks
+
+
+  var diffOffset = 0;
+
+  for (var _i = 0; _i < hunks.length; _i++) {
+    var _hunk = hunks[_i],
+        _toPos = _hunk.oldStart + _hunk.offset + diffOffset - 1;
+
+    diffOffset += _hunk.newLines - _hunk.oldLines;
+
+    if (_toPos < 0) {
+      // Creating a new file
+      _toPos = 0;
+    }
+
+    for (var j = 0; j < _hunk.lines.length; j++) {
+      var line = _hunk.lines[j],
+          operation = line.length > 0 ? line[0] : ' ',
+          content = line.length > 0 ? line.substr(1) : line,
+          delimiter = _hunk.linedelimiters[j];
+
+      if (operation === ' ') {
+        _toPos++;
+      } else if (operation === '-') {
+        lines.splice(_toPos, 1);
+        delimiters.splice(_toPos, 1);
+        /* istanbul ignore else */
+      } else if (operation === '+') {
+        lines.splice(_toPos, 0, content);
+        delimiters.splice(_toPos, 0, delimiter);
+        _toPos++;
+      } else if (operation === '\\') {
+        var previousOperation = _hunk.lines[j - 1] ? _hunk.lines[j - 1][0] : null;
+
+        if (previousOperation === '+') {
+          removeEOFNL = true;
+        } else if (previousOperation === '-') {
+          addEOFNL = true;
+        }
+      }
+    }
+  } // Handle EOFNL insertion/removal
+
+
+  if (removeEOFNL) {
+    while (!lines[lines.length - 1]) {
+      lines.pop();
+      delimiters.pop();
+    }
+  } else if (addEOFNL) {
+    lines.push('');
+    delimiters.push('\n');
+  }
+
+  for (var _k = 0; _k < lines.length - 1; _k++) {
+    lines[_k] = lines[_k] + delimiters[_k];
+  }
+
+  return lines.join('');
+} // Wrapper that supports multiple file patches via callbacks.
+
+
+function applyPatches(uniDiff, options) {
+  if (typeof uniDiff === 'string') {
+    uniDiff =
+    /*istanbul ignore start*/
+    (0,
+    /*istanbul ignore end*/
+
+    /*istanbul ignore start*/
+    _parse
+    /*istanbul ignore end*/
+    .
+    /*istanbul ignore start*/
+    parsePatch)
+    /*istanbul ignore end*/
+    (uniDiff);
+  }
+
+  var currentIndex = 0;
+
+  function processIndex() {
+    var index = uniDiff[currentIndex++];
+
+    if (!index) {
+      return options.complete();
+    }
+
+    options.loadFile(index, function (err, data) {
+      if (err) {
+        return options.complete(err);
+      }
+
+      var updatedContent = applyPatch(data, index, options);
+      options.patched(index, updatedContent, function (err) {
+        if (err) {
+          return options.complete(err);
+        }
+
+        processIndex();
+      });
+    });
+  }
+
+  processIndex();
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9wYXRjaC9hcHBseS5qcyJdLCJuYW1lcyI6WyJhcHBseVBhdGNoIiwic291cmNlIiwidW5pRGlmZiIsIm9wdGlvbnMiLCJwYXJzZVBhdGNoIiwiQXJyYXkiLCJpc0FycmF5IiwibGVuZ3RoIiwiRXJyb3IiLCJsaW5lcyIsInNwbGl0IiwiZGVsaW1pdGVycyIsIm1hdGNoIiwiaHVua3MiLCJjb21wYXJlTGluZSIsImxpbmVOdW1iZXIiLCJsaW5lIiwib3BlcmF0aW9uIiwicGF0Y2hDb250ZW50IiwiZXJyb3JDb3VudCIsImZ1enpGYWN0b3IiLCJtaW5MaW5lIiwib2Zmc2V0IiwicmVtb3ZlRU9GTkwiLCJhZGRFT0ZOTCIsImh1bmtGaXRzIiwiaHVuayIsInRvUG9zIiwiaiIsImNvbnRlbnQiLCJzdWJzdHIiLCJpIiwibWF4TGluZSIsIm9sZExpbmVzIiwibG9jYWxPZmZzZXQiLCJvbGRTdGFydCIsIml0ZXJhdG9yIiwiZGlzdGFuY2VJdGVyYXRvciIsInVuZGVmaW5lZCIsImRpZmZPZmZzZXQiLCJuZXdMaW5lcyIsImRlbGltaXRlciIsImxpbmVkZWxpbWl0ZXJzIiwic3BsaWNlIiwicHJldmlvdXNPcGVyYXRpb24iLCJwb3AiLCJwdXNoIiwiX2siLCJqb2luIiwiYXBwbHlQYXRjaGVzIiwiY3VycmVudEluZGV4IiwicHJvY2Vzc0luZGV4IiwiaW5kZXgiLCJjb21wbGV0ZSIsImxvYWRGaWxlIiwiZXJyIiwiZGF0YSIsInVwZGF0ZWRDb250ZW50IiwicGF0Y2hlZCJdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7OztBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7O0FBQ0E7QUFBQTtBQUFBO0FBQUE7QUFBQTs7Ozs7QUFFTyxTQUFTQSxVQUFULENBQW9CQyxNQUFwQixFQUE0QkMsT0FBNUIsRUFBbUQ7QUFBQTtBQUFBO0FBQUE7QUFBZEMsRUFBQUEsT0FBYyx1RUFBSixFQUFJOztBQUN4RCxNQUFJLE9BQU9ELE9BQVAsS0FBbUIsUUFBdkIsRUFBaUM7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QUE7O0FBQUFFO0FBQUFBO0FBQUFBO0FBQUFBO0FBQUFBO0FBQUFBO0FBQUE7QUFBQSxLQUFXRixPQUFYLENBQVY7QUFDRDs7QUFFRCxNQUFJZ0QsWUFBWSxHQUFHLENBQW5COztBQUNBLFdBQVNDLFlBQVQsR0FBd0I7QUFDdEIsUUFBSUMsS0FBSyxHQUFHbEQsT0FBTyxDQUFDZ0QsWUFBWSxFQUFiLENBQW5COztBQUNBLFFBQUksQ0FBQ0UsS0FBTCxFQUFZO0FBQ1YsYUFBT2pELE9BQU8sQ0FBQ2tELFFBQVIsRUFBUDtBQUNEOztBQUVEbEQsSUFBQUEsT0FBTyxDQUFDbUQsUUFBUixDQUFpQkYsS0FBakIsRUFBd0IsVUFBU0csR0FBVCxFQUFjQyxJQUFkLEVBQW9CO0FBQzFDLFVBQUlELEdBQUosRUFBUztBQUNQLGVBQU9wRCxPQUFPLENBQUNrRCxRQUFSLENBQWlCRSxHQUFqQixDQUFQO0FBQ0Q7O0FBRUQsVUFBSUUsY0FBYyxHQUFHekQsVUFBVSxDQUFDd0QsSUFBRCxFQUFPSixLQUFQLEVBQWNqRCxPQUFkLENBQS9CO0FBQ0FBLE1BQUFBLE9BQU8sQ0FBQ3VELE9BQVIsQ0FBZ0JOLEtBQWhCLEVBQXVCSyxjQUF2QixFQUF1QyxVQUFTRixHQUFULEVBQWM7QUFDbkQsWUFBSUEsR0FBSixFQUFTO0FBQ1AsaUJBQU9wRCxPQUFPLENBQUNrRCxRQUFSLENBQWlCRSxHQUFqQixDQUFQO0FBQ0Q7O0FBRURKLFFBQUFBLFlBQVk7QUFDYixPQU5EO0FBT0QsS0FiRDtBQWNEOztBQUNEQSxFQUFBQSxZQUFZO0FBQ2IiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQge3BhcnNlUGF0Y2h9IGZyb20gJy4vcGFyc2UnO1xuaW1wb3J0IGRpc3RhbmNlSXRlcmF0b3IgZnJvbSAnLi4vdXRpbC9kaXN0YW5jZS1pdGVyYXRvcic7XG5cbmV4cG9ydCBmdW5jdGlvbiBhcHBseVBhdGNoKHNvdXJjZSwgdW5pRGlmZiwgb3B0aW9ucyA9IHt9KSB7XG4gIGlmICh0eXBlb2YgdW5pRGlmZiA9PT0gJ3N0cmluZycpIHtcbiAgICB1bmlEaWZmID0gcGFyc2VQYXRjaCh1bmlEaWZmKTtcbiAgfVxuXG4gIGlmIChBcnJheS5pc0FycmF5KHVuaURpZmYpKSB7XG4gICAgaWYgKHVuaURpZmYubGVuZ3RoID4gMSkge1xuICAgICAgdGhyb3cgbmV3IEVycm9yKCdhcHBseVBhdGNoIG9ubHkgd29ya3Mgd2l0aCBhIHNpbmdsZSBpbnB1dC4nKTtcbiAgICB9XG5cbiAgICB1bmlEaWZmID0gdW5pRGlmZlswXTtcbiAgfVxuXG4gIC8vIEFwcGx5IHRoZSBkaWZmIHRvIHRoZSBpbnB1dFxuICBsZXQgbGluZXMgPSBzb3VyY2Uuc3BsaXQoL1xcclxcbnxbXFxuXFx2XFxmXFxyXFx4ODVdLyksXG4gICAgICBkZWxpbWl0ZXJzID0gc291cmNlLm1hdGNoKC9cXHJcXG58W1xcblxcdlxcZlxcclxceDg1XS9nKSB8fCBbXSxcbiAgICAgIGh1bmtzID0gdW5pRGlmZi5odW5rcyxcblxuICAgICAgY29tcGFyZUxpbmUgPSBvcHRpb25zLmNvbXBhcmVMaW5lIHx8ICgobGluZU51bWJlciwgbGluZSwgb3BlcmF0aW9uLCBwYXRjaENvbnRlbnQpID0+IGxpbmUgPT09IHBhdGNoQ29udGVudCksXG4gICAgICBlcnJvckNvdW50ID0gMCxcbiAgICAgIGZ1enpGYWN0b3IgPSBvcHRpb25zLmZ1enpGYWN0b3IgfHwgMCxcbiAgICAgIG1pbkxpbmUgPSAwLFxuICAgICAgb2Zmc2V0ID0gMCxcblxuICAgICAgcmVtb3ZlRU9GTkwsXG4gICAgICBhZGRFT0ZOTDtcblxuICAvKipcbiAgICogQ2hlY2tzIGlmIHRoZSBodW5rIGV4YWN0bHkgZml0cyBvbiB0aGUgcHJvdmlkZWQgbG9jYXRpb25cbiAgICovXG4gIGZ1bmN0aW9uIGh1bmtGaXRzKGh1bmssIHRvUG9zKSB7XG4gICAgZm9yIChsZXQgaiA9IDA7IGogPCBodW5rLmxpbmVzLmxlbmd0aDsgaisrKSB7XG4gICAgICBsZXQgbGluZSA9IGh1bmsubGluZXNbal0sXG4gICAgICAgICAgb3BlcmF0aW9uID0gKGxpbmUubGVuZ3RoID4gMCA/IGxpbmVbMF0gOiAnICcpLFxuICAgICAgICAgIGNvbnRlbnQgPSAobGluZS5sZW5ndGggPiAwID8gbGluZS5zdWJzdHIoMSkgOiBsaW5lKTtcblxuICAgICAgaWYgKG9wZXJhdGlvbiA9PT0gJyAnIHx8IG9wZXJhdGlvbiA9PT0gJy0nKSB7XG4gICAgICAgIC8vIENvbnRleHQgc2FuaXR5IGNoZWNrXG4gICAgICAgIGlmICghY29tcGFyZUxpbmUodG9Qb3MgKyAxLCBsaW5lc1t0b1Bvc10sIG9wZXJhdGlvbiwgY29udGVudCkpIHtcbiAgICAgICAgICBlcnJvckNvdW50Kys7XG5cbiAgICAgICAgICBpZiAoZXJyb3JDb3VudCA+IGZ1enpGYWN0b3IpIHtcbiAgICAgICAgICAgIHJldHVybiBmYWxzZTtcbiAgICAgICAgICB9XG4gICAgICAgIH1cbiAgICAgICAgdG9Qb3MrKztcbiAgICAgIH1cbiAgICB9XG5cbiAgICByZXR1cm4gdHJ1ZTtcbiAgfVxuXG4gIC8vIFNlYXJjaCBiZXN0IGZpdCBvZmZzZXRzIGZvciBlYWNoIGh1bmsgYmFzZWQgb24gdGhlIHByZXZpb3VzIG9uZXNcbiAgZm9yIChsZXQgaSA9IDA7IGkgPCBodW5rcy5sZW5ndGg7IGkrKykge1xuICAgIGxldCBodW5rID0gaHVua3NbaV0sXG4gICAgICAgIG1heExpbmUgPSBsaW5lcy5sZW5ndGggLSBodW5rLm9sZExpbmVzLFxuICAgICAgICBsb2NhbE9mZnNldCA9IDAsXG4gICAgICAgIHRvUG9zID0gb2Zmc2V0ICsgaHVuay5vbGRTdGFydCAtIDE7XG5cbiAgICBsZXQgaXRlcmF0b3IgPSBkaXN0YW5jZUl0ZXJhdG9yKHRvUG9zLCBtaW5MaW5lLCBtYXhMaW5lKTtcblxuICAgIGZvciAoOyBsb2NhbE9mZnNldCAhPT0gdW5kZWZpbmVkOyBsb2NhbE9mZnNldCA9IGl0ZXJhdG9yKCkpIHtcbiAgICAgIGlmIChodW5rRml0cyhodW5rLCB0b1BvcyArIGxvY2FsT2Zmc2V0KSkge1xuICAgICAgICBodW5rLm9mZnNldCA9IG9mZnNldCArPSBsb2NhbE9mZnNldDtcbiAgICAgICAgYnJlYWs7XG4gICAgICB9XG4gICAgfVxuXG4gICAgaWYgKGxvY2FsT2Zmc2V0ID09PSB1bmRlZmluZWQpIHtcbiAgICAgIHJldHVybiBmYWxzZTtcbiAgICB9XG5cbiAgICAvLyBTZXQgbG93ZXIgdGV4dCBsaW1pdCB0byBlbmQgb2YgdGhlIGN1cnJlbnQgaHVuaywgc28gbmV4dCBvbmVzIGRvbid0IHRyeVxuICAgIC8vIHRvIGZpdCBvdmVyIGFscmVhZHkgcGF0Y2hlZCB0ZXh0XG4gICAgbWluTGluZSA9IGh1bmsub2Zmc2V0ICsgaHVuay5vbGRTdGFydCArIGh1bmsub2xkTGluZXM7XG4gIH1cblxuICAvLyBBcHBseSBwYXRjaCBodW5rc1xuICBsZXQgZGlmZk9mZnNldCA9IDA7XG4gIGZvciAobGV0IGkgPSAwOyBpIDwgaHVua3MubGVuZ3RoOyBpKyspIHtcbiAgICBsZXQgaHVuayA9IGh1bmtzW2ldLFxuICAgICAgICB0b1BvcyA9IGh1bmsub2xkU3RhcnQgKyBodW5rLm9mZnNldCArIGRpZmZPZmZzZXQgLSAxO1xuICAgIGRpZmZPZmZzZXQgKz0gaHVuay5uZXdMaW5lcyAtIGh1bmsub2xkTGluZXM7XG5cbiAgICBpZiAodG9Qb3MgPCAwKSB7IC8vIENyZWF0aW5nIGEgbmV3IGZpbGVcbiAgICAgIHRvUG9zID0gMDtcbiAgICB9XG5cbiAgICBmb3IgKGxldCBqID0gMDsgaiA8IGh1bmsubGluZXMubGVuZ3RoOyBqKyspIHtcbiAgICAgIGxldCBsaW5lID0gaHVuay5saW5lc1tqXSxcbiAgICAgICAgICBvcGVyYXRpb24gPSAobGluZS5sZW5ndGggPiAwID8gbGluZVswXSA6ICcgJyksXG4gICAgICAgICAgY29udGVudCA9IChsaW5lLmxlbmd0aCA+IDAgPyBsaW5lLnN1YnN0cigxKSA6IGxpbmUpLFxuICAgICAgICAgIGRlbGltaXRlciA9IGh1bmsubGluZWRlbGltaXRlcnNbal07XG5cbiAgICAgIGlmIChvcGVyYXRpb24gPT09ICcgJykge1xuICAgICAgICB0b1BvcysrO1xuICAgICAgfSBlbHNlIGlmIChvcGVyYXRpb24gPT09ICctJykge1xuICAgICAgICBsaW5lcy5zcGxpY2UodG9Qb3MsIDEpO1xuICAgICAgICBkZWxpbWl0ZXJzLnNwbGljZSh0b1BvcywgMSk7XG4gICAgICAvKiBpc3RhbmJ1bCBpZ25vcmUgZWxzZSAqL1xuICAgICAgfSBlbHNlIGlmIChvcGVyYXRpb24gPT09ICcrJykge1xuICAgICAgICBsaW5lcy5zcGxpY2UodG9Qb3MsIDAsIGNvbnRlbnQpO1xuICAgICAgICBkZWxpbWl0ZXJzLnNwbGljZSh0b1BvcywgMCwgZGVsaW1pdGVyKTtcbiAgICAgICAgdG9Qb3MrKztcbiAgICAgIH0gZWxzZSBpZiAob3BlcmF0aW9uID09PSAnXFxcXCcpIHtcbiAgICAgICAgbGV0IHByZXZpb3VzT3BlcmF0aW9uID0gaHVuay5saW5lc1tqIC0gMV0gPyBodW5rLmxpbmVzW2ogLSAxXVswXSA6IG51bGw7XG4gICAgICAgIGlmIChwcmV2aW91c09wZXJhdGlvbiA9PT0gJysnKSB7XG4gICAgICAgICAgcmVtb3ZlRU9GTkwgPSB0cnVlO1xuICAgICAgICB9IGVsc2UgaWYgKHByZXZpb3VzT3BlcmF0aW9uID09PSAnLScpIHtcbiAgICAgICAgICBhZGRFT0ZOTCA9IHRydWU7XG4gICAgICAgIH1cbiAgICAgIH1cbiAgICB9XG4gIH1cblxuICAvLyBIYW5kbGUgRU9GTkwgaW5zZXJ0aW9uL3JlbW92YWxcbiAgaWYgKHJlbW92ZUVPRk5MKSB7XG4gICAgd2hpbGUgKCFsaW5lc1tsaW5lcy5sZW5ndGggLSAxXSkge1xuICAgICAgbGluZXMucG9wKCk7XG4gICAgICBkZWxpbWl0ZXJzLnBvcCgpO1xuICAgIH1cbiAgfSBlbHNlIGlmIChhZGRFT0ZOTCkge1xuICAgIGxpbmVzLnB1c2goJycpO1xuICAgIGRlbGltaXRlcnMucHVzaCgnXFxuJyk7XG4gIH1cbiAgZm9yIChsZXQgX2sgPSAwOyBfayA8IGxpbmVzLmxlbmd0aCAtIDE7IF9rKyspIHtcbiAgICBsaW5lc1tfa10gPSBsaW5lc1tfa10gKyBkZWxpbWl0ZXJzW19rXTtcbiAgfVxuICByZXR1cm4gbGluZXMuam9pbignJyk7XG59XG5cbi8vIFdyYXBwZXIgdGhhdCBzdXBwb3J0cyBtdWx0aXBsZSBmaWxlIHBhdGNoZXMgdmlhIGNhbGxiYWNrcy5cbmV4cG9ydCBmdW5jdGlvbiBhcHBseVBhdGNoZXModW5pRGlmZiwgb3B0aW9ucykge1xuICBpZiAodHlwZW9mIHVuaURpZmYgPT09ICdzdHJpbmcnKSB7XG4gICAgdW5pRGlmZiA9IHBhcnNlUGF0Y2godW5pRGlmZik7XG4gIH1cblxuICBsZXQgY3VycmVudEluZGV4ID0gMDtcbiAgZnVuY3Rpb24gcHJvY2Vzc0luZGV4KCkge1xuICAgIGxldCBpbmRleCA9IHVuaURpZmZbY3VycmVudEluZGV4KytdO1xuICAgIGlmICghaW5kZXgpIHtcbiAgICAgIHJldHVybiBvcHRpb25zLmNvbXBsZXRlKCk7XG4gICAgfVxuXG4gICAgb3B0aW9ucy5sb2FkRmlsZShpbmRleCwgZnVuY3Rpb24oZXJyLCBkYXRhKSB7XG4gICAgICBpZiAoZXJyKSB7XG4gICAgICAgIHJldHVybiBvcHRpb25zLmNvbXBsZXRlKGVycik7XG4gICAgICB9XG5cbiAgICAgIGxldCB1cGRhdGVkQ29udGVudCA9IGFwcGx5UGF0Y2goZGF0YSwgaW5kZXgsIG9wdGlvbnMpO1xuICAgICAgb3B0aW9ucy5wYXRjaGVkKGluZGV4LCB1cGRhdGVkQ29udGVudCwgZnVuY3Rpb24oZXJyKSB7XG4gICAgICAgIGlmIChlcnIpIHtcbiAgICAgICAgICByZXR1cm4gb3B0aW9ucy5jb21wbGV0ZShlcnIpO1xuICAgICAgICB9XG5cbiAgICAgICAgcHJvY2Vzc0luZGV4KCk7XG4gICAgICB9KTtcbiAgICB9KTtcbiAgfVxuICBwcm9jZXNzSW5kZXgoKTtcbn1cbiJdfQ==
+
+
+/***/ }),
 /* 637 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -42707,7 +45470,55 @@ exports.SamplesPackageJson = SamplesPackageJson;
 /* 639 */,
 /* 640 */,
 /* 641 */,
-/* 642 */,
+/* 642 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.convertChangesToXML = convertChangesToXML;
+
+/*istanbul ignore end*/
+function convertChangesToXML(changes) {
+  var ret = [];
+
+  for (var i = 0; i < changes.length; i++) {
+    var change = changes[i];
+
+    if (change.added) {
+      ret.push('<ins>');
+    } else if (change.removed) {
+      ret.push('<del>');
+    }
+
+    ret.push(escapeHTML(change.value));
+
+    if (change.added) {
+      ret.push('</ins>');
+    } else if (change.removed) {
+      ret.push('</del>');
+    }
+  }
+
+  return ret.join('');
+}
+
+function escapeHTML(s) {
+  var n = s;
+  n = n.replace(/&/g, '&amp;');
+  n = n.replace(/</g, '&lt;');
+  n = n.replace(/>/g, '&gt;');
+  n = n.replace(/"/g, '&quot;');
+  return n;
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9jb252ZXJ0L3htbC5qcyJdLCJuYW1lcyI6WyJjb252ZXJ0Q2hhbmdlc1RvWE1MIiwiY2hhbmdlcyIsInJldCIsImkiLCJsZW5ndGgiLCJjaGFuZ2UiLCJhZGRlZCIsInB1c2giLCJyZW1vdmVkIiwiZXNjYXBlSFRNTCIsInZhbHVlIiwiam9pbiIsInMiLCJuIiwicmVwbGFjZSJdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7O0FBQU8sU0FBU0EsbUJBQVQsQ0FBNkJDLE9BQTdCLEVBQXNDO0FBQzNDLE1BQUlDLEdBQUcsR0FBRyxFQUFWOztBQUNBLE9BQUssSUFBSUMsQ0FBQyxHQUFHLENBQWIsRUFBZ0JBLENBQUMsR0FBR0YsT0FBTyxDQUFDRyxNQUE1QixFQUFvQ0QsQ0FBQyxFQUFyQyxFQUF5QztBQUN2QyxRQUFJRSxNQUFNLEdBQUdKLE9BQU8sQ0FBQ0UsQ0FBRCxDQUFwQjs7QUFDQSxRQUFJRSxNQUFNLENBQUNDLEtBQVgsRUFBa0I7QUFDaEJKLE1BQUFBLEdBQUcsQ0FBQ0ssSUFBSixDQUFTLE9BQVQ7QUFDRCxLQUZELE1BRU8sSUFBSUYsTUFBTSxDQUFDRyxPQUFYLEVBQW9CO0FBQ3pCTixNQUFBQSxHQUFHLENBQUNLLElBQUosQ0FBUyxPQUFUO0FBQ0Q7O0FBRURMLElBQUFBLEdBQUcsQ0FBQ0ssSUFBSixDQUFTRSxVQUFVLENBQUNKLE1BQU0sQ0FBQ0ssS0FBUixDQUFuQjs7QUFFQSxRQUFJTCxNQUFNLENBQUNDLEtBQVgsRUFBa0I7QUFDaEJKLE1BQUFBLEdBQUcsQ0FBQ0ssSUFBSixDQUFTLFFBQVQ7QUFDRCxLQUZELE1BRU8sSUFBSUYsTUFBTSxDQUFDRyxPQUFYLEVBQW9CO0FBQ3pCTixNQUFBQSxHQUFHLENBQUNLLElBQUosQ0FBUyxRQUFUO0FBQ0Q7QUFDRjs7QUFDRCxTQUFPTCxHQUFHLENBQUNTLElBQUosQ0FBUyxFQUFULENBQVA7QUFDRDs7QUFFRCxTQUFTRixVQUFULENBQW9CRyxDQUFwQixFQUF1QjtBQUNyQixNQUFJQyxDQUFDLEdBQUdELENBQVI7QUFDQUMsRUFBQUEsQ0FBQyxHQUFHQSxDQUFDLENBQUNDLE9BQUYsQ0FBVSxJQUFWLEVBQWdCLE9BQWhCLENBQUo7QUFDQUQsRUFBQUEsQ0FBQyxHQUFHQSxDQUFDLENBQUNDLE9BQUYsQ0FBVSxJQUFWLEVBQWdCLE1BQWhCLENBQUo7QUFDQUQsRUFBQUEsQ0FBQyxHQUFHQSxDQUFDLENBQUNDLE9BQUYsQ0FBVSxJQUFWLEVBQWdCLE1BQWhCLENBQUo7QUFDQUQsRUFBQUEsQ0FBQyxHQUFHQSxDQUFDLENBQUNDLE9BQUYsQ0FBVSxJQUFWLEVBQWdCLFFBQWhCLENBQUo7QUFFQSxTQUFPRCxDQUFQO0FBQ0QiLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgZnVuY3Rpb24gY29udmVydENoYW5nZXNUb1hNTChjaGFuZ2VzKSB7XG4gIGxldCByZXQgPSBbXTtcbiAgZm9yIChsZXQgaSA9IDA7IGkgPCBjaGFuZ2VzLmxlbmd0aDsgaSsrKSB7XG4gICAgbGV0IGNoYW5nZSA9IGNoYW5nZXNbaV07XG4gICAgaWYgKGNoYW5nZS5hZGRlZCkge1xuICAgICAgcmV0LnB1c2goJzxpbnM+Jyk7XG4gICAgfSBlbHNlIGlmIChjaGFuZ2UucmVtb3ZlZCkge1xuICAgICAgcmV0LnB1c2goJzxkZWw+Jyk7XG4gICAgfVxuXG4gICAgcmV0LnB1c2goZXNjYXBlSFRNTChjaGFuZ2UudmFsdWUpKTtcblxuICAgIGlmIChjaGFuZ2UuYWRkZWQpIHtcbiAgICAgIHJldC5wdXNoKCc8L2lucz4nKTtcbiAgICB9IGVsc2UgaWYgKGNoYW5nZS5yZW1vdmVkKSB7XG4gICAgICByZXQucHVzaCgnPC9kZWw+Jyk7XG4gICAgfVxuICB9XG4gIHJldHVybiByZXQuam9pbignJyk7XG59XG5cbmZ1bmN0aW9uIGVzY2FwZUhUTUwocykge1xuICBsZXQgbiA9IHM7XG4gIG4gPSBuLnJlcGxhY2UoLyYvZywgJyZhbXA7Jyk7XG4gIG4gPSBuLnJlcGxhY2UoLzwvZywgJyZsdDsnKTtcbiAgbiA9IG4ucmVwbGFjZSgvPi9nLCAnJmd0OycpO1xuICBuID0gbi5yZXBsYWNlKC9cIi9nLCAnJnF1b3Q7Jyk7XG5cbiAgcmV0dXJuIG47XG59XG4iXX0=
+
+
+/***/ }),
 /* 643 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -42824,7 +45635,50 @@ module.exports = flatstr
 /* 657 */,
 /* 658 */,
 /* 659 */,
-/* 660 */,
+/* 660 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.diffChars = diffChars;
+exports.characterDiff = void 0;
+
+/*istanbul ignore end*/
+var
+/*istanbul ignore start*/
+_base = _interopRequireDefault(__webpack_require__(491))
+/*istanbul ignore end*/
+;
+
+/*istanbul ignore start*/ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/*istanbul ignore end*/
+var characterDiff = new
+/*istanbul ignore start*/
+_base
+/*istanbul ignore end*/
+.
+/*istanbul ignore start*/
+default
+/*istanbul ignore end*/
+();
+
+/*istanbul ignore start*/
+exports.characterDiff = characterDiff;
+
+/*istanbul ignore end*/
+function diffChars(oldStr, newStr, options) {
+  return characterDiff.diff(oldStr, newStr, options);
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9kaWZmL2NoYXJhY3Rlci5qcyJdLCJuYW1lcyI6WyJjaGFyYWN0ZXJEaWZmIiwiRGlmZiIsImRpZmZDaGFycyIsIm9sZFN0ciIsIm5ld1N0ciIsIm9wdGlvbnMiLCJkaWZmIl0sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7O0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTs7Ozs7QUFFTyxJQUFNQSxhQUFhLEdBQUc7QUFBSUM7QUFBQUE7QUFBQUE7QUFBQUE7QUFBQUE7QUFBQUE7QUFBSjtBQUFBLEVBQXRCOzs7Ozs7QUFDQSxTQUFTQyxTQUFULENBQW1CQyxNQUFuQixFQUEyQkMsTUFBM0IsRUFBbUNDLE9BQW5DLEVBQTRDO0FBQUUsU0FBT0wsYUFBYSxDQUFDTSxJQUFkLENBQW1CSCxNQUFuQixFQUEyQkMsTUFBM0IsRUFBbUNDLE9BQW5DLENBQVA7QUFBcUQiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgRGlmZiBmcm9tICcuL2Jhc2UnO1xuXG5leHBvcnQgY29uc3QgY2hhcmFjdGVyRGlmZiA9IG5ldyBEaWZmKCk7XG5leHBvcnQgZnVuY3Rpb24gZGlmZkNoYXJzKG9sZFN0ciwgbmV3U3RyLCBvcHRpb25zKSB7IHJldHVybiBjaGFyYWN0ZXJEaWZmLmRpZmYob2xkU3RyLCBuZXdTdHIsIG9wdGlvbnMpOyB9XG4iXX0=
+
+
+/***/ }),
 /* 661 */,
 /* 662 */,
 /* 663 */
@@ -43346,7 +46200,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.graphqlToCommits = void 0;
 const CONVENTIONAL_COMMIT_REGEX = /^[\w]+(\(\w+\))?!?: /;
 async function graphqlToCommits(github, response) {
-    const commitHistory = response.repository.defaultBranchRef.target.history;
+    const commitHistory = response.repository.refs.edges[0].node.target.history;
     const commits = {
         endCursor: commitHistory.pageInfo.endCursor,
         hasNextPage: commitHistory.pageInfo.hasNextPage,
@@ -43592,7 +46446,30 @@ try {
 
 
 /***/ }),
-/* 690 */,
+/* 690 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+var upload_comments_handler_1 = __webpack_require__(258);
+Object.defineProperty(exports, "makeInlineSuggestions", { enumerable: true, get: function () { return upload_comments_handler_1.makeInlineSuggestions; } });
+//# sourceMappingURL=index.js.map
+
+/***/ }),
 /* 691 */,
 /* 692 */
 /***/ (function(__unusedmodule, exports) {
@@ -46273,6 +49150,19 @@ PrintVisitor.prototype.HashPair = function (pair) {
 
 module.exports = /[^.[\]]+|\[((?:.)*?)\]/g
 
+/*
+Regular expression explanation:
+
+Alt 1: /[^.[\]]+/ - Match one or more characters that are *not* a dot (.)
+                    opening square bracket ([) or closing square bracket (])
+
+Alt 2: /\[((?:.)*?)\]/ - If the char IS dot or square bracket, then create a capture
+                         group (which will be capture group $1) that matches anything
+                         within square brackets. Expansion is lazy so it will
+                         stop matching as soon as the first closing bracket is met `]`
+                         (rather than continuing to match until the final closing bracket).
+*/
+
 
 /***/ }),
 /* 790 */
@@ -46315,7 +49205,7 @@ const releasers_1 = __webpack_require__(593);
 const node_1 = __webpack_require__(618);
 const python_1 = __webpack_require__(540);
 const simple_1 = __webpack_require__(643);
-const terraform_module_1 = __webpack_require__(940);
+const terraform_module_1 = __webpack_require__(440);
 class ReleasePRFactory {
     static build(releaseType, options) {
         const releaseOptions = {
@@ -46359,8 +49249,338 @@ exports.ReleasePRFactory = ReleasePRFactory;
 
 /***/ }),
 /* 797 */,
-/* 798 */,
-/* 799 */,
+/* 798 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getPullRequestHunks = exports.getCurrentPullRequestPatches = void 0;
+const logger_1 = __webpack_require__(148);
+const diff_utils_1 = __webpack_require__(594);
+/**
+ * For a pull request, get each remote file's patch text asynchronously
+ * Also get the list of files whose patch data could not be returned
+ * @param {Octokit} octokit the authenticated octokit instance
+ * @param {RepoDomain} remote the remote repository domain information
+ * @param {number} pullNumber the pull request number
+ * @param {number} pageSize the number of results to return per page
+ * @returns {Promise<Object<PatchText, string[]>>} the stringified patch data for each file and the list of files whose patch data could not be resolved
+ */
+async function getCurrentPullRequestPatches(octokit, remote, pullNumber, pageSize) {
+    // TODO: support pagination
+    const filesMissingPatch = [];
+    const files = (await octokit.pulls.listFiles({
+        owner: remote.owner,
+        repo: remote.repo,
+        pull_number: pullNumber,
+        per_page: pageSize,
+    })).data;
+    const patches = new Map();
+    if (files.length === 0) {
+        logger_1.logger.error(`0 file results have returned from list files query for Pull Request #${pullNumber}. Cannot make suggestions on an empty Pull Request`);
+        throw Error('Empty Pull Request');
+    }
+    files.forEach(file => {
+        if (file.patch === undefined) {
+            // files whose patch is too large do not return the patch text by default
+            // TODO handle file patches that are too large
+            logger_1.logger.warn(`File ${file.filename} may have a patch that is too large to display patch object.`);
+            filesMissingPatch.push(file.filename);
+        }
+        else {
+            patches.set(file.filename, file.patch);
+        }
+    });
+    if (patches.size === 0) {
+        logger_1.logger.warn('0 patches have been returned. This could be because the patch results were too large to return.');
+    }
+    return { patches, filesMissingPatch };
+}
+exports.getCurrentPullRequestPatches = getCurrentPullRequestPatches;
+// This header is ignored for calculating patch ranges, but is neccessary
+// for parsing a diff
+const _DIFF_HEADER = `diff --git a/file.ext b/file.ext
+index cac8fbc..87f387c 100644
+--- a/file.ext
++++ b/file.ext
+`;
+/**
+ * For a pull request, get each remote file's current patch range to identify the scope of each patch as a Map.
+ * @param {Octokit} octokit the authenticated octokit instance
+ * @param {RepoDomain} remote the remote repository domain information
+ * @param {number} pullNumber the pull request number
+ * @param {number} pageSize the number of files to return per pull request list files query
+ * @returns {Promise<Map<string, Hunk[]>>} the scope of each file in the pull request
+ */
+async function getPullRequestHunks(octokit, remote, pullNumber, pageSize) {
+    const files = (await octokit.pulls.listFiles({
+        owner: remote.owner,
+        repo: remote.repo,
+        pull_number: pullNumber,
+        per_page: pageSize,
+    })).data;
+    const pullRequestHunks = new Map();
+    if (files.length === 0) {
+        logger_1.logger.error(`0 file results have returned from list files query for Pull Request #${pullNumber}. Cannot make suggestions on an empty Pull Request`);
+        throw Error('Empty Pull Request');
+    }
+    files.forEach(file => {
+        if (file.patch === undefined) {
+            // files whose patch is too large do not return the patch text by default
+            // TODO handle file patches that are too large
+            logger_1.logger.warn(`File ${file.filename} may have a patch that is too large to display patch object.`);
+        }
+        else {
+            const hunks = diff_utils_1.parseHunks(_DIFF_HEADER + file.patch);
+            pullRequestHunks.set(file.filename, hunks);
+        }
+    });
+    if (pullRequestHunks.size === 0) {
+        logger_1.logger.warn('0 patches have been returned. This could be because the patch results were too large to return.');
+    }
+    return pullRequestHunks;
+}
+exports.getPullRequestHunks = getPullRequestHunks;
+//# sourceMappingURL=remote-patch-ranges-handler.js.map
+
+/***/ }),
+/* 799 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+Object.defineProperty(exports, "Diff", {
+  enumerable: true,
+  get: function get() {
+    return _base.default;
+  }
+});
+Object.defineProperty(exports, "diffChars", {
+  enumerable: true,
+  get: function get() {
+    return _character.diffChars;
+  }
+});
+Object.defineProperty(exports, "diffWords", {
+  enumerable: true,
+  get: function get() {
+    return _word.diffWords;
+  }
+});
+Object.defineProperty(exports, "diffWordsWithSpace", {
+  enumerable: true,
+  get: function get() {
+    return _word.diffWordsWithSpace;
+  }
+});
+Object.defineProperty(exports, "diffLines", {
+  enumerable: true,
+  get: function get() {
+    return _line.diffLines;
+  }
+});
+Object.defineProperty(exports, "diffTrimmedLines", {
+  enumerable: true,
+  get: function get() {
+    return _line.diffTrimmedLines;
+  }
+});
+Object.defineProperty(exports, "diffSentences", {
+  enumerable: true,
+  get: function get() {
+    return _sentence.diffSentences;
+  }
+});
+Object.defineProperty(exports, "diffCss", {
+  enumerable: true,
+  get: function get() {
+    return _css.diffCss;
+  }
+});
+Object.defineProperty(exports, "diffJson", {
+  enumerable: true,
+  get: function get() {
+    return _json.diffJson;
+  }
+});
+Object.defineProperty(exports, "canonicalize", {
+  enumerable: true,
+  get: function get() {
+    return _json.canonicalize;
+  }
+});
+Object.defineProperty(exports, "diffArrays", {
+  enumerable: true,
+  get: function get() {
+    return _array.diffArrays;
+  }
+});
+Object.defineProperty(exports, "applyPatch", {
+  enumerable: true,
+  get: function get() {
+    return _apply.applyPatch;
+  }
+});
+Object.defineProperty(exports, "applyPatches", {
+  enumerable: true,
+  get: function get() {
+    return _apply.applyPatches;
+  }
+});
+Object.defineProperty(exports, "parsePatch", {
+  enumerable: true,
+  get: function get() {
+    return _parse.parsePatch;
+  }
+});
+Object.defineProperty(exports, "merge", {
+  enumerable: true,
+  get: function get() {
+    return _merge.merge;
+  }
+});
+Object.defineProperty(exports, "structuredPatch", {
+  enumerable: true,
+  get: function get() {
+    return _create.structuredPatch;
+  }
+});
+Object.defineProperty(exports, "createTwoFilesPatch", {
+  enumerable: true,
+  get: function get() {
+    return _create.createTwoFilesPatch;
+  }
+});
+Object.defineProperty(exports, "createPatch", {
+  enumerable: true,
+  get: function get() {
+    return _create.createPatch;
+  }
+});
+Object.defineProperty(exports, "convertChangesToDMP", {
+  enumerable: true,
+  get: function get() {
+    return _dmp.convertChangesToDMP;
+  }
+});
+Object.defineProperty(exports, "convertChangesToXML", {
+  enumerable: true,
+  get: function get() {
+    return _xml.convertChangesToXML;
+  }
+});
+
+/*istanbul ignore end*/
+var
+/*istanbul ignore start*/
+_base = _interopRequireDefault(__webpack_require__(491))
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_character = __webpack_require__(660)
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_word = __webpack_require__(262)
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_line = __webpack_require__(553)
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_sentence = __webpack_require__(806)
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_css = __webpack_require__(90)
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_json = __webpack_require__(940)
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_array = __webpack_require__(408)
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_apply = __webpack_require__(636)
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_parse = __webpack_require__(86)
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_merge = __webpack_require__(1)
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_create = __webpack_require__(140)
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_dmp = __webpack_require__(401)
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_xml = __webpack_require__(642)
+/*istanbul ignore end*/
+;
+
+/*istanbul ignore start*/ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/*istanbul ignore end*/
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uL3NyYy9pbmRleC5qcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OztBQWdCQTtBQUFBO0FBQUE7QUFBQTtBQUFBOztBQUNBO0FBQUE7QUFBQTtBQUFBO0FBQUE7O0FBQ0E7QUFBQTtBQUFBO0FBQUE7QUFBQTs7QUFDQTtBQUFBO0FBQUE7QUFBQTtBQUFBOztBQUNBO0FBQUE7QUFBQTtBQUFBO0FBQUE7O0FBRUE7QUFBQTtBQUFBO0FBQUE7QUFBQTs7QUFDQTtBQUFBO0FBQUE7QUFBQTtBQUFBOztBQUVBO0FBQUE7QUFBQTtBQUFBO0FBQUE7O0FBRUE7QUFBQTtBQUFBO0FBQUE7QUFBQTs7QUFDQTtBQUFBO0FBQUE7QUFBQTtBQUFBOztBQUNBO0FBQUE7QUFBQTtBQUFBO0FBQUE7O0FBQ0E7QUFBQTtBQUFBO0FBQUE7QUFBQTs7QUFFQTtBQUFBO0FBQUE7QUFBQTtBQUFBOztBQUNBO0FBQUE7QUFBQTtBQUFBO0FBQUEiLCJzb3VyY2VzQ29udGVudCI6WyIvKiBTZWUgTElDRU5TRSBmaWxlIGZvciB0ZXJtcyBvZiB1c2UgKi9cblxuLypcbiAqIFRleHQgZGlmZiBpbXBsZW1lbnRhdGlvbi5cbiAqXG4gKiBUaGlzIGxpYnJhcnkgc3VwcG9ydHMgdGhlIGZvbGxvd2luZyBBUElTOlxuICogSnNEaWZmLmRpZmZDaGFyczogQ2hhcmFjdGVyIGJ5IGNoYXJhY3RlciBkaWZmXG4gKiBKc0RpZmYuZGlmZldvcmRzOiBXb3JkIChhcyBkZWZpbmVkIGJ5IFxcYiByZWdleCkgZGlmZiB3aGljaCBpZ25vcmVzIHdoaXRlc3BhY2VcbiAqIEpzRGlmZi5kaWZmTGluZXM6IExpbmUgYmFzZWQgZGlmZlxuICpcbiAqIEpzRGlmZi5kaWZmQ3NzOiBEaWZmIHRhcmdldGVkIGF0IENTUyBjb250ZW50XG4gKlxuICogVGhlc2UgbWV0aG9kcyBhcmUgYmFzZWQgb24gdGhlIGltcGxlbWVudGF0aW9uIHByb3Bvc2VkIGluXG4gKiBcIkFuIE8oTkQpIERpZmZlcmVuY2UgQWxnb3JpdGhtIGFuZCBpdHMgVmFyaWF0aW9uc1wiIChNeWVycywgMTk4NikuXG4gKiBodHRwOi8vY2l0ZXNlZXJ4LmlzdC5wc3UuZWR1L3ZpZXdkb2Mvc3VtbWFyeT9kb2k9MTAuMS4xLjQuNjkyN1xuICovXG5pbXBvcnQgRGlmZiBmcm9tICcuL2RpZmYvYmFzZSc7XG5pbXBvcnQge2RpZmZDaGFyc30gZnJvbSAnLi9kaWZmL2NoYXJhY3Rlcic7XG5pbXBvcnQge2RpZmZXb3JkcywgZGlmZldvcmRzV2l0aFNwYWNlfSBmcm9tICcuL2RpZmYvd29yZCc7XG5pbXBvcnQge2RpZmZMaW5lcywgZGlmZlRyaW1tZWRMaW5lc30gZnJvbSAnLi9kaWZmL2xpbmUnO1xuaW1wb3J0IHtkaWZmU2VudGVuY2VzfSBmcm9tICcuL2RpZmYvc2VudGVuY2UnO1xuXG5pbXBvcnQge2RpZmZDc3N9IGZyb20gJy4vZGlmZi9jc3MnO1xuaW1wb3J0IHtkaWZmSnNvbiwgY2Fub25pY2FsaXplfSBmcm9tICcuL2RpZmYvanNvbic7XG5cbmltcG9ydCB7ZGlmZkFycmF5c30gZnJvbSAnLi9kaWZmL2FycmF5JztcblxuaW1wb3J0IHthcHBseVBhdGNoLCBhcHBseVBhdGNoZXN9IGZyb20gJy4vcGF0Y2gvYXBwbHknO1xuaW1wb3J0IHtwYXJzZVBhdGNofSBmcm9tICcuL3BhdGNoL3BhcnNlJztcbmltcG9ydCB7bWVyZ2V9IGZyb20gJy4vcGF0Y2gvbWVyZ2UnO1xuaW1wb3J0IHtzdHJ1Y3R1cmVkUGF0Y2gsIGNyZWF0ZVR3b0ZpbGVzUGF0Y2gsIGNyZWF0ZVBhdGNofSBmcm9tICcuL3BhdGNoL2NyZWF0ZSc7XG5cbmltcG9ydCB7Y29udmVydENoYW5nZXNUb0RNUH0gZnJvbSAnLi9jb252ZXJ0L2RtcCc7XG5pbXBvcnQge2NvbnZlcnRDaGFuZ2VzVG9YTUx9IGZyb20gJy4vY29udmVydC94bWwnO1xuXG5leHBvcnQge1xuICBEaWZmLFxuXG4gIGRpZmZDaGFycyxcbiAgZGlmZldvcmRzLFxuICBkaWZmV29yZHNXaXRoU3BhY2UsXG4gIGRpZmZMaW5lcyxcbiAgZGlmZlRyaW1tZWRMaW5lcyxcbiAgZGlmZlNlbnRlbmNlcyxcblxuICBkaWZmQ3NzLFxuICBkaWZmSnNvbixcblxuICBkaWZmQXJyYXlzLFxuXG4gIHN0cnVjdHVyZWRQYXRjaCxcbiAgY3JlYXRlVHdvRmlsZXNQYXRjaCxcbiAgY3JlYXRlUGF0Y2gsXG4gIGFwcGx5UGF0Y2gsXG4gIGFwcGx5UGF0Y2hlcyxcbiAgcGFyc2VQYXRjaCxcbiAgbWVyZ2UsXG4gIGNvbnZlcnRDaGFuZ2VzVG9ETVAsXG4gIGNvbnZlcnRDaGFuZ2VzVG9YTUwsXG4gIGNhbm9uaWNhbGl6ZVxufTtcbiJdfQ==
+
+
+/***/ }),
 /* 800 */,
 /* 801 */,
 /* 802 */,
@@ -46387,7 +49607,54 @@ module.exports = value => {
 
 /***/ }),
 /* 805 */,
-/* 806 */,
+/* 806 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+/*istanbul ignore start*/
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.diffSentences = diffSentences;
+exports.sentenceDiff = void 0;
+
+/*istanbul ignore end*/
+var
+/*istanbul ignore start*/
+_base = _interopRequireDefault(__webpack_require__(491))
+/*istanbul ignore end*/
+;
+
+/*istanbul ignore start*/ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/*istanbul ignore end*/
+var sentenceDiff = new
+/*istanbul ignore start*/
+_base
+/*istanbul ignore end*/
+.
+/*istanbul ignore start*/
+default
+/*istanbul ignore end*/
+();
+
+/*istanbul ignore start*/
+exports.sentenceDiff = sentenceDiff;
+
+/*istanbul ignore end*/
+sentenceDiff.tokenize = function (value) {
+  return value.split(/(\S.+?[.!?])(?=\s+|$)/);
+};
+
+function diffSentences(oldStr, newStr, callback) {
+  return sentenceDiff.diff(oldStr, newStr, callback);
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9kaWZmL3NlbnRlbmNlLmpzIl0sIm5hbWVzIjpbInNlbnRlbmNlRGlmZiIsIkRpZmYiLCJ0b2tlbml6ZSIsInZhbHVlIiwic3BsaXQiLCJkaWZmU2VudGVuY2VzIiwib2xkU3RyIiwibmV3U3RyIiwiY2FsbGJhY2siLCJkaWZmIl0sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7O0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTs7Ozs7QUFHTyxJQUFNQSxZQUFZLEdBQUc7QUFBSUM7QUFBQUE7QUFBQUE7QUFBQUE7QUFBQUE7QUFBQUE7QUFBSjtBQUFBLEVBQXJCOzs7Ozs7QUFDUEQsWUFBWSxDQUFDRSxRQUFiLEdBQXdCLFVBQVNDLEtBQVQsRUFBZ0I7QUFDdEMsU0FBT0EsS0FBSyxDQUFDQyxLQUFOLENBQVksdUJBQVosQ0FBUDtBQUNELENBRkQ7O0FBSU8sU0FBU0MsYUFBVCxDQUF1QkMsTUFBdkIsRUFBK0JDLE1BQS9CLEVBQXVDQyxRQUF2QyxFQUFpRDtBQUFFLFNBQU9SLFlBQVksQ0FBQ1MsSUFBYixDQUFrQkgsTUFBbEIsRUFBMEJDLE1BQTFCLEVBQWtDQyxRQUFsQyxDQUFQO0FBQXFEIiwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IERpZmYgZnJvbSAnLi9iYXNlJztcblxuXG5leHBvcnQgY29uc3Qgc2VudGVuY2VEaWZmID0gbmV3IERpZmYoKTtcbnNlbnRlbmNlRGlmZi50b2tlbml6ZSA9IGZ1bmN0aW9uKHZhbHVlKSB7XG4gIHJldHVybiB2YWx1ZS5zcGxpdCgvKFxcUy4rP1suIT9dKSg/PVxccyt8JCkvKTtcbn07XG5cbmV4cG9ydCBmdW5jdGlvbiBkaWZmU2VudGVuY2VzKG9sZFN0ciwgbmV3U3RyLCBjYWxsYmFjaykgeyByZXR1cm4gc2VudGVuY2VEaWZmLmRpZmYob2xkU3RyLCBuZXdTdHIsIGNhbGxiYWNrKTsgfVxuIl19
+
+
+/***/ }),
 /* 807 */,
 /* 808 */,
 /* 809 */,
@@ -48381,7 +51648,7 @@ module.exports.windows = windows;
 "use strict";
 
 const Q = __webpack_require__(416)
-const _ = __webpack_require__(557)
+const _ = __webpack_require__(288)
 const conventionalChangelog = __webpack_require__(193)
 const parserOpts = __webpack_require__(8)
 const recommendedBumpOpts = __webpack_require__(995)
@@ -49243,7 +52510,61 @@ function createNewLookupObject() {
 /***/ }),
 /* 913 */,
 /* 914 */,
-/* 915 */,
+/* 915 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.reviewPullRequest = void 0;
+const make_review_handler_1 = __webpack_require__(690);
+const logger_1 = __webpack_require__(148);
+const raw_hunk_handler_1 = __webpack_require__(43);
+const remote_patch_ranges_handler_1 = __webpack_require__(798);
+const scope_handler_1 = __webpack_require__(172);
+/**
+ * Comment on a Pull Request
+ * @param {Octokit} octokit authenticated octokit isntance
+ * @param {RepoDomain} remote the Pull Request repository
+ * @param {number} pullNumber the Pull Request number
+ * @param {number} pageSize the number of files to comment on // TODO pagination
+ * @param {Map<string, FileDiffContent>} diffContents the old and new contents of the files to suggest
+ * @returns the created review's id, or null if no review was made
+ */
+async function reviewPullRequest(octokit, remote, pullNumber, pageSize, diffContents) {
+    try {
+        // get the hunks from the pull request
+        const pullRequestHunks = await remote_patch_ranges_handler_1.getPullRequestHunks(octokit, remote, pullNumber, pageSize);
+        // get the hunks from the suggested change
+        const allSuggestedHunks = raw_hunk_handler_1.getRawSuggestionHunks(diffContents);
+        // split hunks by commentable and uncommentable
+        const { validHunks, invalidHunks } = scope_handler_1.partitionSuggestedHunksByScope(pullRequestHunks, allSuggestedHunks);
+        // create pull request review
+        const reviewNumber = await make_review_handler_1.makeInlineSuggestions(octokit, validHunks, invalidHunks, remote, pullNumber);
+        return reviewNumber;
+    }
+    catch (err) {
+        logger_1.logger.error('Failed to suggest');
+        throw err;
+    }
+}
+exports.reviewPullRequest = reviewPullRequest;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
 /* 916 */
 /***/ (function(__unusedmodule, exports) {
 
@@ -51172,10 +54493,129 @@ module.exports = inc
 /* 929 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["pino@6.6.1","/home/runner/work/release-please-action/release-please-action"]],"_from":"pino@6.6.1","_id":"pino@6.6.1","_inBundle":false,"_integrity":"sha512-DOgm7rn6ctBkBYemHXSLj7+j3o3U1q1FWBXbHcprur8mA93QcJSycEkEqhqKiFB9Mx/3Qld2FGr6+9yfQza0kA==","_location":"/pino","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"pino@6.6.1","name":"pino","escapedName":"pino","rawSpec":"6.6.1","saveSpec":null,"fetchSpec":"6.6.1"},"_requiredBy":["/code-suggester"],"_resolved":"https://registry.npmjs.org/pino/-/pino-6.6.1.tgz","_spec":"6.6.1","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Matteo Collina","email":"hello@matteocollina.com"},"bin":{"pino":"bin.js"},"browser":"./browser.js","bugs":{"url":"https://github.com/pinojs/pino/issues"},"contributors":[{"name":"David Mark Clements","email":"huperekchuno@googlemail.com"},{"name":"James Sumners","email":"james.sumners@gmail.com"},{"name":"Thomas Watson Steen","email":"w@tson.dk","url":"https://twitter.com/wa7son"}],"dependencies":{"fast-redact":"^2.0.0","fast-safe-stringify":"^2.0.7","flatstr":"^1.0.12","pino-std-serializers":"^2.4.2","quick-format-unescaped":"^4.0.1","sonic-boom":"^1.0.2"},"description":"super fast, all natural json logger","devDependencies":{"airtap":"3.0.0","benchmark":"^2.1.4","bole":"^4.0.0","bunyan":"^1.8.14","docsify-cli":"^4.4.1","execa":"^4.0.0","fastbench":"^1.0.1","flush-write-stream":"^2.0.0","import-fresh":"^3.2.1","log":"^6.0.0","loglevel":"^1.6.7","pino-pretty":"^4.1.0","pre-commit":"^1.2.2","proxyquire":"^2.1.3","pump":"^3.0.0","semver":"^7.0.0","snazzy":"^8.0.0","split2":"^3.1.1","standard":"^14.3.3","steed":"^1.1.3","strip-ansi":"^6.0.0","tap":"^14.10.8","tape":"^5.0.0","through2":"^4.0.0","winston":"^3.3.3"},"files":["pino.js","bin.js","browser.js","pretty.js","usage.txt","test","docs","example.js","lib"],"homepage":"http://getpino.io","keywords":["fast","logger","stream","json"],"license":"MIT","main":"pino.js","name":"pino","precommit":"test","repository":{"type":"git","url":"git+https://github.com/pinojs/pino.git"},"scripts":{"bench":"node benchmarks/utils/runbench all","bench-basic":"node benchmarks/utils/runbench basic","bench-child":"node benchmarks/utils/runbench child","bench-child-child":"node benchmarks/utils/runbench child-child","bench-child-creation":"node benchmarks/utils/runbench child-creation","bench-deep-object":"node benchmarks/utils/runbench deep-object","bench-formatters":"node benchmarks/utils/runbench formatters","bench-longs-tring":"node benchmarks/utils/runbench long-string","bench-multi-arg":"node benchmarks/utils/runbench multi-arg","bench-object":"node benchmarks/utils/runbench object","browser-test":"airtap --local 8080 test/browser*test.js","cov-ui":"tap --coverage-report=html test/*test.js","docs":"docsify serve","test":"standard | snazzy && tap --100 test/*test.js","update-bench-doc":"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md"},"version":"6.6.1"};
+module.exports = {"_args":[["pino@6.7.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"pino@6.7.0","_id":"pino@6.7.0","_inBundle":false,"_integrity":"sha512-vPXJ4P9rWCwzlTJt+f0Ni4THc3DWyt8iDDCO4edQ8narTu6hnpzdXu8FqeSJCGndl1W6lfbYQUQihUO54y66Lw==","_location":"/pino","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"pino@6.7.0","name":"pino","escapedName":"pino","rawSpec":"6.7.0","saveSpec":null,"fetchSpec":"6.7.0"},"_requiredBy":["/code-suggester"],"_resolved":"https://registry.npmjs.org/pino/-/pino-6.7.0.tgz","_spec":"6.7.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Matteo Collina","email":"hello@matteocollina.com"},"bin":{"pino":"bin.js"},"browser":"./browser.js","bugs":{"url":"https://github.com/pinojs/pino/issues"},"contributors":[{"name":"David Mark Clements","email":"huperekchuno@googlemail.com"},{"name":"James Sumners","email":"james.sumners@gmail.com"},{"name":"Thomas Watson Steen","email":"w@tson.dk","url":"https://twitter.com/wa7son"}],"dependencies":{"fast-redact":"^3.0.0","fast-safe-stringify":"^2.0.7","flatstr":"^1.0.12","pino-std-serializers":"^2.4.2","quick-format-unescaped":"^4.0.1","sonic-boom":"^1.0.2"},"description":"super fast, all natural json logger","devDependencies":{"airtap":"3.0.0","benchmark":"^2.1.4","bole":"^4.0.0","bunyan":"^1.8.14","docsify-cli":"^4.4.1","execa":"^4.0.0","fastbench":"^1.0.1","flush-write-stream":"^2.0.0","import-fresh":"^3.2.1","log":"^6.0.0","loglevel":"^1.6.7","pino-pretty":"^4.1.0","pre-commit":"^1.2.2","proxyquire":"^2.1.3","pump":"^3.0.0","semver":"^7.0.0","snazzy":"^8.0.0","split2":"^3.1.1","standard":"^14.3.3","steed":"^1.1.3","strip-ansi":"^6.0.0","tap":"^14.10.8","tape":"^5.0.0","through2":"^4.0.0","winston":"^3.3.3"},"files":["pino.js","bin.js","browser.js","pretty.js","usage.txt","test","docs","example.js","lib"],"homepage":"http://getpino.io","keywords":["fast","logger","stream","json"],"license":"MIT","main":"pino.js","name":"pino","precommit":"test","repository":{"type":"git","url":"git+https://github.com/pinojs/pino.git"},"scripts":{"bench":"node benchmarks/utils/runbench all","bench-basic":"node benchmarks/utils/runbench basic","bench-child":"node benchmarks/utils/runbench child","bench-child-child":"node benchmarks/utils/runbench child-child","bench-child-creation":"node benchmarks/utils/runbench child-creation","bench-deep-object":"node benchmarks/utils/runbench deep-object","bench-formatters":"node benchmarks/utils/runbench formatters","bench-longs-tring":"node benchmarks/utils/runbench long-string","bench-multi-arg":"node benchmarks/utils/runbench multi-arg","bench-object":"node benchmarks/utils/runbench object","browser-test":"airtap --local 8080 test/browser*test.js","cov-ui":"tap --coverage-report=html test/*test.js","docs":"docsify serve","test":"standard | snazzy && tap --100 test/*test.js","update-bench-doc":"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md"},"version":"6.7.0"};
 
 /***/ }),
-/* 930 */,
+/* 930 */
+/***/ (function(__unusedmodule, exports) {
+
+/* -*- Mode: js; js-indent-level: 2; -*- */
+/*
+ * Copyright 2011 Mozilla Foundation and contributors
+ * Licensed under the New BSD license. See LICENSE or:
+ * http://opensource.org/licenses/BSD-3-Clause
+ */
+
+// It turns out that some (most?) JavaScript engines don't self-host
+// `Array.prototype.sort`. This makes sense because C++ will likely remain
+// faster than JS when doing raw CPU-intensive sorting. However, when using a
+// custom comparator function, calling back and forth between the VM's C++ and
+// JIT'd JS is rather slow *and* loses JIT type information, resulting in
+// worse generated code for the comparator function than would be optimal. In
+// fact, when sorting with a comparator, these costs outweigh the benefits of
+// sorting in C++. By using our own JS-implemented Quick Sort (below), we get
+// a ~3500ms mean speed-up in `bench/bench.html`.
+
+/**
+ * Swap the elements indexed by `x` and `y` in the array `ary`.
+ *
+ * @param {Array} ary
+ *        The array.
+ * @param {Number} x
+ *        The index of the first item.
+ * @param {Number} y
+ *        The index of the second item.
+ */
+function swap(ary, x, y) {
+  var temp = ary[x];
+  ary[x] = ary[y];
+  ary[y] = temp;
+}
+
+/**
+ * Returns a random integer within the range `low .. high` inclusive.
+ *
+ * @param {Number} low
+ *        The lower bound on the range.
+ * @param {Number} high
+ *        The upper bound on the range.
+ */
+function randomIntInRange(low, high) {
+  return Math.round(low + (Math.random() * (high - low)));
+}
+
+/**
+ * The Quick Sort algorithm.
+ *
+ * @param {Array} ary
+ *        An array to sort.
+ * @param {function} comparator
+ *        Function to use to compare two items.
+ * @param {Number} p
+ *        Start index of the array
+ * @param {Number} r
+ *        End index of the array
+ */
+function doQuickSort(ary, comparator, p, r) {
+  // If our lower bound is less than our upper bound, we (1) partition the
+  // array into two pieces and (2) recurse on each half. If it is not, this is
+  // the empty array and our base case.
+
+  if (p < r) {
+    // (1) Partitioning.
+    //
+    // The partitioning chooses a pivot between `p` and `r` and moves all
+    // elements that are less than or equal to the pivot to the before it, and
+    // all the elements that are greater than it after it. The effect is that
+    // once partition is done, the pivot is in the exact place it will be when
+    // the array is put in sorted order, and it will not need to be moved
+    // again. This runs in O(n) time.
+
+    // Always choose a random pivot so that an input array which is reverse
+    // sorted does not cause O(n^2) running time.
+    var pivotIndex = randomIntInRange(p, r);
+    var i = p - 1;
+
+    swap(ary, pivotIndex, r);
+    var pivot = ary[r];
+
+    // Immediately after `j` is incremented in this loop, the following hold
+    // true:
+    //
+    //   * Every element in `ary[p .. i]` is less than or equal to the pivot.
+    //
+    //   * Every element in `ary[i+1 .. j-1]` is greater than the pivot.
+    for (var j = p; j < r; j++) {
+      if (comparator(ary[j], pivot) <= 0) {
+        i += 1;
+        swap(ary, i, j);
+      }
+    }
+
+    swap(ary, i + 1, j);
+    var q = i + 1;
+
+    // (2) Recurse on each half.
+
+    doQuickSort(ary, comparator, p, q - 1);
+    doQuickSort(ary, comparator, q + 1, r);
+  }
+}
+
+/**
+ * Sort the given array in-place with the given comparator function.
+ *
+ * @param {Array} ary
+ *        An array to sort.
+ * @param {function} comparator
+ *        Function to use to compare two items.
+ */
+exports.quickSort = function (ary, comparator) {
+  doQuickSort(ary, comparator, 0, ary.length - 1);
+};
+
+
+/***/ }),
 /* 931 */,
 /* 932 */,
 /* 933 */,
@@ -51189,83 +54629,170 @@ module.exports = {"_args":[["pino@6.6.1","/home/runner/work/release-please-actio
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
 "use strict";
+/*istanbul ignore start*/
 
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.TerraformModule = void 0;
-const release_pr_1 = __webpack_require__(93);
-const conventional_commits_1 = __webpack_require__(514);
-const checkpoint_1 = __webpack_require__(923);
-// Generic
-const changelog_1 = __webpack_require__(261);
-// Terraform specific.
-const readme_1 = __webpack_require__(458);
-class TerraformModule extends release_pr_1.ReleasePR {
-    async _run() {
-        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}-` : undefined);
-        const commits = await this.commits({
-            sha: latestTag ? latestTag.sha : undefined,
-            path: this.path,
-        });
-        const cc = new conventional_commits_1.ConventionalCommits({
-            commits,
-            githubRepoUrl: this.repoUrl,
-            bumpMinorPreMajor: this.bumpMinorPreMajor,
-            changelogSections: this.changelogSections,
-        });
-        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
-        const changelogEntry = await cc.generateChangelogEntry({
-            version: candidate.version,
-            currentTag: `v${candidate.version}`,
-            previousTag: candidate.previousTag,
-        });
-        // don't create a release candidate until user facing changes
-        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
-        // one line is a good indicator that there were no interesting commits.
-        if (this.changelogEmpty(changelogEntry)) {
-            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return;
-        }
-        const updates = [];
-        updates.push(new changelog_1.Changelog({
-            path: this.addPath('CHANGELOG.md'),
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        updates.push(new readme_1.ReadMe({
-            path: this.addPath('README.md'),
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
-        await this.openPR({
-            sha: commits[0].sha,
-            changelogEntry: `${changelogEntry}\n---\n`,
-            updates,
-            version: candidate.version,
-            includePackageName: this.monorepoTags,
-        });
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.diffJson = diffJson;
+exports.canonicalize = canonicalize;
+exports.jsonDiff = void 0;
+
+/*istanbul ignore end*/
+var
+/*istanbul ignore start*/
+_base = _interopRequireDefault(__webpack_require__(491))
+/*istanbul ignore end*/
+;
+
+var
+/*istanbul ignore start*/
+_line = __webpack_require__(553)
+/*istanbul ignore end*/
+;
+
+/*istanbul ignore start*/ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+/*istanbul ignore end*/
+var objectPrototypeToString = Object.prototype.toString;
+var jsonDiff = new
+/*istanbul ignore start*/
+_base
+/*istanbul ignore end*/
+.
+/*istanbul ignore start*/
+default
+/*istanbul ignore end*/
+(); // Discriminate between two lines of pretty-printed, serialized JSON where one of them has a
+// dangling comma and the other doesn't. Turns out including the dangling comma yields the nicest output:
+
+/*istanbul ignore start*/
+exports.jsonDiff = jsonDiff;
+
+/*istanbul ignore end*/
+jsonDiff.useLongestToken = true;
+jsonDiff.tokenize =
+/*istanbul ignore start*/
+_line
+/*istanbul ignore end*/
+.
+/*istanbul ignore start*/
+lineDiff
+/*istanbul ignore end*/
+.tokenize;
+
+jsonDiff.castInput = function (value) {
+  /*istanbul ignore start*/
+  var _this$options =
+  /*istanbul ignore end*/
+  this.options,
+      undefinedReplacement = _this$options.undefinedReplacement,
+      _this$options$stringi = _this$options.stringifyReplacer,
+      stringifyReplacer = _this$options$stringi === void 0 ? function (k, v)
+  /*istanbul ignore start*/
+  {
+    return (
+      /*istanbul ignore end*/
+      typeof v === 'undefined' ? undefinedReplacement : v
+    );
+  } : _this$options$stringi;
+  return typeof value === 'string' ? value : JSON.stringify(canonicalize(value, null, null, stringifyReplacer), stringifyReplacer, '  ');
+};
+
+jsonDiff.equals = function (left, right) {
+  return (
+    /*istanbul ignore start*/
+    _base
+    /*istanbul ignore end*/
+    .
+    /*istanbul ignore start*/
+    default
+    /*istanbul ignore end*/
+    .prototype.equals.call(jsonDiff, left.replace(/,([\r\n])/g, '$1'), right.replace(/,([\r\n])/g, '$1'))
+  );
+};
+
+function diffJson(oldObj, newObj, options) {
+  return jsonDiff.diff(oldObj, newObj, options);
+} // This function handles the presence of circular references by bailing out when encountering an
+// object that is already on the "stack" of items being processed. Accepts an optional replacer
+
+
+function canonicalize(obj, stack, replacementStack, replacer, key) {
+  stack = stack || [];
+  replacementStack = replacementStack || [];
+
+  if (replacer) {
+    obj = replacer(key, obj);
+  }
+
+  var i;
+
+  for (i = 0; i < stack.length; i += 1) {
+    if (stack[i] === obj) {
+      return replacementStack[i];
     }
-    defaultInitialVersion() {
-        return '0.1.0';
+  }
+
+  var canonicalizedObj;
+
+  if ('[object Array]' === objectPrototypeToString.call(obj)) {
+    stack.push(obj);
+    canonicalizedObj = new Array(obj.length);
+    replacementStack.push(canonicalizedObj);
+
+    for (i = 0; i < obj.length; i += 1) {
+      canonicalizedObj[i] = canonicalize(obj[i], stack, replacementStack, replacer, key);
     }
+
+    stack.pop();
+    replacementStack.pop();
+    return canonicalizedObj;
+  }
+
+  if (obj && obj.toJSON) {
+    obj = obj.toJSON();
+  }
+
+  if (
+  /*istanbul ignore start*/
+  _typeof(
+  /*istanbul ignore end*/
+  obj) === 'object' && obj !== null) {
+    stack.push(obj);
+    canonicalizedObj = {};
+    replacementStack.push(canonicalizedObj);
+
+    var sortedKeys = [],
+        _key;
+
+    for (_key in obj) {
+      /* istanbul ignore else */
+      if (obj.hasOwnProperty(_key)) {
+        sortedKeys.push(_key);
+      }
+    }
+
+    sortedKeys.sort();
+
+    for (i = 0; i < sortedKeys.length; i += 1) {
+      _key = sortedKeys[i];
+      canonicalizedObj[_key] = canonicalize(obj[_key], stack, replacementStack, replacer, _key);
+    }
+
+    stack.pop();
+    replacementStack.pop();
+  } else {
+    canonicalizedObj = obj;
+  }
+
+  return canonicalizedObj;
 }
-exports.TerraformModule = TerraformModule;
-TerraformModule.releaserName = 'terraform-module';
-//# sourceMappingURL=terraform-module.js.map
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uLy4uL3NyYy9kaWZmL2pzb24uanMiXSwibmFtZXMiOlsib2JqZWN0UHJvdG90eXBlVG9TdHJpbmciLCJPYmplY3QiLCJwcm90b3R5cGUiLCJ0b1N0cmluZyIsImpzb25EaWZmIiwiRGlmZiIsInVzZUxvbmdlc3RUb2tlbiIsInRva2VuaXplIiwibGluZURpZmYiLCJjYXN0SW5wdXQiLCJ2YWx1ZSIsIm9wdGlvbnMiLCJ1bmRlZmluZWRSZXBsYWNlbWVudCIsInN0cmluZ2lmeVJlcGxhY2VyIiwiayIsInYiLCJKU09OIiwic3RyaW5naWZ5IiwiY2Fub25pY2FsaXplIiwiZXF1YWxzIiwibGVmdCIsInJpZ2h0IiwiY2FsbCIsInJlcGxhY2UiLCJkaWZmSnNvbiIsIm9sZE9iaiIsIm5ld09iaiIsImRpZmYiLCJvYmoiLCJzdGFjayIsInJlcGxhY2VtZW50U3RhY2siLCJyZXBsYWNlciIsImtleSIsImkiLCJsZW5ndGgiLCJjYW5vbmljYWxpemVkT2JqIiwicHVzaCIsIkFycmF5IiwicG9wIiwidG9KU09OIiwic29ydGVkS2V5cyIsImhhc093blByb3BlcnR5Iiwic29ydCJdLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBOztBQUNBO0FBQUE7QUFBQTtBQUFBO0FBQUE7Ozs7Ozs7QUFFQSxJQUFNQSx1QkFBdUIsR0FBR0MsTUFBTSxDQUFDQyxTQUFQLENBQWlCQyxRQUFqRDtBQUdPLElBQU1DLFFBQVEsR0FBRztBQUFJQztBQUFBQTtBQUFBQTtBQUFBQTtBQUFBQTtBQUFBQTtBQUFKO0FBQUEsRUFBakIsQyxDQUNQO0FBQ0E7Ozs7OztBQUNBRCxRQUFRLENBQUNFLGVBQVQsR0FBMkIsSUFBM0I7QUFFQUYsUUFBUSxDQUFDRyxRQUFUO0FBQW9CQztBQUFBQTtBQUFBQTtBQUFBQTtBQUFBQTtBQUFBQTtBQUFBO0FBQUEsQ0FBU0QsUUFBN0I7O0FBQ0FILFFBQVEsQ0FBQ0ssU0FBVCxHQUFxQixVQUFTQyxLQUFULEVBQWdC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R0FBbkI7QUFDRDs7QUFDRCxTQUFPTyxnQkFBUDtBQUNEIiwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IERpZmYgZnJvbSAnLi9iYXNlJztcbmltcG9ydCB7bGluZURpZmZ9IGZyb20gJy4vbGluZSc7XG5cbmNvbnN0IG9iamVjdFByb3RvdHlwZVRvU3RyaW5nID0gT2JqZWN0LnByb3RvdHlwZS50b1N0cmluZztcblxuXG5leHBvcnQgY29uc3QganNvbkRpZmYgPSBuZXcgRGlmZigpO1xuLy8gRGlzY3JpbWluYXRlIGJldHdlZW4gdHdvIGxpbmVzIG9mIHByZXR0eS1wcmludGVkLCBzZXJpYWxpemVkIEpTT04gd2hlcmUgb25lIG9mIHRoZW0gaGFzIGFcbi8vIGRhbmdsaW5nIGNvbW1hIGFuZCB0aGUgb3RoZXIgZG9lc24ndC4gVHVybnMgb3V0IGluY2x1ZGluZyB0aGUgZGFuZ2xpbmcgY29tbWEgeWllbGRzIHRoZSBuaWNlc3Qgb3V0cHV0OlxuanNvbkRpZmYudXNlTG9uZ2VzdFRva2VuID0gdHJ1ZTtcblxuanNvbkRpZmYudG9rZW5pemUgPSBsaW5lRGlmZi50b2tlbml6ZTtcbmpzb25EaWZmLmNhc3RJbnB1dCA9IGZ1bmN0aW9uKHZhbHVlKSB7XG4gIGNvbnN0IHt1bmRlZmluZWRSZXBsYWNlbWVudCwgc3RyaW5naWZ5UmVwbGFjZXIgPSAoaywgdikgPT4gdHlwZW9mIHYgPT09ICd1bmRlZmluZWQnID8gdW5kZWZpbmVkUmVwbGFjZW1lbnQgOiB2fSA9IHRoaXMub3B0aW9ucztcblxuICByZXR1cm4gdHlwZW9mIHZhbHVlID09PSAnc3RyaW5nJyA/IHZhbHVlIDogSlNPTi5zdHJpbmdpZnkoY2Fub25pY2FsaXplKHZhbHVlLCBudWxsLCBudWxsLCBzdHJpbmdpZnlSZXBsYWNlciksIHN0cmluZ2lmeVJlcGxhY2VyLCAnICAnKTtcbn07XG5qc29uRGlmZi5lcXVhbHMgPSBmdW5jdGlvbihsZWZ0LCByaWdodCkge1xuICByZXR1cm4gRGlmZi5wcm90b3R5cGUuZXF1YWxzLmNhbGwoanNvbkRpZmYsIGxlZnQucmVwbGFjZSgvLChbXFxyXFxuXSkvZywgJyQxJyksIHJpZ2h0LnJlcGxhY2UoLywoW1xcclxcbl0pL2csICckMScpKTtcbn07XG5cbmV4cG9ydCBmdW5jdGlvbiBkaWZmSnNvbihvbGRPYmosIG5ld09iaiwgb3B0aW9ucykgeyByZXR1cm4ganNvbkRpZmYuZGlmZihvbGRPYmosIG5ld09iaiwgb3B0aW9ucyk7IH1cblxuLy8gVGhpcyBmdW5jdGlvbiBoYW5kbGVzIHRoZSBwcmVzZW5jZSBvZiBjaXJjdWxhciByZWZlcmVuY2VzIGJ5IGJhaWxpbmcgb3V0IHdoZW4gZW5jb3VudGVyaW5nIGFuXG4vLyBvYmplY3QgdGhhdCBpcyBhbHJlYWR5IG9uIHRoZSBcInN0YWNrXCIgb2YgaXRlbXMgYmVpbmcgcHJvY2Vzc2VkLiBBY2NlcHRzIGFuIG9wdGlvbmFsIHJlcGxhY2VyXG5leHBvcnQgZnVuY3Rpb24gY2Fub25pY2FsaXplKG9iaiwgc3RhY2ssIHJlcGxhY2VtZW50U3RhY2ssIHJlcGxhY2VyLCBrZXkpIHtcbiAgc3RhY2sgPSBzdGFjayB8fCBbXTtcbiAgcmVwbGFjZW1lbnRTdGFjayA9IHJlcGxhY2VtZW50U3RhY2sgfHwgW107XG5cbiAgaWYgKHJlcGxhY2VyKSB7XG4gICAgb2JqID0gcmVwbGFjZXIoa2V5LCBvYmopO1xuICB9XG5cbiAgbGV0IGk7XG5cbiAgZm9yIChpID0gMDsgaSA8IHN0YWNrLmxlbmd0aDsgaSArPSAxKSB7XG4gICAgaWYgKHN0YWNrW2ldID09PSBvYmopIHtcbiAgICAgIHJldHVybiByZXBsYWNlbWVudFN0YWNrW2ldO1xuICAgIH1cbiAgfVxuXG4gIGxldCBjYW5vbmljYWxpemVkT2JqO1xuXG4gIGlmICgnW29iamVjdCBBcnJheV0nID09PSBvYmplY3RQcm90b3R5cGVUb1N0cmluZy5jYWxsKG9iaikpIHtcbiAgICBzdGFjay5wdXNoKG9iaik7XG4gICAgY2Fub25pY2FsaXplZE9iaiA9IG5ldyBBcnJheShvYmoubGVuZ3RoKTtcbiAgICByZXBsYWNlbWVudFN0YWNrLnB1c2goY2Fub25pY2FsaXplZE9iaik7XG4gICAgZm9yIChpID0gMDsgaSA8IG9iai5sZW5ndGg7IGkgKz0gMSkge1xuICAgICAgY2Fub25pY2FsaXplZE9ialtpXSA9IGNhbm9uaWNhbGl6ZShvYmpbaV0sIHN0YWNrLCByZXBsYWNlbWVudFN0YWNrLCByZXBsYWNlciwga2V5KTtcbiAgICB9XG4gICAgc3RhY2sucG9wKCk7XG4gICAgcmVwbGFjZW1lbnRTdGFjay5wb3AoKTtcbiAgICByZXR1cm4gY2Fub25pY2FsaXplZE9iajtcbiAgfVxuXG4gIGlmIChvYmogJiYgb2JqLnRvSlNPTikge1xuICAgIG9iaiA9IG9iai50b0pTT04oKTtcbiAgfVxuXG4gIGlmICh0eXBlb2Ygb2JqID09PSAnb2JqZWN0JyAmJiBvYmogIT09IG51bGwpIHtcbiAgICBzdGFjay5wdXNoKG9iaik7XG4gICAgY2Fub25pY2FsaXplZE9iaiA9IHt9O1xuICAgIHJlcGxhY2VtZW50U3RhY2sucHVzaChjYW5vbmljYWxpemVkT2JqKTtcbiAgICBsZXQgc29ydGVkS2V5cyA9IFtdLFxuICAgICAgICBrZXk7XG4gICAgZm9yIChrZXkgaW4gb2JqKSB7XG4gICAgICAvKiBpc3RhbmJ1bCBpZ25vcmUgZWxzZSAqL1xuICAgICAgaWYgKG9iai5oYXNPd25Qcm9wZXJ0eShrZXkpKSB7XG4gICAgICAgIHNvcnRlZEtleXMucHVzaChrZXkpO1xuICAgICAgfVxuICAgIH1cbiAgICBzb3J0ZWRLZXlzLnNvcnQoKTtcbiAgICBmb3IgKGkgPSAwOyBpIDwgc29ydGVkS2V5cy5sZW5ndGg7IGkgKz0gMSkge1xuICAgICAga2V5ID0gc29ydGVkS2V5c1tpXTtcbiAgICAgIGNhbm9uaWNhbGl6ZWRPYmpba2V5XSA9IGNhbm9uaWNhbGl6ZShvYmpba2V5XSwgc3RhY2ssIHJlcGxhY2VtZW50U3RhY2ssIHJlcGxhY2VyLCBrZXkpO1xuICAgIH1cbiAgICBzdGFjay5wb3AoKTtcbiAgICByZXBsYWNlbWVudFN0YWNrLnBvcCgpO1xuICB9IGVsc2Uge1xuICAgIGNhbm9uaWNhbGl6ZWRPYmogPSBvYmo7XG4gIH1cbiAgcmV0dXJuIGNhbm9uaWNhbGl6ZWRPYmo7XG59XG4iXX0=
+
 
 /***/ }),
 /* 941 */,
@@ -51450,9 +54977,10 @@ function restoreTmpl (resetters, paths, hasWildcards) {
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addPullRequestDefaults = void 0;
+exports.addReviewCommentsDefaults = exports.addPullRequestDefaults = void 0;
 const DEFAULT_BRANCH_NAME = 'code-suggestions';
 const DEFAULT_PRIMARY_BRANCH = 'master';
+const DEFAULT_PAGE_SIZE = 100;
 /**
  * Add defaults to GitHub Pull Request options.
  * Preserves the empty string.
@@ -51478,6 +55006,24 @@ function addPullRequestDefaults(options) {
     return pullRequestSettings;
 }
 exports.addPullRequestDefaults = addPullRequestDefaults;
+/**
+ * Format user input for pull request review comments
+ * @param options The user's options input for review comments
+ * @returns the formatted version of user input for pull request review comments
+ */
+function addReviewCommentsDefaults(options) {
+    const createReviewComment = {
+        repo: options.repo,
+        owner: options.owner,
+        pullNumber: options.pullNumber,
+        // if zero set as 0
+        pageSize: options.pageSize === null || options.pageSize === undefined
+            ? DEFAULT_PAGE_SIZE
+            : options.pageSize,
+    };
+    return createReviewComment;
+}
+exports.addReviewCommentsDefaults = addReviewCommentsDefaults;
 //# sourceMappingURL=default-options-handler.js.map
 
 /***/ }),
@@ -52467,7 +56013,7 @@ var compareFunc = __webpack_require__(739)
 var conventionalCommitsFilter = __webpack_require__(304)
 var Handlebars = __webpack_require__(635)
 var semver = __webpack_require__(927)
-var _ = __webpack_require__(557)
+var _ = __webpack_require__(288)
 var stringify = __webpack_require__(704)
 
 function compileTemplates (templates) {
