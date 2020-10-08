@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.5.0](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.4.2...v2.5.0) (2020-10-08)
+
+
+### Features
+
+* **deps:** release-please with support for alternate release branches ([#79](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/79)) ([dfe6b62](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/dfe6b622584ce774821ae93012eda87a2ad9d8a5))
+
+
+### Bug Fixes
+
+* **build:** revert build to non-debug form ([e6f39a1](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/e6f39a1ff2137720a77acef0b92a813658920fa4))
+
 ### [2.4.2](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.4.1...v2.4.2) (2020-10-01)
 
 
