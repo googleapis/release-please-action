@@ -3168,6 +3168,7 @@ async function main () {
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
   if (!command || command === 'release-pr') {
+    console.info(changelogSections)
     const release = ReleasePRFactory.buildStatic(releaseType, {
       monorepoTags,
       packageName,
@@ -43806,7 +43807,6 @@ class Node extends release_pr_1.ReleasePR {
             bumpMinorPreMajor: this.bumpMinorPreMajor,
             changelogSections: this.changelogSections,
         });
-	console.info('changelog sections', this.changelogSections);
         const candidate = await this.coerceReleaseCandidate(cc, latestTag);
         const changelogEntry = await cc.generateChangelogEntry({
             version: candidate.version,
