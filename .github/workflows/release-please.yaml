@@ -4,26 +4,26 @@ on:
       - main
 name: release-please
 jobs:
-  #build:
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #  - uses: actions/checkout@v2
-  #  - name: install
-  #    run: npm install
-  #  - name: build
-  #    run: npm run build
-  #  - name: commit
-  #    run: |-
-  #      git config --global user.name "actions-bot"
-  #      git add dist/
-  #      git diff-index --quiet HEAD || git commit -m "chore: build dist"
-  #      git pull --rebase
-  #      git push origin main
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: install
+      run: npm install
+    - name: build
+      run: npm run build
+    - name: commit
+      run: |-
+        git config --global user.name "actions-bot"
+        git add dist/
+        git diff-index --quiet HEAD || git commit -m "chore: build dist"
+        git pull --rebase
+        git push origin main
   release-please-pr:
     runs-on: ubuntu-latest
-    # needs: [build]
+    needs: [build]
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@4b61e6458fa5273c1cfbcd2a3c5830322258e980
+      - uses: GoogleCloudPlatform/release-please-action@v2.4.2
         with:
           token: ${{ secrets.RELEASE_PR_TOKEN }}
           release-type: node
@@ -32,9 +32,9 @@ jobs:
           command: release-pr
   release-please-release:
     runs-on: ubuntu-latest
-    # needs: [build]
+    needs: [build]
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@4b61e6458fa5273c1cfbcd2a3c5830322258e980
+      - uses: GoogleCloudPlatform/release-please-action@v2.4.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
