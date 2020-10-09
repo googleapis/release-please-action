@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.5.3](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.5.2...v2.5.3) (2020-10-09)
+
+
+### Bug Fixes
+
+* **docs:** indicate correct version ([#84](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/84)) ([b632af4](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/b632af41016a545a6e7ee6ecd9b9325538c88e28))
+
 ### [2.5.2](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.5.1...v2.5.2) (2020-10-09)
 
 
