@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.5.4](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.5.3...v2.5.4) (2020-10-10)
+
+
+### Bug Fixes
+
+* **release-please:** last release had undefined ordering behavior ([a4b349d](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/a4b349d8a8462722f0d1c246581650a4788b76ee))
+
 ### [2.5.3](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.5.2...v2.5.3) (2020-10-09)
 
 
