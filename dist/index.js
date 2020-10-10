@@ -915,7 +915,7 @@ async function reviewPullRequest(octokit, diffContents, options, loggerOption) {
     // Do not execute GitHub workflow
     if (diffContents === null ||
         diffContents === undefined ||
-        diffContents.size === 0) {
+        (typeof diffContents !== 'string' && diffContents.size === 0)) {
         logger_1.logger.info('Empty changes provided. No suggestions to be made. Cancelling workflow.');
         return null;
     }
@@ -5345,7 +5345,7 @@ function arrayStartsWith(array, start) {
 /* 170 */,
 /* 171 */,
 /* 172 */
-/***/ (function(__unusedmodule, exports) {
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
 
 "use strict";
 
@@ -5364,6 +5364,11 @@ function arrayStartsWith(array, start) {
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.partitionSuggestedHunksByScope = void 0;
+const hunk_utils_1 = __webpack_require__(249);
+function hunkOverlaps(validHunk, suggestedHunk) {
+    return (suggestedHunk.oldStart >= validHunk.newStart &&
+        suggestedHunk.oldEnd <= validHunk.newEnd);
+}
 function partitionFileHunks(pullRequestHunks, suggestedHunks) {
     // check ranges: the entirety of the old range of the suggested
     // hunk must fit inside the new range of the valid Hunks
@@ -5377,15 +5382,30 @@ function partitionFileHunks(pullRequestHunks, suggestedHunks) {
             candidateHunk = pullRequestHunks[i];
         }
         if (!candidateHunk) {
+            invalidFileHunks.push(suggestedHunk);
             return;
         }
-        if (suggestedHunk.oldStart >= candidateHunk.newStart &&
-            suggestedHunk.oldEnd <= candidateHunk.newEnd) {
+        // if deletion only or addition only
+        if (suggestedHunk.newEnd < suggestedHunk.newStart ||
+            suggestedHunk.oldEnd < suggestedHunk.oldStart) {
+            // try using previous line
+            let adjustedHunk = hunk_utils_1.adjustHunkUp(suggestedHunk);
+            if (adjustedHunk && hunkOverlaps(candidateHunk, adjustedHunk)) {
+                validFileHunks.push(adjustedHunk);
+                return;
+            }
+            // try using next line
+            adjustedHunk = hunk_utils_1.adjustHunkDown(suggestedHunk);
+            if (adjustedHunk && hunkOverlaps(candidateHunk, adjustedHunk)) {
+                validFileHunks.push(adjustedHunk);
+                return;
+            }
+        }
+        else if (hunkOverlaps(candidateHunk, suggestedHunk)) {
             validFileHunks.push(suggestedHunk);
+            return;
         }
-        else {
-            invalidFileHunks.push(suggestedHunk);
-        }
+        invalidFileHunks.push(suggestedHunk);
     });
     return { validFileHunks, invalidFileHunks };
 }
@@ -5681,7 +5701,7 @@ module.exports = require("vm");
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@6.4.1","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@6.4.1","_id":"release-please@6.4.1","_inBundle":false,"_integrity":"sha512-fNxiHr4WeJmCBEqWwEXAhA8Pm7U57Pb6KMmvneaF322PDtT9h2gQuZ/SXgDs7IM5xj/J3BV9xMUsu/x9dxnIPA==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@6.4.1","name":"release-please","escapedName":"release-please","rawSpec":"6.4.1","saveSpec":null,"fetchSpec":"6.4.1"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.4.1.tgz","_spec":"6.4.1","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.17.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.4.1"};
+module.exports = {"_args":[["release-please@6.4.2-candidate-0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@6.4.2-candidate-0","_id":"release-please@6.4.2-candidate-0","_inBundle":false,"_integrity":"sha512-mly1qOqAWGN298iV6QHQsFwmoO7H7cmTP3v7LnCL0/SeqOuHKc0I+8NSE6slYcr49A2bulc72OsamNINnqeIeg==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@6.4.2-candidate-0","name":"release-please","escapedName":"release-please","rawSpec":"6.4.2-candidate-0","saveSpec":null,"fetchSpec":"6.4.2-candidate-0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.4.2-candidate-0.tgz","_spec":"6.4.2-candidate-0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.17.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.4.2-candidate-0"};
 
 /***/ }),
 /* 192 */,
@@ -8552,7 +8572,65 @@ module.exports = {
 
 /***/ }),
 /* 248 */,
-/* 249 */,
+/* 249 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.adjustHunkDown = exports.adjustHunkUp = void 0;
+/**
+ * Shift a Hunk up one line so it starts one line earlier.
+ * @param {Hunk} hunk
+ * @returns {Hunk | null} the adjusted Hunk or null if there is no preceeding line.
+ */
+function adjustHunkUp(hunk) {
+    if (!hunk.previousLine) {
+        return null;
+    }
+    return {
+        oldStart: hunk.oldStart - 1,
+        oldEnd: hunk.oldEnd,
+        newStart: hunk.newStart - 1,
+        newEnd: hunk.newEnd,
+        newContent: [hunk.previousLine, ...hunk.newContent],
+    };
+}
+exports.adjustHunkUp = adjustHunkUp;
+/**
+ * Shift a Hunk up one line so it ends one line later.
+ * @param {Hunk} hunk
+ * @returns {Hunk | null} the adjusted Hunk or null if there is no following line.
+ */
+function adjustHunkDown(hunk) {
+    if (!hunk.nextLine) {
+        return null;
+    }
+    return {
+        oldStart: hunk.oldStart,
+        oldEnd: hunk.oldEnd + 1,
+        newStart: hunk.newStart,
+        newEnd: hunk.newEnd + 1,
+        newContent: hunk.newContent.concat(hunk.nextLine),
+    };
+}
+exports.adjustHunkDown = adjustHunkDown;
+//# sourceMappingURL=hunk-utils.js.map
+
+/***/ }),
 /* 250 */,
 /* 251 */,
 /* 252 */,
@@ -8596,11 +8674,11 @@ function buildReviewComments(suggestions) {
     suggestions.forEach((hunks, fileName) => {
         hunks.forEach(hunk => {
             const newContent = hunk.newContent.join('\n');
-            if (hunk.newStart === hunk.newEnd) {
+            if (hunk.oldStart === hunk.oldEnd) {
                 const singleComment = {
                     path: fileName,
                     body: `\`\`\`suggestion\n${newContent}\n\`\`\``,
-                    line: hunk.newEnd,
+                    line: hunk.oldEnd,
                     side: 'RIGHT',
                 };
                 fileComments.push(singleComment);
@@ -8609,8 +8687,8 @@ function buildReviewComments(suggestions) {
                 const comment = {
                     path: fileName,
                     body: `\`\`\`suggestion\n${newContent}\n\`\`\``,
-                    start_line: hunk.newStart,
-                    line: hunk.newEnd,
+                    start_line: hunk.oldStart,
+                    line: hunk.oldEnd,
                     side: 'RIGHT',
                     start_side: 'RIGHT',
                 };
@@ -41900,51 +41978,92 @@ exports.getReleaserNames = getReleaserNames;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSuggestedHunks = exports.parseHunks = void 0;
+exports.getSuggestedHunks = exports.parseAllHunks = exports.parsePatch = void 0;
 const parseDiff = __webpack_require__(557);
 const diff_1 = __webpack_require__(799);
+// This header is ignored for calculating patch ranges, but is neccessary
+// for parsing a diff
+const _DIFF_HEADER = `diff --git a/file.ext b/file.ext
+index cac8fbc..87f387c 100644
+--- a/file.ext
++++ b/file.ext
+`;
 /**
- * Given a diff expressed in GNU diff format, return the range of lines
+ * Given a patch expressed in GNU diff format, return the range of lines
  * from the original content that are changed.
  * @param diff Diff expressed in GNU diff format.
  * @returns Hunk[]
  */
-function parseHunks(diff) {
-    const chunks = parseDiff(diff)[0].chunks;
-    return chunks.map(chunk => {
-        let oldStart = chunk.oldStart;
-        let newStart = chunk.newStart;
-        let normalLines = 0;
-        let changeSeen = false;
-        const newLines = [];
-        chunk.changes.forEach(change => {
-            if (change.type === 'normal') {
-                normalLines++;
-            }
-            else {
-                if (change.type === 'add') {
-                    // strip off leading '+' and trailing carriage return
-                    newLines.push(change.content.substring(1).replace(/[\n\r]+$/g, ''));
-                }
-                if (!changeSeen) {
-                    oldStart += normalLines;
-                    newStart += normalLines;
-                    changeSeen = true;
-                }
-            }
-        });
-        const newEnd = newStart + chunk.newLines - normalLines - 1;
-        const oldEnd = oldStart + chunk.oldLines - normalLines - 1;
-        return {
-            oldStart: oldStart,
-            oldEnd: oldEnd,
-            newStart: newStart,
-            newEnd: newEnd,
-            newContent: newLines,
-        };
-    });
+function parsePatch(patch) {
+    return parseAllHunks(_DIFF_HEADER + patch).get('file.ext') || [];
 }
-exports.parseHunks = parseHunks;
+exports.parsePatch = parsePatch;
+/**
+ * Given a diff expressed in GNU diff format, return the range of lines
+ * from the original content that are changed.
+ * @param diff Diff expressed in GNU diff format.
+ * @returns Map<string, Hunk[]>
+ */
+function parseAllHunks(diff) {
+    const hunksByFile = new Map();
+    parseDiff(diff).forEach(file => {
+        const filename = file.to ? file.to : file.from;
+        const chunks = file.chunks.map(chunk => {
+            let oldStart = chunk.oldStart;
+            let newStart = chunk.newStart;
+            let normalLines = 0;
+            let changeSeen = false;
+            const newLines = [];
+            let previousLine = null;
+            let nextLine = null;
+            chunk.changes.forEach(change => {
+                // strip off leading '+', '-', or ' ' and trailing carriage return
+                const content = change.content.substring(1).replace(/[\n\r]+$/g, '');
+                if (change.type === 'normal') {
+                    normalLines++;
+                    if (changeSeen) {
+                        if (nextLine === null) {
+                            nextLine = content;
+                        }
+                    }
+                    else {
+                        previousLine = content;
+                    }
+                }
+                else {
+                    if (change.type === 'add') {
+                        // strip off leading '+' and trailing carriage return
+                        newLines.push(content);
+                    }
+                    if (!changeSeen) {
+                        oldStart += normalLines;
+                        newStart += normalLines;
+                        changeSeen = true;
+                    }
+                }
+            });
+            const newEnd = newStart + chunk.newLines - normalLines - 1;
+            const oldEnd = oldStart + chunk.oldLines - normalLines - 1;
+            let hunk = {
+                oldStart: oldStart,
+                oldEnd: oldEnd,
+                newStart: newStart,
+                newEnd: newEnd,
+                newContent: newLines,
+            };
+            if (previousLine) {
+                hunk = { ...hunk, previousLine: previousLine };
+            }
+            if (nextLine) {
+                hunk = { ...hunk, nextLine: nextLine };
+            }
+            return hunk;
+        });
+        hunksByFile.set(filename, chunks);
+    });
+    return hunksByFile;
+}
+exports.parseAllHunks = parseAllHunks;
 /**
  * Given two texts, return the range of lines that are changed.
  * @param oldContent The original content.
@@ -41953,7 +42072,7 @@ exports.parseHunks = parseHunks;
  */
 function getSuggestedHunks(oldContent, newContent) {
     const diff = diff_1.createPatch('unused', oldContent, newContent);
-    return parseHunks(diff);
+    return parseAllHunks(diff).get('unused') || [];
 }
 exports.getSuggestedHunks = getSuggestedHunks;
 //# sourceMappingURL=diff-utils.js.map
@@ -43144,7 +43263,12 @@ const chalk = __webpack_require__(843);
 const semver = __webpack_require__(876);
 const checkpoint_1 = __webpack_require__(923);
 const graphql_to_commits_1 = __webpack_require__(684);
-const VERSION_FROM_BRANCH_RE = /^.*:release-(.*)$/;
+// Short explanation of this regex:
+// - skip the owner tag (e.g. googleapis)
+// - make sure the branch name starts with "release"
+// - skip everything up to the last "-v"
+// - take everything after the v as a match group
+const VERSION_FROM_BRANCH_RE = /^.*:release.*-v(?=[^v]+$)(.+)$/;
 let probotMode = false;
 class GitHub {
     constructor(options) {
@@ -43235,39 +43359,34 @@ class GitHub {
         // order along with the file paths attached to them.
         try {
             const response = await this.graphqlRequest({
-                query: `query commitsWithFiles($cursor: String, $owner: String!, $repo: String!, $baseBranch: String!, $perPage: Int, $maxFilesChanged: Int, $path: String) {
+                query: `query commitsWithFiles($cursor: String, $owner: String!, $repo: String!, $baseRef: String!, $perPage: Int, $maxFilesChanged: Int, $path: String) {
           repository(owner: $owner, name: $repo) {
-            refs(first: 1, refPrefix: "refs/heads/", query: $baseBranch,
-                  orderBy:{field:TAG_COMMIT_DATE, direction:DESC}) {
-              edges {
-                node {
-                  target {
-                    ... on Commit {
-                      history(first: $perPage, after: $cursor, path: $path) {
-                        edges {
-                          node {
-                            ... on Commit {
-                              message
-                              oid
-                              associatedPullRequests(first: 1) {
-                                edges {
-                                  node {
-                                    ... on PullRequest {
-                                      number
-                                      mergeCommit {
-                                        oid
+            ref(qualifiedName: $baseRef) {
+              target {
+                ... on Commit {
+                  history(first: $perPage, after: $cursor, path: $path) {
+                    edges {
+                      node {
+                        ... on Commit {
+                          message
+                          oid
+                          associatedPullRequests(first: 1) {
+                            edges {
+                              node {
+                                ... on PullRequest {
+                                  number
+                                  mergeCommit {
+                                    oid
+                                  }
+                                  files(first: $maxFilesChanged) {
+                                    edges {
+                                      node {
+                                        path
                                       }
-                                      files(first: $maxFilesChanged) {
-                                        edges {
-                                          node {
-                                            path
-                                          }
-                                        }
-                                        pageInfo {
-                                          endCursor
-                                          hasNextPage
-                                        }
-                                      }
+                                    }
+                                    pageInfo {
+                                      endCursor
+                                      hasNextPage
                                     }
                                   }
                                 }
@@ -43275,11 +43394,11 @@ class GitHub {
                             }
                           }
                         }
-                        pageInfo {
-                          endCursor
-                          hasNextPage
-                        }
                       }
+                    }
+                    pageInfo {
+                      endCursor
+                      hasNextPage
                     }
                   }
                 }
@@ -43293,7 +43412,7 @@ class GitHub {
                 path,
                 perPage,
                 repo: this.repo,
-                baseBranch,
+                baseRef: `refs/heads/${baseBranch}`,
             });
             return graphql_to_commits_1.graphqlToCommits(this, response);
         }
@@ -46203,7 +46322,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.graphqlToCommits = void 0;
 const CONVENTIONAL_COMMIT_REGEX = /^[\w]+(\(\w+\))?!?: /;
 async function graphqlToCommits(github, response) {
-    const commitHistory = response.repository.refs.edges[0].node.target.history;
+    const commitHistory = response.repository.ref.target.history;
     const commits = {
         endCursor: commitHistory.pageInfo.endCursor,
         hasNextPage: commitHistory.pageInfo.hasNextPage,
@@ -49314,13 +49433,6 @@ async function getCurrentPullRequestPatches(octokit, remote, pullNumber, pageSiz
     return { patches, filesMissingPatch };
 }
 exports.getCurrentPullRequestPatches = getCurrentPullRequestPatches;
-// This header is ignored for calculating patch ranges, but is neccessary
-// for parsing a diff
-const _DIFF_HEADER = `diff --git a/file.ext b/file.ext
-index cac8fbc..87f387c 100644
---- a/file.ext
-+++ b/file.ext
-`;
 /**
  * For a pull request, get each remote file's current patch range to identify the scope of each patch as a Map.
  * @param {Octokit} octokit the authenticated octokit instance
@@ -49348,7 +49460,7 @@ async function getPullRequestHunks(octokit, remote, pullNumber, pageSize) {
             logger_1.logger.warn(`File ${file.filename} may have a patch that is too large to display patch object.`);
         }
         else {
-            const hunks = diff_utils_1.parseHunks(_DIFF_HEADER + file.patch);
+            const hunks = diff_utils_1.parsePatch(file.patch);
             pullRequestHunks.set(file.filename, hunks);
         }
     });
@@ -52538,6 +52650,7 @@ const logger_1 = __webpack_require__(148);
 const raw_hunk_handler_1 = __webpack_require__(43);
 const remote_patch_ranges_handler_1 = __webpack_require__(798);
 const scope_handler_1 = __webpack_require__(172);
+const diff_utils_1 = __webpack_require__(594);
 /**
  * Comment on a Pull Request
  * @param {Octokit} octokit authenticated octokit isntance
@@ -52552,7 +52665,9 @@ async function reviewPullRequest(octokit, remote, pullNumber, pageSize, diffCont
         // get the hunks from the pull request
         const pullRequestHunks = await remote_patch_ranges_handler_1.getPullRequestHunks(octokit, remote, pullNumber, pageSize);
         // get the hunks from the suggested change
-        const allSuggestedHunks = raw_hunk_handler_1.getRawSuggestionHunks(diffContents);
+        const allSuggestedHunks = typeof diffContents === 'string'
+            ? diff_utils_1.parseAllHunks(diffContents)
+            : raw_hunk_handler_1.getRawSuggestionHunks(diffContents);
         // split hunks by commentable and uncommentable
         const { validHunks, invalidHunks } = scope_handler_1.partitionSuggestedHunksByScope(pullRequestHunks, allSuggestedHunks);
         // create pull request review
