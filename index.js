@@ -10,6 +10,7 @@ async function main () {
   const packageName = core.getInput('package-name')
   const path = core.getInput('path') ? core.getInput('path') : undefined
   const releaseType = core.getInput('release-type')
+  const defaultBranch = core.getInput('default-branch')
   const token = core.getInput('token')
   const fork = core.getInput('fork') ? true : undefined
   const changelogTypes = core.getInput('changelog-types')
@@ -29,7 +30,8 @@ async function main () {
       repoUrl: process.env.GITHUB_REPOSITORY,
       packageName,
       path,
-      token
+      token,
+      defaultBranch
     })
     const releaseCreated = await gr.createRelease()
     if (releaseCreated) {
@@ -55,6 +57,7 @@ async function main () {
       token: token,
       label: RELEASE_LABEL,
       bumpMinorPreMajor,
+      defaultBranch,
       changelogSections
     })
     await release.run()

@@ -25,10 +25,13 @@ inputs:
     required: false
   changelog-types:
     description: 'changlelog commit types'
-    require: false
+    required: false
   command:
     description: 'release-please command to run, either "github-release", or "release-pr" (defaults to running both)'
-    require: false
+    required: false
+  default-branch:
+    description: 'branch to open pull release PR against (detected by default).'
+    required: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
