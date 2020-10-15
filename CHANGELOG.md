@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.5.6](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.5.5...v2.5.6) (2020-10-15)
+
+
+### Bug Fixes
+
+* **release-please:** fallback to tag ([#89](https://www.github.com/GoogleCloudPlatform/release-please-action/issues/89)) ([c6f1cd6](https://www.github.com/GoogleCloudPlatform/release-please-action/commit/c6f1cd680fabd9729dc13f6bde59ed5160acb9a3))
+
 ### [2.5.5](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.5.4...v2.5.5) (2020-10-10)
 
 
