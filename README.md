@@ -20,8 +20,8 @@ Automate releases with Conventional Commit Messages.
       release-please:
         runs-on: ubuntu-latest
         steps:
-          - uses: GoogleCloudPlatform/release-please-action@v2.5.5
-            with:
+          - uses: GoogleCloudPlatform/release-please-action@v2.5.6
+            with
               token: ${{ secrets.GITHUB_TOKEN }}
               release-type: node
               package-name: release-please-action
@@ -107,7 +107,7 @@ To output more commit information in the changelog,  a JSON formatted String can
       release-please:
         runs-on: ubuntu-latest
         steps:
-          - uses: GoogleCloudPlatform/release-please-action@v2.5.5
+          - uses: GoogleCloudPlatform/release-please-action@v2.5.6
             with:
               token: ${{ secrets.GITHUB_TOKEN }}
               release-type: node
