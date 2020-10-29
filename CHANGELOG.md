@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.5.7](https://www.github.com/google-github-actions/release-please-action/compare/v2.5.6...v2.5.7) (2020-10-29)
+
+
+### Bug Fixes
+
+* **ruby:** properly support ruby release process ([#92](https://www.github.com/google-github-actions/release-please-action/issues/92)) ([6c289af](https://www.github.com/google-github-actions/release-please-action/commit/6c289af7b611b6019c67c2285397d905380962ac))
+
 ### [2.5.6](https://www.github.com/GoogleCloudPlatform/release-please-action/compare/v2.5.5...v2.5.6) (2020-10-15)
 
 
