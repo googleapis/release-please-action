@@ -856,7 +856,97 @@ exports.VersionTxt = VersionTxt;
 /***/ }),
 /* 26 */,
 /* 27 */,
-/* 28 */,
+/* 28 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Ruby = void 0;
+const release_pr_1 = __webpack_require__(93);
+const conventional_commits_1 = __webpack_require__(514);
+const checkpoint_1 = __webpack_require__(923);
+const indent_commit_1 = __webpack_require__(967);
+// Generic
+const changelog_1 = __webpack_require__(261);
+// Ruby
+const version_rb_1 = __webpack_require__(749);
+class Ruby extends release_pr_1.ReleasePR {
+    constructor(options) {
+        super(options);
+        this.versionFile = options.versionFile;
+    }
+    async _run() {
+        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}-` : undefined);
+        const commits = await this.commits({
+            sha: latestTag ? latestTag.sha : undefined,
+            path: this.path,
+        });
+        const cc = new conventional_commits_1.ConventionalCommits({
+            commits: postProcessCommits(commits),
+            githubRepoUrl: this.repoUrl,
+            bumpMinorPreMajor: this.bumpMinorPreMajor,
+            changelogSections: this.changelogSections,
+        });
+        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
+        const changelogEntry = await cc.generateChangelogEntry({
+            version: candidate.version,
+            currentTag: `v${candidate.version}`,
+            previousTag: candidate.previousTag,
+        });
+        // don't create a release candidate until user facing changes
+        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
+        // one line is a good indicator that there were no interesting commits.
+        if (this.changelogEmpty(changelogEntry)) {
+            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            return;
+        }
+        const updates = [];
+        updates.push(new changelog_1.Changelog({
+            path: this.addPath('CHANGELOG.md'),
+            changelogEntry,
+            version: candidate.version,
+            packageName: this.packageName,
+        }));
+        updates.push(new version_rb_1.VersionRB({
+            path: this.addPath(this.versionFile),
+            changelogEntry,
+            version: candidate.version,
+            packageName: this.packageName,
+        }));
+        await this.openPR({
+            sha: commits[0].sha,
+            changelogEntry: `${changelogEntry}\n---\n`,
+            updates,
+            version: candidate.version,
+            includePackageName: this.monorepoTags,
+        });
+    }
+}
+exports.Ruby = Ruby;
+Ruby.releaserName = 'ruby';
+function postProcessCommits(commits) {
+    commits.forEach(commit => {
+        commit.message = indent_commit_1.indentCommit(commit);
+    });
+    return commits;
+}
+//# sourceMappingURL=ruby.js.map
+
+/***/ }),
 /* 29 */,
 /* 30 */,
 /* 31 */,
@@ -3138,6 +3228,7 @@ async function main () {
   const fork = core.getInput('fork') ? true : undefined
   const changelogTypes = core.getInput('changelog-types')
   const command = core.getInput('command') ? core.getInput('command') : undefined
+  const versionFile = core.getInput('version-file') ? core.getInput('version-file') : undefined
 
   // Parse the changelogTypes if there are any
   let changelogSections
@@ -3178,7 +3269,8 @@ async function main () {
       token: token,
       label: RELEASE_LABEL,
       bumpMinorPreMajor,
-      changelogSections
+      changelogSections,
+      versionFile
     })
     await release.run()
   }
@@ -5700,7 +5792,7 @@ module.exports = require("vm");
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@6.4.2-candidate-2","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@6.4.2-candidate-2","_id":"release-please@6.4.2-candidate-2","_inBundle":false,"_integrity":"sha512-cDL8C2S0nMp6u7g7yf58jG/Tg2N/+IwkcFLvfKfSh3HwD9X9Ys0CysdZpNLtMSdTwaP7F2+EJ+Ox+qfmChWgfg==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@6.4.2-candidate-2","name":"release-please","escapedName":"release-please","rawSpec":"6.4.2-candidate-2","saveSpec":null,"fetchSpec":"6.4.2-candidate-2"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.4.2-candidate-2.tgz","_spec":"6.4.2-candidate-2","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.17.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.4.2-candidate-2"};
+module.exports = {"_args":[["release-please@6.6.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@6.6.0","_id":"release-please@6.6.0","_inBundle":false,"_integrity":"sha512-Ajki4AnAfZBOXA+JKg0jT8kRPSWcHTeYhfEGi6rOdmwyts80pRmLfUFmYkOp1hjFY6zrm/AZzMfi1C83sbw43Q==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@6.6.0","name":"release-please","escapedName":"release-please","rawSpec":"6.6.0","saveSpec":null,"fetchSpec":"6.6.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.6.0.tgz","_spec":"6.6.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.18.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.6.0"};
 
 /***/ }),
 /* 192 */,
@@ -34397,56 +34489,43 @@ var request = __webpack_require__(753);
 var graphql = __webpack_require__(743);
 var authToken = __webpack_require__(813);
 
-function _defineProperty(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
+function _objectWithoutPropertiesLoose(source, excluded) {
+  if (source == null) return {};
+  var target = {};
+  var sourceKeys = Object.keys(source);
+  var key, i;
+
+  for (i = 0; i < sourceKeys.length; i++) {
+    key = sourceKeys[i];
+    if (excluded.indexOf(key) >= 0) continue;
+    target[key] = source[key];
   }
 
-  return obj;
+  return target;
 }
 
-function ownKeys(object, enumerableOnly) {
-  var keys = Object.keys(object);
+function _objectWithoutProperties(source, excluded) {
+  if (source == null) return {};
+
+  var target = _objectWithoutPropertiesLoose(source, excluded);
+
+  var key, i;
 
   if (Object.getOwnPropertySymbols) {
-    var symbols = Object.getOwnPropertySymbols(object);
-    if (enumerableOnly) symbols = symbols.filter(function (sym) {
-      return Object.getOwnPropertyDescriptor(object, sym).enumerable;
-    });
-    keys.push.apply(keys, symbols);
-  }
+    var sourceSymbolKeys = Object.getOwnPropertySymbols(source);
 
-  return keys;
-}
-
-function _objectSpread2(target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i] != null ? arguments[i] : {};
-
-    if (i % 2) {
-      ownKeys(Object(source), true).forEach(function (key) {
-        _defineProperty(target, key, source[key]);
-      });
-    } else if (Object.getOwnPropertyDescriptors) {
-      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
-    } else {
-      ownKeys(Object(source)).forEach(function (key) {
-        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
-      });
+    for (i = 0; i < sourceSymbolKeys.length; i++) {
+      key = sourceSymbolKeys[i];
+      if (excluded.indexOf(key) >= 0) continue;
+      if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+      target[key] = source[key];
     }
   }
 
   return target;
 }
 
-const VERSION = "3.1.2";
+const VERSION = "3.2.0";
 
 class Octokit {
   constructor(options = {}) {
@@ -34478,9 +34557,7 @@ class Octokit {
     }
 
     this.request = request.request.defaults(requestDefaults);
-    this.graphql = graphql.withCustomRequest(this.request).defaults(_objectSpread2(_objectSpread2({}, requestDefaults), {}, {
-      baseUrl: requestDefaults.baseUrl.replace(/\/api\/v3$/, "/api")
-    }));
+    this.graphql = graphql.withCustomRequest(this.request).defaults(requestDefaults);
     this.log = Object.assign({
       debug: () => {},
       info: () => {},
@@ -34488,7 +34565,7 @@ class Octokit {
       error: console.error.bind(console)
     }, options.log);
     this.hook = hook; // (1) If neither `options.authStrategy` nor `options.auth` are set, the `octokit` instance
-    //     is unauthenticated. The `this.auth()` method is a no-op and no request hook is registred.
+    //     is unauthenticated. The `this.auth()` method is a no-op and no request hook is registered.
     // (2) If only `options.auth` is set, use the default token authentication strategy.
     // (3) If `options.authStrategy` is set then use it and pass in `options.auth`. Always pass own request as many strategies accept a custom request instance.
     // TODO: type `options.auth` based on `options.authStrategy`.
@@ -34507,8 +34584,21 @@ class Octokit {
         this.auth = auth;
       }
     } else {
-      const auth = options.authStrategy(Object.assign({
-        request: this.request
+      const {
+        authStrategy
+      } = options,
+            otherOptions = _objectWithoutProperties(options, ["authStrategy"]);
+
+      const auth = authStrategy(Object.assign({
+        request: this.request,
+        log: this.log,
+        // we pass the current octokit instance as well as its constructor options
+        // to allow for authentication strategies that return a new octokit instance
+        // that shares the same internal state as the current one. The original
+        // requirement for this was the "event-octokit" authentication strategy
+        // of https://github.com/probot/octokit-auth-probot.
+        octokit: this,
+        octokitOptions: otherOptions
       }, options.auth)); // @ts-ignore  ¯\_(ツ)_/¯
 
       hook.wrap("request", auth.hook);
@@ -43265,9 +43355,14 @@ const graphql_to_commits_1 = __webpack_require__(684);
 // Short explanation of this regex:
 // - skip the owner tag (e.g. googleapis)
 // - make sure the branch name starts with "release"
-// - skip everything up to the last "-v"
+// - take everything else
+// This includes the tag to handle monorepos.
+const VERSION_FROM_BRANCH_RE = /^.*:release-(.*)+$/;
+// Takes the output of the above regex and strips it down further
+// to a basic semver.
+// - skip everything up to the last "-vX.Y.Z" and maybe "-test"
 // - take everything after the v as a match group
-const VERSION_FROM_BRANCH_RE = /^.*:release.*-v(?=[^v]+$)(.+)$/;
+const SEMVER_FROM_VERSION_RE = /^.*-?(v\d+\.\d+\.\d+[^\d]?(?!.*v\d+\.\d+\.\d+).*)$/;
 let probotMode = false;
 class GitHub {
     constructor(options) {
@@ -43431,34 +43526,29 @@ class GitHub {
         const baseBranch = await this.getDefaultBranch();
         try {
             const response = await this.graphqlRequest({
-                query: `query commitsWithLabels($cursor: String, $owner: String!, $repo: String!, $baseBranch: String!, $perPage: Int, $maxLabels: Int, $path: String) {
+                query: `query commitsWithLabels($cursor: String, $owner: String!, $repo: String!, $baseRef: String!, $perPage: Int, $maxLabels: Int, $path: String) {
           repository(owner: $owner, name: $repo) {
-            refs(first: 1, refPrefix: "refs/heads/", query: $baseBranch,
-                  orderBy:{field:TAG_COMMIT_DATE, direction:DESC}) {
-              edges {
-                node {
-                  target {
-                    ... on Commit {
-                      history(first: $perPage, after: $cursor, path: $path) {
-                        edges {
-                          node {
-                            ... on Commit {
-                              message
-                              oid
-                              associatedPullRequests(first: 1) {
-                                edges {
-                                  node {
-                                    ... on PullRequest {
-                                      number
-                                      mergeCommit {
-                                        oid
-                                      }
-                                      labels(first: $maxLabels) {
-                                        edges {
-                                          node {
-                                            name
-                                          }
-                                        }
+            ref(qualifiedName: $baseRef) {
+              target {
+                ... on Commit {
+                  history(first: $perPage, after: $cursor, path: $path) {
+                    edges {
+                      node {
+                        ... on Commit {
+                          message
+                          oid
+                          associatedPullRequests(first: 1) {
+                            edges {
+                              node {
+                                ... on PullRequest {
+                                  number
+                                  mergeCommit {
+                                    oid
+                                  }
+                                  labels(first: $maxLabels) {
+                                    edges {
+                                      node {
+                                        name
                                       }
                                     }
                                   }
@@ -43467,11 +43557,11 @@ class GitHub {
                             }
                           }
                         }
-                        pageInfo {
-                          endCursor
-                          hasNextPage
-                        }
                       }
+                    }
+                    pageInfo {
+                      endCursor
+                      hasNextPage
                     }
                   }
                 }
@@ -43485,7 +43575,7 @@ class GitHub {
                 path,
                 perPage,
                 repo: this.repo,
-                baseBranch,
+                baseRef: `refs/heads/${baseBranch}`,
             });
             return graphql_to_commits_1.graphqlToCommits(this, response);
         }
@@ -43542,11 +43632,7 @@ class GitHub {
     // This looks for the most recent matching release tag on
     // the branch we're configured for.
     async latestTag(prefix, preRelease = false) {
-        let regexpString = prefix || '';
-        if (!preRelease)
-            regexpString = `^${regexpString}[^-]*$`;
-        const regexp = regexpString ? new RegExp(regexpString) : null;
-        const pull = await this.findMergedReleasePR([], 1024, regexp);
+        const pull = await this.findMergedReleasePR([], 100, prefix, preRelease);
         if (!pull)
             return await this.latestTagFallback(prefix, preRelease);
         const tag = {
@@ -43610,48 +43696,64 @@ class GitHub {
         return tags;
     }
     // The default matcher will rule out pre-releases.
-    async findMergedReleasePR(labels, maxPRsChecked = 100, matcher = /[^-]*/) {
+    // TODO: make this handle more than 100 results using async iterator.
+    async findMergedReleasePR(labels, perPage = 100, prefix = undefined, preRelease = true) {
         const baseLabel = await this.getBaseLabel();
-        let total = 0;
-        for await (const response of this.octokit.paginate.iterator(this.decoratePaginateOpts({
-            method: 'GET',
-            url: `/repos/${this.owner}/${this.repo}/pulls?per_page=25${this.proxyKey ? `&key=${this.proxyKey}` : ''}&state=closed&sort=updated&direction=desc`,
-        }))) {
-            const pullsResponse = response;
-            console.info(response);
-            for (let i = 0, pull; i < pullsResponse.data.length; i++) {
-                total++;
-                pull = pullsResponse.data[i];
-                if (labels.length === 0 ||
-                    this.hasAllLabels(labels, pull.labels.map(l => l.name))) {
-                    // it's expected that a release PR will have a
-                    // HEAD matching the format repo:release-v1.0.0.
-                    if (!pull.head)
+        const pullsResponse = (await this.request(`GET /repos/:owner/:repo/pulls?state=closed&per_page=${perPage}${this.proxyKey ? `&key=${this.proxyKey}` : ''}&sort=merged_at&direction=desc`, {
+            owner: this.owner,
+            repo: this.repo,
+        }));
+        for (let i = 0, pull; i < pullsResponse.data.length; i++) {
+            pull = pullsResponse.data[i];
+            if (labels.length === 0 ||
+                this.hasAllLabels(labels, pull.labels.map(l => l.name))) {
+                // it's expected that a release PR will have a
+                // HEAD matching the format repo:release-v1.0.0.
+                if (!pull.head)
+                    continue;
+                // Verify that this PR was based against our base branch of interest.
+                if (!pull.base || pull.base.label !== baseLabel)
+                    continue;
+                // The input should look something like:
+                // user:release-[optional-package-name]-v1.2.3
+                // We want the package name and any semver on the end.
+                const match = pull.head.label.match(VERSION_FROM_BRANCH_RE);
+                if (!match || !pull.merged_at)
+                    continue;
+                // The input here should look something like:
+                // [optional-package-name-]v1.2.3[-beta-or-whatever]
+                // Because the package name can contain things like "-v1",
+                // it's easiest/safest to just pull this out by string search.
+                let version = match[1];
+                if (prefix) {
+                    if (!version.startsWith(prefix))
                         continue;
-                    // Verify that this PR was based against our base branch of interest.
-                    if (!pull.base || pull.base.label !== baseLabel)
-                        continue;
-                    const match = pull.head.label.match(VERSION_FROM_BRANCH_RE);
-                    if (!match || !pull.merged_at)
-                        continue;
-                    // Make sure we did get a valid semver.
-                    const version = match[1];
-                    const normalizedVersion = semver.valid(version);
-                    if (!normalizedVersion)
-                        continue;
-                    // Does its name match any passed matcher?
-                    if (matcher && !matcher.test(normalizedVersion))
-                        continue;
-                    return {
-                        number: pull.number,
-                        sha: pull.merge_commit_sha,
-                        version: normalizedVersion,
-                    };
+                    // Remove any prefix after validating it.
+                    version = version.substr(prefix.length);
                 }
+                // Extract the actual version string.
+                const versionMatch = version.match(SEMVER_FROM_VERSION_RE);
+                if (!versionMatch)
+                    continue;
+                // If no prefix is provided, and there appears to be a prefix, i.e.,
+                // characters before the version, skip this tag:
+                if (!prefix && version.indexOf(versionMatch[1]) > 0)
+                    continue;
+                version = versionMatch[1];
+                // What's left by now should just be the version string.
+                // Check for pre-releases if needed.
+                if (!preRelease && version.indexOf('-') >= 0)
+                    continue;
+                // Make sure we did get a valid semver.
+                const normalizedVersion = semver.valid(version);
+                if (!normalizedVersion)
+                    continue;
+                return {
+                    number: pull.number,
+                    sha: pull.merge_commit_sha,
+                    version: normalizedVersion,
+                };
             }
-            console.info(total, maxPRsChecked);
-            if (total >= maxPRsChecked)
-                return undefined;
         }
         return undefined;
     }
@@ -48185,7 +48287,42 @@ module.exports = require("fs");
 
 /***/ }),
 /* 748 */,
-/* 749 */,
+/* 749 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.VersionRB = void 0;
+class VersionRB {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        return content.replace(/"[0-9]+\.[0-9]+\.[0-9](-\w+)?"/, `"${this.version}"`);
+    }
+}
+exports.VersionRB = VersionRB;
+//# sourceMappingURL=version-rb.js.map
+
+/***/ }),
 /* 750 */,
 /* 751 */,
 /* 752 */
@@ -49386,6 +49523,7 @@ exports.ReleasePRFactory = void 0;
 const releasers_1 = __webpack_require__(593);
 const node_1 = __webpack_require__(618);
 const python_1 = __webpack_require__(540);
+const ruby_1 = __webpack_require__(28);
 const simple_1 = __webpack_require__(643);
 const terraform_module_1 = __webpack_require__(440);
 class ReleasePRFactory {
@@ -49417,6 +49555,8 @@ class ReleasePRFactory {
                 return new node_1.Node(releaseOptions);
             case 'python':
                 return new python_1.Python(releaseOptions);
+            case 'ruby':
+                return new ruby_1.Ruby(releaseOptions);
             case 'simple':
                 return new simple_1.Simple(releaseOptions);
             case 'terraform-module':
@@ -52751,7 +52891,7 @@ exports.reviewPullRequest = reviewPullRequest;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-const VERSION = "1.0.0";
+const VERSION = "1.0.2";
 
 /**
  * @param octokit Octokit instance
@@ -55232,7 +55372,51 @@ module.exports = (commit) => {
 /***/ }),
 /* 965 */,
 /* 966 */,
-/* 967 */,
+/* 967 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.indentCommit = void 0;
+function indentCommit(commit) {
+    const reduced = [];
+    let inList = false;
+    commit.message.split(/\r?\n/).forEach((line, i) => {
+        if (i !== 0)
+            line = `  ${line}`;
+        else
+            reduced.push(line);
+        if (/^\s*\*/.test(line)) {
+            inList = true;
+            reduced.push(line);
+        }
+        else if (/^ +[\w]/.test(line) && inList) {
+            reduced[reduced.length - 1] = `${reduced[reduced.length - 1]}\n${line}`;
+        }
+        else {
+            inList = false;
+        }
+    });
+    return reduced.join('\n');
+}
+exports.indentCommit = indentCommit;
+//# sourceMappingURL=indent-commit.js.map
+
+/***/ }),
 /* 968 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
