@@ -43,6 +43,7 @@ Automate releases with Conventional Commit Messages.
 | `path`          | create a release from a path other than the repository's root |
 | `monorepo-tags` | add prefix to tags and branches, allowing multiple libraries to be released from the same repository. |
 | `changelog-types` | A JSON formatted String containing to override the outputted changlog sections |
+| `version-file` | provide a path to a version file to increment (used by ruby releaser) |
 
 | output | description |
 |:---:|---|

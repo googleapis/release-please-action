@@ -29,6 +29,9 @@ inputs:
   command:
     description: 'release-please command to run, either "github-release", or "release-pr" (defaults to running both)'
     require: false
+  verssion-file:
+    description: 'provide a path to a version file to increment (used by ruby releaser)'
+    require: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
