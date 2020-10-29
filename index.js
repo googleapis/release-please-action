@@ -14,6 +14,7 @@ async function main () {
   const fork = core.getInput('fork') ? true : undefined
   const changelogTypes = core.getInput('changelog-types')
   const command = core.getInput('command') ? core.getInput('command') : undefined
+  const versionFile = core.getInput('version-file') ? core.getInput('version-file') : undefined
 
   // Parse the changelogTypes if there are any
   let changelogSections
@@ -54,7 +55,8 @@ async function main () {
       token: token,
       label: RELEASE_LABEL,
       bumpMinorPreMajor,
-      changelogSections
+      changelogSections,
+      versionFile
     })
     await release.run()
   }
