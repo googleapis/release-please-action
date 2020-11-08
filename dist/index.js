@@ -4790,19 +4790,19 @@ function createPatch(fileName, oldStr, newStr, oldHeader, newHeader, options) {
 "use strict";
 
 
-var dateFormat = __webpack_require__(701)
-var join = __webpack_require__(622).join
-var readFileSync = __webpack_require__(747).readFileSync
-var semverValid = __webpack_require__(927).valid
-var through = __webpack_require__(576)
-var util = __webpack_require__(985)
-var _ = __webpack_require__(288)
+const dateFormat = __webpack_require__(701)
+const join = __webpack_require__(622).join
+const readFileSync = __webpack_require__(747).readFileSync
+const semverValid = __webpack_require__(927).valid
+const through = __webpack_require__(576)
+const util = __webpack_require__(985)
+const _ = __webpack_require__(288)
 
 function conventionalChangelogWriter (context, options) {
-  var savedKeyCommit
-  var commits = []
-  var firstRelease = true
-  var neverGenerated = true
+  let savedKeyCommit
+  let commits = []
+  let firstRelease = true
+  let neverGenerated = true
 
   context = _.extend({
     commit: 'commits',
@@ -4856,7 +4856,7 @@ function conventionalChangelogWriter (context, options) {
     }, options.transform)
   }
 
-  var generateOn = options.generateOn
+  let generateOn = options.generateOn
   if (_.isString(generateOn)) {
     generateOn = function (commit) {
       return !_.isUndefined(commit[options.generateOn])
@@ -4874,9 +4874,9 @@ function conventionalChangelogWriter (context, options) {
 
   return through.obj(function (chunk, enc, cb) {
     try {
-      var result
-      var commit = util.processCommit(chunk, options.transform, context)
-      var keyCommit = commit || chunk
+      let result
+      const commit = util.processCommit(chunk, options.transform, context)
+      const keyCommit = commit || chunk
 
       // previous blocks of logs
       if (options.reverse) {
@@ -4935,7 +4935,7 @@ function conventionalChangelogWriter (context, options) {
     }
 
     try {
-      var result = util.generate(options, commits, context, savedKeyCommit)
+      const result = util.generate(options, commits, context, savedKeyCommit)
 
       if (options.includeDetails) {
         this.push({
@@ -5792,7 +5792,7 @@ module.exports = require("vm");
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@6.6.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@6.6.0","_id":"release-please@6.6.0","_inBundle":false,"_integrity":"sha512-Ajki4AnAfZBOXA+JKg0jT8kRPSWcHTeYhfEGi6rOdmwyts80pRmLfUFmYkOp1hjFY6zrm/AZzMfi1C83sbw43Q==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@6.6.0","name":"release-please","escapedName":"release-please","rawSpec":"6.6.0","saveSpec":null,"fetchSpec":"6.6.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.6.0.tgz","_spec":"6.6.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.18.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.6.0"};
+module.exports = {"_args":[["release-please@6.7.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@6.7.0","_id":"release-please@6.7.0","_inBundle":false,"_integrity":"sha512-MugP1gM0U8hqxupqxpYoeemy3nTj5ZYcHKfG7DxSl46E2Scr6jmFRSa+ki/goqUqxPJgWhBe0c6PaT3u3IZKcQ==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@6.7.0","name":"release-please","escapedName":"release-please","rawSpec":"6.7.0","saveSpec":null,"fetchSpec":"6.7.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.7.0.tgz","_spec":"6.7.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.18.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@microsoft/api-documenter":"^7.8.10","@microsoft/api-extractor":"^7.8.10","@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.7.0"};
 
 /***/ }),
 /* 192 */,
@@ -28120,7 +28120,7 @@ module.exports = eq
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-const VERSION = "2.4.0";
+const VERSION = "2.6.0";
 
 /**
  * Some “list” response that can be paginated have a different response structure
@@ -28173,26 +28173,23 @@ function iterator(octokit, route, parameters) {
   let url = options.url;
   return {
     [Symbol.asyncIterator]: () => ({
-      next() {
-        if (!url) {
-          return Promise.resolve({
-            done: true
-          });
-        }
-
-        return requestMethod({
+      async next() {
+        if (!url) return {
+          done: true
+        };
+        const response = await requestMethod({
           method,
           url,
           headers
-        }).then(normalizePaginatedListResponse).then(response => {
-          // `response.headers.link` format:
-          // '<https://api.github.com/users/aseemk/followers?page=2>; rel="next", <https://api.github.com/users/aseemk/followers?page=2>; rel="last"'
-          // sets `url` to undefined if "next" URL is not present or `link` header is not set
-          url = ((response.headers.link || "").match(/<([^>]+)>;\s*rel="next"/) || [])[1];
-          return {
-            value: response
-          };
         });
+        const normalizedResponse = normalizePaginatedListResponse(response); // `response.headers.link` format:
+        // '<https://api.github.com/users/aseemk/followers?page=2>; rel="next", <https://api.github.com/users/aseemk/followers?page=2>; rel="last"'
+        // sets `url` to undefined if "next" URL is not present or `link` header is not set
+
+        url = ((normalizedResponse.headers.link || "").match(/<([^>]+)>;\s*rel="next"/) || [])[1];
+        return {
+          value: normalizedResponse
+        };
       }
 
     })
@@ -28230,6 +28227,10 @@ function gather(octokit, results, iterator, mapFn) {
   });
 }
 
+const composePaginateRest = Object.assign(paginate, {
+  iterator
+});
+
 /**
  * @param octokit Octokit instance
  * @param options Options passed to Octokit constructor
@@ -28244,6 +28245,7 @@ function paginateRest(octokit) {
 }
 paginateRest.VERSION = VERSION;
 
+exports.composePaginateRest = composePaginateRest;
 exports.paginateRest = paginateRest;
 //# sourceMappingURL=index.js.map
 
@@ -28259,8 +28261,8 @@ exports.paginateRest = paginateRest;
 "use strict";
 
 
-var isMatch = __webpack_require__(561)
-var modifyValues = __webpack_require__(513)
+const isMatch = __webpack_require__(561)
+const modifyValues = __webpack_require__(513)
 
 function modifyValue (val) {
   if (typeof val === 'string') {
@@ -28275,9 +28277,9 @@ function conventionalCommitsFilter (commits) {
     throw new TypeError('Expected an array')
   }
 
-  var ret = []
-  var ignores = []
-  var remove = []
+  let ret = []
+  const ignores = []
+  const remove = []
   commits.forEach(function (commit) {
     if (commit.revert) {
       ignores.push(commit)
@@ -28288,12 +28290,12 @@ function conventionalCommitsFilter (commits) {
 
   // Filter out reverted commits
   ret = ret.filter(function (commit) {
-    var ignoreThis = false
+    let ignoreThis = false
 
     commit = commit.raw ? modifyValues(commit.raw, modifyValue) : modifyValues(commit, modifyValue)
 
     ignores.some(function (ignoreCommit) {
-      var ignore = modifyValues(ignoreCommit.revert, modifyValue)
+      const ignore = modifyValues(ignoreCommit.revert, modifyValue)
 
       ignoreThis = isMatch(commit, ignore)
 
@@ -29183,11 +29185,11 @@ function packF32(v) { return packIEEE754(v, 8, 23); }
 
 "use strict";
 
-var trimOffNewlines = __webpack_require__(582)
-var _ = __webpack_require__(288)
+const trimOffNewlines = __webpack_require__(582)
+const _ = __webpack_require__(288)
 
-var CATCH_ALL = /()(.+)/gi
-var SCISSOR = '# ------------------------ >8 ------------------------'
+const CATCH_ALL = /()(.+)/gi
+const SCISSOR = '# ------------------------ >8 ------------------------'
 
 function append (src, line) {
   if (src) {
@@ -29206,7 +29208,7 @@ function getCommentFilter (char) {
 }
 
 function truncateToScissor (lines) {
-  var scissorIndex = lines.indexOf(SCISSOR)
+  const scissorIndex = lines.indexOf(SCISSOR)
 
   if (scissorIndex === -1) {
     return lines
@@ -29216,29 +29218,29 @@ function truncateToScissor (lines) {
 }
 
 function getReferences (input, regex) {
-  var references = []
-  var referenceSentences
-  var referenceMatch
+  const references = []
+  let referenceSentences
+  let referenceMatch
 
-  var reApplicable = input.match(regex.references) !== null
+  const reApplicable = input.match(regex.references) !== null
     ? regex.references
     : CATCH_ALL
 
   while ((referenceSentences = reApplicable.exec(input))) {
-    var action = referenceSentences[1] || null
-    var sentence = referenceSentences[2]
+    const action = referenceSentences[1] || null
+    const sentence = referenceSentences[2]
 
     while ((referenceMatch = regex.referenceParts.exec(sentence))) {
-      var owner = null
-      var repository = referenceMatch[1] || ''
-      var ownerRepo = repository.split('/')
+      let owner = null
+      let repository = referenceMatch[1] || ''
+      const ownerRepo = repository.split('/')
 
       if (ownerRepo.length > 1) {
         owner = ownerRepo.shift()
         repository = ownerRepo.join('/')
       }
 
-      var reference = {
+      const reference = {
         action: action,
         owner: owner,
         repository: repository || null,
@@ -29271,39 +29273,37 @@ function parser (raw, options, regex) {
     throw new TypeError('Expected regex')
   }
 
-  var headerMatch
-  var mergeMatch
-  var currentProcessedField
-  var mentionsMatch
-  var revertMatch
-  var otherFields = {}
-  var commentFilter = typeof options.commentChar === 'string'
+  let currentProcessedField
+  let mentionsMatch
+  const otherFields = {}
+  const commentFilter = typeof options.commentChar === 'string'
     ? getCommentFilter(options.commentChar)
     : passTrough
+  const gpgFilter = line => !line.match(/^\s*gpg:/)
 
-  var rawLines = trimOffNewlines(raw).split(/\r?\n/)
-  var lines = truncateToScissor(rawLines).filter(commentFilter)
+  const rawLines = trimOffNewlines(raw).split(/\r?\n/)
+  const lines = truncateToScissor(rawLines).filter(commentFilter).filter(gpgFilter)
 
-  var continueNote = false
-  var isBody = true
-  var headerCorrespondence = _.map(options.headerCorrespondence, function (part) {
+  let continueNote = false
+  let isBody = true
+  const headerCorrespondence = _.map(options.headerCorrespondence, function (part) {
     return part.trim()
   })
-  var revertCorrespondence = _.map(options.revertCorrespondence, function (field) {
+  const revertCorrespondence = _.map(options.revertCorrespondence, function (field) {
     return field.trim()
   })
-  var mergeCorrespondence = _.map(options.mergeCorrespondence, function (field) {
+  const mergeCorrespondence = _.map(options.mergeCorrespondence, function (field) {
     return field.trim()
   })
 
-  var body = null
-  var footer = null
-  var header = null
-  var mentions = []
-  var merge = null
-  var notes = []
-  var references = []
-  var revert = null
+  let body = null
+  let footer = null
+  let header = null
+  const mentions = []
+  let merge = null
+  const notes = []
+  const references = []
+  let revert = null
 
   if (lines.length === 0) {
     return {
@@ -29323,12 +29323,12 @@ function parser (raw, options, regex) {
 
   // msg parts
   merge = lines.shift()
-  var mergeParts = {}
-  var headerParts = {}
+  const mergeParts = {}
+  const headerParts = {}
   body = ''
   footer = ''
 
-  mergeMatch = merge.match(options.mergePattern)
+  const mergeMatch = merge.match(options.mergePattern)
   if (mergeMatch && options.mergePattern) {
     merge = mergeMatch[0]
 
@@ -29338,7 +29338,7 @@ function parser (raw, options, regex) {
     }
 
     _.forEach(mergeCorrespondence, function (partName, index) {
-      var partValue = mergeMatch[index + 1] || null
+      const partValue = mergeMatch[index + 1] || null
       mergeParts[partName] = partValue
     })
   } else {
@@ -29350,10 +29350,10 @@ function parser (raw, options, regex) {
     })
   }
 
-  headerMatch = header.match(options.headerPattern)
+  const headerMatch = header.match(options.headerPattern)
   if (headerMatch) {
     _.forEach(headerCorrespondence, function (partName, index) {
-      var partValue = headerMatch[index + 1] || null
+      const partValue = headerMatch[index + 1] || null
       headerParts[partName] = partValue
     })
   } else {
@@ -29370,7 +29370,7 @@ function parser (raw, options, regex) {
   // body or footer
   _.forEach(lines, function (line) {
     if (options.fieldPattern) {
-      var fieldMatch = options.fieldPattern.exec(line)
+      const fieldMatch = options.fieldPattern.exec(line)
 
       if (fieldMatch) {
         currentProcessedField = fieldMatch[1]
@@ -29385,16 +29385,16 @@ function parser (raw, options, regex) {
       }
     }
 
-    var referenceMatched
+    let referenceMatched
 
     // this is a new important note
-    var notesMatch = line.match(regex.notes)
+    const notesMatch = line.match(regex.notes)
     if (notesMatch) {
       continueNote = true
       isBody = false
       footer = append(footer, line)
 
-      var note = {
+      const note = {
         title: notesMatch[1],
         text: notesMatch[2]
       }
@@ -29404,7 +29404,7 @@ function parser (raw, options, regex) {
       return
     }
 
-    var lineReferences = getReferences(line, {
+    const lineReferences = getReferences(line, {
       references: regex.references,
       referenceParts: regex.referenceParts
     })
@@ -29438,7 +29438,7 @@ function parser (raw, options, regex) {
   })
 
   if (options.breakingHeaderPattern && notes.length === 0) {
-    var breakingHeader = header.match(options.breakingHeaderPattern)
+    const breakingHeader = header.match(options.breakingHeaderPattern)
     if (breakingHeader) {
       const noteText = breakingHeader[3] // the description of the change.
       notes.push({
@@ -29453,11 +29453,11 @@ function parser (raw, options, regex) {
   }
 
   // does this commit revert any other commit?
-  revertMatch = raw.match(options.revertPattern)
+  const revertMatch = raw.match(options.revertPattern)
   if (revertMatch) {
     revert = {}
     _.forEach(revertCorrespondence, function (partName, index) {
-      var partValue = revertMatch[index + 1] || null
+      const partValue = revertMatch[index + 1] || null
       revert[partName] = partValue
     })
   } else {
@@ -29470,7 +29470,7 @@ function parser (raw, options, regex) {
     return note
   })
 
-  var msg = _.merge(headerParts, mergeParts, {
+  const msg = _.merge(headerParts, mergeParts, {
     merge: merge,
     header: header,
     body: body ? trimOffNewlines(body) : null,
@@ -31601,7 +31601,7 @@ function withDefaults(oldDefaults, newDefaults) {
   });
 }
 
-const VERSION = "6.0.8";
+const VERSION = "6.0.9";
 
 const userAgent = `octokit-endpoint.js/${VERSION} ${universalUserAgent.getUserAgent()}`; // DEFAULTS has all properties set that EndpointOptions has, except url.
 // So we use RequestParameters and add method as additional required property.
@@ -34525,7 +34525,7 @@ function _objectWithoutProperties(source, excluded) {
   return target;
 }
 
-const VERSION = "3.2.0";
+const VERSION = "3.2.1";
 
 class Octokit {
   constructor(options = {}) {
@@ -38922,10 +38922,10 @@ module.exports = debug
 "use strict";
 
 
-var parser = __webpack_require__(320)
-var regex = __webpack_require__(970)
-var through = __webpack_require__(576)
-var _ = __webpack_require__(288)
+const parser = __webpack_require__(320)
+const regex = __webpack_require__(970)
+const through = __webpack_require__(576)
+const _ = __webpack_require__(288)
 
 function assignOpts (options) {
   options = _.extend({
@@ -38993,10 +38993,10 @@ function assignOpts (options) {
 
 function conventionalCommitsParser (options) {
   options = assignOpts(options)
-  var reg = regex(options)
+  const reg = regex(options)
 
   return through.obj(function (data, enc, cb) {
-    var commit
+    let commit
 
     try {
       commit = parser(data.toString(), options, reg)
@@ -39014,7 +39014,7 @@ function conventionalCommitsParser (options) {
 
 function sync (commit, options) {
   options = assignOpts(options)
-  var reg = regex(options)
+  const reg = regex(options)
 
   return parser(commit, options, reg)
 }
@@ -41286,101 +41286,89 @@ if (process.env.READABLE_STREAM === 'disable' && Stream) {
 /* 576 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
-var Transform = __webpack_require__(574).Transform
-  , inherits  = __webpack_require__(689)
+const { Transform } = __webpack_require__(574)
 
-function DestroyableTransform(opts) {
-  Transform.call(this, opts)
-  this._destroyed = false
-}
-
-inherits(DestroyableTransform, Transform)
-
-DestroyableTransform.prototype.destroy = function(err) {
-  if (this._destroyed) return
-  this._destroyed = true
-  
-  var self = this
-  process.nextTick(function() {
-    if (err)
-      self.emit('error', err)
-    self.emit('close')
+function inherits (fn, sup) {
+  fn.super_ = sup
+  fn.prototype = Object.create(sup.prototype, {
+    constructor: { value: fn, enumerable: false, writable: true, configurable: true }
   })
 }
-
-// a noop _transform function
-function noop (chunk, enc, callback) {
-  callback(null, chunk)
-}
-
 
 // create a new export function, used by both the main export and
 // the .ctor export, contains common logic for dealing with arguments
 function through2 (construct) {
-  return function (options, transform, flush) {
-    if (typeof options == 'function') {
-      flush     = transform
+  return (options, transform, flush) => {
+    if (typeof options === 'function') {
+      flush = transform
       transform = options
-      options   = {}
+      options = {}
     }
 
-    if (typeof transform != 'function')
-      transform = noop
+    if (typeof transform !== 'function') {
+      // noop
+      transform = (chunk, enc, cb) => cb(null, chunk)
+    }
 
-    if (typeof flush != 'function')
+    if (typeof flush !== 'function') {
       flush = null
+    }
 
     return construct(options, transform, flush)
   }
 }
 
-
 // main export, just make me a transform stream!
-module.exports = through2(function (options, transform, flush) {
-  var t2 = new DestroyableTransform(options)
+const make = through2((options, transform, flush) => {
+  const t2 = new Transform(options)
 
   t2._transform = transform
 
-  if (flush)
+  if (flush) {
     t2._flush = flush
+  }
 
   return t2
 })
 
-
 // make me a reusable prototype that I can `new`, or implicitly `new`
 // with a constructor call
-module.exports.ctor = through2(function (options, transform, flush) {
+const ctor = through2((options, transform, flush) => {
   function Through2 (override) {
-    if (!(this instanceof Through2))
+    if (!(this instanceof Through2)) {
       return new Through2(override)
+    }
 
     this.options = Object.assign({}, options, override)
 
-    DestroyableTransform.call(this, this.options)
+    Transform.call(this, this.options)
+
+    this._transform = transform
+    if (flush) {
+      this._flush = flush
+    }
   }
 
-  inherits(Through2, DestroyableTransform)
-
-  Through2.prototype._transform = transform
-
-  if (flush)
-    Through2.prototype._flush = flush
+  inherits(Through2, Transform)
 
   return Through2
 })
 
-
-module.exports.obj = through2(function (options, transform, flush) {
-  var t2 = new DestroyableTransform(Object.assign({ objectMode: true, highWaterMark: 16 }, options))
+const obj = through2(function (options, transform, flush) {
+  const t2 = new Transform(Object.assign({ objectMode: true, highWaterMark: 16 }, options))
 
   t2._transform = transform
 
-  if (flush)
+  if (flush) {
     t2._flush = flush
+  }
 
   return t2
 })
+
+module.exports = make
+module.exports.ctor = ctor
+module.exports.obj = obj
 
 
 /***/ }),
@@ -41499,18 +41487,27 @@ module.exports = function (config) {
     })
 }
 
+function findTypeEntry (types, commit) {
+  const typeKey = (commit.revert ? 'revert' : (commit.type || '')).toLowerCase()
+  return types.find((entry) => {
+    if (entry.type !== typeKey) {
+      return false
+    }
+    if (entry.scope && entry.scope !== commit.scope) {
+      return false
+    }
+    return true
+  })
+}
+
 function getWriterOpts (config) {
   config = defaultConfig(config)
-  const typesLookup = {}
-  config.types.forEach(type => {
-    typesLookup[type.type] = type
-  })
 
   return {
     transform: (commit, context) => {
       let discard = true
       const issues = []
-      const typeKey = (commit.revert ? 'revert' : (commit.type || '')).toLowerCase()
+      const entry = findTypeEntry(config.types, commit)
 
       // adds additional breaking change notes
       // for the special case, test(system)!: hello world, where there is
@@ -41523,10 +41520,10 @@ function getWriterOpts (config) {
       })
 
       // breaking changes attached to any type are still displayed.
-      if (discard && (typesLookup[typeKey] === undefined ||
-          typesLookup[typeKey].hidden)) return
+      if (discard && (entry === undefined ||
+          entry.hidden)) return
 
-      if (typesLookup[typeKey]) commit.type = typesLookup[typeKey].section
+      if (entry) commit.type = entry.section
 
       if (commit.scope === '*') {
         commit.scope = ''
@@ -48165,7 +48162,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 var request = __webpack_require__(753);
 var universalUserAgent = __webpack_require__(526);
 
-const VERSION = "4.5.6";
+const VERSION = "4.5.7";
 
 class GraphqlError extends Error {
   constructor(request, response) {
@@ -48395,7 +48392,7 @@ var isPlainObject = __webpack_require__(356);
 var nodeFetch = _interopDefault(__webpack_require__(454));
 var requestError = __webpack_require__(463);
 
-const VERSION = "5.4.9";
+const VERSION = "5.4.10";
 
 function getBufferResponse(response) {
   return response.arrayBuffer();
@@ -51436,7 +51433,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "4.2.0";
+const VERSION = "4.2.1";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -52503,7 +52500,7 @@ var pluginRequestLog = __webpack_require__(916);
 var pluginPaginateRest = __webpack_require__(299);
 var pluginRestEndpointMethods = __webpack_require__(842);
 
-const VERSION = "18.0.6";
+const VERSION = "18.0.9";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.restEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`
@@ -55562,7 +55559,7 @@ exports.ArraySet = ArraySet;
 "use strict";
 
 
-var reNomatch = /(?!.*)/
+const reNomatch = /(?!.*)/
 
 function join (array, joiner) {
   return array
@@ -55575,12 +55572,18 @@ function join (array, joiner) {
     .join(joiner)
 }
 
-function getNotesRegex (noteKeywords) {
+function getNotesRegex (noteKeywords, notesPattern) {
   if (!noteKeywords) {
     return reNomatch
   }
 
-  return new RegExp('^[\\s|*]*(' + join(noteKeywords, '|') + ')[:\\s]+(.*)', 'i')
+  const noteKeywordsSelection = join(noteKeywords, '|')
+
+  if (!notesPattern) {
+    return new RegExp('^[\\s|*]*(' + noteKeywordsSelection + ')[:\\s]+(.*)', 'i')
+  }
+
+  return notesPattern(noteKeywordsSelection)
 }
 
 function getReferencePartsRegex (issuePrefixes, issuePrefixesCaseSensitive) {
@@ -55588,7 +55591,7 @@ function getReferencePartsRegex (issuePrefixes, issuePrefixesCaseSensitive) {
     return reNomatch
   }
 
-  var flags = issuePrefixesCaseSensitive ? 'g' : 'gi'
+  const flags = issuePrefixesCaseSensitive ? 'g' : 'gi'
   return new RegExp('(?:.*?)??\\s*([\\w-\\.\\/]*?)??(' + join(issuePrefixes, '|') + ')([\\w-]*\\d+)', flags)
 }
 
@@ -55598,15 +55601,15 @@ function getReferencesRegex (referenceActions) {
     return /()(.+)/gi
   }
 
-  var joinedKeywords = join(referenceActions, '|')
+  const joinedKeywords = join(referenceActions, '|')
   return new RegExp('(' + joinedKeywords + ')(?:\\s+(.*?))(?=(?:' + joinedKeywords + ')|$)', 'gi')
 }
 
 module.exports = function (options) {
   options = options || {}
-  var reNotes = getNotesRegex(options.noteKeywords)
-  var reReferenceParts = getReferencePartsRegex(options.issuePrefixes, options.issuePrefixesCaseSensitive)
-  var reReferences = getReferencesRegex(options.referenceActions)
+  const reNotes = getNotesRegex(options.noteKeywords, options.notesPattern)
+  const reReferenceParts = getReferencePartsRegex(options.issuePrefixes, options.issuePrefixesCaseSensitive)
+  const reReferences = getReferencesRegex(options.referenceActions)
 
   return {
     notes: reNotes,
@@ -56371,19 +56374,19 @@ function passLookupPropertyOption(helper, container) {
 
 "use strict";
 
-var compareFunc = __webpack_require__(739)
-var conventionalCommitsFilter = __webpack_require__(304)
-var Handlebars = __webpack_require__(635)
-var semver = __webpack_require__(927)
-var _ = __webpack_require__(288)
-var stringify = __webpack_require__(704)
+const compareFunc = __webpack_require__(739)
+const conventionalCommitsFilter = __webpack_require__(304)
+const Handlebars = __webpack_require__(635)
+const semver = __webpack_require__(927)
+const _ = __webpack_require__(288)
+const stringify = __webpack_require__(704)
 
 function compileTemplates (templates) {
-  var main = templates.mainTemplate
-  var headerPartial = templates.headerPartial
-  var commitPartial = templates.commitPartial
-  var footerPartial = templates.footerPartial
-  var partials = templates.partials
+  const main = templates.mainTemplate
+  const headerPartial = templates.headerPartial
+  const commitPartial = templates.commitPartial
+  const footerPartial = templates.footerPartial
+  const partials = templates.partials
 
   if (_.isString(headerPartial)) {
     Handlebars.registerPartial('header', headerPartial)
@@ -56416,8 +56419,8 @@ function functionify (strOrArr) {
 }
 
 function getCommitGroups (groupBy, commits, groupsSort, commitsSort) {
-  var commitGroups = []
-  var commitGroupsObj = _.groupBy(commits, function (commit) {
+  const commitGroups = []
+  const commitGroupsObj = _.groupBy(commits, function (commit) {
     return commit[groupBy] || ''
   })
 
@@ -56444,11 +56447,11 @@ function getCommitGroups (groupBy, commits, groupsSort, commitsSort) {
 }
 
 function getNoteGroups (notes, noteGroupsSort, notesSort) {
-  var retGroups = []
+  const retGroups = []
 
   _.forEach(notes, function (note) {
-    var title = note.title
-    var titleExists = false
+    const title = note.title
+    let titleExists = false
 
     _.forEach(retGroups, function (group) {
       if (group.title === title) {
@@ -56480,7 +56483,7 @@ function getNoteGroups (notes, noteGroupsSort, notesSort) {
 }
 
 function processCommit (chunk, transform, context) {
-  var commit
+  let commit
 
   try {
     chunk = JSON.parse(chunk)
@@ -56499,7 +56502,7 @@ function processCommit (chunk, transform, context) {
   }
 
   _.forEach(transform, function (el, path) {
-    var value = _.get(commit, path)
+    let value = _.get(commit, path)
 
     if (_.isFunction(el)) {
       value = el(value, path)
@@ -56516,7 +56519,7 @@ function processCommit (chunk, transform, context) {
 }
 
 function getExtraContext (commits, notes, options) {
-  var context = {}
+  const context = {}
 
   // group `commits` by `options.groupBy`
   context.commitGroups = getCommitGroups(options.groupBy, commits, options.commitGroupsSort, options.commitsSort)
@@ -56528,9 +56531,9 @@ function getExtraContext (commits, notes, options) {
 }
 
 function generate (options, commits, context, keyCommit) {
-  var notes = []
-  var filteredCommits
-  var compiled = compileTemplates(options)
+  let notes = []
+  let filteredCommits
+  const compiled = compileTemplates(options)
 
   if (options.ignoreReverted) {
     filteredCommits = conventionalCommitsFilter(commits)
