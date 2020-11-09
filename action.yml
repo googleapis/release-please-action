@@ -1,4 +1,4 @@
-name: 'release-please'
+name: 'release-please-action'
 description: 'automated releases based on conventional commits'
 author: 'Ben Coe <bencoe@google.com>'
 inputs:
