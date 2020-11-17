@@ -21,7 +21,7 @@ Automate releases with Conventional Commit Messages.
         runs-on: ubuntu-latest
         steps:
           - uses: GoogleCloudPlatform/release-please-action@v2.6.0
-            with
+            with:
               token: ${{ secrets.GITHUB_TOKEN }}
               release-type: node
               package-name: release-please-action
