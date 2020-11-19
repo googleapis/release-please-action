@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.6.0...v2.7.0) (2020-11-19)
+
+
+### Features
+
+* **deps:** upgrade to release-please 6.9.0 ([#100](https://www.github.com/google-github-actions/release-please-action/issues/100)) ([40aba5e](https://www.github.com/google-github-actions/release-please-action/commit/40aba5e11684d69de9f36e60e19de0c5aa28750b))
+
 ## [2.6.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.5.7...v2.6.0) (2020-11-08)
 
 
