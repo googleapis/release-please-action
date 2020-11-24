@@ -5,7 +5,8 @@
   "description": "automated releases based on conventional commits",
   "main": "index.js",
   "scripts": {
-    "test": "standard",
+    "test": "c8 mocha test/*.js",
+    "posttest": "standard",
     "fix": "standard --fix",
     "build": "ncc build index.js"
   },
@@ -29,6 +30,9 @@
   },
   "devDependencies": {
     "@zeit/ncc": "^0.22.3",
+    "c8": "^7.3.5",
+    "mocha": "^8.2.1",
+    "sinon": "^9.2.1",
     "standard": "^14.3.4"
   },
   "standard": {
