@@ -87,8 +87,8 @@ jobs:
           git tag -d v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}; echo ok
           git push origin :v${{ steps.release.outputs.major }}; echo ok
           git push origin :v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}; echo ok
-          git tag -a v${{ steps.release.outputs.major }}
-          git tag -a v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
+          git tag -a v${{ steps.release.outputs.major }} -m "Release v${{ steps.release.outputs.major }}"
+          git tag -a v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} -m "Release v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}"
           git push origin v${{ steps.release.outputs.major }}
           git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }};
         if: ${{ steps.release.outputs.release_created }}
