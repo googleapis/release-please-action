@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.7.0...v2.8.0) (2020-11-25)
+
+
+### Features
+
+* add additional outputs ([#106](https://www.github.com/google-github-actions/release-please-action/issues/106)) ([c0f7d24](https://www.github.com/google-github-actions/release-please-action/commit/c0f7d24cd04488b7e14836d90143850b97aefadd))
+
 ## [2.7.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.6.0...v2.7.0) (2020-11-19)
 
 
