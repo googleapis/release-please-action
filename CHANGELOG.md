@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.8.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.8.0...v2.8.1) (2020-11-25)
+
+
+### Bug Fixes
+
+* **build:** working on version of build that tags major/minor release line ([d4814fe](https://www.github.com/google-github-actions/release-please-action/commit/d4814feca529141f25d8c871b3c2d093b38c14c8))
+
 ## [2.8.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.7.0...v2.8.0) (2020-11-25)
 
 
