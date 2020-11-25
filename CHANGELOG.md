@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.9.2](https://www.github.com/google-github-actions/release-please-action/compare/v2.9.1...v2.9.2) (2020-11-25)
+
+
+### Bug Fixes
+
+* parse false value for clean ([fc5b3e5](https://www.github.com/google-github-actions/release-please-action/commit/fc5b3e5c11baace865aed65127f107a4d8b392da))
+
 ### [2.9.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.9.0...v2.9.1) (2020-11-25)
 
 
