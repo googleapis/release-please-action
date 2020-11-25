@@ -1,5 +1,13 @@
 # Changelog
 
+### [2.8.2](https://www.github.com/google-github-actions/release-please-action/compare/v2.8.1...v2.8.2) (2020-11-25)
+
+
+### Bug Fixes
+
+* **build:** configure git checkout step ([ff5dfe1](https://www.github.com/google-github-actions/release-please-action/commit/ff5dfe1653289b33b5fb3e5de72e0b3733ff390d))
+* **build:** run latest dist ([799e6de](https://www.github.com/google-github-actions/release-please-action/commit/799e6de570879ef6ad3d7067295b3e0c2c837e04))
+
 ### [2.8.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.8.0...v2.8.1) (2020-11-25)
 
 
