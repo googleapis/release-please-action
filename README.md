@@ -20,7 +20,7 @@ Automate releases with Conventional Commit Messages.
       release-please:
         runs-on: ubuntu-latest
         steps:
-          - uses: GoogleCloudPlatform/release-please-action@v2.7.0
+          - uses: GoogleCloudPlatform/release-please-action@v2.8.0
             with:
               token: ${{ secrets.GITHUB_TOKEN }}
               release-type: node
@@ -44,14 +44,22 @@ Automate releases with Conventional Commit Messages.
 | `monorepo-tags` | add prefix to tags and branches, allowing multiple libraries to be released from the same repository. |
 | `changelog-types` | A JSON formatted String containing to override the outputted changlog sections |
 | `version-file` | provide a path to a version file to increment (used by ruby releaser) |
+| `fork`          | Should the PR be created from a fork (does not work with `secrets.GITHUB_TOKEN`) |
+| `clean`          | Should stale release PRs be closed post release? Default `true` |
+| `command`          | release-please command to run, either `github-release`, or `release-pr` (_defaults to running both_) |
 
 | output | description |
 |:---:|---|
 | `release_created` | `true` if the release was created, `false` otherwise |
 | `upload_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
+| `html_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `tag_name` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
-| `fork`          | Should the PR be created from a fork (does not work with `secrets.GITHUB_TOKEN`) |
-| `command`          | release-please command to run, either `github-release`, or `release-pr` (_defaults to running both_) |
+| `major` | Number representing major semver value |
+| `minor` | Number representing minor semver value |
+| `patch` | Number representing patch semver value |
+| `sha` | sha that a GitHub release was tagged at |
+| `pr` | The PR number of an opened release (undefined if no release created) |
+
 
 ### Release types supported
 
@@ -108,7 +116,7 @@ To output more commit information in the changelog,  a JSON formatted String can
       release-please:
         runs-on: ubuntu-latest
         steps:
-          - uses: GoogleCloudPlatform/release-please-action@v2.7.0
+          - uses: GoogleCloudPlatform/release-please-action@v2.8.0
             with:
               token: ${{ secrets.GITHUB_TOKEN }}
               release-type: node
@@ -131,7 +139,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2.7.0
+      - uses: GoogleCloudPlatform/release-please-action@v2.8.0
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}

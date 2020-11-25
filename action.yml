@@ -8,6 +8,9 @@ inputs:
   fork:
     description: 'should the PR be proposed from a fork (does not work with secrets.GITHUB_TOKEN)'
     required: false
+  clean:
+    description: 'Should stale release PRs be closed post release? Defaults to true'
+    required: false
   package-name:
     description: 'name of the distributions releases are being created for, e.g., "name" in package.json, or "setup.py"'
     required: true

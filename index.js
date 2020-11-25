@@ -6,6 +6,7 @@ const RELEASE_LABEL = 'autorelease: pending'
 
 async function main () {
   const bumpMinorPreMajor = Boolean(core.getInput('bump-minor-pre-major'))
+  const clean = core.getInput('clean') ? true : undefined
   const monorepoTags = Boolean(core.getInput('monorepo-tags'))
   const packageName = core.getInput('package-name')
   const path = core.getInput('path') ? core.getInput('path') : undefined
@@ -35,11 +36,10 @@ async function main () {
     })
     const releaseCreated = await gr.createRelease()
     if (releaseCreated) {
-      // eslint-disable-next-line
-      const { upload_url, tag_name } = releaseCreated
       core.setOutput('release_created', true)
-      core.setOutput('upload_url', upload_url)
-      core.setOutput('tag_name', tag_name)
+      for (const key of Object.keys(releaseCreated)) {
+        core.setOutput(key, releaseCreated[key])
+      }
     }
   }
 
@@ -47,6 +47,7 @@ async function main () {
   // release PR:
   if (!command || command === 'release-pr') {
     const release = releasePlease.getReleasePRFactory().buildStatic(releaseType, {
+      clean,
       monorepoTags,
       packageName,
       path,
@@ -59,7 +60,8 @@ async function main () {
       changelogSections,
       versionFile
     })
-    await release.run()
+    const pr = await release.run()
+    core.setOutput('pr', pr)
   }
 }
 
