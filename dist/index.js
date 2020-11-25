@@ -3301,6 +3301,7 @@ async function main () {
       repoUrl: process.env.GITHUB_REPOSITORY,
       packageName,
       path,
+      monorepoTags,
       token
     })
     const releaseCreated = await gr.createRelease()
