@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.9.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.9.0...v2.9.1) (2020-11-25)
+
+
+### Bug Fixes
+
+* **build:** attempt to ignore errors ([15d0718](https://www.github.com/google-github-actions/release-please-action/commit/15d0718b84b06b34d9125a5d7e97b38888480f99))
+
 ## [2.9.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.8.2...v2.9.0) (2020-11-25)
 
 
