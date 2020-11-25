@@ -33,8 +33,7 @@ async function main () {
       packageName,
       path,
       monorepoTags,
-      packageName,
-      token,
+      token
     })
     const releaseCreated = await gr.createRelease()
     if (releaseCreated) {
