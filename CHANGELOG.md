@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.8.3](https://www.github.com/google-github-actions/release-please-action/compare/v2.8.2...v2.8.3) (2020-11-25)
+
+
+### Bug Fixes
+
+* **build:** add message to tag ([b467439](https://www.github.com/google-github-actions/release-please-action/commit/b46743913ea2c717e2a144864cd026c3f2df4029))
+
 ### [2.8.2](https://www.github.com/google-github-actions/release-please-action/compare/v2.8.1...v2.8.2) (2020-11-25)
 
 
