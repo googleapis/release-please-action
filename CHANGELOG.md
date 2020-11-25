@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.9.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.8.2...v2.9.0) (2020-11-25)
+
+
+### Features
+
+* pass monorepoTags and packageName when creating GitHub release ([#112](https://www.github.com/google-github-actions/release-please-action/issues/112)) ([69af5fc](https://www.github.com/google-github-actions/release-please-action/commit/69af5fc7d9bb0977586102a0e1488abab7fdaace))
+
+
+### Bug Fixes
+
+* **build:** add message to tag ([b467439](https://www.github.com/google-github-actions/release-please-action/commit/b46743913ea2c717e2a144864cd026c3f2df4029))
+
 ### [2.8.2](https://www.github.com/google-github-actions/release-please-action/compare/v2.8.1...v2.8.2) (2020-11-25)
 
 
