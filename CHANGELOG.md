@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.9.3](https://www.github.com/google-github-actions/release-please-action/compare/v2.9.2...v2.9.3) (2020-11-25)
+
+
+### Bug Fixes
+
+* **release-please:** don't add labels from fork ([13bffc3](https://www.github.com/google-github-actions/release-please-action/commit/13bffc3e974a8edf5d4830257a17d40e9cb9a32f))
+
 ### [2.9.2](https://www.github.com/google-github-actions/release-please-action/compare/v2.9.1...v2.9.2) (2020-11-25)
 
 
