@@ -7,8 +7,8 @@ const RELEASE_LABEL = 'autorelease: pending'
 async function main () {
   const bumpMinorPreMajor = Boolean(core.getInput('bump-minor-pre-major'))
   // TODO(bcoe): remove this log line.
-  console.info(typeof core.getInput('clean'), core.getInput('clean'));
-  const clean = core.getInput('clean') === 'false' ? false : true
+  console.info(typeof core.getInput('clean'), core.getInput('clean'))
+  const clean = core.getInput('clean') !== 'false'
   const monorepoTags = Boolean(core.getInput('monorepo-tags'))
   const packageName = core.getInput('package-name')
   const path = core.getInput('path') ? core.getInput('path') : undefined
