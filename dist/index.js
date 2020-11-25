@@ -3270,7 +3270,7 @@ exports.issueCommand = issueCommand;
 /***/ }),
 /* 103 */,
 /* 104 */
-/***/ (function(__unusedmodule, __unusedexports, __webpack_require__) {
+/***/ (function(module, __unusedexports, __webpack_require__) {
 
 const core = __webpack_require__(470)
 const { GitHubRelease } = __webpack_require__(57)
@@ -3299,7 +3299,8 @@ async function main () {
   // First we check for any merged release PRs (PRs merged with the label
   // "autorelease: pending"):
   if (!command || command === 'github-release') {
-    const gr = new GitHubRelease({
+    const Release = releasePlease.getGitHubRelease()
+    const gr = new Release({
       label: RELEASE_LABEL,
       repoUrl: process.env.GITHUB_REPOSITORY,
       packageName,
@@ -3319,7 +3320,7 @@ async function main () {
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
   if (!command || command === 'release-pr') {
-    const release = ReleasePRFactory.buildStatic(releaseType, {
+    const release = releasePlease.getReleasePRFactory().buildStatic(releaseType, {
       monorepoTags,
       packageName,
       path,
@@ -3336,9 +3337,27 @@ async function main () {
   }
 }
 
-main().catch(err => {
-  core.setFailed(`release-please failed: ${err.message}`)
-})
+function getGitHubRelease () {
+  return GitHubRelease
+}
+
+function getReleasePRFactory () {
+  return ReleasePRFactory
+}
+
+const releasePlease = {
+  main,
+  getGitHubRelease,
+  getReleasePRFactory
+}
+
+if (require.main === require.cache[eval('__filename')]) {
+  main().catch(err => {
+    core.setFailed(`release-please failed: ${err.message}`)
+  })
+} else {
+  module.exports = releasePlease
+}
 
 
 /***/ }),
