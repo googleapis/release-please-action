@@ -916,7 +916,7 @@ class Ruby extends release_pr_1.ReleasePR {
         // one line is a good indicator that there were no interesting commits.
         if (this.changelogEmpty(changelogEntry)) {
             checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return;
+            return undefined;
         }
         const updates = [];
         updates.push(new changelog_1.Changelog({
@@ -931,7 +931,7 @@ class Ruby extends release_pr_1.ReleasePR {
             version: candidate.version,
             packageName: this.packageName,
         }));
-        await this.openPR({
+        return await this.openPR({
             sha: commits[0].sha,
             changelogEntry: `${changelogEntry}\n---\n`,
             updates,
@@ -1943,6 +1943,7 @@ const chalk = __webpack_require__(843);
 const checkpoint_1 = __webpack_require__(923);
 const release_pr_factory_1 = __webpack_require__(796);
 const github_1 = __webpack_require__(614);
+const semver_1 = __webpack_require__(876);
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const parseGithubRepoUrl = __webpack_require__(345);
 const GITHUB_RELEASE_LABEL = 'autorelease: tagged';
@@ -1962,72 +1963,60 @@ class GitHubRelease {
         this.gh = this.gitHubInstance(options.octokitAPIs);
     }
     async createRelease() {
-        let gitHubReleasePRs = [];
-        const rootPath = this.path;
-        const releases = [];
         // In most configurations, createRelease() should be called close to when
         // a release PR is merged, e.g., a GitHub action that kicks off this
         // workflow on merge. For tis reason, we can pull a fairly small number of PRs:
         const pageSize = 25;
-        if (this.monorepoTags) {
-            gitHubReleasePRs = await this.gh.findMergedReleasePRs(this.labels, pageSize);
-        }
-        else {
-            const releasePR = await this.gh.findMergedReleasePR(this.labels, pageSize);
-            if (releasePR) {
-                gitHubReleasePRs = [releasePR];
-            }
-        }
-        if (gitHubReleasePRs.length === 0) {
+        const gitHubReleasePR = await this.gh.findMergedReleasePR(this.labels, pageSize, this.monorepoTags ? this.packageName : undefined);
+        if (!gitHubReleasePR) {
             checkpoint_1.checkpoint('no recent release PRs found', checkpoint_1.CheckpointType.Failure);
             return undefined;
         }
-        for (const gitHubReleasePR of gitHubReleasePRs) {
-            const version = `v${gitHubReleasePR.version}`;
-            // If we've enabled monorepoTags, and a prefix was found on release PR
-            // e.g., release-bigquery-v1.0.0, then assume we are releasing a
-            // module from within the "bigquery" folder:
-            if (this.monorepoTags && gitHubReleasePR.packageName) {
-                this.path = gitHubReleasePR.packageName;
-            }
-            else {
-                // As in the case of google-cloud-go, a repo may contain both a
-                // top level module, and submodules. If no submodule is found in
-                // the branch name, we use the initial rootPath:
-                this.path = rootPath;
-            }
-            checkpoint_1.checkpoint(`found release branch ${chalk.green(version)} at ${chalk.green(gitHubReleasePR.sha)}`, checkpoint_1.CheckpointType.Success);
-            const changelogContents = (await this.gh.getFileContents(this.addPath(this.changelogPath))).parsedContent;
-            const latestReleaseNotes = GitHubRelease.extractLatestReleaseNotes(changelogContents, version);
-            checkpoint_1.checkpoint(`found release notes: \n---\n${chalk.grey(latestReleaseNotes)}\n---\n`, checkpoint_1.CheckpointType.Success);
-            // Attempt to lookup the package name from a well known location, such
-            // as package.json, if none is provided:
-            if (!this.packageName && this.releaseType) {
-                this.packageName = await release_pr_factory_1.ReleasePRFactory.class(this.releaseType).lookupPackageName(this.gh);
-            }
-            // Go uses '/' for a tag separator, rather than '-':
-            let tagSeparator = '-';
-            if (this.releaseType) {
-                tagSeparator = release_pr_factory_1.ReleasePRFactory.class(this.releaseType).tagSeparator();
-            }
-            if (this.packageName === undefined) {
-                throw Error(`could not determine package name for release repo = ${this.repoUrl}`);
-            }
-            const release = await this.gh.createRelease(this.packageName, this.monorepoTags && this.path
-                ? `${this.path}${tagSeparator}${version}`
-                : version, gitHubReleasePR.sha, latestReleaseNotes);
-            // Add a label indicating that a release has been created on GitHub,
-            // but a publication has not yet occurred.
-            await this.gh.addLabels([GITHUB_RELEASE_LABEL], gitHubReleasePR.number);
-            // Remove 'autorelease: pending' which indicates a GitHub release
-            // has not yet been created.
-            await this.gh.removeLabels(this.labels, gitHubReleasePR.number);
-            releases.push(release);
+        const version = `v${gitHubReleasePR.version}`;
+        checkpoint_1.checkpoint(`found release branch ${chalk.green(version)} at ${chalk.green(gitHubReleasePR.sha)}`, checkpoint_1.CheckpointType.Success);
+        const changelogContents = (await this.gh.getFileContents(this.addPath(this.changelogPath))).parsedContent;
+        const latestReleaseNotes = GitHubRelease.extractLatestReleaseNotes(changelogContents, version);
+        checkpoint_1.checkpoint(`found release notes: \n---\n${chalk.grey(latestReleaseNotes)}\n---\n`, checkpoint_1.CheckpointType.Success);
+        // Attempt to lookup the package name from a well known location, such
+        // as package.json, if none is provided:
+        if (!this.packageName && this.releaseType) {
+            this.packageName = await release_pr_factory_1.ReleasePRFactory.class(this.releaseType).lookupPackageName(this.gh);
         }
-        // TODO(bcoe): it will be a breaking change, but we should come up with
-        // an approach to return a list of releases rather than a single
-        // release (we will need to make this work with the GitHub action).
-        return releases[0];
+        // Go uses '/' for a tag separator, rather than '-':
+        let tagSeparator = '-';
+        if (this.releaseType) {
+            tagSeparator = release_pr_factory_1.ReleasePRFactory.class(this.releaseType).tagSeparator();
+        }
+        if (this.packageName === undefined) {
+            throw Error(`could not determine package name for release repo = ${this.repoUrl}`);
+        }
+        const release = await this.gh.createRelease(this.packageName, this.monorepoTags
+            ? `${this.packageName}${tagSeparator}${version}`
+            : version, gitHubReleasePR.sha, latestReleaseNotes);
+        // Add a label indicating that a release has been created on GitHub,
+        // but a publication has not yet occurred.
+        await this.gh.addLabels([GITHUB_RELEASE_LABEL], gitHubReleasePR.number);
+        // Remove 'autorelease: pending' which indicates a GitHub release
+        // has not yet been created.
+        await this.gh.removeLabels(this.labels, gitHubReleasePR.number);
+        const parsedVersion = semver_1.parse(version, { loose: true });
+        if (parsedVersion) {
+            return {
+                major: parsedVersion.major,
+                minor: parsedVersion.minor,
+                patch: parsedVersion.patch,
+                sha: gitHubReleasePR.sha,
+                version,
+                pr: gitHubReleasePR.number,
+                html_url: release.html_url,
+                tag_name: release.tag_name,
+                upload_url: release.upload_url,
+            };
+        }
+        else {
+            console.warn(`failed to parse version informatino from ${version}`);
+            return undefined;
+        }
     }
     addPath(file) {
         if (this.path === undefined) {
@@ -2859,6 +2848,7 @@ const parseGithubRepoUrl = __webpack_require__(345);
 const DEFAULT_LABELS = 'autorelease: pending';
 class ReleasePR {
     constructor(options) {
+        var _a;
         this.bumpMinorPreMajor = options.bumpMinorPreMajor || false;
         this.defaultBranch = options.defaultBranch;
         this.fork = !!options.fork;
@@ -2878,6 +2868,7 @@ class ReleasePR {
         this.lastPackageVersion = options.lastPackageVersion
             ? options.lastPackageVersion.replace(/^v/, '')
             : undefined;
+        this.clean = (_a = options.clean) !== null && _a !== void 0 ? _a : true;
         this.gh = this.gitHubInstance(options.octokitAPIs);
         this.changelogSections = options.changelogSections;
     }
@@ -2886,10 +2877,11 @@ class ReleasePR {
             checkpoint_1.checkpoint('snapshot releases not supported for this releaser', checkpoint_1.CheckpointType.Failure);
             return;
         }
-        const pr = await this.gh.findMergedReleasePR(this.labels);
-        if (pr) {
+        const mergedPR = await this.gh.findMergedReleasePR(this.labels);
+        if (mergedPR) {
             // a PR already exists in the autorelease: pending state.
-            checkpoint_1.checkpoint(`pull #${pr.number} ${pr.sha} has not yet been released`, checkpoint_1.CheckpointType.Failure);
+            checkpoint_1.checkpoint(`pull #${mergedPR.number} ${mergedPR.sha} has not yet been released`, checkpoint_1.CheckpointType.Failure);
+            return undefined;
         }
         else {
             return this._run();
@@ -3020,12 +3012,15 @@ class ReleasePR {
             fork: this.fork,
             labels: this.labels,
         });
-        // a return of 0 indicates that PR was not updated.
-        if (pr !== 0) {
+        // a return of undefined indicates that PR was not updated.
+        if (pr) {
             await this.gh.addLabels(this.labels, pr);
             checkpoint_1.checkpoint(`${this.repoUrl} find stale PRs with label "${this.labels.join(',')}"`, checkpoint_1.CheckpointType.Success);
-            await this.closeStaleReleasePRs(pr, includePackageName);
+            if (this.clean) {
+                await this.closeStaleReleasePRs(pr, includePackageName);
+            }
         }
+        return pr;
     }
     changelogEmpty(changelogEntry) {
         return changelogEntry.split('\n').length === 1;
@@ -3280,6 +3275,7 @@ const RELEASE_LABEL = 'autorelease: pending'
 
 async function main () {
   const bumpMinorPreMajor = Boolean(core.getInput('bump-minor-pre-major'))
+  const clean = core.getInput('clean') ? true : undefined
   const monorepoTags = Boolean(core.getInput('monorepo-tags'))
   const packageName = core.getInput('package-name')
   const path = core.getInput('path') ? core.getInput('path') : undefined
@@ -3309,11 +3305,10 @@ async function main () {
     })
     const releaseCreated = await gr.createRelease()
     if (releaseCreated) {
-      // eslint-disable-next-line
-      const { upload_url, tag_name } = releaseCreated
       core.setOutput('release_created', true)
-      core.setOutput('upload_url', upload_url)
-      core.setOutput('tag_name', tag_name)
+      for (const key of Object.keys(releaseCreated)) {
+        core.setOutput(key, releaseCreated[key])
+      }
     }
   }
 
@@ -3321,6 +3316,7 @@ async function main () {
   // release PR:
   if (!command || command === 'release-pr') {
     const release = releasePlease.getReleasePRFactory().buildStatic(releaseType, {
+      clean,
       monorepoTags,
       packageName,
       path,
@@ -3333,7 +3329,8 @@ async function main () {
       changelogSections,
       versionFile
     })
-    await release.run()
+    const pr = await release.run()
+    core.setOutput('pr', pr)
   }
 }
 
@@ -5891,7 +5888,7 @@ module.exports = require("vm");
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@6.9.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@6.9.0","_id":"release-please@6.9.0","_inBundle":false,"_integrity":"sha512-oyOLBu2Q7RPk57tem2RPAiAI0nrmvQapBWMcAVTcEMCKW9x7yyyA8O9QHZ4kuKw3mpHr3TSkNvWlcjzkAiRRaA==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@6.9.0","name":"release-please","escapedName":"release-please","rawSpec":"6.9.0","saveSpec":null,"fetchSpec":"6.9.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-6.9.0.tgz","_spec":"6.9.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.19.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"6.9.0"};
+module.exports = {"_args":[["release-please@7.0.0-candidate.1","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@7.0.0-candidate.1","_id":"release-please@7.0.0-candidate.1","_inBundle":false,"_integrity":"sha512-Q6SPRStRhY3gCxn6LW1DA1ozA8obmgtqJ9c4fP2a9QlMaRGYKx/bQmBSU3GNfNQHqFc8qxtZ7KWCPOv7KyMaNw==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@7.0.0-candidate.1","name":"release-please","escapedName":"release-please","rawSpec":"7.0.0-candidate.1","saveSpec":null,"fetchSpec":"7.0.0-candidate.1"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-7.0.0-candidate.1.tgz","_spec":"7.0.0-candidate.1","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^5.0.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"7.0.0-candidate.1"};
 
 /***/ }),
 /* 192 */,
@@ -34537,7 +34534,7 @@ class TerraformModule extends release_pr_1.ReleasePR {
         // one line is a good indicator that there were no interesting commits.
         if (this.changelogEmpty(changelogEntry)) {
             checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return;
+            return undefined;
         }
         const updates = [];
         updates.push(new changelog_1.Changelog({
@@ -34546,12 +34543,17 @@ class TerraformModule extends release_pr_1.ReleasePR {
             version: candidate.version,
             packageName: this.packageName,
         }));
-        updates.push(new readme_1.ReadMe({
-            path: this.addPath('README.md'),
-            changelogEntry,
-            version: candidate.version,
-            packageName: this.packageName,
-        }));
+        // Update version in README to current candidate version.
+        // A module may have submodules, so find all submodules.
+        const readmeFiles = await this.gh.findFilesByFilename('readme.md');
+        readmeFiles.forEach(path => {
+            updates.push(new readme_1.ReadMe({
+                path: this.addPath(path),
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+        });
         // Update versions.tf to current candidate version.
         // A module may have submodules, so find all versions.tf to update.
         const versionFiles = await this.gh.findFilesByFilename('versions.tf');
@@ -34563,7 +34565,7 @@ class TerraformModule extends release_pr_1.ReleasePR {
                 packageName: this.packageName,
             }));
         });
-        await this.openPR({
+        return await this.openPR({
             sha: commits[0].sha,
             changelogEntry: `${changelogEntry}\n---\n`,
             updates,
@@ -39004,7 +39006,7 @@ class Python extends release_pr_1.ReleasePR {
         // one line is a good indicator that there were no interesting commits.
         if (this.changelogEmpty(changelogEntry)) {
             checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return;
+            return undefined;
         }
         const updates = [];
         updates.push(new changelog_1.Changelog({
@@ -39036,7 +39038,7 @@ class Python extends release_pr_1.ReleasePR {
                 packageName: this.packageName,
             }));
         });
-        await this.openPR({
+        return await this.openPR({
             sha: commits[0].sha,
             changelogEntry: `${changelogEntry}\n---\n`,
             updates,
@@ -43897,63 +43899,12 @@ class GitHub {
                     continue;
                 return {
                     number: pull.number,
-                    packageName: match[1] ? match[1] : undefined,
                     sha: pull.merge_commit_sha,
                     version: normalizedVersion,
                 };
             }
         }
         return undefined;
-    }
-    // Allows multiple release PRs to be pulled at once, for use by monorepos.
-    // TODO(bcoe): can we consolidate findMergedRelease and findMergedReleasePRs
-    // logic? The signficant differences are: findMergedRelease enforces a
-    // prefix on releases; findMergedReleasePRs returns the entire set of merged
-    // PRs, vs., a single PR matching a pattern:
-    async findMergedReleasePRs(labels, perPage = 100) {
-        const prs = [];
-        const baseLabel = await this.getBaseLabel();
-        const pullsResponse = (await this.request(`GET /repos/:owner/:repo/pulls?state=closed&per_page=${perPage}${this.proxyKey ? `&key=${this.proxyKey}` : ''}&sort=merged_at&direction=desc`, {
-            owner: this.owner,
-            repo: this.repo,
-        }));
-        for (const pull of pullsResponse.data) {
-            if (labels.length === 0 ||
-                this.hasAllLabels(labels, pull.labels.map(l => l.name))) {
-                // it's expected that a release PR will have a
-                // HEAD matching the format repo:release-v1.0.0.
-                if (!pull.head)
-                    continue;
-                // Verify that this PR was based against our base branch of interest.
-                if (!pull.base || pull.base.label !== baseLabel)
-                    continue;
-                // The input should look something like:
-                // user:release-[optional-package-name]-v1.2.3
-                // We want the package name and any semver on the end.
-                const match = pull.head.label.match(VERSION_FROM_BRANCH_RE);
-                if (!match || !pull.merged_at) {
-                    continue;
-                }
-                // The input here should look something like:
-                // [optional-package-name-]v1.2.3[-beta-or-whatever]
-                // Because the package name can contain things like "-v1",
-                // it's easiest/safest to just pull this out by string search.
-                const version = match[2];
-                if (!version)
-                    continue;
-                // Make sure we did get a valid semver.
-                const normalizedVersion = semver.valid(version);
-                if (!normalizedVersion)
-                    continue;
-                prs.push({
-                    number: pull.number,
-                    packageName: match[1] ? match[1] : undefined,
-                    sha: pull.merge_commit_sha,
-                    version: normalizedVersion,
-                });
-            }
-        }
-        return prs;
     }
     hasAllLabels(labelsA, labelsB) {
         let hasAll = true;
@@ -44042,7 +43993,7 @@ class GitHub {
         // Short-circuit if there have been no changes to the pull-request body.
         if (openReleasePR && openReleasePR.body === options.body) {
             checkpoint_1.checkpoint(`PR https://github.com/${this.owner}/${this.repo}/pull/${openReleasePR.number} remained the same`, checkpoint_1.CheckpointType.Failure);
-            return 0;
+            return undefined;
         }
         //  Actually update the files for the release:
         const changes = await this.getChangeSet(options.updates, defaultBranch);
@@ -44299,7 +44250,7 @@ class Node extends release_pr_1.ReleasePR {
         // one line is a good indicator that there were no interesting commits.
         if (this.changelogEmpty(changelogEntry)) {
             checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return;
+            return undefined;
         }
         const updates = [];
         // Make an effort to populate packageName from the contents of
@@ -44333,7 +44284,7 @@ class Node extends release_pr_1.ReleasePR {
             packageName: this.packageName,
             contents,
         }));
-        await this.openPR({
+        return await this.openPR({
             sha: commits[0].sha,
             changelogEntry: `${changelogEntry}\n---\n`,
             updates,
@@ -46047,7 +45998,7 @@ class Simple extends release_pr_1.ReleasePR {
         // one line is a good indicator that there were no interesting commits.
         if (this.changelogEmpty(changelogEntry)) {
             checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return;
+            return undefined;
         }
         const updates = [];
         updates.push(new changelog_1.Changelog({
@@ -46062,7 +46013,7 @@ class Simple extends release_pr_1.ReleasePR {
             version: candidate.version,
             packageName: this.packageName,
         }));
-        await this.openPR({
+        return await this.openPR({
             sha: commits[0].sha,
             changelogEntry: `${changelogEntry}\n---\n`,
             updates,
