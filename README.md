@@ -171,7 +171,7 @@ jobs:
 
 If you are using release-please to publish a GitHub acton, you will
 likely want to tag a major and minor tag during a release, i.e., if you
-are releasing `v2.8.3`, you will also tag `v2` nd `v2.8`. This allows your
+are releasing `v2.8.3`, you will also want to update tags `v2` and `v2.8`. This allows your
 users to pin to `v2`, and get updates to your library without updating their
 workflows.
 
