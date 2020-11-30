@@ -176,7 +176,7 @@ users to pin to `v2`, and get updates to your library without updating their
 workflows.
 
 The `release-please-action` has the outputs `major`, `minor`, and
-`release_created` to facilitate this. These outputs can bey used conditionally,
+`release_created` to facilitate this. These outputs can be used conditionally,
 like so:
 
 ```yaml
