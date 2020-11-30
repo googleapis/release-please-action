@@ -20,7 +20,7 @@ Automate releases with Conventional Commit Messages.
       release-please:
         runs-on: ubuntu-latest
         steps:
-          - uses: GoogleCloudPlatform/release-please-action@v2.8.0
+          - uses: GoogleCloudPlatform/release-please-action@v2
             with:
               token: ${{ secrets.GITHUB_TOKEN }}
               release-type: node
@@ -116,7 +116,7 @@ To output more commit information in the changelog,  a JSON formatted String can
       release-please:
         runs-on: ubuntu-latest
         steps:
-          - uses: GoogleCloudPlatform/release-please-action@v2.8.0
+          - uses: GoogleCloudPlatform/release-please-action@v2
             with:
               token: ${{ secrets.GITHUB_TOKEN }}
               release-type: node
@@ -139,7 +139,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2.8.0
+      - uses: GoogleCloudPlatform/release-please-action@v2
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -165,6 +165,53 @@ jobs:
 
 > So that you can keep 2FA enabled for npm publications, we recommend setting
 `registry-url` to your own [Wombat Dressing Room](https://github.com/GoogleCloudPlatform/wombat-dressing-room) deployment.
+
+
+## Creating major/minor tags
+
+If you are using release-please to publish a GitHub acton, you will
+likely want to tag a major and minor tag during a release, i.e., if you
+are releasing `v2.8.3`, you will also want to update tags `v2` and `v2.8`. This allows your
+users to pin to `v2`, and get updates to your library without updating their
+workflows.
+
+The `release-please-action` has the outputs `major`, `minor`, and
+`release_created` to facilitate this. These outputs can be used conditionally,
+like so:
+
+```yaml
+on:
+  push:
+    branches:
+      - main
+name: release-please
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: GoogleCloudPlatform/release-please-action@v2
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: node
+          package-name: ${{env.ACTION_NAME}}
+          command: github-release
+      - uses: actions/checkout@v2
+      - name: tag major and patch versions
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git remote add gh-token "https://${{ secrets.GITHUB_TOKEN}}@github.com/google-github-actions/release-please-action.git"
+          git tag -d v${{ steps.release.outputs.major }} || true
+          git tag -d v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
+          git push origin :v${{ steps.release.outputs.major }} || true
+          git push origin :v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
+          git tag -a v${{ steps.release.outputs.major }} -m "Release v${{ steps.release.outputs.major }}"
+          git tag -a v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} -m "Release v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}"
+          git push origin v${{ steps.release.outputs.major }}
+          git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
+```
 
 ## License
 
