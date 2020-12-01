@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.9.3...v2.10.0) (2020-12-01)
+
+
+### Features
+
+* **deps:** latest version of release-please ([#122](https://www.github.com/google-github-actions/release-please-action/issues/122)) ([5469575](https://www.github.com/google-github-actions/release-please-action/commit/54695753296b6274758664da88a333e49528635a))
+
 ### [2.9.3](https://www.github.com/google-github-actions/release-please-action/compare/v2.9.2...v2.9.3) (2020-11-25)
 
 
