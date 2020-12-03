@@ -1,5 +1,13 @@
 # Changelog
 
+### [2.10.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.10.0...v2.10.1) (2020-12-03)
+
+
+### Bug Fixes
+
+* fix readme typo ([#125](https://www.github.com/google-github-actions/release-please-action/issues/125)) ([d5b0c35](https://www.github.com/google-github-actions/release-please-action/commit/d5b0c3523e4cae31bc0a75685616e21df3197a90))
+* **release-please:** fix for merge commits ([#126](https://www.github.com/google-github-actions/release-please-action/issues/126)) ([35f9456](https://www.github.com/google-github-actions/release-please-action/commit/35f94566f5857aafe9fdaad7b2e7df122aac5a92))
+
 ## [2.10.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.9.3...v2.10.0) (2020-12-01)
 
 
