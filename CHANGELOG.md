@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.11.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.11.0...v2.11.1) (2020-12-07)
+
+
+### Bug Fixes
+
+* **release-please:** fixed branch detection logic for ruby ([#139](https://www.github.com/google-github-actions/release-please-action/issues/139)) ([cd052f4](https://www.github.com/google-github-actions/release-please-action/commit/cd052f41cb6dce082f59e9edad966004813dcdc5))
+
 ## [2.11.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.10.1...v2.11.0) (2020-12-07)
 
 
