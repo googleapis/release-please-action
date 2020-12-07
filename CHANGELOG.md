@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.11.4](https://www.github.com/google-github-actions/release-please-action/compare/v2.11.3...v2.11.4) (2020-12-07)
+
+
+### Bug Fixes
+
+* **go:** first commit sha was not being stored ([b555656](https://www.github.com/google-github-actions/release-please-action/commit/b5556569e8852edb74aadc6aff8bd9315d600689))
+
 ### [2.11.3](https://www.github.com/google-github-actions/release-please-action/compare/v2.11.2...v2.11.3) (2020-12-07)
 
 
