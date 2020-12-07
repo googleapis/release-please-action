@@ -894,7 +894,7 @@ class Ruby extends release_pr_1.ReleasePR {
         this.versionFile = options.versionFile;
     }
     async _run() {
-        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}-` : undefined);
+        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}/` : undefined, false, this.monorepoTags ? `${this.packageName}-` : undefined);
         const commits = await this.commits({
             sha: latestTag ? latestTag.sha : undefined,
             path: this.path,
@@ -938,6 +938,9 @@ class Ruby extends release_pr_1.ReleasePR {
             version: candidate.version,
             includePackageName: this.monorepoTags,
         });
+    }
+    static tagSeparator() {
+        return '/';
     }
 }
 exports.Ruby = Ruby;
@@ -5954,7 +5957,7 @@ module.exports = require("vm");
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@8.0.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@8.0.0","_id":"release-please@8.0.0","_inBundle":false,"_integrity":"sha512-PS+ziIOQx/iYjRBLz4QPk53SOObbCWHs1cKH3qiRfWmHIOPfDoCAB9Mu/SthrDPSpKAKxBEl7vlOPTtIq01IWg==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@8.0.0","name":"release-please","escapedName":"release-please","rawSpec":"8.0.0","saveSpec":null,"fetchSpec":"8.0.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-8.0.0.tgz","_spec":"8.0.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"8.0.0"};
+module.exports = {"_args":[["release-please@8.0.1","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@8.0.1","_id":"release-please@8.0.1","_inBundle":false,"_integrity":"sha512-o6JiagjOpAyragZTiOMKH2MtGAT2O90IB/TohAgvDMcuUYviU+jFefn+wNsvxe/nH0YRSOETiOuc2G34ofFEzg==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@8.0.1","name":"release-please","escapedName":"release-please","rawSpec":"8.0.1","saveSpec":null,"fetchSpec":"8.0.1"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-8.0.1.tgz","_spec":"8.0.1","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"8.0.1"};
 
 /***/ }),
 /* 192 */,
@@ -44394,6 +44397,7 @@ class GitHub {
     // The default matcher will rule out pre-releases.
     // TODO: make this handle more than 100 results using async iterator.
     async findMergedReleasePR(labels, perPage = 100, prefix = undefined, preRelease = true) {
+        prefix = (prefix === null || prefix === void 0 ? void 0 : prefix.endsWith('-')) ? prefix.replace(/-$/, '') : prefix;
         const baseLabel = await this.getBaseLabel();
         const pullsResponse = (await this.request(`GET /repos/:owner/:repo/pulls?state=closed&per_page=${perPage}${this.proxyKey ? `&key=${this.proxyKey}` : ''}&sort=merged_at&direction=desc`, {
             owner: this.owner,
@@ -52345,6 +52349,11 @@ const Endpoints = {
     }],
     users: ["GET /search/users"]
   },
+  secretScanning: {
+    getAlert: ["GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}"],
+    listAlertsForRepo: ["GET /repos/{owner}/{repo}/secret-scanning/alerts"],
+    updateAlert: ["PATCH /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}"]
+  },
   teams: {
     addOrUpdateMembershipForUserInOrg: ["PUT /orgs/{org}/teams/{team_slug}/memberships/{username}"],
     addOrUpdateProjectPermissionsInOrg: ["PUT /orgs/{org}/teams/{team_slug}/projects/{project_id}", {
@@ -52425,7 +52434,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "4.3.1";
+const VERSION = "4.4.1";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -53492,7 +53501,7 @@ var pluginRequestLog = __webpack_require__(916);
 var pluginPaginateRest = __webpack_require__(299);
 var pluginRestEndpointMethods = __webpack_require__(842);
 
-const VERSION = "18.0.11";
+const VERSION = "18.0.12";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.restEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`
