@@ -5954,7 +5954,7 @@ module.exports = require("vm");
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@7.0.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@7.0.0","_id":"release-please@7.0.0","_inBundle":false,"_integrity":"sha512-13NGJMG0s9LLXmBkPVyRQPv1V77OugZPKoWwk0D3Bi9xxIYAziAcxeOQPJNo+Qyp32Ldf77+ClmLSBKrP3KADQ==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@7.0.0","name":"release-please","escapedName":"release-please","rawSpec":"7.0.0","saveSpec":null,"fetchSpec":"7.0.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-7.0.0.tgz","_spec":"7.0.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"7.0.0"};
+module.exports = {"_args":[["release-please@8.0.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@8.0.0","_id":"release-please@8.0.0","_inBundle":false,"_integrity":"sha512-PS+ziIOQx/iYjRBLz4QPk53SOObbCWHs1cKH3qiRfWmHIOPfDoCAB9Mu/SthrDPSpKAKxBEl7vlOPTtIq01IWg==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@8.0.0","name":"release-please","escapedName":"release-please","rawSpec":"8.0.0","saveSpec":null,"fetchSpec":"8.0.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-8.0.0.tgz","_spec":"8.0.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"8.0.0"};
 
 /***/ }),
 /* 192 */,
@@ -50541,6 +50541,7 @@ const node_1 = __webpack_require__(618);
 const python_1 = __webpack_require__(540);
 const ruby_1 = __webpack_require__(28);
 const simple_1 = __webpack_require__(643);
+const go_yoshi_1 = __webpack_require__(958);
 const terraform_module_1 = __webpack_require__(440);
 class ReleasePRFactory {
     static build(releaseType, options) {
@@ -50577,6 +50578,8 @@ class ReleasePRFactory {
                 return new simple_1.Simple(releaseOptions);
             case 'terraform-module':
                 return new terraform_module_1.TerraformModule(releaseOptions);
+            case 'go':
+                return new go_yoshi_1.GoYoshi(releaseOptions);
             default:
                 throw Error('unknown release type');
         }
@@ -56333,7 +56336,171 @@ exports.addReviewCommentsDefaults = addReviewCommentsDefaults;
 /***/ }),
 /* 956 */,
 /* 957 */,
-/* 958 */,
+/* 958 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.GoYoshi = void 0;
+const release_pr_1 = __webpack_require__(93);
+const conventional_commits_1 = __webpack_require__(514);
+const checkpoint_1 = __webpack_require__(923);
+const semver = __webpack_require__(876);
+// Generic
+const changelog_1 = __webpack_require__(261);
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const parseGithubRepoUrl = __webpack_require__(345);
+// Commits containing a scope prefixed with an item in this array will be
+// ignored when generating a release PR for the parent module.
+const SUB_MODULES = [
+    'bigtable',
+    'bigquery',
+    'datastore',
+    'firestore',
+    'logging',
+    'pubsub',
+    'pubsublite',
+    'spanner',
+    'storage',
+];
+const REGEN_PR_REGEX = /.*auto-regenerate.*/;
+const SCOPE_REGEX = /^\w+\((?<scope>.*)\):/;
+class GoYoshi extends release_pr_1.ReleasePR {
+    async _run() {
+        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}/` : undefined, false, this.monorepoTags ? `${this.packageName}` : undefined);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const [_owner, repo] = parseGithubRepoUrl(this.repoUrl);
+        let regenPR;
+        let sha = null;
+        const commits = (await this.commits({
+            sha: latestTag === null || latestTag === void 0 ? void 0 : latestTag.sha,
+            path: this.path,
+        })).filter(commit => {
+            var _a, _b, _c, _d;
+            if (this.isGapicRepo(repo)) {
+                const scope = (_b = (_a = commit.message.match(SCOPE_REGEX)) === null || _a === void 0 ? void 0 : _a.groups) === null || _b === void 0 ? void 0 : _b.scope;
+                // Filter commits that don't have a scope as we don't know where to put
+                // them.
+                if (!scope) {
+                    return false;
+                }
+                // Skipping commits related to sub-modules as they are not apart of the
+                // parent module.
+                if (!this.monorepoTags) {
+                    for (const subModule of SUB_MODULES) {
+                        if (scope === subModule || scope.startsWith(subModule + '/')) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            // Store the very first SHA returned, this represents the HEAD of the
+            // release being created:
+            if (!sha) {
+                sha = commit.sha;
+            }
+            if (this.isMultiClientRepo(repo) && REGEN_PR_REGEX.test(commit.message)) {
+                // Only have a single entry of the nightly regen listed in the changelog.
+                // If there are more than one of these commits, append associated PR.
+                const issueRe = /(?<prefix>.*)\((?<pr>.*)\)(\n|$)/;
+                if (regenPR) {
+                    const match = commit.message.match(issueRe);
+                    if ((_c = match === null || match === void 0 ? void 0 : match.groups) === null || _c === void 0 ? void 0 : _c.pr) {
+                        regenPR.message += `\nRefs ${match.groups.pr}`;
+                    }
+                    return false;
+                }
+                else {
+                    // Throw away the sha for nightly regens, will just append PR numbers.
+                    commit.sha = null;
+                    regenPR = commit;
+                    const match = commit.message.match(issueRe);
+                    if ((_d = match === null || match === void 0 ? void 0 : match.groups) === null || _d === void 0 ? void 0 : _d.pr) {
+                        regenPR.message = `${match.groups.prefix}\n\nRefs ${match.groups.pr}`;
+                    }
+                }
+            }
+            return true;
+        });
+        const cc = new conventional_commits_1.ConventionalCommits({
+            commits: commits,
+            githubRepoUrl: this.repoUrl,
+            bumpMinorPreMajor: this.bumpMinorPreMajor,
+        });
+        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
+        // "closes" is a little presumptuous, let's just indicate that the
+        // PR references these other commits:
+        const changelogEntry = (await cc.generateChangelogEntry({
+            version: candidate.version,
+            currentTag: `v${candidate.version}`,
+            previousTag: candidate.previousTag,
+        })).replace(/, closes /g, ', refs ');
+        // don't create a release candidate until user facing changes
+        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
+        // one line is a good indicator that there were no interesting commits.
+        if (this.changelogEmpty(changelogEntry)) {
+            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            return undefined;
+        }
+        const updates = [];
+        updates.push(new changelog_1.Changelog({
+            path: this.addPath('CHANGES.md'),
+            changelogEntry,
+            version: candidate.version,
+            packageName: this.packageName,
+        }));
+        if (!sha) {
+            throw Error('no sha found for pull request');
+        }
+        return await this.openPR({
+            sha: sha,
+            changelogEntry,
+            updates,
+            version: candidate.version,
+            includePackageName: false,
+        });
+    }
+    isGapicRepo(repo) {
+        return repo === 'google-cloud-go';
+    }
+    isMultiClientRepo(repo) {
+        return repo === 'google-cloud-go' || repo === 'google-api-go-client';
+    }
+    async coerceReleaseCandidate(cc, latestTag) {
+        const version = latestTag
+            ? latestTag.version
+            : this.defaultInitialVersion();
+        const previousTag = latestTag ? latestTag.name : undefined;
+        const bump = 'minor';
+        const candidate = semver.inc(version, bump);
+        return { version: candidate, previousTag };
+    }
+    defaultInitialVersion() {
+        return '0.1.0';
+    }
+    static tagSeparator() {
+        return '/';
+    }
+}
+exports.GoYoshi = GoYoshi;
+GoYoshi.releaserName = 'go-yoshi';
+//# sourceMappingURL=go-yoshi.js.map
+
+/***/ }),
 /* 959 */,
 /* 960 */,
 /* 961 */,
