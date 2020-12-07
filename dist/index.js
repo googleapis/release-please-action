@@ -3745,7 +3745,9 @@ async function main () {
 >>>>>>> e9bcb5b0ddeb00b1ecf52301a324407ff66e7312
     })
     const pr = await release.run()
-    core.setOutput('pr', pr)
+    if (pr) {
+      core.setOutput('pr', pr)
+    }
   }
 }
 
