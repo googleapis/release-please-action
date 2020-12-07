@@ -25,7 +25,7 @@ describe('release-please-action', () => {
       Release.prototype.createRelease = createRelease
       return Release
     }
-    const releasePR = sinon.stub()
+    const releasePR = sinon.stub().returns(25)
     action.getReleasePRFactory = () => {
       return {
         buildStatic: () => {
@@ -42,7 +42,7 @@ describe('release-please-action', () => {
       release_created: true,
       upload_url: 'http://example.com',
       tag_name: 'v1.0.0',
-      pr: undefined
+      pr: 25
     })
   })
 
@@ -186,5 +186,31 @@ describe('release-please-action', () => {
     }
     await action.main()
     assert.strictEqual(output.pr, 95)
+  })
+
+  it('does not set PR output, when no release PR is returned', async () => {
+    const output = {}
+    core.setOutput = (name, value) => {
+      output[name] = value
+    }
+    const input = {
+      'release-type': 'node',
+      command: 'release-pr'
+    }
+    core.getInput = (name) => {
+      return input[name]
+    }
+    const releasePR = sinon.stub().returns(undefined)
+    action.getReleasePRFactory = () => {
+      return {
+        buildStatic: () => {
+          return {
+            run: releasePR
+          }
+        }
+      }
+    }
+    await action.main()
+    assert.strictEqual(Object.hasOwnProperty.call(output, 'pr'), false)
   })
 })

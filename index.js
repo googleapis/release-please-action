@@ -61,7 +61,9 @@ async function main () {
       versionFile
     })
     const pr = await release.run()
-    core.setOutput('pr', pr)
+    if (pr) {
+      core.setOutput('pr', pr)
+    }
   }
 }
 
