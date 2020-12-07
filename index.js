@@ -16,6 +16,7 @@ async function main () {
   const changelogTypes = core.getInput('changelog-types')
   const command = core.getInput('command') ? core.getInput('command') : undefined
   const versionFile = core.getInput('version-file') ? core.getInput('version-file') : undefined
+  const defaultBranch = core.getInput('default-branch') ? core.getInput('default-branch') : undefined
 
   // Parse the changelogTypes if there are any
   let changelogSections
@@ -48,6 +49,7 @@ async function main () {
   // release PR:
   if (!command || command === 'release-pr') {
     const release = releasePlease.getReleasePRFactory().buildStatic(releaseType, {
+      defaultBranch,
       monorepoTags,
       packageName,
       path,
