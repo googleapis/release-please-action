@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.10.2](https://www.github.com/google-github-actions/release-please-action/compare/v2.10.1...v2.10.2) (2020-12-07)
+
+
+### Bug Fixes
+
+* do not set PR output, if no PR opened ([#129](https://www.github.com/google-github-actions/release-please-action/issues/129)) ([b0faf1d](https://www.github.com/google-github-actions/release-please-action/commit/b0faf1dd7d65697a12321df74e57458262513d70))
+
 ### [2.10.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.10.0...v2.10.1) (2020-12-03)
 
 
