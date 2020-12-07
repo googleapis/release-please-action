@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.11.2](https://www.github.com/google-github-actions/release-please-action/compare/v2.11.1...v2.11.2) (2020-12-07)
+
+
+### Bug Fixes
+
+* **go:** pass monorepoTags when opening PR ([#142](https://www.github.com/google-github-actions/release-please-action/issues/142)) ([3428252](https://www.github.com/google-github-actions/release-please-action/commit/34282521f08daa0962fba0a8d98936286a0b2896))
+
 ### [2.11.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.11.0...v2.11.1) (2020-12-07)
 
 
