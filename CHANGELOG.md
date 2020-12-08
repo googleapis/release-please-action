@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.11.5](https://www.github.com/google-github-actions/release-please-action/compare/v2.11.4...v2.11.5) (2020-12-08)
+
+
+### Bug Fixes
+
+* **go:** non-gapic/apiary libraries now bump patch ([#150](https://www.github.com/google-github-actions/release-please-action/issues/150)) ([00fefb4](https://www.github.com/google-github-actions/release-please-action/commit/00fefb4ff917a53cb65ed27c14c0586ef9055b37))
+
 ### [2.11.4](https://www.github.com/google-github-actions/release-please-action/compare/v2.11.3...v2.11.4) (2020-12-07)
 
 
