@@ -3332,13 +3332,13 @@ const RELEASE_LABEL = 'autorelease: pending'
 
 async function main () {
   const bumpMinorPreMajor = Boolean(core.getInput('bump-minor-pre-major'))
-  // TODO(bcoe): remove this log line.
   const monorepoTags = Boolean(core.getInput('monorepo-tags'))
   const packageName = core.getInput('package-name')
   const path = core.getInput('path') ? core.getInput('path') : undefined
   const releaseType = core.getInput('release-type')
   const token = core.getInput('token')
   const fork = core.getInput('fork') ? true : undefined
+  const changelogPath = core.getInput('changelog-path') ? core.getInput('changelog-path') : undefined
   const changelogTypes = core.getInput('changelog-types')
   const command = core.getInput('command') ? core.getInput('command') : undefined
   const versionFile = core.getInput('version-file') ? core.getInput('version-file') : undefined
@@ -3359,7 +3359,8 @@ async function main () {
       packageName,
       path,
       monorepoTags,
-      token
+      token,
+      changelogPath
     })
     const releaseCreated = await gr.createRelease()
     if (releaseCreated) {
