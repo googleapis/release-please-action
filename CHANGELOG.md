@@ -7,6 +7,13 @@
 
 * allow changelogPath to be specified ([#153](https://www.github.com/google-github-actions/release-please-action/issues/153)) ([10d7619](https://www.github.com/google-github-actions/release-please-action/commit/10d761994342597b3e1d24464a41d28d5d97abe3))
 
+## [2.12.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.11.5...v2.12.0) (2020-12-10)
+
+
+### Features
+
+* allow changelogPath to be specified ([#153](https://www.github.com/google-github-actions/release-please-action/issues/153)) ([10d7619](https://www.github.com/google-github-actions/release-please-action/commit/10d761994342597b3e1d24464a41d28d5d97abe3))
+
 ### [2.11.5](https://www.github.com/google-github-actions/release-please-action/compare/v2.11.4...v2.11.5) (2020-12-08)
 
 
