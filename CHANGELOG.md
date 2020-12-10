@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.12.2](https://www.github.com/google-github-actions/release-please-action/compare/v2.12.1...v2.12.2) (2020-12-10)
+
+
+### Bug Fixes
+
+* **go:** pass release-type ([#160](https://www.github.com/google-github-actions/release-please-action/issues/160)) ([5c5271c](https://www.github.com/google-github-actions/release-please-action/commit/5c5271ce75fb1e7955fddc806b9260163206aa27))
+
 ### [2.12.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.12.0...v2.12.1) (2020-12-10)
 
 
