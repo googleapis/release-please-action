@@ -1966,6 +1966,7 @@ class GitHubRelease {
         this.gh = this.gitHubInstance(options.octokitAPIs);
     }
     async createRelease() {
+        var _a;
         // In most configurations, createRelease() should be called close to when
         // a release PR is merged, e.g., a GitHub action that kicks off this
         // workflow on merge. For tis reason, we can pull a fairly small number of PRs:
@@ -1985,10 +1986,15 @@ class GitHubRelease {
         if (!this.packageName && this.releaseType) {
             this.packageName = await release_pr_factory_1.ReleasePRFactory.class(this.releaseType).lookupPackageName(this.gh);
         }
-        // Go uses '/' for a tag separator, rather than '-':
+        // Go uses '/' for a tag separator, rather than '-', if a release type
+        // is provided, allow other languages to specify alternate tagging rules:
+        // TODO(bcoe): refactor class to work in action, perhaps drop
+        // releaseTypeToClass:
         let tagSeparator = '-';
         if (this.releaseType) {
-            tagSeparator = release_pr_factory_1.ReleasePRFactory.class(this.releaseType).tagSeparator();
+            tagSeparator =
+                ((_a = release_pr_factory_1.ReleasePRFactory.releaseTypeToClass(this.releaseType)) === null || _a === void 0 ? void 0 : _a.tagSeparator()) ||
+                    '-';
         }
         if (this.packageName === undefined) {
             throw Error(`could not determine package name for release repo = ${this.repoUrl}`);
@@ -5958,7 +5964,7 @@ module.exports = require("vm");
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@8.0.2-candidate.4","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@8.0.2-candidate.4","_id":"release-please@8.0.2-candidate.4","_inBundle":false,"_integrity":"sha512-jpATr8boMLawgqpNXyqOoICjep5nOxANGLsRYcPLbkdCDAszL184Zym8nmtTtlz4HKHCahLcjYV7Pa4pVmpmyQ==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@8.0.2-candidate.4","name":"release-please","escapedName":"release-please","rawSpec":"8.0.2-candidate.4","saveSpec":null,"fetchSpec":"8.0.2-candidate.4"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-8.0.2-candidate.4.tgz","_spec":"8.0.2-candidate.4","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"8.0.2-candidate.4"};
+module.exports = {"_args":[["release-please@8.0.2-candidate.6","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@8.0.2-candidate.6","_id":"release-please@8.0.2-candidate.6","_inBundle":false,"_integrity":"sha512-bX/kSyQF1JPmFoKsPhCtcoVV6pTmg9/otnBkBhxVKR9E7JMK12xGu8E3IN7OoiSUpkTyvEEVbcJtQtWp1qowDw==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@8.0.2-candidate.6","name":"release-please","escapedName":"release-please","rawSpec":"8.0.2-candidate.6","saveSpec":null,"fetchSpec":"8.0.2-candidate.6"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-8.0.2-candidate.6.tgz","_spec":"8.0.2-candidate.6","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"8.0.2-candidate.6"};
 
 /***/ }),
 /* 192 */,
@@ -50587,6 +50593,16 @@ class ReleasePRFactory {
                 return new go_yoshi_1.GoYoshi(releaseOptions);
             default:
                 throw Error('unknown release type');
+        }
+    }
+    static releaseTypeToClass(releaseType) {
+        switch (releaseType) {
+            case 'go':
+                return go_yoshi_1.GoYoshi;
+            case 'go-yoshi':
+                return go_yoshi_1.GoYoshi;
+            default:
+                return undefined;
         }
     }
 }
