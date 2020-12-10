@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.12.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.12.0...v2.12.1) (2020-12-10)
+
+
+### Bug Fixes
+
+* **release-please:** map go to alternate tag separator ([#157](https://www.github.com/google-github-actions/release-please-action/issues/157)) ([bdc110f](https://www.github.com/google-github-actions/release-please-action/commit/bdc110f19e7d011ed957f41b21f69b3005d151c1))
+
 ## [2.12.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.11.5...v2.12.0) (2020-12-10)
 
 
