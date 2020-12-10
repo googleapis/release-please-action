@@ -26,15 +26,18 @@ inputs:
   monorepo-tags:
     description: 'add prefix to tags and branches, allowing multiple libraries to be released from the same repository'
     required: false
+  changelog-path:
+    description: 'specify a CHANGELOG path other than the root CHANGELOG.md'
+    required: false
   changelog-types:
     description: 'changlelog commit types'
-    require: false
+    required: false
   command:
     description: 'release-please command to run, either "github-release", or "release-pr" (defaults to running both)'
-    require: false
+    required: false
   version-file:
     description: 'provide a path to a version file to increment (used by ruby releaser)'
-    require: false
+    required: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
