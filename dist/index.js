@@ -3366,7 +3366,8 @@ async function main () {
       path,
       monorepoTags,
       token,
-      changelogPath
+      changelogPath,
+      releaseType
     })
     const releaseCreated = await gr.createRelease()
     if (releaseCreated) {
