@@ -1118,7 +1118,67 @@ exports.parseTextFiles = parseTextFiles;
 //# sourceMappingURL=index.js.map
 
 /***/ }),
-/* 40 */,
+/* 40 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.VersionsManifest = void 0;
+const java_update_1 = __webpack_require__(55);
+class VersionsManifest extends java_update_1.JavaUpdate {
+    updateContent(content) {
+        let newContent = content;
+        this.versions.forEach((version, packageName) => {
+            newContent = this.updateSingleVersion(newContent, packageName, version);
+        });
+        return newContent;
+    }
+    updateSingleVersion(content, packageName, version) {
+        const newLines = [];
+        content.split(/\r?\n/).forEach(line => {
+            if (version.includes('SNAPSHOT')) {
+                newLines.push(line.replace(new RegExp(`${packageName}:(.*):[0-9]+\\.[0-9]+\\.[0-9]+(-\\w+)?(-SNAPSHOT)?`, 'g'), `${packageName}:$1:${version}`));
+            }
+            else {
+                newLines.push(line.replace(new RegExp(`${packageName}:[0-9]+\\.[0-9]+\\.[0-9]+(-\\w+)?(-SNAPSHOT)?:[0-9]+\\.[0-9]+\\.[0-9]+(-\\w+)?(-SNAPSHOT)?`, 'g'), `${packageName}:${version}:${version}`));
+            }
+        });
+        return newLines.join('\n');
+    }
+    static parseVersions(content) {
+        const versions = new Map();
+        content.split(/\r?\n/).forEach(line => {
+            const match = line.match(/^([\w\-_]+):([^:]+):([^:]+)/);
+            if (match) {
+                versions.set(match[1], match[2]);
+            }
+        });
+        return versions;
+    }
+    static needsSnapshot(content) {
+        return !content.split(/\r?\n/).some(line => {
+            return !!line.match(/^[\w\-_]+:.+:.+-SNAPSHOT/);
+        });
+    }
+}
+exports.VersionsManifest = VersionsManifest;
+//# sourceMappingURL=versions-manifest.js.map
+
+/***/ }),
 /* 41 */,
 /* 42 */,
 /* 43 */
@@ -1920,7 +1980,88 @@ exports.SourceNode = SourceNode;
 
 
 /***/ }),
-/* 55 */,
+/* 55 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.JavaUpdate = void 0;
+const INLINE_UPDATE_REGEX = /{x-version-update:([\w\-_]+):(current|released)}/;
+const BLOCK_START_REGEX = /{x-version-update-start:([\w\-_]+):(current|released)}/;
+const BLOCK_END_REGEX = /{x-version-update-end}/;
+const VERSION_REGEX = /\d+\.\d+\.\d+(-\w+)?(-SNAPSHOT)?/;
+class JavaUpdate {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.versions = new Map();
+        this.version = 'unused';
+        this.packageName = 'unused';
+        if (options.versions) {
+            this.versions = options.versions;
+        }
+        else if (options.version) {
+            this.versions.set(options.packageName, options.version);
+            this.version = options.version;
+            this.packageName = options.packageName;
+        }
+    }
+    updateContent(content) {
+        const newLines = [];
+        let blockPackageName = null;
+        content.split(/\r?\n/).forEach(line => {
+            let match = line.match(INLINE_UPDATE_REGEX);
+            if (match) {
+                const newVersion = this.versions.get(match[1]);
+                if (newVersion) {
+                    newLines.push(line.replace(VERSION_REGEX, newVersion));
+                }
+                else {
+                    newLines.push(line);
+                }
+            }
+            else if (blockPackageName) {
+                const newVersion = this.versions.get(blockPackageName);
+                if (newVersion) {
+                    newLines.push(line.replace(VERSION_REGEX, newVersion));
+                }
+                else {
+                    newLines.push(line);
+                }
+                if (line.match(BLOCK_END_REGEX)) {
+                    blockPackageName = null;
+                }
+            }
+            else {
+                match = line.match(BLOCK_START_REGEX);
+                if (match) {
+                    blockPackageName = match[1];
+                }
+                newLines.push(line);
+            }
+        });
+        return newLines.join('\n');
+    }
+}
+exports.JavaUpdate = JavaUpdate;
+//# sourceMappingURL=java_update.js.map
+
+/***/ }),
 /* 56 */,
 /* 57 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
@@ -1966,7 +2107,6 @@ class GitHubRelease {
         this.gh = this.gitHubInstance(options.octokitAPIs);
     }
     async createRelease() {
-        var _a;
         // In most configurations, createRelease() should be called close to when
         // a release PR is merged, e.g., a GitHub action that kicks off this
         // workflow on merge. For tis reason, we can pull a fairly small number of PRs:
@@ -1986,15 +2126,10 @@ class GitHubRelease {
         if (!this.packageName && this.releaseType) {
             this.packageName = await release_pr_factory_1.ReleasePRFactory.class(this.releaseType).lookupPackageName(this.gh);
         }
-        // Go uses '/' for a tag separator, rather than '-', if a release type
-        // is provided, allow other languages to specify alternate tagging rules:
-        // TODO(bcoe): refactor class to work in action, perhaps drop
-        // releaseTypeToClass:
+        // Go uses '/' for a tag separator, rather than '-':
         let tagSeparator = '-';
         if (this.releaseType) {
-            tagSeparator =
-                ((_a = release_pr_factory_1.ReleasePRFactory.releaseTypeToClass(this.releaseType)) === null || _a === void 0 ? void 0 : _a.tagSeparator()) ||
-                    '-';
+            tagSeparator = release_pr_factory_1.ReleasePRFactory.class(this.releaseType).tagSeparator();
         }
         if (this.packageName === undefined) {
             throw Error(`could not determine package name for release repo = ${this.repoUrl}`);
@@ -3858,7 +3993,60 @@ exports.SourceMapGenerator = SourceMapGenerator;
 
 /***/ }),
 /* 107 */,
-/* 108 */,
+/* 108 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CommitSplit = void 0;
+const path_1 = __webpack_require__(622);
+class CommitSplit {
+    constructor(opts) {
+        opts = opts || {};
+        this.root = opts.root || './';
+    }
+    split(commits) {
+        const splitCommits = {};
+        commits.forEach((commit) => {
+            const dedupe = new Set();
+            for (let i = 0; i < commit.files.length; i++) {
+                const file = commit.files[i];
+                const splitPath = path_1.relative(this.root, file).split(/[/\\]/);
+                // indicates that we have a top-level file and not a folder
+                // in this edge-case we should not attempt to update the path.
+                if (splitPath.length === 1)
+                    continue;
+                const pkgName = splitPath[0];
+                if (dedupe.has(pkgName))
+                    continue;
+                else
+                    dedupe.add(pkgName);
+                if (!splitCommits[pkgName])
+                    splitCommits[pkgName] = [];
+                splitCommits[pkgName].push(commit);
+            }
+        });
+        return splitCommits;
+    }
+}
+exports.CommitSplit = CommitSplit;
+//# sourceMappingURL=commit-split.js.map
+
+/***/ }),
 /* 109 */,
 /* 110 */,
 /* 111 */,
@@ -5040,9 +5228,9 @@ function conventionalChangelogWriter (context, options) {
     includeDetails: false,
     ignoreReverted: true,
     doFlush: true,
-    mainTemplate: readFileSync(__webpack_require__.ab + "template.hbs", 'utf-8'),
-    headerPartial: readFileSync(__webpack_require__.ab + "header.hbs", 'utf-8'),
-    commitPartial: readFileSync(__webpack_require__.ab + "commit.hbs", 'utf-8'),
+    mainTemplate: readFileSync(__webpack_require__.ab + "template1.hbs", 'utf-8'),
+    headerPartial: readFileSync(__webpack_require__.ab + "header1.hbs", 'utf-8'),
+    commitPartial: readFileSync(__webpack_require__.ab + "commit1.hbs", 'utf-8'),
     footerPartial: readFileSync(__webpack_require__.ab + "footer.hbs", 'utf-8')
   }, options)
 
@@ -5965,7 +6153,7 @@ module.exports = require("vm");
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@8.0.2-candidate.6","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@8.0.2-candidate.6","_id":"release-please@8.0.2-candidate.6","_inBundle":false,"_integrity":"sha512-bX/kSyQF1JPmFoKsPhCtcoVV6pTmg9/otnBkBhxVKR9E7JMK12xGu8E3IN7OoiSUpkTyvEEVbcJtQtWp1qowDw==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@8.0.2-candidate.6","name":"release-please","escapedName":"release-please","rawSpec":"8.0.2-candidate.6","saveSpec":null,"fetchSpec":"8.0.2-candidate.6"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-8.0.2-candidate.6.tgz","_spec":"8.0.2-candidate.6","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"8.0.2-candidate.6"};
+module.exports = {"_args":[["release-please@8.0.2-candidate.7","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@8.0.2-candidate.7","_id":"release-please@8.0.2-candidate.7","_inBundle":false,"_integrity":"sha512-Hhuj3FqLJ5jVGLCe758wJnkXX2qaj0tzsdI8mgN8xU8NXEW54soptIU/kB8Sxk4GyebFxUJdsTGC91x3vWBa4g==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@8.0.2-candidate.7","name":"release-please","escapedName":"release-please","rawSpec":"8.0.2-candidate.7","saveSpec":null,"fetchSpec":"8.0.2-candidate.7"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-8.0.2-candidate.7.tgz","_spec":"8.0.2-candidate.7","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"8.0.2-candidate.7"};
 
 /***/ }),
 /* 192 */,
@@ -7752,7 +7940,33 @@ module.exports = {
 };
 
 /***/ }),
-/* 233 */,
+/* 233 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Readme = void 0;
+const java_update_1 = __webpack_require__(55);
+class Readme extends java_update_1.JavaUpdate {
+}
+exports.Readme = Readme;
+//# sourceMappingURL=readme.js.map
+
+/***/ }),
 /* 234 */,
 /* 235 */,
 /* 236 */,
@@ -28263,7 +28477,200 @@ module.exports = eos;
 
 
 /***/ }),
-/* 289 */,
+/* 289 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PHPYoshi = void 0;
+const release_pr_1 = __webpack_require__(93);
+const conventional_commits_1 = __webpack_require__(514);
+const checkpoint_1 = __webpack_require__(923);
+const commit_split_1 = __webpack_require__(108);
+const semver = __webpack_require__(876);
+// Generic
+const changelog_1 = __webpack_require__(261);
+// Yoshi PHP Monorepo
+const php_client_version_1 = __webpack_require__(963);
+const php_manifest_1 = __webpack_require__(734);
+const root_composer_1 = __webpack_require__(794);
+const version_1 = __webpack_require__(700);
+const CHANGELOG_SECTIONS = [
+    { type: 'feat', section: 'Features' },
+    { type: 'fix', section: 'Bug Fixes' },
+    { type: 'perf', section: 'Performance Improvements' },
+    { type: 'revert', section: 'Reverts' },
+    { type: 'docs', section: 'Documentation' },
+    { type: 'chore', section: 'Miscellaneous Chores' },
+    { type: 'style', section: 'Styles', hidden: true },
+    { type: 'refactor', section: 'Code Refactoring', hidden: true },
+    { type: 'test', section: 'Tests', hidden: true },
+    { type: 'build', section: 'Build System', hidden: true },
+    { type: 'ci', section: 'Continuous Integration', hidden: true },
+];
+class PHPYoshi extends release_pr_1.ReleasePR {
+    async _run() {
+        const latestTag = await this.gh.latestTag();
+        const commits = await this.commits({
+            sha: latestTag ? latestTag.sha : undefined,
+        });
+        // we create an instance of conventional CHANGELOG for bumping the
+        // top-level tag version we maintain on the mono-repo itself.
+        const ccb = new conventional_commits_1.ConventionalCommits({
+            commits,
+            githubRepoUrl: this.repoUrl,
+            bumpMinorPreMajor: true,
+            changelogSections: CHANGELOG_SECTIONS,
+        });
+        const candidate = await this.coerceReleaseCandidate(ccb, latestTag);
+        // partition a set of packages in the mono-repo that need to be
+        // updated since our last release -- the set of string keys
+        // is sorted to ensure consistency in the CHANGELOG.
+        const updates = [];
+        let changelogEntry = `## ${candidate.version}`;
+        const bulkUpdate = await this.releaseAllPHPLibraries(commits, updates, changelogEntry);
+        changelogEntry = bulkUpdate.changelogEntry;
+        // update the aggregate package information in the root
+        // composer.json and manifest.json.
+        updates.push(new root_composer_1.RootComposer({
+            path: 'composer.json',
+            changelogEntry,
+            version: candidate.version,
+            versions: bulkUpdate.versionUpdates,
+            packageName: this.packageName,
+        }));
+        updates.push(new php_manifest_1.PHPManifest({
+            path: 'docs/manifest.json',
+            changelogEntry,
+            version: candidate.version,
+            versions: bulkUpdate.versionUpdates,
+            packageName: this.packageName,
+        }));
+        updates.push(new changelog_1.Changelog({
+            path: 'CHANGELOG.md',
+            changelogEntry,
+            version: candidate.version,
+            packageName: this.packageName,
+        }));
+        ['src/Version.php', 'src/ServiceBuilder.php'].forEach((path) => {
+            updates.push(new php_client_version_1.PHPClientVersion({
+                path,
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+        });
+        return await this.openPR({
+            sha: commits[0].sha,
+            changelogEntry,
+            updates,
+            version: candidate.version,
+            includePackageName: this.monorepoTags,
+        });
+    }
+    async releaseAllPHPLibraries(commits, updates, changelogEntry) {
+        const cs = new commit_split_1.CommitSplit();
+        const commitLookup = cs.split(commits);
+        const pkgKeys = Object.keys(commitLookup).sort();
+        // map of library names that need to be updated in the top level
+        // composer.json and manifest.json.
+        const versionUpdates = new Map();
+        // walk each individual library updating the VERSION file, and
+        // if necessary the `const VERSION` in the client library.
+        for (let i = 0; i < pkgKeys.length; i++) {
+            const pkgKey = pkgKeys[i];
+            const cc = new conventional_commits_1.ConventionalCommits({
+                commits: commitLookup[pkgKey],
+                githubRepoUrl: this.repoUrl,
+                bumpMinorPreMajor: this.bumpMinorPreMajor,
+                changelogSections: CHANGELOG_SECTIONS,
+            });
+            // some packages in the mono-repo might have only had chores,
+            // build updates, etc., applied.
+            if (!this.changelogEmpty(await cc.generateChangelogEntry({ version: '0.0.0' }))) {
+                try {
+                    const contents = await this.gh.getFileContents(`${pkgKey}/VERSION`);
+                    const bump = await cc.suggestBump(contents.parsedContent);
+                    const candidate = semver.inc(contents.parsedContent, bump.releaseType);
+                    if (!candidate) {
+                        checkpoint_1.checkpoint(`failed to update ${pkgKey} version`, checkpoint_1.CheckpointType.Failure);
+                        continue;
+                    }
+                    const meta = JSON.parse((await this.gh.getFileContents(`${pkgKey}/composer.json`))
+                        .parsedContent);
+                    versionUpdates.set(meta.name, candidate);
+                    changelogEntry = updatePHPChangelogEntry(`${meta.name} ${candidate}`, changelogEntry, await cc.generateChangelogEntry({ version: candidate }));
+                    updates.push(new version_1.Version({
+                        path: `${pkgKey}/VERSION`,
+                        changelogEntry,
+                        version: candidate,
+                        packageName: this.packageName,
+                        contents,
+                    }));
+                    // extra.component indicates an entry-point class file
+                    // that must have its version # updatd.
+                    if (meta.extra &&
+                        meta.extra.component &&
+                        meta.extra.component.entry) {
+                        updates.push(new php_client_version_1.PHPClientVersion({
+                            path: `${pkgKey}/${meta.extra.component.entry}`,
+                            changelogEntry,
+                            version: candidate,
+                            packageName: this.packageName,
+                        }));
+                    }
+                }
+                catch (err) {
+                    if (err.status === 404) {
+                        // if the updated path has no VERSION, assume this isn't a
+                        // module that needs updating.
+                        continue;
+                    }
+                    else {
+                        throw err;
+                    }
+                }
+            }
+        }
+        return { changelogEntry, versionUpdates };
+    }
+}
+exports.PHPYoshi = PHPYoshi;
+PHPYoshi.releaserName = 'php-yoshi';
+function updatePHPChangelogEntry(pkgKey, changelogEntry, entryUpdate) {
+    {
+        // Remove the first line of the entry, in favor of <summary>.
+        // This also allows us to use the same regex for extracting release
+        // notes (since the string "## v0.0.0" doesn't show up multiple times).
+        const entryUpdateSplit = entryUpdate.split(/\r?\n/);
+        entryUpdateSplit.shift();
+        entryUpdate = entryUpdateSplit.join('\n');
+    }
+    return `${changelogEntry}
+
+<details><summary>${pkgKey}</summary>
+
+${entryUpdate}
+
+</details>`;
+}
+//# sourceMappingURL=php-yoshi.js.map
+
+/***/ }),
 /* 290 */,
 /* 291 */,
 /* 292 */,
@@ -31959,9 +32366,9 @@ function write (_obj, msg, num) {
   var obj
 
   if (_obj === undefined || _obj === null) {
-    obj = mixin ? mixin() : {}
+    obj = mixin ? mixin({}) : {}
   } else {
-    obj = Object.assign(mixin ? mixin() : {}, _obj)
+    obj = Object.assign(mixin ? mixin(_obj) : {}, _obj)
     if (!msg && objError) {
       msg = _obj.message
     }
@@ -34568,8 +34975,192 @@ function escapeProperty(s) {
 /* 432 */,
 /* 433 */,
 /* 434 */,
-/* 435 */,
-/* 436 */,
+/* 435 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RubyYoshi = void 0;
+const fs_1 = __webpack_require__(747);
+const path_1 = __webpack_require__(622);
+const release_pr_1 = __webpack_require__(93);
+const conventional_commits_1 = __webpack_require__(514);
+const checkpoint_1 = __webpack_require__(923);
+const indent_commit_1 = __webpack_require__(967);
+const changelog_1 = __webpack_require__(261);
+const version_rb_1 = __webpack_require__(749);
+const CHANGELOG_SECTIONS = [
+    { type: 'feat', section: 'Features' },
+    { type: 'fix', section: 'Bug Fixes' },
+    { type: 'perf', section: 'Performance Improvements' },
+    { type: 'revert', section: 'Reverts' },
+    { type: 'docs', section: 'Documentation' },
+    { type: 'style', section: 'Styles', hidden: true },
+    { type: 'chore', section: 'Miscellaneous Chores', hidden: true },
+    { type: 'refactor', section: 'Code Refactoring', hidden: true },
+    { type: 'test', section: 'Tests', hidden: true },
+    { type: 'build', section: 'Build System', hidden: true },
+    { type: 'ci', section: 'Continuous Integration', hidden: true },
+];
+class RubyYoshi extends release_pr_1.ReleasePR {
+    async _run() {
+        const lastReleaseSha = this.lastPackageVersion
+            ? await this.gh.getTagSha(`${this.packageName}/v${this.lastPackageVersion}`)
+            : undefined;
+        const commits = await this.commits({
+            sha: lastReleaseSha,
+            path: this.packageName,
+        });
+        if (commits.length === 0) {
+            checkpoint_1.checkpoint(`no commits found since ${lastReleaseSha}`, checkpoint_1.CheckpointType.Failure);
+            return undefined;
+        }
+        else {
+            const cc = new conventional_commits_1.ConventionalCommits({
+                commits: postProcessCommits(commits),
+                githubRepoUrl: this.repoUrl,
+                bumpMinorPreMajor: this.bumpMinorPreMajor,
+                commitPartial: fs_1.readFileSync(__webpack_require__.ab + "commit.hbs", 'utf8'),
+                headerPartial: fs_1.readFileSync(__webpack_require__.ab + "header.hbs", 'utf8'),
+                mainTemplate: fs_1.readFileSync(__webpack_require__.ab + "template.hbs", 'utf8'),
+                changelogSections: CHANGELOG_SECTIONS,
+            });
+            const candidate = await this.coerceReleaseCandidate(cc, {
+                version: this.lastPackageVersion,
+                name: this.lastPackageVersion,
+            });
+            const changelogEntry = await cc.generateChangelogEntry({
+                version: candidate.version,
+                currentTag: `v${candidate.version}`,
+                previousTag: undefined,
+            });
+            // don't create a release candidate until user facing changes
+            // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
+            // one line is a good indicator that there were no interesting commits.
+            if (this.changelogEmpty(changelogEntry)) {
+                checkpoint_1.checkpoint(`no user facing commits found since ${lastReleaseSha ? lastReleaseSha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+                return undefined;
+            }
+            const updates = [];
+            updates.push(new changelog_1.Changelog({
+                path: `${this.packageName}/CHANGELOG.md`,
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+            updates.push(new version_rb_1.VersionRB({
+                path: `${this.packageName}/lib/${this.packageName.replace(/-/g, '/')}/version.rb`,
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+            return await this.openPR({
+                sha: commits[0].sha,
+                changelogEntry: `${changelogEntry}\n---\n${this.summarizeCommits(lastReleaseSha, commits)}\n`,
+                updates,
+                version: candidate.version,
+                includePackageName: true,
+            });
+        }
+    }
+    // create a summary of the commits landed since the last release,
+    // for the benefit of the release PR.
+    summarizeCommits(lastReleaseSha, commits) {
+        // summarize the commits that landed:
+        let summary = '### Commits since last release:\n\n';
+        const updatedFiles = {};
+        commits.forEach(commit => {
+            if (commit.sha === null)
+                return;
+            const splitMessage = commit.message.split('\n');
+            summary += `* [${splitMessage[0]}](https://github.com/${this.repoUrl}/commit/${commit.sha})\n`;
+            if (splitMessage.length > 2) {
+                summary = `${summary}<pre><code>${splitMessage
+                    .slice(1)
+                    .join('\n')}</code></pre>\n`;
+            }
+            commit.files.forEach(file => {
+                if (file.startsWith(this.packageName)) {
+                    updatedFiles[file] = true;
+                }
+            });
+        });
+        // summarize the files that changed:
+        summary = `${summary}\n### Files edited since last release:\n\n<pre><code>`;
+        Object.keys(updatedFiles).forEach(file => {
+            summary += `${file}\n`;
+        });
+        return `${summary}</code></pre>\n[Compare Changes](https://github.com/${this.repoUrl}/compare/${lastReleaseSha}...HEAD)\n`;
+    }
+}
+exports.RubyYoshi = RubyYoshi;
+RubyYoshi.releaserName = 'ruby-yoshi';
+function postProcessCommits(commits) {
+    commits.forEach(commit => {
+        commit.message = indent_commit_1.indentCommit(commit);
+    });
+    return commits;
+}
+//# sourceMappingURL=ruby-yoshi.js.map
+
+/***/ }),
+/* 436 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.isStableArtifact = void 0;
+const VERSIONED_ARTIFACT_REGEX = /^.*-(v\d+[^-]*)$/;
+const VERSION_REGEX = /^v\d+(.*)$/;
+/**
+ * Returns true if the artifact should be considered stable
+ * @param artifact name of the artifact to check
+ */
+function isStableArtifact(artifact) {
+    const match = artifact.match(VERSIONED_ARTIFACT_REGEX);
+    if (!match) {
+        // The artifact does not have a version qualifier at the end
+        return true;
+    }
+    const versionMatch = match[1].match(VERSION_REGEX);
+    if (versionMatch && versionMatch[1]) {
+        // The version is not stable (probably alpha/beta/rc)
+        return false;
+    }
+    return true;
+}
+exports.isStableArtifact = isStableArtifact;
+//# sourceMappingURL=stability.js.map
+
+/***/ }),
 /* 437 */,
 /* 438 */,
 /* 439 */,
@@ -37742,7 +38333,50 @@ module.exports = patch
 
 
 /***/ }),
-/* 490 */,
+/* 490 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.fromSemverReleaseType = exports.maxBumpType = void 0;
+function maxBumpType(bumpTypes) {
+    if (bumpTypes.some(bumpType => bumpType === 'major')) {
+        return 'major';
+    }
+    if (bumpTypes.some(bumpType => bumpType === 'minor')) {
+        return 'minor';
+    }
+    return 'patch';
+}
+exports.maxBumpType = maxBumpType;
+function fromSemverReleaseType(releaseType) {
+    switch (releaseType) {
+        case 'major':
+        case 'minor':
+        case 'patch':
+            return releaseType;
+        default:
+            throw Error(`unsupported release type ${releaseType}`);
+    }
+}
+exports.fromSemverReleaseType = fromSemverReleaseType;
+//# sourceMappingURL=bump_type.js.map
+
+/***/ }),
 /* 491 */
 /***/ (function(__unusedmodule, exports) {
 
@@ -41746,9 +42380,9 @@ module.exports = function (config) {
   })
 
   return Q.all([
-    readFile(__webpack_require__.ab + "template1.hbs", 'utf-8'),
-    readFile(__webpack_require__.ab + "header1.hbs", 'utf-8'),
-    readFile(__webpack_require__.ab + "commit1.hbs", 'utf-8'),
+    readFile(__webpack_require__.ab + "template2.hbs", 'utf-8'),
+    readFile(__webpack_require__.ab + "header2.hbs", 'utf-8'),
+    readFile(__webpack_require__.ab + "commit2.hbs", 'utf-8'),
     readFile(__webpack_require__.ab + "footer1.hbs", 'utf-8')
   ])
     .spread((template, header, commit, footer) => {
@@ -42293,23 +42927,33 @@ module.exports = convert;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getReleaserNames = exports.getReleasers = void 0;
-const fs_1 = __webpack_require__(747);
-const path_1 = __webpack_require__(622);
-// dynamically load all the releasers in the folder, and index based on their
-// releaserName property:
+const go_yoshi_1 = __webpack_require__(958);
+const java_auth_yoshi_1 = __webpack_require__(895);
+const java_bom_1 = __webpack_require__(957);
+const java_yoshi_1 = __webpack_require__(771);
+const node_1 = __webpack_require__(618);
+const php_yoshi_1 = __webpack_require__(289);
+const python_1 = __webpack_require__(540);
+const ruby_yoshi_1 = __webpack_require__(435);
+const ruby_1 = __webpack_require__(28);
+const simple_1 = __webpack_require__(643);
+const terraform_module_1 = __webpack_require__(440);
+// TODO: add any new releasers you create to this list:
 function getReleasers() {
-    const releasers = {};
-    const root = path_1.dirname(/*require.resolve*/(593));
-    for (const file of fs_1.readdirSync(root, { withFileTypes: true })) {
-        if (file.isFile() &&
-            !file.name.match(/.*\.ts.*/) &&
-            !file.name.match(/.*\.map$/) &&
-            !file.name.match(/index\.js/)) {
-            const obj = require(`./${file.name}`);
-            const releaser = obj[Object.keys(obj)[0]];
-            releasers[releaser.releaserName] = releaser;
-        }
-    }
+    const releasers = {
+        go: go_yoshi_1.GoYoshi,
+        'go-yoshi': go_yoshi_1.GoYoshi,
+        'java-auth-yoshi': java_auth_yoshi_1.JavaAuthYoshi,
+        'java-bom': java_bom_1.JavaBom,
+        'java-yoshi': java_yoshi_1.JavaYoshi,
+        node: node_1.Node,
+        'php-yoshi': php_yoshi_1.PHPYoshi,
+        python: python_1.Python,
+        'ruby-yoshi': ruby_yoshi_1.RubyYoshi,
+        ruby: ruby_1.Ruby,
+        simple: simple_1.Simple,
+        'terraform-module': terraform_module_1.TerraformModule,
+    };
     return releasers;
 }
 exports.getReleasers = getReleasers;
@@ -46611,7 +47255,33 @@ module.exports = flatstr
 /* 652 */,
 /* 653 */,
 /* 654 */,
-/* 655 */,
+/* 655 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PomXML = void 0;
+const java_update_1 = __webpack_require__(55);
+class PomXML extends java_update_1.JavaUpdate {
+}
+exports.PomXML = PomXML;
+//# sourceMappingURL=pom-xml.js.map
+
+/***/ }),
 /* 656 */,
 /* 657 */,
 /* 658 */,
@@ -47477,7 +48147,43 @@ exports.Deprecation = Deprecation;
 /* 697 */,
 /* 698 */,
 /* 699 */,
-/* 700 */,
+/* 700 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Version = void 0;
+class Version {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+        this.contents = options.contents;
+    }
+    updateContent() {
+        return `${this.version}`;
+    }
+}
+exports.Version = Version;
+//# sourceMappingURL=version.js.map
+
+/***/ }),
 /* 701 */
 /***/ (function(module) {
 
@@ -48315,14 +49021,17 @@ function levelNameLabelFormatter (name) {
   }
 }
 
-pino.extreme = (dest = process.stdout.fd) => {
+module.exports = pino
+
+module.exports.extreme = (dest = process.stdout.fd) => {
   process.emitWarning(
     'The pino.extreme() option is deprecated and will be removed in v7. Use pino.destination({ sync: false }) instead.',
     { code: 'extreme_deprecation' }
   )
   return buildSafeSonicBoom({ dest, minLength: 4096, sync: false })
 }
-pino.destination = (dest = process.stdout.fd) => {
+
+module.exports.destination = (dest = process.stdout.fd) => {
   if (typeof dest === 'object') {
     dest.dest = dest.dest || process.stdout.fd
     return buildSafeSonicBoom(dest)
@@ -48331,14 +49040,16 @@ pino.destination = (dest = process.stdout.fd) => {
   }
 }
 
-pino.final = final
-pino.levels = mappings()
-pino.stdSerializers = serializers
-pino.stdTimeFunctions = Object.assign({}, time)
-pino.symbols = symbols
-pino.version = version
+module.exports.final = final
+module.exports.levels = mappings()
+module.exports.stdSerializers = serializers
+module.exports.stdTimeFunctions = Object.assign({}, time)
+module.exports.symbols = symbols
+module.exports.version = version
 
-module.exports = pino
+// Enables default and name export with TypeScript and Babel
+module.exports.default = pino
+module.exports.pino = pino
 
 
 /***/ }),
@@ -48346,14 +49057,106 @@ module.exports = pino
 /* 724 */,
 /* 725 */,
 /* 726 */,
-/* 727 */,
+/* 727 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.GoogleUtils = void 0;
+class GoogleUtils {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        return content.replace(/"[0-9]\.[0-9]+\.[0-9](-\w+)?"/, `"${this.version}"`);
+    }
+}
+exports.GoogleUtils = GoogleUtils;
+//# sourceMappingURL=google-utils.js.map
+
+/***/ }),
 /* 728 */,
 /* 729 */,
 /* 730 */,
 /* 731 */,
 /* 732 */,
 /* 733 */,
-/* 734 */,
+/* 734 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PHPManifest = void 0;
+const checkpoint_1 = __webpack_require__(923);
+class PHPManifest {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.versions = options.versions;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        if (!this.versions || this.versions.size === 0) {
+            checkpoint_1.checkpoint(`no updates necessary for ${this.path}`, checkpoint_1.CheckpointType.Failure);
+            return content;
+        }
+        const parsed = JSON.parse(content);
+        parsed.modules.forEach((module) => {
+            if (!this.versions)
+                return;
+            for (const [key, version] of this.versions) {
+                if (module.name === key) {
+                    checkpoint_1.checkpoint(`adding ${key}@${version} to manifest`, checkpoint_1.CheckpointType.Success);
+                    module.versions.unshift(`v${version}`);
+                }
+            }
+            // the mono-repo's own API version should be added to the
+            // google/cloud key:
+            if (module.name === 'google/cloud') {
+                module.versions.unshift(`v${this.version}`);
+            }
+        });
+        return JSON.stringify(parsed, null, 4) + '\n';
+    }
+}
+exports.PHPManifest = PHPManifest;
+//# sourceMappingURL=php-manifest.js.map
+
+/***/ }),
 /* 735 */,
 /* 736 */
 /***/ (function(module, exports) {
@@ -49608,7 +50411,93 @@ module.exports = {
 
 
 /***/ }),
-/* 755 */,
+/* 755 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Version = void 0;
+const VERSION_REGEX = /(\d+)\.(\d+)\.(\d+)(-\w+)?(-SNAPSHOT)?/;
+class Version {
+    constructor(major, minor, patch, extra, snapshot) {
+        this.major = major;
+        this.minor = minor;
+        this.patch = patch;
+        this.extra = extra;
+        this.snapshot = snapshot;
+    }
+    static parse(version) {
+        const match = version.match(VERSION_REGEX);
+        if (!match) {
+            throw Error(`unable to parse version string: ${version}`);
+        }
+        const major = Number(match[1]);
+        const minor = Number(match[2]);
+        const patch = Number(match[3]);
+        let extra = '';
+        let snapshot = false;
+        if (match[5]) {
+            extra = match[4];
+            snapshot = match[5] === '-SNAPSHOT';
+        }
+        else if (match[4]) {
+            if (match[4] === '-SNAPSHOT') {
+                snapshot = true;
+            }
+            else {
+                extra = match[4];
+            }
+        }
+        return new Version(major, minor, patch, extra, snapshot);
+    }
+    bump(bumpType) {
+        switch (bumpType) {
+            case 'major':
+                this.major += 1;
+                this.minor = 0;
+                this.patch = 0;
+                this.snapshot = false;
+                break;
+            case 'minor':
+                this.minor += 1;
+                this.patch = 0;
+                this.snapshot = false;
+                break;
+            case 'patch':
+                this.patch += 1;
+                this.snapshot = false;
+                break;
+            case 'snapshot':
+                this.patch += 1;
+                this.snapshot = true;
+                break;
+            default:
+                throw Error(`unsupported bump type: ${bumpType}`);
+        }
+        return this;
+    }
+    toString() {
+        return `${this.major}.${this.minor}.${this.patch}${this.extra}${this.snapshot ? '-SNAPSHOT' : ''}`;
+    }
+}
+exports.Version = Version;
+//# sourceMappingURL=version.js.map
+
+/***/ }),
 /* 756 */,
 /* 757 */,
 /* 758 */
@@ -49707,7 +50596,231 @@ module.exports = require("zlib");
 /* 768 */,
 /* 769 */,
 /* 770 */,
-/* 771 */,
+/* 771 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.JavaYoshi = void 0;
+const release_pr_1 = __webpack_require__(93);
+const conventional_commits_1 = __webpack_require__(514);
+const checkpoint_1 = __webpack_require__(923);
+// Generic
+const changelog_1 = __webpack_require__(261);
+// Java
+const google_utils_1 = __webpack_require__(727);
+const pom_xml_1 = __webpack_require__(655);
+const versions_manifest_1 = __webpack_require__(40);
+const readme_1 = __webpack_require__(233);
+const version_1 = __webpack_require__(755);
+const bump_type_1 = __webpack_require__(490);
+const java_update_1 = __webpack_require__(55);
+const stability_1 = __webpack_require__(436);
+const CHANGELOG_SECTIONS = [
+    { type: 'feat', section: 'Features' },
+    { type: 'fix', section: 'Bug Fixes' },
+    { type: 'perf', section: 'Performance Improvements' },
+    { type: 'deps', section: 'Dependencies' },
+    { type: 'revert', section: 'Reverts' },
+    { type: 'docs', section: 'Documentation' },
+    { type: 'style', section: 'Styles', hidden: true },
+    { type: 'chore', section: 'Miscellaneous Chores', hidden: true },
+    { type: 'refactor', section: 'Code Refactoring', hidden: true },
+    { type: 'test', section: 'Tests', hidden: true },
+    { type: 'build', section: 'Build System', hidden: true },
+    { type: 'ci', section: 'Continuous Integration', hidden: true },
+];
+class JavaYoshi extends release_pr_1.ReleasePR {
+    async _run() {
+        const versionsManifestContent = await this.gh.getFileContents('versions.txt');
+        const currentVersions = versions_manifest_1.VersionsManifest.parseVersions(versionsManifestContent.parsedContent);
+        const snapshotNeeded = versions_manifest_1.VersionsManifest.needsSnapshot(versionsManifestContent.parsedContent);
+        if (!this.snapshot) {
+            // if a snapshot is not explicitly requested, decided what type
+            // of release based on whether a snapshot is needed or not
+            this.snapshot = snapshotNeeded;
+        }
+        else if (!snapshotNeeded) {
+            checkpoint_1.checkpoint('release asked for a snapshot, but no snapshot is needed', checkpoint_1.CheckpointType.Failure);
+            return undefined;
+        }
+        if (this.snapshot) {
+            this.labels = ['type: process'];
+        }
+        const latestTag = await this.gh.latestTag();
+        const commits = this.snapshot
+            ? [
+                {
+                    sha: 'abc123',
+                    message: 'fix: ',
+                    files: [],
+                },
+            ]
+            : await this.commits({
+                sha: latestTag ? latestTag.sha : undefined,
+                labels: true,
+            });
+        if (commits.length === 0) {
+            checkpoint_1.checkpoint(`no commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            return undefined;
+        }
+        let prSHA = commits[0].sha;
+        // Snapshots populate a fake "fix:"" commit, so that they will always
+        // result in a patch update. We still need to know the HEAD sba, so that
+        // we can use this as a starting point for the snapshot PR:
+        if (this.snapshot && (latestTag === null || latestTag === void 0 ? void 0 : latestTag.sha)) {
+            const latestCommit = (await this.commits({
+                sha: latestTag.sha,
+                perPage: 1,
+                labels: true,
+            }))[0];
+            prSHA = latestCommit ? latestCommit.sha : latestTag.sha;
+        }
+        const cc = new conventional_commits_1.ConventionalCommits({
+            commits,
+            githubRepoUrl: this.repoUrl,
+            bumpMinorPreMajor: this.bumpMinorPreMajor,
+            changelogSections: CHANGELOG_SECTIONS,
+        });
+        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
+        const candidateVersions = await this.coerceVersions(cc, currentVersions, candidate);
+        let changelogEntry = await cc.generateChangelogEntry({
+            version: candidate.version,
+            currentTag: `v${candidate.version}`,
+            previousTag: candidate.previousTag,
+        });
+        // snapshot entries are special:
+        // 1. they don't update the README or CHANGELOG.
+        // 2. they always update a patch with the -SNAPSHOT suffix.
+        // 3. they're haunted.
+        if (this.snapshot) {
+            candidate.version = `${candidate.version}-SNAPSHOT`;
+            changelogEntry =
+                '### Updating meta-information for bleeding-edge SNAPSHOT release.';
+        }
+        // don't create a release candidate until user facing changes
+        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
+        // one line is a good indicator that there were no interesting commits.
+        if (this.changelogEmpty(changelogEntry) && !this.snapshot) {
+            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            return undefined;
+        }
+        const updates = [];
+        if (!this.snapshot) {
+            updates.push(new changelog_1.Changelog({
+                path: 'CHANGELOG.md',
+                changelogEntry,
+                versions: candidateVersions,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+            updates.push(new readme_1.Readme({
+                path: 'README.md',
+                changelogEntry,
+                versions: candidateVersions,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+            updates.push(new google_utils_1.GoogleUtils({
+                // TODO(@chingor): should this use search like pom.xml?
+                path: 'google-api-client/src/main/java/com/google/api/client/googleapis/GoogleUtils.java',
+                changelogEntry,
+                versions: candidateVersions,
+                version: candidate.version,
+                packageName: this.packageName,
+                contents: versionsManifestContent,
+            }));
+        }
+        updates.push(new versions_manifest_1.VersionsManifest({
+            path: 'versions.txt',
+            changelogEntry,
+            versions: candidateVersions,
+            version: candidate.version,
+            packageName: this.packageName,
+            contents: versionsManifestContent,
+        }));
+        const pomFilesSearch = this.gh.findFilesByFilename('pom.xml');
+        const buildFilesSearch = this.gh.findFilesByFilename('build.gradle');
+        const dependenciesSearch = this.gh.findFilesByFilename('dependencies.properties');
+        const pomFiles = await pomFilesSearch;
+        pomFiles.forEach(path => {
+            updates.push(new pom_xml_1.PomXML({
+                path,
+                changelogEntry,
+                versions: candidateVersions,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+        });
+        const buildFiles = await buildFilesSearch;
+        buildFiles.forEach(path => {
+            updates.push(new java_update_1.JavaUpdate({
+                path,
+                changelogEntry,
+                versions: candidateVersions,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+        });
+        const dependenciesFiles = await dependenciesSearch;
+        dependenciesFiles.forEach(path => {
+            updates.push(new java_update_1.JavaUpdate({
+                path,
+                changelogEntry,
+                versions: candidateVersions,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+        });
+        return await this.openPR({
+            sha: prSHA,
+            changelogEntry: `${changelogEntry}\n---\n`,
+            updates,
+            version: candidate.version,
+            includePackageName: this.monorepoTags,
+        });
+    }
+    supportsSnapshots() {
+        return true;
+    }
+    defaultInitialVersion() {
+        return '0.1.0';
+    }
+    async coerceVersions(cc, currentVersions, candidate) {
+        const newVersions = new Map();
+        for (const [k, version] of currentVersions) {
+            if (candidate.version === '1.0.0' && stability_1.isStableArtifact(k)) {
+                newVersions.set(k, '1.0.0');
+            }
+            else {
+                const bump = await cc.suggestBump(version);
+                const newVersion = version_1.Version.parse(version);
+                newVersion.bump(this.snapshot ? 'snapshot' : bump_type_1.fromSemverReleaseType(bump.releaseType));
+                newVersions.set(k, newVersion.toString());
+            }
+        }
+        return newVersions;
+    }
+}
+exports.JavaYoshi = JavaYoshi;
+JavaYoshi.releaserName = 'java-yoshi';
+//# sourceMappingURL=java-yoshi.js.map
+
+/***/ }),
 /* 772 */,
 /* 773 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
@@ -50526,7 +51639,57 @@ module.exports = function(val) {
 /* 791 */,
 /* 792 */,
 /* 793 */,
-/* 794 */,
+/* 794 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RootComposer = void 0;
+const checkpoint_1 = __webpack_require__(923);
+class RootComposer {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.versions = options.versions;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        if (!this.versions || this.versions.size === 0) {
+            checkpoint_1.checkpoint(`no updates necessary for ${this.path}`, checkpoint_1.CheckpointType.Failure);
+            return content;
+        }
+        const parsed = JSON.parse(content);
+        if (this.versions) {
+            // eslint-disable-next-line prefer-const
+            for (let [key, version] of this.versions.entries()) {
+                version = version || '1.0.0';
+                checkpoint_1.checkpoint(`updating ${key} from ${parsed.replace[key]} to ${version}`, checkpoint_1.CheckpointType.Success);
+                parsed.replace[key] = version;
+            }
+        }
+        return JSON.stringify(parsed, null, 4) + '\n';
+    }
+}
+exports.RootComposer = RootComposer;
+//# sourceMappingURL=root-composer.js.map
+
+/***/ }),
 /* 795 */,
 /* 796 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
@@ -50549,12 +51712,6 @@ module.exports = function(val) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReleasePRFactory = void 0;
 const releasers_1 = __webpack_require__(593);
-const node_1 = __webpack_require__(618);
-const python_1 = __webpack_require__(540);
-const ruby_1 = __webpack_require__(28);
-const simple_1 = __webpack_require__(643);
-const go_yoshi_1 = __webpack_require__(958);
-const terraform_module_1 = __webpack_require__(440);
 class ReleasePRFactory {
     static build(releaseType, options) {
         const releaseOptions = {
@@ -50572,39 +51729,10 @@ class ReleasePRFactory {
         }
         return releaser;
     }
-    // For the benefit of WebPack, we provide a static factory for a subset
-    // of the releasers available in the release please GitHub action:
+    // TODO(bcoe): this function is deprecated and should be removed in the
+    // next major;
     static buildStatic(releaseType, options) {
-        const releaseOptions = {
-            ...options,
-            ...{ releaseType },
-        };
-        switch (releaseType) {
-            case 'node':
-                return new node_1.Node(releaseOptions);
-            case 'python':
-                return new python_1.Python(releaseOptions);
-            case 'ruby':
-                return new ruby_1.Ruby(releaseOptions);
-            case 'simple':
-                return new simple_1.Simple(releaseOptions);
-            case 'terraform-module':
-                return new terraform_module_1.TerraformModule(releaseOptions);
-            case 'go':
-                return new go_yoshi_1.GoYoshi(releaseOptions);
-            default:
-                throw Error('unknown release type');
-        }
-    }
-    static releaseTypeToClass(releaseType) {
-        switch (releaseType) {
-            case 'go':
-                return go_yoshi_1.GoYoshi;
-            case 'go-yoshi':
-                return go_yoshi_1.GoYoshi;
-            default:
-                return undefined;
-        }
+        return this.build(releaseType, options);
     }
 }
 exports.ReleasePRFactory = ReleasePRFactory;
@@ -53535,7 +54663,136 @@ exports.Octokit = Octokit;
 /* 892 */,
 /* 893 */,
 /* 894 */,
-/* 895 */,
+/* 895 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.JavaAuthYoshi = void 0;
+const release_pr_1 = __webpack_require__(93);
+const conventional_commits_1 = __webpack_require__(514);
+const checkpoint_1 = __webpack_require__(923);
+// Generic
+const changelog_1 = __webpack_require__(261);
+// Java
+const pom_xml_1 = __webpack_require__(655);
+// Yoshi Java Auth Library
+const versions_manifest_1 = __webpack_require__(40);
+const readme_1 = __webpack_require__(233);
+class JavaAuthYoshi extends release_pr_1.ReleasePR {
+    async _run() {
+        const latestTag = await this.gh.latestTag();
+        const commits = this.snapshot
+            ? [
+                {
+                    sha: 'abc123',
+                    message: 'fix: ',
+                    files: [],
+                },
+            ]
+            : await this.commits({
+                sha: latestTag ? latestTag.sha : undefined,
+                labels: true,
+            });
+        if (commits.length === 0) {
+            checkpoint_1.checkpoint(`no commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            return undefined;
+        }
+        let prSHA = commits[0].sha;
+        const cc = new conventional_commits_1.ConventionalCommits({
+            commits,
+            githubRepoUrl: this.repoUrl,
+            bumpMinorPreMajor: this.bumpMinorPreMajor,
+        });
+        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
+        let changelogEntry = await cc.generateChangelogEntry({
+            version: candidate.version,
+            currentTag: `v${candidate.version}`,
+            previousTag: candidate.previousTag,
+        });
+        // snapshot entries are special:
+        // 1. they don't update the README or CHANGELOG.
+        // 2. they always update a patch with the -SNAPSHOT suffix.
+        // 3. they're haunted.
+        if (this.snapshot) {
+            prSHA = latestTag.sha;
+            candidate.version = `${candidate.version}-SNAPSHOT`;
+            changelogEntry =
+                '### Updating meta-information for bleeding-edge SNAPSHOT release.';
+        }
+        // don't create a release candidate until user facing changes
+        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
+        // one line is a good indicator that there were no interesting commits.
+        if (this.changelogEmpty(changelogEntry) && !this.snapshot) {
+            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            return undefined;
+        }
+        const updates = [];
+        if (!this.snapshot) {
+            updates.push(new changelog_1.Changelog({
+                path: 'CHANGELOG.md',
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+            updates.push(new readme_1.Readme({
+                path: 'README.md',
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+        }
+        updates.push(new versions_manifest_1.VersionsManifest({
+            path: 'versions.txt',
+            changelogEntry,
+            version: candidate.version,
+            packageName: this.packageName,
+        }));
+        [
+            'appengine/pom.xml',
+            'bom/pom.xml',
+            'credentials/pom.xml',
+            'oauth2_http/pom.xml',
+            'pom.xml',
+        ].forEach(path => {
+            updates.push(new pom_xml_1.PomXML({
+                path,
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+        });
+        return await this.openPR({
+            sha: prSHA,
+            changelogEntry: `${changelogEntry}\n---\n`,
+            updates,
+            version: candidate.version,
+            includePackageName: this.monorepoTags,
+        });
+    }
+    supportsSnapshots() {
+        return true;
+    }
+}
+exports.JavaAuthYoshi = JavaAuthYoshi;
+JavaAuthYoshi.releaserName = 'java-auth-yoshi';
+//# sourceMappingURL=java-auth-yoshi.js.map
+
+/***/ }),
 /* 896 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -55827,7 +57084,7 @@ module.exports = inc
 /* 929 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["pino@6.7.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"pino@6.7.0","_id":"pino@6.7.0","_inBundle":false,"_integrity":"sha512-vPXJ4P9rWCwzlTJt+f0Ni4THc3DWyt8iDDCO4edQ8narTu6hnpzdXu8FqeSJCGndl1W6lfbYQUQihUO54y66Lw==","_location":"/pino","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"pino@6.7.0","name":"pino","escapedName":"pino","rawSpec":"6.7.0","saveSpec":null,"fetchSpec":"6.7.0"},"_requiredBy":["/code-suggester"],"_resolved":"https://registry.npmjs.org/pino/-/pino-6.7.0.tgz","_spec":"6.7.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Matteo Collina","email":"hello@matteocollina.com"},"bin":{"pino":"bin.js"},"browser":"./browser.js","bugs":{"url":"https://github.com/pinojs/pino/issues"},"contributors":[{"name":"David Mark Clements","email":"huperekchuno@googlemail.com"},{"name":"James Sumners","email":"james.sumners@gmail.com"},{"name":"Thomas Watson Steen","email":"w@tson.dk","url":"https://twitter.com/wa7son"}],"dependencies":{"fast-redact":"^3.0.0","fast-safe-stringify":"^2.0.7","flatstr":"^1.0.12","pino-std-serializers":"^2.4.2","quick-format-unescaped":"^4.0.1","sonic-boom":"^1.0.2"},"description":"super fast, all natural json logger","devDependencies":{"airtap":"3.0.0","benchmark":"^2.1.4","bole":"^4.0.0","bunyan":"^1.8.14","docsify-cli":"^4.4.1","execa":"^4.0.0","fastbench":"^1.0.1","flush-write-stream":"^2.0.0","import-fresh":"^3.2.1","log":"^6.0.0","loglevel":"^1.6.7","pino-pretty":"^4.1.0","pre-commit":"^1.2.2","proxyquire":"^2.1.3","pump":"^3.0.0","semver":"^7.0.0","snazzy":"^8.0.0","split2":"^3.1.1","standard":"^14.3.3","steed":"^1.1.3","strip-ansi":"^6.0.0","tap":"^14.10.8","tape":"^5.0.0","through2":"^4.0.0","winston":"^3.3.3"},"files":["pino.js","bin.js","browser.js","pretty.js","usage.txt","test","docs","example.js","lib"],"homepage":"http://getpino.io","keywords":["fast","logger","stream","json"],"license":"MIT","main":"pino.js","name":"pino","precommit":"test","repository":{"type":"git","url":"git+https://github.com/pinojs/pino.git"},"scripts":{"bench":"node benchmarks/utils/runbench all","bench-basic":"node benchmarks/utils/runbench basic","bench-child":"node benchmarks/utils/runbench child","bench-child-child":"node benchmarks/utils/runbench child-child","bench-child-creation":"node benchmarks/utils/runbench child-creation","bench-deep-object":"node benchmarks/utils/runbench deep-object","bench-formatters":"node benchmarks/utils/runbench formatters","bench-longs-tring":"node benchmarks/utils/runbench long-string","bench-multi-arg":"node benchmarks/utils/runbench multi-arg","bench-object":"node benchmarks/utils/runbench object","browser-test":"airtap --local 8080 test/browser*test.js","cov-ui":"tap --coverage-report=html test/*test.js","docs":"docsify serve","test":"standard | snazzy && tap --100 test/*test.js","update-bench-doc":"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md"},"version":"6.7.0"};
+module.exports = {"_args":[["pino@6.8.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"pino@6.8.0","_id":"pino@6.8.0","_inBundle":false,"_integrity":"sha512-nxq+6Jr7m0cMjYFBoTRw3bco14omZ/SQCheAHz9GVwdkbUrzKhgT+gSI/ql2Mnsca0QQKgpB/ACWhjxE4JsX3Q==","_location":"/pino","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"pino@6.8.0","name":"pino","escapedName":"pino","rawSpec":"6.8.0","saveSpec":null,"fetchSpec":"6.8.0"},"_requiredBy":["/code-suggester"],"_resolved":"https://registry.npmjs.org/pino/-/pino-6.8.0.tgz","_spec":"6.8.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Matteo Collina","email":"hello@matteocollina.com"},"bin":{"pino":"bin.js"},"browser":"./browser.js","bugs":{"url":"https://github.com/pinojs/pino/issues"},"contributors":[{"name":"David Mark Clements","email":"huperekchuno@googlemail.com"},{"name":"James Sumners","email":"james.sumners@gmail.com"},{"name":"Thomas Watson Steen","email":"w@tson.dk","url":"https://twitter.com/wa7son"}],"dependencies":{"fast-redact":"^3.0.0","fast-safe-stringify":"^2.0.7","flatstr":"^1.0.12","pino-std-serializers":"^2.4.2","quick-format-unescaped":"^4.0.1","sonic-boom":"^1.0.2"},"description":"super fast, all natural json logger","devDependencies":{"airtap":"3.0.0","benchmark":"^2.1.4","bole":"^4.0.0","bunyan":"^1.8.14","docsify-cli":"^4.4.1","execa":"^4.0.0","fastbench":"^1.0.1","flush-write-stream":"^2.0.0","import-fresh":"^3.2.1","log":"^6.0.0","loglevel":"^1.6.7","pino-pretty":"^4.1.0","pre-commit":"^1.2.2","proxyquire":"^2.1.3","pump":"^3.0.0","semver":"^7.0.0","snazzy":"^8.0.0","split2":"^3.1.1","standard":"^14.3.3","steed":"^1.1.3","strip-ansi":"^6.0.0","tap":"^14.10.8","tape":"^5.0.0","through2":"^4.0.0","winston":"^3.3.3"},"files":["pino.js","bin.js","browser.js","pretty.js","usage.txt","test","docs","example.js","lib"],"homepage":"http://getpino.io","keywords":["fast","logger","stream","json"],"license":"MIT","main":"pino.js","name":"pino","precommit":"test","repository":{"type":"git","url":"git+https://github.com/pinojs/pino.git"},"scripts":{"bench":"node benchmarks/utils/runbench all","bench-basic":"node benchmarks/utils/runbench basic","bench-child":"node benchmarks/utils/runbench child","bench-child-child":"node benchmarks/utils/runbench child-child","bench-child-creation":"node benchmarks/utils/runbench child-creation","bench-deep-object":"node benchmarks/utils/runbench deep-object","bench-formatters":"node benchmarks/utils/runbench formatters","bench-longs-tring":"node benchmarks/utils/runbench long-string","bench-multi-arg":"node benchmarks/utils/runbench multi-arg","bench-object":"node benchmarks/utils/runbench object","browser-test":"airtap --local 8080 test/browser*test.js","cov-ui":"tap --coverage-report=html test/*test.js test/*/*test.js","docs":"docsify serve","test":"standard | snazzy && tap --100 test/*test.js test/*/*test.js","update-bench-doc":"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md"},"version":"6.8.0"};
 
 /***/ }),
 /* 930 */
@@ -56362,7 +57619,205 @@ exports.addReviewCommentsDefaults = addReviewCommentsDefaults;
 
 /***/ }),
 /* 956 */,
-/* 957 */,
+/* 957 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.JavaBom = void 0;
+const release_pr_1 = __webpack_require__(93);
+const conventional_commits_1 = __webpack_require__(514);
+const checkpoint_1 = __webpack_require__(923);
+// Generic
+const changelog_1 = __webpack_require__(261);
+// Java
+const pom_xml_1 = __webpack_require__(655);
+const versions_manifest_1 = __webpack_require__(40);
+const readme_1 = __webpack_require__(233);
+const bump_type_1 = __webpack_require__(490);
+const version_1 = __webpack_require__(755);
+const CHANGELOG_SECTIONS = [
+    { type: 'feat', section: 'Features' },
+    { type: 'fix', section: 'Bug Fixes' },
+    { type: 'perf', section: 'Performance Improvements' },
+    { type: 'deps', section: 'Dependencies' },
+    { type: 'revert', section: 'Reverts' },
+    { type: 'docs', section: 'Documentation' },
+    { type: 'style', section: 'Styles', hidden: true },
+    { type: 'chore', section: 'Miscellaneous Chores', hidden: true },
+    { type: 'refactor', section: 'Code Refactoring', hidden: true },
+    { type: 'test', section: 'Tests', hidden: true },
+    { type: 'build', section: 'Build System', hidden: true },
+    { type: 'ci', section: 'Continuous Integration', hidden: true },
+];
+const DEPENDENCY_UPDATE_REGEX = /^deps: update dependency (.*) to (v.*)(\s\(#\d+\))?$/m;
+const DEPENDENCY_PATCH_VERSION_REGEX = /^v\d+\.\d+\.[1-9]\d*(-.*)?/;
+class JavaBom extends release_pr_1.ReleasePR {
+    async _run() {
+        const versionsManifestContent = await this.gh.getFileContents('versions.txt');
+        const currentVersions = versions_manifest_1.VersionsManifest.parseVersions(versionsManifestContent.parsedContent);
+        const snapshotNeeded = versions_manifest_1.VersionsManifest.needsSnapshot(versionsManifestContent.parsedContent);
+        if (!this.snapshot) {
+            // if a snapshot is not explicitly requested, decided what type
+            // of release based on whether a snapshot is needed or not
+            this.snapshot = snapshotNeeded;
+        }
+        else if (!snapshotNeeded) {
+            checkpoint_1.checkpoint('release asked for a snapshot, but no snapshot is needed', checkpoint_1.CheckpointType.Failure);
+            return undefined;
+        }
+        if (this.snapshot) {
+            this.labels = ['type: process'];
+        }
+        const latestTag = await this.gh.latestTag();
+        const commits = await this.commits({
+            sha: latestTag ? latestTag.sha : undefined,
+            perPage: this.snapshot ? 1 : 100,
+            labels: true,
+        });
+        if (commits.length === 0) {
+            checkpoint_1.checkpoint(`no commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            return undefined;
+        }
+        const prSHA = commits[0].sha;
+        const cc = new conventional_commits_1.ConventionalCommits({
+            commits,
+            githubRepoUrl: this.repoUrl,
+            bumpMinorPreMajor: this.bumpMinorPreMajor,
+            changelogSections: CHANGELOG_SECTIONS,
+        });
+        const bumpType = this.snapshot
+            ? 'snapshot'
+            : bump_type_1.maxBumpType([
+                JavaBom.determineBumpType(commits),
+                bump_type_1.fromSemverReleaseType((await cc.suggestBump((latestTag === null || latestTag === void 0 ? void 0 : latestTag.version) || this.defaultInitialVersion())).releaseType),
+            ]);
+        const candidate = {
+            version: latestTag
+                ? version_1.Version.parse(latestTag.version).bump(bumpType).toString()
+                : this.defaultInitialVersion(),
+            previousTag: latestTag === null || latestTag === void 0 ? void 0 : latestTag.version,
+        };
+        const changelogEntry = this.snapshot
+            ? '### Updating meta-information for bleeding-edge SNAPSHOT release.'
+            : await cc.generateChangelogEntry({
+                version: candidate.version,
+                currentTag: `v${candidate.version}`,
+                previousTag: candidate.previousTag,
+            });
+        // don't create a release candidate until user facing changes
+        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
+        // one line is a good indicator that there were no interesting commits.
+        if (this.changelogEmpty(changelogEntry) && !this.snapshot) {
+            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            return undefined;
+        }
+        const candidateVersions = JavaBom.bumpAllVersions(bumpType, currentVersions);
+        const updates = [];
+        if (!this.snapshot) {
+            updates.push(new changelog_1.Changelog({
+                path: 'CHANGELOG.md',
+                changelogEntry,
+                versions: candidateVersions,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+            updates.push(new readme_1.Readme({
+                path: 'README.md',
+                changelogEntry,
+                versions: candidateVersions,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+        }
+        updates.push(new versions_manifest_1.VersionsManifest({
+            path: 'versions.txt',
+            changelogEntry,
+            versions: candidateVersions,
+            version: candidate.version,
+            packageName: this.packageName,
+            contents: versionsManifestContent,
+        }));
+        const pomFiles = await this.gh.findFilesByFilename('pom.xml');
+        pomFiles.forEach(path => {
+            updates.push(new pom_xml_1.PomXML({
+                path,
+                changelogEntry,
+                versions: candidateVersions,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+        });
+        return await this.openPR({
+            sha: prSHA,
+            changelogEntry: `${changelogEntry}\n---\n`,
+            updates,
+            version: candidate.version,
+            includePackageName: this.monorepoTags,
+        });
+    }
+    supportsSnapshots() {
+        return true;
+    }
+    defaultInitialVersion() {
+        return '0.1.0';
+    }
+    static bumpAllVersions(bumpType, currentVersions) {
+        const newVersions = new Map();
+        for (const [k, version] of currentVersions) {
+            newVersions.set(k, version_1.Version.parse(version).bump(bumpType).toString());
+        }
+        return newVersions;
+    }
+    static dependencyUpdates(commits) {
+        const versionsMap = new Map();
+        commits.forEach(commit => {
+            const match = commit.message.match(DEPENDENCY_UPDATE_REGEX);
+            if (!match)
+                return;
+            // commits are sorted by latest first, so if there is a collision,
+            // then we've already recorded the latest version
+            if (versionsMap.has(match[1]))
+                return;
+            versionsMap.set(match[1], match[2]);
+        });
+        return versionsMap;
+    }
+    static isNonPatchVersion(commit) {
+        let match = commit.message.match(DEPENDENCY_UPDATE_REGEX);
+        if (!match)
+            return false;
+        match = match[2].match(DEPENDENCY_PATCH_VERSION_REGEX);
+        if (!match)
+            return true;
+        return false;
+    }
+    static determineBumpType(commits) {
+        if (commits.some(this.isNonPatchVersion)) {
+            return 'minor';
+        }
+        return 'patch';
+    }
+}
+exports.JavaBom = JavaBom;
+JavaBom.releaserName = 'java-bom';
+//# sourceMappingURL=java-bom.js.map
+
+/***/ }),
 /* 958 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -56543,7 +57998,43 @@ GoYoshi.releaserName = 'go-yoshi';
 /* 960 */,
 /* 961 */,
 /* 962 */,
-/* 963 */,
+/* 963 */
+/***/ (function(__unusedmodule, exports) {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PHPClientVersion = void 0;
+class PHPClientVersion {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+        this.contents = options.contents;
+    }
+    updateContent(content) {
+        return content.replace(/const VERSION = '[0-9]+\.[0-9]+\.[0-9]+'/, `const VERSION = '${this.version}'`);
+    }
+}
+exports.PHPClientVersion = PHPClientVersion;
+//# sourceMappingURL=php-client-version.js.map
+
+/***/ }),
 /* 964 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
