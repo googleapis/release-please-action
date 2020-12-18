@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.12.3](https://www.github.com/google-github-actions/release-please-action/compare/v2.12.2...v2.12.3) (2020-12-18)
+
+
+### Bug Fixes
+
+* **release-please:** stop dynamically loading releasers ([#165](https://www.github.com/google-github-actions/release-please-action/issues/165)) ([4de8d4a](https://www.github.com/google-github-actions/release-please-action/commit/4de8d4ac44ed9d0a8d20386d68169b86b30d798a))
+
 ### [2.12.2](https://www.github.com/google-github-actions/release-please-action/compare/v2.12.1...v2.12.2) (2020-12-10)
 
 
