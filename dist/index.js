@@ -894,7 +894,7 @@ class Ruby extends release_pr_1.ReleasePR {
         this.versionFile = options.versionFile;
     }
     async _run() {
-        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}/` : undefined, false, this.monorepoTags ? `${this.packageName}-` : undefined);
+        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}-` : undefined, false);
         const commits = await this.commits({
             sha: latestTag ? latestTag.sha : undefined,
             path: this.path,
@@ -3190,7 +3190,7 @@ class ReleasePR {
         const title = includePackageName
             ? `chore: release ${this.packageName} ${version}`
             : `chore: release ${version}`;
-        const body = `:robot: I have created a release \\*beep\\* \\*boop\\* \n---\n${changelogEntry}\n\nThis PR was generated with [Release Please](https://github.com/googleapis/release-please).`;
+        const body = `:robot: I have created a release \\*beep\\* \\*boop\\* \n---\n${changelogEntry}\n\nThis PR was generated with [Release Please](https://github.com/googleapis/release-please). See [documentation](https://github.com/googleapis/release-please#release-please).`;
         const pr = await this.gh.openPR({
             branch: includePackageName
                 ? `release-${branchPrefix}-v${version}`
@@ -6153,7 +6153,7 @@ module.exports = require("vm");
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@8.0.2-candidate.7","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@8.0.2-candidate.7","_id":"release-please@8.0.2-candidate.7","_inBundle":false,"_integrity":"sha512-Hhuj3FqLJ5jVGLCe758wJnkXX2qaj0tzsdI8mgN8xU8NXEW54soptIU/kB8Sxk4GyebFxUJdsTGC91x3vWBa4g==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@8.0.2-candidate.7","name":"release-please","escapedName":"release-please","rawSpec":"8.0.2-candidate.7","saveSpec":null,"fetchSpec":"8.0.2-candidate.7"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-8.0.2-candidate.7.tgz","_spec":"8.0.2-candidate.7","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"8.0.2-candidate.7"};
+module.exports = {"_args":[["release-please@8.1.0-candidate.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@8.1.0-candidate.0","_id":"release-please@8.1.0-candidate.0","_inBundle":false,"_integrity":"sha512-jQlh1oyFnKrRY9ryngmROMdKg7zcdwYxBLY6U+Lr6mKGS6B55dpsUegfEZ1LYw1hI2gdOlS4IQSjhrHcEBji8A==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@8.1.0-candidate.0","name":"release-please","escapedName":"release-please","rawSpec":"8.1.0-candidate.0","saveSpec":null,"fetchSpec":"8.1.0-candidate.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-8.1.0-candidate.0.tgz","_spec":"8.1.0-candidate.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","concat-stream":"^2.0.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^4.0.6","conventional-commits-filter":"^2.0.2","conventional-commits-parser":"^3.0.3","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","presystem-test":"npm run compile","pretest":"npm run compile","system-test":"echo 'no system tests'","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:all":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=20000 build/system-test build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"8.1.0-candidate.0"};
 
 /***/ }),
 /* 192 */,
@@ -44978,12 +44978,8 @@ class GitHub {
     }
     // This looks for the most recent matching release tag on
     // the branch we're configured for.
-    async latestTag(prefix, preRelease = false, 
-    // Allow a branch prefix to differ from a tag prefix. This was required
-    // for google-cloud-go, which uses the tag prefix library/vx.y.z.
-    // this is a requirement in the go community.
-    branchPrefix) {
-        const pull = await this.findMergedReleasePR([], 100, branchPrefix !== null && branchPrefix !== void 0 ? branchPrefix : prefix, preRelease);
+    async latestTag(prefix, preRelease = false) {
+        const pull = await this.findMergedReleasePR([], 100, prefix, preRelease);
         if (!pull)
             return await this.latestTagFallback(prefix, preRelease);
         const tag = {
@@ -45028,6 +45024,16 @@ class GitHub {
         };
     }
     async allTags(prefix) {
+        // If we've fallen back to using allTags, support "-", "@", and "/" as a
+        // suffix separating the library name from the version #. This allows
+        // a repository to be seamlessly be migrated from a tool like lerna:
+        const prefixes = [];
+        if (prefix) {
+            prefix = prefix.substring(0, prefix.length - 1);
+            for (const suffix of ['-', '@', '/']) {
+                prefixes.push(`${prefix}${suffix}`);
+            }
+        }
         const tags = {};
         for await (const response of this.octokit.paginate.iterator(this.decoratePaginateOpts({
             method: 'GET',
@@ -45036,9 +45042,18 @@ class GitHub {
             response.data.forEach((data) => {
                 // For monorepos, a prefix can be provided, indicating that only tags
                 // matching the prefix should be returned:
-                if (prefix && !data.name.startsWith(prefix))
-                    return;
-                let version = data.name.replace(prefix, '');
+                let version = data.name;
+                if (prefix) {
+                    let match = false;
+                    for (prefix of prefixes) {
+                        if (data.name.startsWith(prefix)) {
+                            version = data.name.replace(prefix, '');
+                            match = true;
+                        }
+                    }
+                    if (!match)
+                        return;
+                }
                 if ((version = semver.valid(version))) {
                     tags[version] = { sha: data.commit.sha, name: data.name, version };
                 }
@@ -57863,7 +57878,7 @@ const REGEN_PR_REGEX = /.*auto-regenerate.*/;
 const SCOPE_REGEX = /^\w+\((?<scope>.*)\):/;
 class GoYoshi extends release_pr_1.ReleasePR {
     async _run() {
-        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}/` : undefined, false, this.monorepoTags ? `${this.packageName}` : undefined);
+        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}-` : undefined, false);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const [_owner, repo] = parseGithubRepoUrl(this.repoUrl);
         let regenPR;
