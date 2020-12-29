@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.13.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.12.3...v2.13.0) (2020-12-29)
+
+
+### Features
+
+* **release-please:** fallback tag check is looser ([#169](https://www.github.com/google-github-actions/release-please-action/issues/169)) ([46292e5](https://www.github.com/google-github-actions/release-please-action/commit/46292e55636f49995766fb1bb9ef1b0aaaf21aa7))
+
 ### [2.12.3](https://www.github.com/google-github-actions/release-please-action/compare/v2.12.2...v2.12.3) (2020-12-18)
 
 
