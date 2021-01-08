@@ -2399,6 +2399,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.GitHubRelease = void 0;
 const chalk = __webpack_require__(843);
 const checkpoint_1 = __webpack_require__(923);
+const package_branch_prefix_1 = __webpack_require__(866);
 const release_pr_factory_1 = __webpack_require__(796);
 const github_1 = __webpack_require__(614);
 const semver_1 = __webpack_require__(876);
@@ -2421,11 +2422,21 @@ class GitHubRelease {
         this.gh = this.gitHubInstance(options.octokitAPIs);
     }
     async createRelease() {
+        // Attempt to lookup the package name from a well known location, such
+        // as package.json, if none is provided:
+        if (!this.packageName && this.releaseType) {
+            this.packageName = await release_pr_factory_1.ReleasePRFactory.class(this.releaseType).lookupPackageName(this.gh, this.path);
+        }
+        if (this.packageName === undefined) {
+            throw Error(`could not determine package name for release repo = ${this.repoUrl}`);
+        }
         // In most configurations, createRelease() should be called close to when
         // a release PR is merged, e.g., a GitHub action that kicks off this
         // workflow on merge. For tis reason, we can pull a fairly small number of PRs:
         const pageSize = 25;
-        const gitHubReleasePR = await this.gh.findMergedReleasePR(this.labels, pageSize, this.monorepoTags ? this.packageName : undefined);
+        const gitHubReleasePR = await this.gh.findMergedReleasePR(this.labels, pageSize, this.monorepoTags
+            ? package_branch_prefix_1.packageBranchPrefix(this.packageName, this.releaseType)
+            : undefined);
         if (!gitHubReleasePR) {
             checkpoint_1.checkpoint('no recent release PRs found', checkpoint_1.CheckpointType.Failure);
             return undefined;
@@ -2435,18 +2446,10 @@ class GitHubRelease {
         const changelogContents = (await this.gh.getFileContents(this.addPath(this.changelogPath))).parsedContent;
         const latestReleaseNotes = GitHubRelease.extractLatestReleaseNotes(changelogContents, version);
         checkpoint_1.checkpoint(`found release notes: \n---\n${chalk.grey(latestReleaseNotes)}\n---\n`, checkpoint_1.CheckpointType.Success);
-        // Attempt to lookup the package name from a well known location, such
-        // as package.json, if none is provided:
-        if (!this.packageName && this.releaseType) {
-            this.packageName = await release_pr_factory_1.ReleasePRFactory.class(this.releaseType).lookupPackageName(this.gh);
-        }
         // Go uses '/' for a tag separator, rather than '-':
         let tagSeparator = '-';
         if (this.releaseType) {
             tagSeparator = release_pr_factory_1.ReleasePRFactory.class(this.releaseType).tagSeparator();
-        }
-        if (this.packageName === undefined) {
-            throw Error(`could not determine package name for release repo = ${this.repoUrl}`);
         }
         const release = await this.gh.createRelease(this.packageName, this.monorepoTags
             ? `${this.packageName}${tagSeparator}${version}`
@@ -3388,6 +3391,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReleasePR = void 0;
 const semver = __webpack_require__(876);
 const checkpoint_1 = __webpack_require__(923);
+const package_branch_prefix_1 = __webpack_require__(866);
 const github_1 = __webpack_require__(614);
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const parseGithubRepoUrl = __webpack_require__(345);
@@ -3415,6 +3419,7 @@ class ReleasePR {
             : undefined;
         this.gh = this.gitHubInstance(options.octokitAPIs);
         this.changelogSections = options.changelogSections;
+        this.releaseType = options.releaseType;
     }
     async run() {
         if (this.snapshot && !this.supportsSnapshots()) {
@@ -3459,8 +3464,11 @@ class ReleasePR {
     // A releaser can implement this method to automatically detect
     // the release name when creating a GitHub release, for instance by returning
     // name in package.json, or setup.py.
+    static async lookupPackageName(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    static async lookupPackageName(gh) {
+    gh, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    path) {
         return Promise.resolve(undefined);
     }
     static tagSeparator() {
@@ -3536,10 +3544,7 @@ class ReleasePR {
         const updates = options.updates;
         const version = options.version;
         const includePackageName = options.includePackageName;
-        // Do not include npm style @org/ prefixes in the branch name:
-        const branchPrefix = this.packageName.match(/^@[\w-]+\//)
-            ? this.packageName.split('/')[1]
-            : this.packageName;
+        const branchPrefix = package_branch_prefix_1.packageBranchPrefix(this.packageName, this.releaseType);
         const title = includePackageName
             ? `chore: release ${this.packageName} ${version}`
             : `chore: release ${version}`;
@@ -3576,15 +3581,18 @@ class ReleasePR {
     changelogEmpty(changelogEntry) {
         return changelogEntry.split('\n').length === 1;
     }
-    addPath(file) {
-        if (this.path === undefined) {
+    static addPathStatic(file, path) {
+        if (path === undefined) {
             return file;
         }
         else {
-            const path = this.path.replace(/[/\\]$/, '');
+            path = path.replace(/[/\\]$/, '');
             file = file.replace(/^[/\\]/, '');
             return `${path}/${file}`;
         }
+    }
+    addPath(file) {
+        return ReleasePR.addPathStatic(file, this.path);
     }
 }
 exports.ReleasePR = ReleasePR;
@@ -8055,7 +8063,7 @@ module.exports = Scanner
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@8.2.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@8.2.0","_id":"release-please@8.2.0","_inBundle":false,"_integrity":"sha512-uyd2K2X9YLwb+t7XtR268qQBDBCTarNdaSJ7zTwF7KF+rFfoHRmWcgTBylK0hM2/FS+L+4SoJ1KEBvoyjQ01uw==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@8.2.0","name":"release-please","escapedName":"release-please","rawSpec":"8.2.0","saveSpec":null,"fetchSpec":"8.2.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-8.2.0.tgz","_spec":"8.2.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@conventional-commits/parser":"^0.3.0","@iarna/toml":"^2.2.5","@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^5.0.0","conventional-commits-filter":"^2.0.2","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","unist-util-visit":"^2.0.3","unist-util-visit-parents":"^3.1.1","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/iarna__toml":"^2.0.1","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","pretest":"npm run compile","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"8.2.0"};
+module.exports = {"_args":[["release-please@9.0.0-candidate.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@9.0.0-candidate.0","_id":"release-please@9.0.0-candidate.0","_inBundle":false,"_integrity":"sha512-Q4z3+t13zO0lQg1dk4qfddR/s4np5L5JlEi6yLZt5Xz7UKoVynjr6c0s7AesoKpqPjnz4k14V2b1Gk3rScU1Xw==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@9.0.0-candidate.0","name":"release-please","escapedName":"release-please","rawSpec":"9.0.0-candidate.0","saveSpec":null,"fetchSpec":"9.0.0-candidate.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-9.0.0-candidate.0.tgz","_spec":"9.0.0-candidate.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@conventional-commits/parser":"^0.4.1","@iarna/toml":"^2.2.5","@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^5.0.0","conventional-commits-filter":"^2.0.2","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","unist-util-visit":"^2.0.3","unist-util-visit-parents":"^3.1.1","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/iarna__toml":"^2.0.1","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","pretest":"npm run compile","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"9.0.0-candidate.0"};
 
 /***/ }),
 /* 192 */,
@@ -31003,8 +31011,8 @@ module.exports = {
   reqSerializer
 }
 
-var rawSymbol = Symbol('pino-raw-req-ref')
-var pinoReqProto = Object.create({}, {
+const rawSymbol = Symbol('pino-raw-req-ref')
+const pinoReqProto = Object.create({}, {
   id: {
     enumerable: true,
     writable: true,
@@ -31052,7 +31060,7 @@ Object.defineProperty(pinoReqProto, rawSymbol, {
 
 function reqSerializer (req) {
   // req.info is for hapi compat.
-  var connection = req.info || req.connection
+  const connection = req.info || req.socket
   const _req = Object.create(pinoReqProto)
   _req.id = (typeof req.id === 'function' ? req.id() : (req.id || (req.info ? req.info.id : undefined)))
   _req.method = req.method
@@ -31238,10 +31246,9 @@ const visit = __webpack_require__(263);
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const visitWithAncestors = __webpack_require__(727);
 const NUMBER_REGEX = /^[0-9]+$/;
-// Converts conventional commit AST into conventional-changelog's
-// output format, see: https://www.npmjs.com/package/conventional-commits-parser
-function toConventionalChangelogFormat(ast) {
-    const cc = {
+const parser = __webpack_require__(10);
+function getBlankConventionalCommit() {
+    return {
         body: '',
         subject: '',
         type: '',
@@ -31254,6 +31261,12 @@ function toConventionalChangelogFormat(ast) {
         header: '',
         footer: null,
     };
+}
+// Converts conventional commit AST into conventional-changelog's
+// output format, see: https://www.npmjs.com/package/conventional-commits-parser
+function toConventionalChangelogFormat(ast) {
+    const commits = [];
+    const headerCommit = getBlankConventionalCommit();
     // Separate the body and summary nodes, this simplifies the subsequent
     // tree walking logic:
     let body;
@@ -31272,19 +31285,19 @@ function toConventionalChangelogFormat(ast) {
     visit(summary, (node) => {
         switch (node.type) {
             case 'type':
-                cc.type = node.value;
-                cc.header += node.value;
+                headerCommit.type = node.value;
+                headerCommit.header += node.value;
                 break;
             case 'scope':
-                cc.scope = node.value;
-                cc.header += `(${node.value})`;
+                headerCommit.scope = node.value;
+                headerCommit.header += `(${node.value})`;
                 break;
             case 'breaking-change':
-                cc.header += '!';
+                headerCommit.header += '!';
                 break;
             case 'text':
-                cc.subject = node.value;
-                cc.header += `: ${node.value}`;
+                headerCommit.subject = node.value;
+                headerCommit.header += `: ${node.value}`;
                 break;
             default:
                 break;
@@ -31292,11 +31305,8 @@ function toConventionalChangelogFormat(ast) {
     });
     // [<any body-text except pre-footer>]
     if (body) {
-        visit(body, 'text', (node) => {
-            // TODO(@bcoe): once we have \n tokens in tree we can drop this:
-            if (cc.body !== '')
-                cc.body += '\n';
-            cc.body += node.value;
+        visit(body, ['text', 'newline'], (node) => {
+            headerCommit.body += node.value;
         });
     }
     // Extract BREAKING CHANGE notes, regardless of whether they fall in
@@ -31310,37 +31320,32 @@ function toConventionalChangelogFormat(ast) {
         if (!parent) {
             return;
         }
-        let startCollecting = false;
         switch (parent.type) {
             case 'summary':
-                breaking.text = cc.subject;
+                breaking.text = headerCommit.subject;
                 break;
             case 'body':
                 breaking.text = '';
                 // We treat text from the BREAKING CHANGE marker forward as
                 // the breaking change notes:
-                visit(parent, ['text', 'breaking-change'], (node) => {
-                    // TODO(@bcoe): once we have \n tokens in tree we can drop this:
-                    if (startCollecting && node.type === 'text') {
-                        if (breaking.text !== '')
-                            breaking.text += '\n';
-                        breaking.text += node.value;
-                    }
-                    else if (node.type === 'breaking-change') {
-                        startCollecting = true;
-                    }
+                visit(parent, ['text', 'newline'], (node) => {
+                    breaking.text += node.value;
                 });
                 break;
             case 'token':
+                // If the '!' breaking change marker is used, the breaking change
+                // will be identified when the footer is parsed as a commit:
+                if (!node.value.includes('BREAKING'))
+                    return;
                 parent = ancestors.pop();
-                visit(parent, 'text', (node) => {
+                visit(parent, ['text', 'newline'], (node) => {
                     breaking.text = node.value;
                 });
                 break;
         }
     });
     if (breaking.text !== '')
-        cc.notes.push(breaking);
+        headerCommit.notes.push(breaking);
     // Populates references array from footers:
     // references: [{
     //    action: 'Closes',
@@ -31384,10 +31389,53 @@ function toConventionalChangelogFormat(ast) {
         });
         // TODO(@bcoe): how should references like "Refs: v8:8940" work.
         if (hasRefSepartor && reference.issue.match(NUMBER_REGEX)) {
-            cc.references.push(reference);
+            headerCommit.references.push(reference);
         }
     });
-    return cc;
+    /*
+     * Split footers that resemble commits into additional commits, e.g.,
+     * chore: multiple commits
+     * chore(recaptchaenterprise): migrate recaptchaenterprise to the Java microgenerator
+     *   Committer: @miraleung
+     *   PiperOrigin-RevId: 345559154
+     * ...
+     */
+    visitWithAncestors(ast, ['type'], (node, ancestors) => {
+        let parent = ancestors.pop();
+        if (!parent) {
+            return;
+        }
+        if (parent.type === 'token') {
+            parent = ancestors.pop();
+            let footerText = '';
+            visit(parent, ['type', 'scope', 'breaking-change', 'separator', 'text', 'newline'], (node) => {
+                switch (node.type) {
+                    case 'scope':
+                        footerText += `(${node.value})`;
+                        break;
+                    case 'separator':
+                        // Footers of the form Fixes #99, should not be parsed.
+                        if (node.value.includes('#'))
+                            return;
+                        footerText += `${node.value} `;
+                        break;
+                    default:
+                        footerText += node.value;
+                        break;
+                }
+            });
+            try {
+                for (const commit of toConventionalChangelogFormat(parser.parser(footerText))) {
+                    commits.push(commit);
+                }
+            }
+            catch (err) {
+                // Footer does not appear to be an additional commit.
+            }
+        }
+    });
+    commits.push(headerCommit);
+    return commits;
 }
 exports.default = toConventionalChangelogFormat;
 //# sourceMappingURL=to-conventional-changelog-format.js.map
@@ -31519,9 +31567,9 @@ module.exports = ltr
 "use strict";
 
 
-var errSerializer = __webpack_require__(621)
-var reqSerializers = __webpack_require__(307)
-var resSerializers = __webpack_require__(578)
+const errSerializer = __webpack_require__(621)
+const reqSerializers = __webpack_require__(307)
+const resSerializers = __webpack_require__(578)
 
 module.exports = {
   err: errSerializer,
@@ -36281,8 +36329,8 @@ const Scanner = __webpack_require__(188)
 const { isWhitespace, isNewline, isParens } = __webpack_require__(157)
 
 /*
- * <message>       ::= <summary>, <newline>*, <body>, <newline>*, <footer>+
- *                  |  <summary>, <newline>*, <footer>+
+ * <message>       ::= <summary>, <newline>+, <body>, (<newline>+, <footer>)*
+ *                  |  <summary>, (<newline>+, <footer>)*
  *                  |  <summary>, <newline>*
  *
  */
@@ -36290,7 +36338,7 @@ function message (commitText) {
   const scanner = new Scanner(commitText.trim())
   const node = scanner.enter('message', [])
 
-  // <summary>
+  // <summary> ...
   const s = summary(scanner)
   if (s instanceof Error) {
     throw s
@@ -36301,27 +36349,49 @@ function message (commitText) {
     return scanner.exit(node)
   }
 
-  // <summary> <newline>* <body>
-  if (isNewline(scanner.peek())) {
-    // TODO(@byCedric): include <newline>* in AST.
-    while (isNewline(scanner.peek())) {
-      scanner.next()
-    }
+  let nl
+  let b
+  // ... <newline>* <body> ...
+  nl = newline(scanner)
+  if (nl instanceof Error) {
+    throw nl
   } else {
-    throw scanner.abort(node)
+    node.children.push(nl)
+    b = body(scanner)
+    if (b instanceof Error) {
+      b = null
+    } else {
+      node.children.push(b)
+    }
   }
-  const b = body(scanner)
-  if (!(b instanceof Error)) {
-    node.children.push(b)
+  if (scanner.eof()) {
+    return scanner.exit(node)
   }
-  // TODO(@byCedric): include <newline>* in AST.
-  while (isNewline(scanner.peek())) {
-    scanner.next()
+
+  //  ... <newline>* <footer>+
+  if (b) {
+    nl = newline(scanner)
+    if (nl instanceof Error) {
+      throw nl
+    } else {
+      node.children.push(nl)
+    }
   }
   while (!scanner.eof()) {
     const f = footer(scanner)
-    if (!(f instanceof Error)) node.children.push(f)
+    if (f instanceof Error) {
+      break
+    } else {
+      node.children.push(f)
+    }
+    nl = newline(scanner)
+    if (nl instanceof Error) {
+      break
+    } else {
+      node.children.push(nl)
+    }
   }
+
   return scanner.exit(node)
 }
 
@@ -36468,10 +36538,13 @@ function body (scanner) {
   const t = text(scanner)
   node.children.push(t)
   // <newline>, <body>*
-  if (isNewline(scanner.peek())) {
-    scanner.next()
+  const nl = newline(scanner)
+  if (!(nl instanceof Error)) {
     const b = body(scanner)
-    if (!(b instanceof Error)) {
+    if (b instanceof Error) {
+      scanner.abort(nl)
+    } else {
+      node.children.push(nl)
       Array.prototype.push.apply(node.children, b.children)
     }
   }
@@ -36483,11 +36556,9 @@ function body (scanner) {
  */
 function preFooter (scanner) {
   const node = scanner.enter('pre-footer', [])
-  while (isNewline(scanner.peek())) {
-    scanner.next()
-  }
   let f
   while (!scanner.eof()) {
+    newline(scanner)
     f = footer(scanner)
     if (f instanceof Error) return scanner.abort(node)
   }
@@ -36495,7 +36566,7 @@ function preFooter (scanner) {
 }
 
 /*
- * <footer>       ::= <token> <separator> <whitespace>* <value> <newline>?
+ * <footer>       ::= <token> <separator> <whitespace>* <value>
  */
 function footer (scanner) {
   const node = scanner.enter('footer', [])
@@ -36510,6 +36581,7 @@ function footer (scanner) {
   // <separator>
   const s = separator(scanner)
   if (s instanceof Error) {
+    scanner.abort(node)
     return s
   } else {
     node.children.push(s)
@@ -36521,16 +36593,15 @@ function footer (scanner) {
     node.children.push(ws)
   }
 
-  // <value> <newline>?
+  // <value>
   const v = value(scanner)
   if (v instanceof Error) {
+    scanner.abort(node)
     return v
   } else {
     node.children.push(v)
   }
-  if (isNewline(scanner.peek())) {
-    scanner.next()
-  }
+
   return scanner.exit(node)
 }
 
@@ -36609,18 +36680,24 @@ function value (scanner) {
  */
 function continuation (scanner) {
   const node = scanner.enter('continuation', [])
-  if (isNewline(scanner.peek())) {
-    scanner.next()
-    const ws = whitespace(scanner)
-    if (ws instanceof Error) {
-      return ws
-    } else {
-      node.children.push(ws)
-      node.children.push(text(scanner))
-    }
+  // <newline>
+  const nl = newline(scanner)
+  if (nl instanceof Error) {
+    return nl
   } else {
-    return scanner.abort(node)
+    node.children.push(nl)
   }
+
+  // <whitespace> <text>
+  const ws = whitespace(scanner)
+  if (ws instanceof Error) {
+    scanner.abort(node)
+    return ws
+  } else {
+    node.children.push(ws)
+    node.children.push(text(scanner))
+  }
+
   return scanner.exit(node)
 }
 
@@ -36660,6 +36737,20 @@ function whitespace (scanner) {
   }
   if (node.value === '') {
     return scanner.abort(node, [' '])
+  }
+  return scanner.exit(node)
+}
+
+/*
+ * <newline>+       ::= [<CR>], <LF>
+ */
+function newline (scanner) {
+  const node = scanner.enter('newline', '')
+  while (isNewline(scanner.peek())) {
+    node.value += scanner.next()
+  }
+  if (node.value === '') {
+    return scanner.abort(node, ['<CR><LF>', '<LF>'])
   }
   return scanner.exit(node)
 }
@@ -40755,7 +40846,7 @@ module.exports = coerce
 
 var register = __webpack_require__(280)
 var addHook = __webpack_require__(510)
-var removeHook = __webpack_require__(866)
+var removeHook = __webpack_require__(881)
 
 // bind with array of arguments: https://stackoverflow.com/a/21792913
 var bind = Function.bind
@@ -40942,6 +41033,26 @@ const conventionalChangelogWriter = __webpack_require__(142);
 const parseGithubRepoUrl = __webpack_require__(345);
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const presetFactory = __webpack_require__(851);
+function getParsedCommits(commits) {
+    const parsedCommits = [];
+    for (const commit of commits) {
+        try {
+            for (const parsedCommit of to_conventional_changelog_format_1.default(parser_1.parser(commit.message))) {
+                const commitWithHash = postProcessCommits(parsedCommit);
+                commitWithHash.hash = commit.sha;
+                parsedCommits.push(commitWithHash);
+            }
+        }
+        catch (_err) {
+            // Commit is not in conventional commit format, it does not
+            // contribute to the CHANGELOG generation.
+        }
+    }
+    return parsedCommits;
+}
+// TODO(@bcoe): now that we walk the actual AST of conventional commits
+// we should be able to move post processing into
+// to-conventional-changelog.ts.
 function postProcessCommits(commit) {
     commit.notes.forEach(note => {
         let text = '';
@@ -41031,38 +41142,15 @@ class ConventionalCommits {
             this.headerPartial || preset.writerOpts.headerPartial;
         preset.writerOpts.mainTemplate =
             this.mainTemplate || preset.writerOpts.mainTemplate;
-        const parsedCommits = [];
-        for (const commit of this.commits) {
-            try {
-                const parsedCommit = postProcessCommits(to_conventional_changelog_format_1.default(parser_1.parser(commit.message)));
-                parsedCommit.hash = commit.sha;
-                parsedCommits.push(parsedCommit);
-            }
-            catch (_err) {
-                // Commit is not in conventional commit format, it does not
-                // contribute to the CHANGELOG generation.
-            }
-        }
         const parsed = conventionalChangelogWriter
-            .parseArray(parsedCommits, context, preset.writerOpts)
+            .parseArray(getParsedCommits(this.commits), context, preset.writerOpts)
             .trim();
         return parsed;
     }
     async guessReleaseType(preMajor) {
         const VERSIONS = ['major', 'minor', 'patch'];
         const preset = await presetFactory({ preMajor });
-        const parsedCommits = [];
-        for (const commit of this.commits) {
-            try {
-                const parsedCommit = to_conventional_changelog_format_1.default(parser_1.parser(commit.message));
-                parsedCommits.push(parsedCommit);
-            }
-            catch (_err) {
-                // Commit is not in conventional commit format, it does not
-                // contribute to the CHANGELOG generation.
-            }
-        }
-        const commits = conventionalCommitsFilter(parsedCommits);
+        const commits = conventionalCommitsFilter(getParsedCommits(this.commits));
         let result = preset.recommendedBumpOpts.whatBump(commits, preset.recommendedBumpOpts);
         if (result && result.level !== null) {
             result.releaseType = VERSIONS[result.level];
@@ -41661,7 +41749,7 @@ class Python extends release_pr_1.ReleasePR {
             packageName: this.packageName,
         }));
         // There should be only one version.py, but foreach in case that is incorrect
-        const versionPyFilesSearch = this.gh.findFilesByFilename('version.py');
+        const versionPyFilesSearch = this.gh.findFilesByFilename('version.py', this.path);
         const versionPyFiles = await versionPyFilesSearch;
         versionPyFiles.forEach(path => {
             updates.push(new version_py_1.VersionPy({
@@ -44071,8 +44159,8 @@ module.exports = {
   resSerializer
 }
 
-var rawSymbol = Symbol('pino-raw-res-ref')
-var pinoResProto = Object.create({}, {
+const rawSymbol = Symbol('pino-raw-res-ref')
+const pinoResProto = Object.create({}, {
   statusCode: {
     enumerable: true,
     writable: true,
@@ -46677,8 +46765,9 @@ class GitHub {
     }
     // The default matcher will rule out pre-releases.
     // TODO: make this handle more than 100 results using async iterator.
-    async findMergedReleasePR(labels, perPage = 100, prefix = undefined, preRelease = true) {
-        prefix = (prefix === null || prefix === void 0 ? void 0 : prefix.endsWith('-')) ? prefix.replace(/-$/, '') : prefix;
+    async findMergedReleasePR(labels, perPage = 100, branchPrefix = undefined, preRelease = true) {
+        branchPrefix = (branchPrefix === null || branchPrefix === void 0 ? void 0 : branchPrefix.endsWith('-')) ? branchPrefix.replace(/-$/, '')
+            : branchPrefix;
         const baseLabel = await this.getBaseLabel();
         const pullsResponse = (await this.request(`GET /repos/:owner/:repo/pulls?state=closed&per_page=${perPage}${this.proxyKey ? `&key=${this.proxyKey}` : ''}&sort=merged_at&direction=desc`, {
             owner: this.owner,
@@ -46709,10 +46798,10 @@ class GitHub {
                 const version = match[2];
                 if (!version)
                     continue;
-                if (prefix && match[1] !== prefix) {
+                if (branchPrefix && match[1] !== branchPrefix) {
                     continue;
                 }
-                else if (!prefix && match[1]) {
+                else if (!branchPrefix && match[1]) {
                     continue;
                 }
                 // What's left by now should just be the version string.
@@ -47002,12 +47091,23 @@ class GitHub {
             });
         }
     }
-    async findFilesByFilename(filename) {
+    async findFilesByFilename(filename, prefix) {
+        let q = `filename:${filename}+repo:${this.owner}/${this.repo}`;
+        if (prefix) {
+            prefix = prefix.replace(/[/\\]$/, '');
+            prefix = prefix.replace(/^[/\\]/, '');
+            q += `+path:${prefix}`;
+        }
         const response = await this.octokit.search.code({
-            q: `filename:${filename}+repo:${this.owner}/${this.repo}`,
+            q: q,
         });
         return response.data.items.map(file => {
-            return file.path;
+            let path = file.path;
+            if (prefix) {
+                const pfix = new RegExp(`^${prefix}[/\\\\]`);
+                path = path.replace(pfix, '');
+            }
+            return path;
         });
     }
 }
@@ -47047,6 +47147,7 @@ exports.Node = void 0;
 const release_pr_1 = __webpack_require__(93);
 const conventional_commits_1 = __webpack_require__(514);
 const checkpoint_1 = __webpack_require__(923);
+const package_branch_prefix_1 = __webpack_require__(866);
 // Generic
 const changelog_1 = __webpack_require__(261);
 // JavaScript
@@ -47054,7 +47155,9 @@ const package_json_1 = __webpack_require__(815);
 const samples_package_json_1 = __webpack_require__(637);
 class Node extends release_pr_1.ReleasePR {
     async _run() {
-        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}-` : undefined);
+        const latestTag = await this.gh.latestTag(this.monorepoTags
+            ? `${package_branch_prefix_1.packageBranchPrefix(this.packageName, 'node')}-`
+            : undefined);
         const commits = await this.commits({
             sha: latestTag ? latestTag.sha : undefined,
             path: this.path,
@@ -47121,10 +47224,10 @@ class Node extends release_pr_1.ReleasePR {
     // A releaser can implement this method to automatically detect
     // the release name when creating a GitHub release, for instance by returning
     // name in package.json, or setup.py.
-    static async lookupPackageName(gh) {
+    static async lookupPackageName(gh, path) {
         // Make an effort to populate packageName from the contents of
         // the package.json, rather than forcing this to be set:
-        const contents = await gh.getFileContents('package.json');
+        const contents = await gh.getFileContents(this.addPathStatic('package.json', path));
         const pkg = JSON.parse(contents.parsedContent);
         if (pkg.name)
             return pkg.name;
@@ -47147,6 +47250,7 @@ Node.releaserName = 'node';
 
 module.exports = errSerializer
 
+const { toString } = Object.prototype
 const seen = Symbol('circular-ref-tag')
 const rawSymbol = Symbol('pino-raw-err-ref')
 const pinoErrProto = Object.create({}, {
@@ -47187,13 +47291,16 @@ function errSerializer (err) {
 
   err[seen] = undefined // tag to prevent re-looking at this
   const _err = Object.create(pinoErrProto)
-  _err.type = err.constructor.name
+  _err.type = toString.call(err.constructor) === '[object Object]'
+    ? err.constructor.name
+    : err.name
   _err.message = err.message
   _err.stack = err.stack
   for (const key in err) {
     if (_err[key] === undefined) {
       const val = err[key]
       if (val instanceof Error) {
+        /* eslint-disable no-prototype-builtins */
         if (!val.hasOwnProperty(seen)) {
           _err[key] = errSerializer(val)
         }
@@ -56246,26 +56353,43 @@ module.exports = exports['default'];
 /* 864 */,
 /* 865 */,
 /* 866 */
-/***/ (function(module) {
+/***/ (function(__unusedmodule, exports) {
 
-module.exports = removeHook
+"use strict";
 
-function removeHook (state, name, method) {
-  if (!state.registry[name]) {
-    return
-  }
-
-  var index = state.registry[name]
-    .map(function (registered) { return registered.orig })
-    .indexOf(method)
-
-  if (index === -1) {
-    return
-  }
-
-  state.registry[name].splice(index, 1)
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.packageBranchPrefix = void 0;
+// map from a packageName to the prefix used in release branch creation.
+function packageBranchPrefix(packageName, releaseType) {
+    let branchPrefix;
+    switch (releaseType) {
+        case 'node': {
+            branchPrefix = packageName.match(/^@[\w-]+\//)
+                ? packageName.split('/')[1]
+                : packageName;
+            break;
+        }
+        default: {
+            branchPrefix = packageName;
+        }
+    }
+    return branchPrefix;
 }
-
+exports.packageBranchPrefix = packageBranchPrefix;
+//# sourceMappingURL=package-branch-prefix.js.map
 
 /***/ }),
 /* 867 */
@@ -56407,7 +56531,29 @@ module.exports = (versions, range, options) => {
 /* 878 */,
 /* 879 */,
 /* 880 */,
-/* 881 */,
+/* 881 */
+/***/ (function(module) {
+
+module.exports = removeHook
+
+function removeHook (state, name, method) {
+  if (!state.registry[name]) {
+    return
+  }
+
+  var index = state.registry[name]
+    .map(function (registered) { return registered.orig })
+    .indexOf(method)
+
+  if (index === -1) {
+    return
+  }
+
+  state.registry[name].splice(index, 1)
+}
+
+
+/***/ }),
 /* 882 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
@@ -59266,7 +59412,7 @@ module.exports = inc
 /* 929 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["pino@6.9.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"pino@6.9.0","_id":"pino@6.9.0","_inBundle":false,"_integrity":"sha512-9RrRJsKOsgj50oGoR/y4EEVyUjMb/eRu8y4hjwPqM6q214xsxSxY/IKB+aEEv0slqNd4U0RVRfivKfy83UxgUQ==","_location":"/pino","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"pino@6.9.0","name":"pino","escapedName":"pino","rawSpec":"6.9.0","saveSpec":null,"fetchSpec":"6.9.0"},"_requiredBy":["/code-suggester"],"_resolved":"https://registry.npmjs.org/pino/-/pino-6.9.0.tgz","_spec":"6.9.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Matteo Collina","email":"hello@matteocollina.com"},"bin":{"pino":"bin.js"},"browser":"./browser.js","bugs":{"url":"https://github.com/pinojs/pino/issues"},"contributors":[{"name":"David Mark Clements","email":"huperekchuno@googlemail.com"},{"name":"James Sumners","email":"james.sumners@gmail.com"},{"name":"Thomas Watson Steen","email":"w@tson.dk","url":"https://twitter.com/wa7son"}],"dependencies":{"fast-redact":"^3.0.0","fast-safe-stringify":"^2.0.7","flatstr":"^1.0.12","pino-std-serializers":"^2.4.2","quick-format-unescaped":"^4.0.1","sonic-boom":"^1.0.2"},"description":"super fast, all natural json logger","devDependencies":{"airtap":"3.0.0","benchmark":"^2.1.4","bole":"^4.0.0","bunyan":"^1.8.14","docsify-cli":"^4.4.1","execa":"^4.0.0","fastbench":"^1.0.1","flush-write-stream":"^2.0.0","import-fresh":"^3.2.1","log":"^6.0.0","loglevel":"^1.6.7","pino-pretty":"^4.1.0","pre-commit":"^1.2.2","proxyquire":"^2.1.3","pump":"^3.0.0","semver":"^7.0.0","snazzy":"^8.0.0","split2":"^3.1.1","standard":"^14.3.3","steed":"^1.1.3","strip-ansi":"^6.0.0","tap":"^14.10.8","tape":"^5.0.0","through2":"^4.0.0","winston":"^3.3.3"},"files":["pino.js","bin.js","browser.js","pretty.js","usage.txt","test","docs","example.js","lib"],"homepage":"http://getpino.io","keywords":["fast","logger","stream","json"],"license":"MIT","main":"pino.js","name":"pino","precommit":"test","repository":{"type":"git","url":"git+https://github.com/pinojs/pino.git"},"scripts":{"bench":"node benchmarks/utils/runbench all","bench-basic":"node benchmarks/utils/runbench basic","bench-child":"node benchmarks/utils/runbench child","bench-child-child":"node benchmarks/utils/runbench child-child","bench-child-creation":"node benchmarks/utils/runbench child-creation","bench-deep-object":"node benchmarks/utils/runbench deep-object","bench-formatters":"node benchmarks/utils/runbench formatters","bench-longs-tring":"node benchmarks/utils/runbench long-string","bench-multi-arg":"node benchmarks/utils/runbench multi-arg","bench-object":"node benchmarks/utils/runbench object","browser-test":"airtap --local 8080 test/browser*test.js","cov-ui":"tap --coverage-report=html test/*test.js test/*/*test.js","docs":"docsify serve","test":"standard | snazzy && tap --100 test/*test.js test/*/*test.js","update-bench-doc":"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md"},"version":"6.9.0"};
+module.exports = {"_args":[["pino@6.10.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"pino@6.10.0","_id":"pino@6.10.0","_inBundle":false,"_integrity":"sha512-ZFGE/Wq930gFb1h0RI6S/QOfkyzNj94Xubwlyo4XpxNUgrG1C0iEqnlooG5Fymx6yrUUtEJ8j/u8NCGwgwTXaQ==","_location":"/pino","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"pino@6.10.0","name":"pino","escapedName":"pino","rawSpec":"6.10.0","saveSpec":null,"fetchSpec":"6.10.0"},"_requiredBy":["/code-suggester"],"_resolved":"https://registry.npmjs.org/pino/-/pino-6.10.0.tgz","_spec":"6.10.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Matteo Collina","email":"hello@matteocollina.com"},"bin":{"pino":"bin.js"},"browser":"./browser.js","bugs":{"url":"https://github.com/pinojs/pino/issues"},"contributors":[{"name":"David Mark Clements","email":"huperekchuno@googlemail.com"},{"name":"James Sumners","email":"james.sumners@gmail.com"},{"name":"Thomas Watson Steen","email":"w@tson.dk","url":"https://twitter.com/wa7son"}],"dependencies":{"fast-redact":"^3.0.0","fast-safe-stringify":"^2.0.7","flatstr":"^1.0.12","pino-std-serializers":"^3.1.0","quick-format-unescaped":"^4.0.1","sonic-boom":"^1.0.2"},"description":"super fast, all natural json logger","devDependencies":{"airtap":"3.0.0","benchmark":"^2.1.4","bole":"^4.0.0","bunyan":"^1.8.14","docsify-cli":"^4.4.1","execa":"^4.0.0","fastbench":"^1.0.1","flush-write-stream":"^2.0.0","import-fresh":"^3.2.1","log":"^6.0.0","loglevel":"^1.6.7","pino-pretty":"^4.1.0","pre-commit":"^1.2.2","proxyquire":"^2.1.3","pump":"^3.0.0","semver":"^7.0.0","snazzy":"^8.0.0","split2":"^3.1.1","standard":"^14.3.3","steed":"^1.1.3","strip-ansi":"^6.0.0","tap":"^14.10.8","tape":"^5.0.0","through2":"^4.0.0","winston":"^3.3.3"},"files":["pino.js","bin.js","browser.js","pretty.js","usage.txt","test","docs","example.js","lib"],"homepage":"http://getpino.io","keywords":["fast","logger","stream","json"],"license":"MIT","main":"pino.js","name":"pino","precommit":"test","repository":{"type":"git","url":"git+https://github.com/pinojs/pino.git"},"scripts":{"bench":"node benchmarks/utils/runbench all","bench-basic":"node benchmarks/utils/runbench basic","bench-child":"node benchmarks/utils/runbench child","bench-child-child":"node benchmarks/utils/runbench child-child","bench-child-creation":"node benchmarks/utils/runbench child-creation","bench-deep-object":"node benchmarks/utils/runbench deep-object","bench-formatters":"node benchmarks/utils/runbench formatters","bench-longs-tring":"node benchmarks/utils/runbench long-string","bench-multi-arg":"node benchmarks/utils/runbench multi-arg","bench-object":"node benchmarks/utils/runbench object","browser-test":"airtap --local 8080 test/browser*test.js","cov-ui":"tap --coverage-report=html test/*test.js test/*/*test.js","docs":"docsify serve","test":"standard | snazzy && tap --100 test/*test.js test/*/*test.js","update-bench-doc":"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md"},"version":"6.10.0"};
 
 /***/ }),
 /* 930 */
