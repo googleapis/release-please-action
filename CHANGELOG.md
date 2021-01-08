@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.14.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.13.0...v2.14.0) (2021-01-08)
+
+
+### Features
+
+* **release-please:** add support for Rust ([#177](https://www.github.com/google-github-actions/release-please-action/issues/177)) ([fce09f2](https://www.github.com/google-github-actions/release-please-action/commit/fce09f2994e8c6711169af3c92fdfda15fa30f05))
+
 ## [2.13.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.12.3...v2.13.0) (2020-12-29)
 
 
