@@ -42,7 +42,7 @@ Automate releases with Conventional Commit Messages.
 | `bump-minor-pre-major` | Should breaking changes before 1.0.0 produce minor bumps?  Default `No` |
 | `path`          | create a release from a path other than the repository's root |
 | `monorepo-tags` | add prefix to tags and branches, allowing multiple libraries to be released from the same repository. |
-| `changelog-types` | A JSON formatted String containing to override the outputted changlog sections |
+| `changelog-types` | A JSON formatted String containing to override the outputted changelog sections |
 | `version-file` | provide a path to a version file to increment (used by ruby releaser) |
 | `fork`          | Should the PR be created from a fork (does not work with `secrets.GITHUB_TOKEN`) |
 | `command`          | release-please command to run, either `github-release`, or `release-pr` (_defaults to running both_) |
@@ -168,7 +168,7 @@ jobs:
 
 ## Creating major/minor tags
 
-If you are using release-please to publish a GitHub acton, you will
+If you are using release-please to publish a GitHub action, you will
 likely want to tag a major and minor tag during a release, i.e., if you
 are releasing `v2.8.3`, you will also want to update tags `v2` and `v2.8`. This allows your
 users to pin to `v2`, and get updates to your library without updating their
