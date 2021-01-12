@@ -26,7 +26,7 @@
   "homepage": "https://github.com/bcoe/release-please-action#readme",
   "dependencies": {
     "@actions/core": "^1.2.6",
-    "release-please": "^9.0.0-candidate.1"
+    "release-please": "^9.1.0"
   },
   "devDependencies": {
     "@zeit/ncc": "^0.22.3",
