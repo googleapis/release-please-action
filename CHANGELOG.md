@@ -1,5 +1,15 @@
 # Changelog
 
+### [2.14.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.14.0...v2.14.1) (2021-01-12)
+
+
+### Bug Fixes
+
+* README.md typos ([#186](https://www.github.com/google-github-actions/release-please-action/issues/186)) ([e363460](https://www.github.com/google-github-actions/release-please-action/commit/e36346079c94b226b38a19d018ca6cdc044080e0))
+* **release-please:** fixes for monorepo path handling ([#181](https://www.github.com/google-github-actions/release-please-action/issues/181)) ([349920d](https://www.github.com/google-github-actions/release-please-action/commit/349920da705ae2434e49ea95bd1c90238b71aafa))
+* **release-please:** handle missing packageName release-pr ([#184](https://www.github.com/google-github-actions/release-please-action/issues/184)) ([88127ca](https://www.github.com/google-github-actions/release-please-action/commit/88127ca26bc402aaf2d7e9f2182035ad2e81b417))
+* **release-please:** increase page size for release PRs ([#187](https://www.github.com/google-github-actions/release-please-action/issues/187)) ([abdb363](https://www.github.com/google-github-actions/release-please-action/commit/abdb3633221dfc822423679ad246db4e1b048fff))
+
 ## [2.14.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.13.0...v2.14.0) (2021-01-08)
 
 
