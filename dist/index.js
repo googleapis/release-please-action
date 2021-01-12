@@ -3318,7 +3318,120 @@ module.exports = require("os");
 
 /***/ }),
 /* 88 */,
-/* 89 */,
+/* 89 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.OCaml = void 0;
+const release_pr_1 = __webpack_require__(93);
+const conventional_commits_1 = __webpack_require__(514);
+const checkpoint_1 = __webpack_require__(923);
+// Generic
+const changelog_1 = __webpack_require__(261);
+// OCaml
+const opam_1 = __webpack_require__(159);
+const esy_json_1 = __webpack_require__(481);
+const notEsyLock = (path) => !path.startsWith('esy.lock');
+const CHANGELOG_SECTIONS = [
+    { type: 'feat', section: 'Features' },
+    { type: 'fix', section: 'Bug Fixes' },
+    { type: 'perf', section: 'Performance Improvements' },
+    { type: 'revert', section: 'Reverts' },
+    { type: 'docs', section: 'Documentation' },
+    { type: 'chore', section: 'Miscellaneous Chores' },
+    { type: 'refactor', section: 'Code Refactoring' },
+    { type: 'test', section: 'Tests' },
+    { type: 'build', section: 'Build System' },
+    { type: 'ci', section: 'Continuous Integration' },
+];
+class OCaml extends release_pr_1.ReleasePR {
+    async _run() {
+        const latestTag = await this.gh.latestTag(this.monorepoTags ? `${this.packageName}-` : undefined);
+        const commits = await this.commits({
+            sha: latestTag ? latestTag.sha : undefined,
+            path: this.path,
+        });
+        const cc = new conventional_commits_1.ConventionalCommits({
+            commits,
+            githubRepoUrl: this.repoUrl,
+            bumpMinorPreMajor: this.bumpMinorPreMajor,
+            // TODO: Is this configurable?
+            changelogSections: CHANGELOG_SECTIONS,
+        });
+        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
+        const changelogEntry = await cc.generateChangelogEntry({
+            version: candidate.version,
+            currentTag: `v${candidate.version}`,
+            previousTag: candidate.previousTag,
+        });
+        // don't create a release candidate until user facing changes
+        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
+        // one line is a good indicator that there were no interesting commits.
+        if (this.changelogEmpty(changelogEntry)) {
+            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            return undefined;
+        }
+        const updates = [];
+        const jsonPaths = await this.gh.findFilesByExtension('json');
+        for (const path of jsonPaths) {
+            if (notEsyLock(path)) {
+                const contents = await this.gh.getFileContents(this.addPath(path));
+                const pkg = JSON.parse(contents.parsedContent);
+                if (pkg.version !== undefined) {
+                    updates.push(new esy_json_1.EsyJson({
+                        path: this.addPath(path),
+                        changelogEntry,
+                        version: candidate.version,
+                        packageName: this.packageName,
+                        contents,
+                    }));
+                }
+            }
+        }
+        const opamPaths = await this.gh.findFilesByExtension('opam');
+        opamPaths.filter(notEsyLock).forEach(path => {
+            updates.push(new opam_1.Opam({
+                path: this.addPath(path),
+                changelogEntry,
+                version: candidate.version,
+                packageName: this.packageName,
+            }));
+        });
+        updates.push(new changelog_1.Changelog({
+            path: this.addPath('CHANGELOG.md'),
+            changelogEntry,
+            version: candidate.version,
+            packageName: this.packageName,
+        }));
+        return await this.openPR({
+            sha: commits[0].sha,
+            changelogEntry: `${changelogEntry}\n---\n`,
+            updates,
+            version: candidate.version,
+            includePackageName: this.monorepoTags,
+        });
+    }
+}
+exports.OCaml = OCaml;
+OCaml.releaserName = 'ocaml';
+//# sourceMappingURL=ocaml.js.map
+
+/***/ }),
 /* 90 */
 /***/ (function(__unusedmodule, exports, __webpack_require__) {
 
@@ -7502,7 +7615,47 @@ module.exports = {
 
 /***/ }),
 /* 158 */,
-/* 159 */,
+/* 159 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Opam = void 0;
+const checkpoint_1 = __webpack_require__(923);
+class Opam {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        const oldVersion = content.match(/^version: "([A-Za-z0-9_\-+.~]+)"$/m);
+        if (oldVersion) {
+            checkpoint_1.checkpoint(`updating ${this.path} from ${oldVersion[1]} to ${this.version}`, checkpoint_1.CheckpointType.Success);
+        }
+        return content.replace(/^version: "[A-Za-z0-9_\-+.~]+"$/m, `version: "${this.version}"`);
+    }
+}
+exports.Opam = Opam;
+//# sourceMappingURL=opam.js.map
+
+/***/ }),
 /* 160 */,
 /* 161 */,
 /* 162 */,
@@ -8063,7 +8216,7 @@ module.exports = Scanner
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@9.1.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@9.1.0","_id":"release-please@9.1.0","_inBundle":false,"_integrity":"sha512-qUAE6WO2rBbMobUQRx3DbTqfL/6BiiTrNyZEEgwGyIKrwGAnK1Iu8XRuixh4MT8MfPHQwUKAqn27JEOL+wSXsQ==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@9.1.0","name":"release-please","escapedName":"release-please","rawSpec":"9.1.0","saveSpec":null,"fetchSpec":"9.1.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-9.1.0.tgz","_spec":"9.1.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@conventional-commits/parser":"^0.4.1","@iarna/toml":"^2.2.5","@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^5.0.0","conventional-commits-filter":"^2.0.2","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","unist-util-visit":"^2.0.3","unist-util-visit-parents":"^3.1.1","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/iarna__toml":"^2.0.1","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","pretest":"npm run compile","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"9.1.0"};
+module.exports = {"_args":[["release-please@9.2.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@9.2.0","_id":"release-please@9.2.0","_inBundle":false,"_integrity":"sha512-FoTTOODxbnptIfXdw2YsEsprBmsKohW1hzHBOx00zzoRyXg/utcJEtWesH1C4cs4Bc4jv0y0nX3O2QTEJQce1w==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@9.2.0","name":"release-please","escapedName":"release-please","rawSpec":"9.2.0","saveSpec":null,"fetchSpec":"9.2.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-9.2.0.tgz","_spec":"9.2.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@conventional-commits/parser":"^0.4.1","@iarna/toml":"^2.2.5","@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^5.0.0","conventional-commits-filter":"^2.0.2","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","unist-util-visit":"^2.0.3","unist-util-visit-parents":"^3.1.1","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/iarna__toml":"^2.0.1","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","pretest":"npm run compile","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"9.2.0"};
 
 /***/ }),
 /* 192 */,
@@ -40204,7 +40357,46 @@ module.exports = validRange
 
 
 /***/ }),
-/* 481 */,
+/* 481 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.EsyJson = void 0;
+const checkpoint_1 = __webpack_require__(923);
+class EsyJson {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        const parsed = JSON.parse(content);
+        checkpoint_1.checkpoint(`updating ${this.path} from ${parsed.version} to ${this.version}`, checkpoint_1.CheckpointType.Success);
+        parsed.version = this.version;
+        return JSON.stringify(parsed, null, 2) + '\n';
+    }
+}
+exports.EsyJson = EsyJson;
+//# sourceMappingURL=esy-json.js.map
+
+/***/ }),
 /* 482 */,
 /* 483 */,
 /* 484 */,
@@ -44788,6 +44980,7 @@ const ruby_1 = __webpack_require__(28);
 const simple_1 = __webpack_require__(643);
 const terraform_module_1 = __webpack_require__(440);
 const rust_1 = __webpack_require__(886);
+const ocaml_1 = __webpack_require__(89);
 // TODO: add any new releasers you create to this list:
 function getReleasers() {
     const releasers = {
@@ -44804,6 +44997,7 @@ function getReleasers() {
         simple: simple_1.Simple,
         'terraform-module': terraform_module_1.TerraformModule,
         rust: rust_1.Rust,
+        ocaml: ocaml_1.OCaml,
     };
     return releasers;
 }
