@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.15.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.14.1...v2.15.0) (2021-01-12)
+
+
+### Features
+
+* **release-please:** add support for ocaml ([#189](https://www.github.com/google-github-actions/release-please-action/issues/189)) ([c1aca05](https://www.github.com/google-github-actions/release-please-action/commit/c1aca052417abd8c2b0d1e68ce826282ae3b245a))
+
 ### [2.14.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.14.0...v2.14.1) (2021-01-12)
 
 
