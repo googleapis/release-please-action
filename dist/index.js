@@ -2432,8 +2432,8 @@ class GitHubRelease {
         }
         // In most configurations, createRelease() should be called close to when
         // a release PR is merged, e.g., a GitHub action that kicks off this
-        // workflow on merge. For tis reason, we can pull a fairly small number of PRs:
-        const pageSize = 25;
+        // workflow on merge. For this reason, we can pull a fairly small number of PRs:
+        const pageSize = 50;
         const gitHubReleasePR = await this.gh.findMergedReleasePR(this.labels, pageSize, this.monorepoTags
             ? package_branch_prefix_1.packageBranchPrefix(this.packageName, this.releaseType)
             : undefined);
@@ -3582,12 +3582,12 @@ class ReleasePR {
         return changelogEntry.split('\n').length === 1;
     }
     static addPathStatic(file, path) {
+        file = file.replace(/^[/\\]/, '');
         if (path === undefined) {
             return file;
         }
         else {
             path = path.replace(/[/\\]$/, '');
-            file = file.replace(/^[/\\]/, '');
             return `${path}/${file}`;
         }
     }
@@ -8063,7 +8063,7 @@ module.exports = Scanner
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@9.0.0-candidate.1","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@9.0.0-candidate.1","_id":"release-please@9.0.0-candidate.1","_inBundle":false,"_integrity":"sha512-XwfkMdhyAGXhcJpo9jWVGLnha+fXXAdtxa8BP7RbhGFHrdbbqg4waiTMce/TnFCj+Tj0JSq59UVINzt3jHeKIw==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@9.0.0-candidate.1","name":"release-please","escapedName":"release-please","rawSpec":"9.0.0-candidate.1","saveSpec":null,"fetchSpec":"9.0.0-candidate.1"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-9.0.0-candidate.1.tgz","_spec":"9.0.0-candidate.1","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@conventional-commits/parser":"^0.4.1","@iarna/toml":"^2.2.5","@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^5.0.0","conventional-commits-filter":"^2.0.2","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","unist-util-visit":"^2.0.3","unist-util-visit-parents":"^3.1.1","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/iarna__toml":"^2.0.1","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","pretest":"npm run compile","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"9.0.0-candidate.1"};
+module.exports = {"_args":[["release-please@9.1.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@9.1.0","_id":"release-please@9.1.0","_inBundle":false,"_integrity":"sha512-qUAE6WO2rBbMobUQRx3DbTqfL/6BiiTrNyZEEgwGyIKrwGAnK1Iu8XRuixh4MT8MfPHQwUKAqn27JEOL+wSXsQ==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@9.1.0","name":"release-please","escapedName":"release-please","rawSpec":"9.1.0","saveSpec":null,"fetchSpec":"9.1.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-9.1.0.tgz","_spec":"9.1.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@conventional-commits/parser":"^0.4.1","@iarna/toml":"^2.2.5","@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^5.0.0","conventional-commits-filter":"^2.0.2","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","unist-util-visit":"^2.0.3","unist-util-visit-parents":"^3.1.1","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/iarna__toml":"^2.0.1","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","pretest":"npm run compile","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"9.1.0"};
 
 /***/ }),
 /* 192 */,
@@ -47091,11 +47091,31 @@ class GitHub {
             });
         }
     }
+    normalizePrefix(prefix) {
+        return prefix.replace(/^[/\\]/, '').replace(/[/\\]$/, '');
+    }
     async findFilesByFilename(filename, prefix) {
         let q = `filename:${filename}+repo:${this.owner}/${this.repo}`;
         if (prefix) {
-            prefix = prefix.replace(/[/\\]$/, '');
-            prefix = prefix.replace(/^[/\\]/, '');
+            prefix = this.normalizePrefix(prefix);
+            q += `+path:${prefix}`;
+        }
+        const response = await this.octokit.search.code({
+            q: q,
+        });
+        return response.data.items.map(file => {
+            let path = file.path;
+            if (prefix) {
+                const pfix = new RegExp(`^${prefix}[/\\\\]`);
+                path = path.replace(pfix, '');
+            }
+            return path;
+        });
+    }
+    async findFilesByExtension(extension, prefix) {
+        let q = `extension:${extension}+repo:${this.owner}/${this.repo}`;
+        if (prefix) {
+            prefix = this.normalizePrefix(prefix);
             q += `+path:${prefix}`;
         }
         const response = await this.octokit.search.code({
