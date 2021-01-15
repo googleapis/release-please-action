@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.15.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.15.0...v2.15.1) (2021-01-15)
+
+
+### Bug Fixes
+
+* **release-please:** paginate PRs by updated ([#192](https://www.github.com/google-github-actions/release-please-action/issues/192)) ([92f9818](https://www.github.com/google-github-actions/release-please-action/commit/92f9818112ba7b24ebe9629d519b12e93df6a0ab))
+
 ## [2.15.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.14.1...v2.15.0) (2021-01-12)
 
 
