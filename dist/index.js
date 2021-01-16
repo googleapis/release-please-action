@@ -2436,7 +2436,7 @@ class GitHubRelease {
         const pageSize = 50;
         const gitHubReleasePR = await this.gh.findMergedReleasePR(this.labels, pageSize, this.monorepoTags
             ? package_branch_prefix_1.packageBranchPrefix(this.packageName, this.releaseType)
-            : undefined);
+            : undefined, true, 'updated');
         if (!gitHubReleasePR) {
             checkpoint_1.checkpoint('no recent release PRs found', checkpoint_1.CheckpointType.Failure);
             return undefined;
@@ -8216,7 +8216,7 @@ module.exports = Scanner
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@9.3.0-beta.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@9.3.0-beta.0","_id":"release-please@9.3.0-beta.0","_inBundle":false,"_integrity":"sha512-G7fyxTy+VNlW4qwDP9hUoY3P9J7jyUOyyLuYmmvW2Xc/tvsAY6VS865A6UgeDzDND6YFy2ne3DtGOU8y/OgePQ==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@9.3.0-beta.0","name":"release-please","escapedName":"release-please","rawSpec":"9.3.0-beta.0","saveSpec":null,"fetchSpec":"9.3.0-beta.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-9.3.0-beta.0.tgz","_spec":"9.3.0-beta.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@conventional-commits/parser":"^0.4.1","@iarna/toml":"^2.2.5","@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^5.0.0","conventional-commits-filter":"^2.0.2","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","unist-util-visit":"^2.0.3","unist-util-visit-parents":"^3.1.1","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/iarna__toml":"^2.0.1","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","pretest":"npm run compile","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"9.3.0-beta.0"};
+module.exports = {"_args":[["release-please@9.3.0-candidate.1","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@9.3.0-candidate.1","_id":"release-please@9.3.0-candidate.1","_inBundle":false,"_integrity":"sha512-btivtb+BKRX1qeK+4Z9kRTRLt+Jy0tKAJhJIet7p6XzBynx8Qo0tJRmGjvwulMZD30zbXWuMVP9+tyv4XZqBNg==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@9.3.0-candidate.1","name":"release-please","escapedName":"release-please","rawSpec":"9.3.0-candidate.1","saveSpec":null,"fetchSpec":"9.3.0-candidate.1"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-9.3.0-candidate.1.tgz","_spec":"9.3.0-candidate.1","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@conventional-commits/parser":"^0.4.1","@iarna/toml":"^2.2.5","@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^5.0.0","conventional-commits-filter":"^2.0.2","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","unist-util-visit":"^2.0.3","unist-util-visit-parents":"^3.1.1","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/iarna__toml":"^2.0.1","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","pretest":"npm run compile","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"9.3.0-candidate.1"};
 
 /***/ }),
 /* 192 */,
@@ -30950,7 +30950,7 @@ module.exports = eq
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-const VERSION = "2.7.0";
+const VERSION = "2.7.1";
 
 /**
  * Some “list” response that can be paginated have a different response structure
@@ -46959,11 +46959,11 @@ class GitHub {
     }
     // The default matcher will rule out pre-releases.
     // TODO: make this handle more than 100 results using async iterator.
-    async findMergedReleasePR(labels, perPage = 100, branchPrefix = undefined, preRelease = true) {
+    async findMergedReleasePR(labels, perPage = 100, branchPrefix = undefined, preRelease = true, sort = 'created') {
         branchPrefix = (branchPrefix === null || branchPrefix === void 0 ? void 0 : branchPrefix.endsWith('-')) ? branchPrefix.replace(/-$/, '')
             : branchPrefix;
         const baseLabel = await this.getBaseLabel();
-        const pullsResponse = (await this.request(`GET /repos/:owner/:repo/pulls?state=closed&per_page=${perPage}${this.proxyKey ? `&key=${this.proxyKey}` : ''}&sort=updated&direction=desc`, {
+        const pullsResponse = (await this.request(`GET /repos/:owner/:repo/pulls?state=closed&per_page=${perPage}${this.proxyKey ? `&key=${this.proxyKey}` : ''}&sort=${sort}&direction=desc`, {
             owner: this.owner,
             repo: this.repo,
         }));
@@ -49771,7 +49771,47 @@ function simpleEnd(buf) {
 
 /***/ }),
 /* 675 */,
-/* 676 */,
+/* 676 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.parseCargoLockfile = exports.parseCargoManifest = exports.DEP_KINDS = void 0;
+const TOML = __webpack_require__(197);
+/**
+ * All possible dependency kinds for `CargoManifest`,
+ * typed properly.
+ */
+exports.DEP_KINDS = [
+    'dependencies',
+    'dev-dependencies',
+    'build-dependencies',
+];
+function parseCargoManifest(content) {
+    return TOML.parse(content);
+}
+exports.parseCargoManifest = parseCargoManifest;
+function parseCargoLockfile(content) {
+    return TOML.parse(content);
+}
+exports.parseCargoLockfile = parseCargoLockfile;
+//# sourceMappingURL=common.js.map
+
+/***/ }),
 /* 677 */,
 /* 678 */,
 /* 679 */,
@@ -50922,11 +50962,180 @@ module.exports = valid
 
 /***/ }),
 /* 715 */,
-/* 716 */,
+/* 716 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CargoToml = void 0;
+const checkpoint_1 = __webpack_require__(923);
+const toml_edit_1 = __webpack_require__(819);
+const common_1 = __webpack_require__(676);
+/**
+ * Updates `Cargo.toml` manifests, preserving formatting and comments.
+ */
+class CargoToml {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.versions = options.versions;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        var _a;
+        let payload = content;
+        if (!this.versions) {
+            throw new Error('updateContent called with no versions');
+        }
+        const parsed = common_1.parseCargoManifest(payload);
+        if (!parsed.package) {
+            const msg = `${this.path} is not a package manifest (might be a cargo workspace)`;
+            checkpoint_1.checkpoint(msg, checkpoint_1.CheckpointType.Failure);
+            throw new Error(msg);
+        }
+        for (const [pkgName, pkgVersion] of this.versions) {
+            if (parsed.package.name === pkgName) {
+                checkpoint_1.checkpoint(`updating ${this.path}'s own version from ${(_a = parsed.package) === null || _a === void 0 ? void 0 : _a.version} to ${pkgVersion}`, checkpoint_1.CheckpointType.Success);
+                payload = toml_edit_1.replaceTomlValue(payload, ['package', 'version'], pkgVersion);
+                continue; // to next [pkgName, pkgVersion] pair
+            }
+            for (const depKind of common_1.DEP_KINDS) {
+                const deps = parsed[depKind];
+                if (!deps) {
+                    continue; // to next depKind
+                }
+                if (!deps[pkgName]) {
+                    continue; // to next depKind
+                }
+                const dep = deps[pkgName];
+                if (typeof dep === 'string' || typeof dep.path === 'undefined') {
+                    checkpoint_1.checkpoint(`skipping ${depKind}.${pkgName} in ${this.path}`, checkpoint_1.CheckpointType.Success);
+                    continue; // to next depKind
+                }
+                checkpoint_1.checkpoint(`updating ${this.path} ${depKind}.${pkgName} from ${dep.version} to ${pkgVersion}`, checkpoint_1.CheckpointType.Success);
+                payload = toml_edit_1.replaceTomlValue(payload, [depKind, pkgName, 'version'], pkgVersion);
+            }
+            // Update platform-specific dependencies
+            if (parsed.target) {
+                for (const targetName of Object.keys(parsed.target)) {
+                    for (const depKind of common_1.DEP_KINDS) {
+                        const deps = parsed.target[targetName][depKind];
+                        if (!deps) {
+                            continue; // to next depKind
+                        }
+                        if (!deps[pkgName]) {
+                            continue; // to next depKind
+                        }
+                        const dep = deps[pkgName];
+                        if (typeof dep === 'string' || typeof dep.path === 'undefined') {
+                            checkpoint_1.checkpoint(`skipping target.${targetName}.${depKind}.${pkgName} in ${this.path}`, checkpoint_1.CheckpointType.Success);
+                            continue; // to next depKind
+                        }
+                        checkpoint_1.checkpoint(`updating ${this.path} target.${targetName}.${depKind}.${pkgName} from ${dep.version} to ${pkgVersion}`, checkpoint_1.CheckpointType.Success);
+                        payload = toml_edit_1.replaceTomlValue(payload, ['target', targetName, depKind, pkgName, 'version'], pkgVersion);
+                    }
+                }
+            }
+        }
+        return payload;
+    }
+}
+exports.CargoToml = CargoToml;
+//# sourceMappingURL=cargo-toml.js.map
+
+/***/ }),
 /* 717 */,
 /* 718 */,
 /* 719 */,
-/* 720 */,
+/* 720 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CargoLock = void 0;
+const checkpoint_1 = __webpack_require__(923);
+const toml_edit_1 = __webpack_require__(819);
+const common_1 = __webpack_require__(676);
+/**
+ * Updates `Cargo.lock` lockfiles, preserving formatting and comments.
+ */
+class CargoLock {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.versions = options.versions;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        let payload = content;
+        if (!this.versions) {
+            throw new Error('updateContent called with no versions');
+        }
+        const parsed = common_1.parseCargoLockfile(payload);
+        if (!parsed.package) {
+            checkpoint_1.checkpoint(`${this.path} is not a Cargo lockfile`, checkpoint_1.CheckpointType.Failure);
+            throw new Error(`${this.path} is not a Cargo lockfile`);
+        }
+        // n.b for `replaceTomlString`, we need to keep track of the index
+        // (position) of the package we're considering.
+        for (let i = 0; i < parsed.package.length; i++) {
+            const pkg = parsed.package[i];
+            if (!pkg.name) {
+                // all `[[package]]` entries should have a name,
+                // but if they don't, ignore them silently.
+                continue; // to next package
+            }
+            const nextVersion = this.versions.get(pkg.name);
+            if (!nextVersion) {
+                // this package is not upgraded.
+                continue; // to next package
+            }
+            // note: in ECMAScript, using strings to index arrays is perfectly valid,
+            // which is lucky because `replaceTomlString` expect "all strings" in its
+            // `path` argument.
+            const packageIndex = i.toString();
+            checkpoint_1.checkpoint(`updating ${pkg.name} in ${this.path}`, checkpoint_1.CheckpointType.Success);
+            payload = toml_edit_1.replaceTomlValue(payload, ['package', packageIndex, 'version'], nextVersion);
+        }
+        return payload;
+    }
+}
+exports.CargoLock = CargoLock;
+//# sourceMappingURL=cargo-lock.js.map
+
+/***/ }),
 /* 721 */,
 /* 722 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
@@ -53576,96 +53785,7 @@ function transformLiteralToPath(sexpr) {
 /* 780 */,
 /* 781 */,
 /* 782 */,
-/* 783 */
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-// Copyright 2021 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.serializeCargoManifest = exports.parseCargoManifest = exports.CargoToml = void 0;
-const checkpoint_1 = __webpack_require__(923);
-const TOML = __webpack_require__(197);
-class CargoToml {
-    constructor(options) {
-        this.create = false;
-        this.path = options.path;
-        this.changelogEntry = options.changelogEntry;
-        this.version = options.version;
-        this.versions = options.versions;
-        this.packageName = options.packageName;
-    }
-    updateContent(content) {
-        var _a;
-        if (!this.versions) {
-            throw new Error('CargoToml called with no versions to update');
-        }
-        const parsed = parseCargoManifest(content);
-        if (!parsed.package) {
-            checkpoint_1.checkpoint(`${this.path} is not a package manifest`, checkpoint_1.CheckpointType.Failure);
-            throw new Error(`${this.path} is not a package manifest`);
-        }
-        const state = { updated: false };
-        for (const [pkgName, pkgVersion] of this.versions) {
-            if (parsed.package.name === pkgName) {
-                checkpoint_1.checkpoint(`updating ${this.path}'s own version from ${(_a = parsed.package) === null || _a === void 0 ? void 0 : _a.version} to ${pkgVersion}`, checkpoint_1.CheckpointType.Success);
-                parsed.package.version = pkgVersion;
-                state.updated = true;
-            }
-            else {
-                const updateDeps = (kind, deps) => {
-                    if (!deps) {
-                        return;
-                    }
-                    const dep = deps[pkgName];
-                    if (!dep) {
-                        return;
-                    }
-                    if (typeof dep === 'string' || typeof dep.path === 'undefined') {
-                        checkpoint_1.checkpoint(`skipping ${pkgName} ${kind} in ${this.path}`, checkpoint_1.CheckpointType.Success);
-                        return;
-                    }
-                    checkpoint_1.checkpoint(`updating ${this.path} ${kind} ${pkgName} from ${dep.version} to ${pkgVersion}`, checkpoint_1.CheckpointType.Success);
-                    dep.version = pkgVersion;
-                    state.updated = true;
-                };
-                updateDeps('dependency', parsed.dependencies);
-                updateDeps('dev-dependency', parsed['dev-dependencies']);
-                updateDeps('build-dependency', parsed['build-dependencies']);
-            }
-        }
-        if (state.updated) {
-            return serializeCargoManifest(parsed);
-        }
-        else {
-            return content;
-        }
-    }
-}
-exports.CargoToml = CargoToml;
-function parseCargoManifest(content) {
-    return TOML.parse(content);
-}
-exports.parseCargoManifest = parseCargoManifest;
-function serializeCargoManifest(manifest) {
-    return TOML.stringify(manifest);
-}
-exports.serializeCargoManifest = serializeCargoManifest;
-//# sourceMappingURL=cargo-toml.js.map
-
-/***/ }),
+/* 783 */,
 /* 784 */,
 /* 785 */,
 /* 786 */
@@ -54579,7 +54699,137 @@ exports.PackageJson = PackageJson;
 /* 816 */,
 /* 817 */,
 /* 818 */,
-/* 819 */,
+/* 819 */
+/***/ (function(__unusedmodule, exports, __webpack_require__) {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.replaceTomlValue = void 0;
+const TOMLParser = __webpack_require__(132);
+const taggedValueMarker = Symbol('__TAGGED_VALUE');
+/**
+ * A custom variant of `TOMLParser` that replaces all values with a tagged
+ * variant that includes their start and end positions, allowing them to be
+ * replaced.
+ */
+class TaggedTOMLParser extends TOMLParser {
+    parseValue() {
+        // Remember the start position of the value.
+        //
+        // Off-by-one correctness: by this point, `this.pos` points one character
+        // *after* the first character of the value, which is in `this.char`
+        this.state.__TAGGED_START = this.pos - 1;
+        return super.parseValue();
+    }
+    next(fn) {
+        const prevState = this.state;
+        super.next(fn); // `next` returns void
+        // Carry over the start position. If it wasn't set, (say, if we were parsing
+        // something other than a value), we're just assigning `undefined` here.
+        this.state.__TAGGED_START = prevState.__TAGGED_START;
+    }
+    return(value) {
+        const prevState = this.state;
+        super.return(value); // `return` returns void
+        if (prevState.__TAGGED_START && typeof this.state.returned !== 'object') {
+            // If the parser we just returned from remembered a start position,
+            // tag the returned value with "start" and "end".
+            // Note that we don't tag objects to avoid encountering multiple tagged
+            // values when replacing later on.
+            const taggedValue = {
+                [taggedValueMarker]: true,
+                start: prevState.__TAGGED_START,
+                end: this.pos,
+                value: this.state.returned,
+            };
+            this.state.returned = taggedValue;
+        }
+    }
+}
+/**
+ * Parses input as TOML with the given parser
+ * @param input A string
+ * @param parserType The TOML parser to use (might be custom)
+ */
+function parseWith(input, parserType) {
+    const parser = new parserType();
+    parser.parse(input);
+    return parser.finish();
+}
+function isTaggedValue(x) {
+    if (!x) {
+        return false;
+    }
+    if (typeof x !== 'object') {
+        return false;
+    }
+    const ts = x;
+    return ts[taggedValueMarker] === true;
+}
+/**
+ * Given TOML input and a path to a value, attempt to replace
+ * that value without modifying the formatting.
+ * @param input A string that's valid TOML
+ * @param path Path to a value to replace. When replacing 'deps.tokio.version', pass ['deps', 'tokio', 'version']. The value must already exist.
+ * @param newValue The value to replace the value at `path` with. Is passed through `JSON.stringify()` when replacing: strings will end up being double-quoted strings, properly escaped. Numbers will be numbers.
+ */
+function replaceTomlValue(input, path, newValue) {
+    // our pointer into the object "tree", initially points to the root.
+    let current = parseWith(input, TaggedTOMLParser);
+    // navigate down the object tree, following the path, expecting only objects.
+    // Note that tagged strings (generated by `TaggedTOMLParser`) are also objects.
+    for (let i = 0; i < path.length; i++) {
+        const key = path[i];
+        // // We may encounter tagged values when descending through the object tree
+        // if (isTaggedValue(current)) {
+        //   if (!current.value || typeof current.value !== 'object') {
+        //     const msg = `partial path does not lead to table: ${path
+        //       .slice(0, i)
+        //       .join('.')}`;
+        //     throw new Error(msg);
+        //   }
+        //   current = current.value as Record<string, unknown>;
+        // }
+        const next = current[key];
+        if (typeof next !== 'object') {
+            const msg = `path not found in object: ${path.slice(0, i + 1).join('.')}`;
+            throw new Error(msg);
+        }
+        current = next;
+    }
+    if (!isTaggedValue(current)) {
+        const msg = `value at path ${path.join('.')} is not tagged`;
+        throw new Error(msg);
+    }
+    const before = input.slice(0, current.start);
+    const after = input.slice(current.end);
+    const output = before + JSON.stringify(newValue) + after;
+    try {
+        parseWith(output, TOMLParser);
+    }
+    catch (e) {
+        throw new Error(`After replacing value, result is not valid TOML: ${e}`);
+    }
+    return output;
+}
+exports.replaceTomlValue = replaceTomlValue;
+//# sourceMappingURL=toml-edit.js.map
+
+/***/ }),
 /* 820 */,
 /* 821 */
 /***/ (function(module, exports, __webpack_require__) {
@@ -57000,7 +57250,9 @@ const checkpoint_1 = __webpack_require__(923);
 // Generic
 const changelog_1 = __webpack_require__(261);
 // Cargo.toml support
-const cargo_toml_1 = __webpack_require__(783);
+const cargo_toml_1 = __webpack_require__(716);
+const cargo_lock_1 = __webpack_require__(720);
+const common_1 = __webpack_require__(676);
 class Rust extends release_pr_1.ReleasePR {
     async _run() {
         const prefix = this.monorepoTags ? `${this.packageName}-` : undefined;
@@ -57044,26 +57296,38 @@ class Rust extends release_pr_1.ReleasePR {
             version: candidate.version,
             packageName: this.packageName,
         }));
-        const paths = [];
+        const manifestPaths = [];
+        let lockPath;
         if (workspaceManifest &&
             workspaceManifest.workspace &&
             workspaceManifest.workspace.members) {
             const members = workspaceManifest.workspace.members;
             checkpoint_1.checkpoint(`found workspace with ${members.length} members, upgrading all`, checkpoint_1.CheckpointType.Success);
             for (const member of members) {
-                paths.push(`${member}/Cargo.toml`);
+                manifestPaths.push(`${member}/Cargo.toml`);
             }
+            lockPath = 'Cargo.lock';
         }
         else {
             const manifestPath = this.addPath('Cargo.toml');
             checkpoint_1.checkpoint(`single crate found, updating ${manifestPath}`, checkpoint_1.CheckpointType.Success);
-            paths.push(this.addPath('Cargo.toml'));
+            manifestPaths.push(this.addPath('Cargo.toml'));
+            lockPath = this.addPath('Cargo.lock');
         }
         const versions = new Map();
         versions.set(this.packageName, candidate.version);
-        for (const path of paths) {
+        for (const path of manifestPaths) {
             updates.push(new cargo_toml_1.CargoToml({
                 path,
+                changelogEntry,
+                version: 'unused',
+                versions,
+                packageName: this.packageName,
+            }));
+        }
+        if (await this.exists(lockPath)) {
+            updates.push(new cargo_lock_1.CargoLock({
+                path: lockPath,
                 changelogEntry,
                 version: 'unused',
                 versions,
@@ -57119,7 +57383,16 @@ class Rust extends release_pr_1.ReleasePR {
         catch (e) {
             return null;
         }
-        return cargo_toml_1.parseCargoManifest(content.parsedContent);
+        return common_1.parseCargoManifest(content.parsedContent);
+    }
+    async exists(path) {
+        try {
+            await this.gh.getFileContents(path);
+            return true;
+        }
+        catch (_e) {
+            return false;
+        }
     }
 }
 exports.Rust = Rust;
