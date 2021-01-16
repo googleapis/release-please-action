@@ -1,5 +1,13 @@
 # Changelog
 
+### [2.15.2](https://www.github.com/google-github-actions/release-please-action/compare/v2.15.1...v2.15.2) (2021-01-16)
+
+
+### Bug Fixes
+
+* **pagination:** tagging can use 'updated' releases should use 'created' ([b5e370c](https://www.github.com/google-github-actions/release-please-action/commit/b5e370ce70ebd5db6cffa9e93327c62dbd29ffde))
+* **release-please:** fix whitespace issues in Rust ([#195](https://www.github.com/google-github-actions/release-please-action/issues/195)) ([b5e370c](https://www.github.com/google-github-actions/release-please-action/commit/b5e370ce70ebd5db6cffa9e93327c62dbd29ffde))
+
 ### [2.15.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.15.0...v2.15.1) (2021-01-15)
 
 
