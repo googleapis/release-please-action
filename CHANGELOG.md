@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.15.3](https://www.github.com/google-github-actions/release-please-action/compare/v2.15.2...v2.15.3) (2021-01-22)
+
+
+### Bug Fixes
+
+* **release-please:** uses alternate approach to find files in repo ([#198](https://www.github.com/google-github-actions/release-please-action/issues/198)) ([c540b9e](https://www.github.com/google-github-actions/release-please-action/commit/c540b9e79be1b629a02e961a539eea29c1e9e57a))
+
 ### [2.15.2](https://www.github.com/google-github-actions/release-please-action/compare/v2.15.1...v2.15.2) (2021-01-16)
 
 
