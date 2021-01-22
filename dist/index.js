@@ -6661,7 +6661,7 @@ function setLevel (level) {
   const useOnlyCustomLevelsVal = this[useOnlyCustomLevelsSym]
   const hook = this[hooksSym].logMethod
 
-  for (var key in values) {
+  for (const key in values) {
     if (levelVal > values[key]) {
       this[key] = noop
       continue
@@ -6691,10 +6691,12 @@ function isLevelEnabled (logLevel) {
 }
 
 function mappings (customLevels = null, useOnlyCustomLevels = false) {
-  const customNums = customLevels ? Object.keys(customLevels).reduce((o, k) => {
-    o[customLevels[k]] = k
-    return o
-  }, {}) : null
+  const customNums = customLevels
+    ? Object.keys(customLevels).reduce((o, k) => {
+        o[customLevels[k]] = k
+        return o
+      }, {})
+    : null
 
   const labels = Object.assign(
     Object.create(Object.prototype, { Infinity: { value: 'silent' } }),
@@ -8216,7 +8218,7 @@ module.exports = Scanner
 /* 191 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["release-please@9.3.0-candidate.1","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@9.3.0-candidate.1","_id":"release-please@9.3.0-candidate.1","_inBundle":false,"_integrity":"sha512-btivtb+BKRX1qeK+4Z9kRTRLt+Jy0tKAJhJIet7p6XzBynx8Qo0tJRmGjvwulMZD30zbXWuMVP9+tyv4XZqBNg==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@9.3.0-candidate.1","name":"release-please","escapedName":"release-please","rawSpec":"9.3.0-candidate.1","saveSpec":null,"fetchSpec":"9.3.0-candidate.1"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-9.3.0-candidate.1.tgz","_spec":"9.3.0-candidate.1","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@conventional-commits/parser":"^0.4.1","@iarna/toml":"^2.2.5","@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^5.0.0","conventional-commits-filter":"^2.0.2","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","unist-util-visit":"^2.0.3","unist-util-visit-parents":"^3.1.1","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/iarna__toml":"^2.0.1","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","pretest":"npm run compile","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"9.3.0-candidate.1"};
+module.exports = {"_args":[["release-please@9.3.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"release-please@9.3.0","_id":"release-please@9.3.0","_inBundle":false,"_integrity":"sha512-XT6fOytZ0hKJVS4EO6i2WNWEvMWs5h9QhiLgwFPkGr8lcJti3YMztIONnw6qecNw1yegM4mlXxm2YivRkRN26w==","_location":"/release-please","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"release-please@9.3.0","name":"release-please","escapedName":"release-please","rawSpec":"9.3.0","saveSpec":null,"fetchSpec":"9.3.0"},"_requiredBy":["/"],"_resolved":"https://registry.npmjs.org/release-please/-/release-please-9.3.0.tgz","_spec":"9.3.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Google Inc."},"bin":{"release-please":"build/src/bin/release-please.js"},"bugs":{"url":"https://github.com/googleapis/release-please/issues"},"dependencies":{"@conventional-commits/parser":"^0.4.1","@iarna/toml":"^2.2.5","@octokit/graphql":"^4.3.1","@octokit/request":"^5.3.4","@octokit/rest":"^18.0.4","chalk":"^4.0.0","code-suggester":"^1.4.0","conventional-changelog-conventionalcommits":"^4.4.0","conventional-changelog-writer":"^5.0.0","conventional-commits-filter":"^2.0.2","figures":"^3.0.0","parse-github-repo-url":"^1.4.1","semver":"^7.0.0","type-fest":"^0.20.0","unist-util-visit":"^2.0.3","unist-util-visit-parents":"^3.1.1","yargs":"^16.0.0"},"description":"generate release PRs based on the conventionalcommits.org spec","devDependencies":{"@octokit/types":"^6.1.0","@types/chai":"^4.1.7","@types/iarna__toml":"^2.0.1","@types/mocha":"^8.0.0","@types/node":"^11.13.6","@types/pino":"^6.3.0","@types/semver":"^7.0.0","@types/sinon":"^9.0.5","@types/yargs":"^15.0.4","c8":"^7.0.0","chai":"^4.2.0","cross-env":"^7.0.0","gts":"^2.0.0","mocha":"^8.0.0","nock":"^13.0.0","sinon":"^9.0.3","snap-shot-it":"^7.0.0","typescript":"^3.8.3"},"engines":{"node":">=10.12.0"},"files":["build/src","templates","!build/src/**/*.map"],"homepage":"https://github.com/googleapis/release-please#readme","keywords":["release","conventional-commits"],"license":"Apache-2.0","main":"./build/src/index.js","name":"release-please","repository":{"type":"git","url":"git+https://github.com/googleapis/release-please.git"},"scripts":{"api-documenter":"api-documenter yaml --input-folder=temp","api-extractor":"api-extractor run --local","clean":"gts clean","compile":"tsc -p .","docs-test":"echo add docs tests","fix":"gts fix","lint":"gts check","prepare":"npm run compile","pretest":"npm run compile","test":"cross-env ENVIRONMENT=test c8 mocha --recursive --timeout=5000 build/test","test:snap":"SNAPSHOT_UPDATE=1 npm test"},"version":"9.3.0"};
 
 /***/ }),
 /* 192 */,
@@ -13367,9 +13369,11 @@ function redaction (opts, serialize) {
     if (shape[k] === null) {
       o[k] = (value) => topCensor(value, [k])
     } else {
-      const wrappedCensor = typeof censor === 'function' ? (value, path) => {
-        return censor(value, [k, ...path])
-      } : censor
+      const wrappedCensor = typeof censor === 'function'
+        ? (value, path) => {
+            return censor(value, [k, ...path])
+          }
+        : censor
       o[k] = fastRedact({
         paths: shape[k],
         censor: wrappedCensor,
@@ -13387,7 +13391,7 @@ function handle (opts) {
     validate(opts)
     return opts
   }
-  var { paths, censor = CENSOR, remove } = opts
+  let { paths, censor = CENSOR, remove } = opts
   if (Array.isArray(paths) === false) { throw Error('pino – redact must contain an array of strings') }
   if (remove === true) censor = undefined
   validate({ paths, censor })
@@ -30950,7 +30954,7 @@ module.exports = eq
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-const VERSION = "2.7.1";
+const VERSION = "2.8.0";
 
 /**
  * Some “list” response that can be paginated have a different response structure
@@ -31181,6 +31185,16 @@ const pinoReqProto = Object.create({}, {
     writable: true,
     value: ''
   },
+  query: {
+    enumerable: true,
+    writable: true,
+    value: ''
+  },
+  params: {
+    enumerable: true,
+    writable: true,
+    value: ''
+  },
   headers: {
     enumerable: true,
     writable: true,
@@ -31220,6 +31234,8 @@ function reqSerializer (req) {
   // req.originalUrl is for expressjs compat.
   if (req.originalUrl) {
     _req.url = req.originalUrl
+    _req.query = req.query
+    _req.params = req.params
   } else {
     // req.url.path is  for hapi compat.
     _req.url = req.path || (req.url ? (req.url.path || req.url) : undefined)
@@ -33018,7 +33034,7 @@ function genLog (level, hook) {
 
   function LOG (o, ...n) {
     if (typeof o === 'object') {
-      var msg = o
+      let msg = o
       if (o !== null) {
         if (o.method && o.headers && o.socket) {
           o = mapHttpRequest(o)
@@ -33027,7 +33043,7 @@ function genLog (level, hook) {
         }
       }
       if (this[nestedKeySym]) o = { [this[nestedKeySym]]: o }
-      var formatParams
+      let formatParams
       if (msg === null && n.length === 0) {
         formatParams = [null]
       } else {
@@ -33047,10 +33063,10 @@ function genLog (level, hook) {
 // 34 and 92 happens all the time, so we
 // have a fast case for them
 function asString (str) {
-  var result = ''
-  var last = 0
-  var found = false
-  var point = 255
+  let result = ''
+  let last = 0
+  let found = false
+  let point = 255
   const l = str.length
   if (l > 100) {
     return JSON.stringify(str)
@@ -33079,14 +33095,14 @@ function asJson (obj, msg, num, time) {
   const serializers = this[serializersSym]
   const formatters = this[formattersSym]
   const messageKey = this[messageKeySym]
-  var data = this[lsCacheSym][num] + time
+  let data = this[lsCacheSym][num] + time
 
   // we need the child bindings added to the output first so instance logged
   // objects can take precedence when JSON.parse-ing the resulting log line
   data = data + chindings
 
-  var value
-  var notHasOwnProperty = obj.hasOwnProperty === undefined
+  let value
+  const notHasOwnProperty = obj.hasOwnProperty === undefined
   if (formatters.log) {
     obj = formatters.log(obj)
   }
@@ -33094,7 +33110,7 @@ function asJson (obj, msg, num, time) {
     obj[messageKey] = msg
   }
   const wildcardStringifier = stringifiers[wildcardFirstSym]
-  for (var key in obj) {
+  for (const key in obj) {
     value = obj[key]
     if ((notHasOwnProperty || obj.hasOwnProperty(key)) && value !== undefined) {
       value = serializers[key] ? serializers[key](value) : value
@@ -33129,9 +33145,8 @@ function asJson (obj, msg, num, time) {
 }
 
 function asChindings (instance, bindings) {
-  var key
-  var value
-  var data = instance[chindingsSym]
+  let value
+  let data = instance[chindingsSym]
   const stringify = instance[stringifySym]
   const stringifiers = instance[stringifiersSym]
   const wildcardStringifier = stringifiers[wildcardFirstSym]
@@ -33139,7 +33154,7 @@ function asChindings (instance, bindings) {
   const formatter = instance[formattersSym].bindings
   bindings = formatter(bindings)
 
-  for (key in bindings) {
+  for (const key in bindings) {
     value = bindings[key]
     const valid = key !== 'level' &&
       key !== 'serializers' &&
@@ -33163,7 +33178,7 @@ function getPrettyStream (opts, prettifier, dest, instance) {
     return prettifierMetaWrapper(prettifier(opts), dest, opts)
   }
   try {
-    var prettyFactory = __webpack_require__(309)
+    const prettyFactory = __webpack_require__(309)
     prettyFactory.asMetaWrapper = prettifierMetaWrapper
     return prettifierMetaWrapper(prettyFactory(opts), dest, opts)
   } catch (e) {
@@ -33173,7 +33188,7 @@ function getPrettyStream (opts, prettifier, dest, instance) {
 
 function prettifierMetaWrapper (pretty, dest, opts) {
   opts = Object.assign({ suppressFlushSyncWarning: false }, opts)
-  var warned = false
+  let warned = false
   return {
     [needsMetadataGsym]: true,
     lastLevel: 0,
@@ -33194,7 +33209,7 @@ function prettifierMetaWrapper (pretty, dest, opts) {
     },
     chindings () {
       const lastLogger = this.lastLogger
-      var chindings = null
+      let chindings = null
 
       // protection against flushSync being called before logging
       // anything
@@ -33215,7 +33230,7 @@ function prettifierMetaWrapper (pretty, dest, opts) {
       const lastLogger = this.lastLogger
       const chindings = this.chindings()
 
-      var time = this.lastTime
+      let time = this.lastTime
 
       if (time.match(/^\d+/)) {
         time = parseInt(time)
@@ -33223,9 +33238,9 @@ function prettifierMetaWrapper (pretty, dest, opts) {
         time = time.slice(1, -1)
       }
 
-      var lastObj = this.lastObj
-      var lastMsg = this.lastMsg
-      var errorProps = null
+      const lastObj = this.lastObj
+      const lastMsg = this.lastMsg
+      const errorProps = null
 
       const formatters = lastLogger[formattersSym]
       const formattedObj = formatters.log ? formatters.log(lastObj) : lastObj
@@ -33242,16 +33257,15 @@ function prettifierMetaWrapper (pretty, dest, opts) {
 
       const serializers = lastLogger[serializersSym]
       const keys = Object.keys(serializers)
-      var key
 
       for (var i = 0; i < keys.length; i++) {
-        key = keys[i]
+        const key = keys[i]
         if (obj[key] !== undefined) {
           obj[key] = serializers[key](obj[key])
         }
       }
 
-      for (key in chindings) {
+      for (const key in chindings) {
         if (!obj.hasOwnProperty(key)) {
           obj[key] = chindings[key]
         }
@@ -33911,16 +33925,17 @@ function child (bindings) {
   if (bindings.hasOwnProperty('serializers') === true) {
     instance[serializersSym] = Object.create(null)
 
-    for (var k in serializers) {
+    for (const k in serializers) {
       instance[serializersSym][k] = serializers[k]
     }
     const parentSymbols = Object.getOwnPropertySymbols(serializers)
+    /* eslint no-var: off */
     for (var i = 0; i < parentSymbols.length; i++) {
       const ks = parentSymbols[i]
       instance[serializersSym][ks] = serializers[ks]
     }
 
-    for (var bk in bindings.serializers) {
+    for (const bk in bindings.serializers) {
       instance[serializersSym][bk] = bindings.serializers[bk]
     }
     const bindingsSymbols = Object.getOwnPropertySymbols(bindings.serializers)
@@ -33957,8 +33972,8 @@ function child (bindings) {
 
 function bindings () {
   const chindings = this[chindingsSym]
-  var chindingsJson = `{${chindings.substr(1)}}` // at least contains ,"pid":7068,"hostname":"myMac"
-  var bindingsFromJson = JSON.parse(chindingsJson)
+  const chindingsJson = `{${chindings.substr(1)}}` // at least contains ,"pid":7068,"hostname":"myMac"
+  const bindingsFromJson = JSON.parse(chindingsJson)
   delete bindingsFromJson.pid
   delete bindingsFromJson.hostname
   return bindingsFromJson
@@ -33974,7 +33989,7 @@ function write (_obj, msg, num) {
   const t = this[timeSym]()
   const mixin = this[mixinSym]
   const objError = _obj instanceof Error
-  var obj
+  let obj
 
   if (_obj === undefined || _obj === null) {
     obj = mixin ? mixin({}) : {}
@@ -41225,12 +41240,15 @@ const conventionalChangelogWriter = __webpack_require__(142);
 const parseGithubRepoUrl = __webpack_require__(345);
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const presetFactory = __webpack_require__(851);
-function getParsedCommits(commits) {
+function getParsedCommits(commits, commitFilter = () => false) {
     const parsedCommits = [];
     for (const commit of commits) {
         try {
             for (const parsedCommit of to_conventional_changelog_format_1.default(parser_1.parser(commit.message))) {
                 const commitWithHash = postProcessCommits(parsedCommit);
+                if (commitFilter(parsedCommit)) {
+                    continue;
+                }
                 commitWithHash.hash = commit.sha;
                 parsedCommits.push(commitWithHash);
             }
@@ -41302,6 +41320,7 @@ class ConventionalCommits {
         this.headerPartial = options.headerPartial;
         this.mainTemplate = options.mainTemplate;
         this.changelogSections = options.changelogSections;
+        this.commitFilter = options.commitFilter;
     }
     async suggestBump(version) {
         const preMajor = this.bumpMinorPreMajor
@@ -41335,14 +41354,14 @@ class ConventionalCommits {
         preset.writerOpts.mainTemplate =
             this.mainTemplate || preset.writerOpts.mainTemplate;
         const parsed = conventionalChangelogWriter
-            .parseArray(getParsedCommits(this.commits), context, preset.writerOpts)
+            .parseArray(getParsedCommits(this.commits, this.commitFilter), context, preset.writerOpts)
             .trim();
         return parsed;
     }
     async guessReleaseType(preMajor) {
         const VERSIONS = ['major', 'minor', 'patch'];
         const preset = await presetFactory({ preMajor });
-        const commits = conventionalCommitsFilter(getParsedCommits(this.commits));
+        const commits = conventionalCommitsFilter(getParsedCommits(this.commits, this.commitFilter));
         let result = preset.recommendedBumpOpts.whatBump(commits, preset.recommendedBumpOpts);
         if (result && result.level !== null) {
             result.releaseType = VERSIONS[result.level];
@@ -47288,17 +47307,38 @@ class GitHub {
     normalizePrefix(prefix) {
         return prefix.replace(/^[/\\]/, '').replace(/[/\\]$/, '');
     }
-    async findFilesByFilename(filename, prefix) {
-        let q = `filename:${filename}+repo:${this.owner}/${this.repo}`;
+    /**
+     * Returns a list of paths to all files with a given name.
+     *
+     * If a prefix is specified, only return paths that match
+     * the provided prefix.
+     *
+     * @param filename The name of the file to find
+     * @param ref Git reference to search files in
+     * @param prefix Optional path prefix used to filter results
+     */
+    async findFilesByFilenameAndRef(filename, ref, prefix) {
         if (prefix) {
             prefix = this.normalizePrefix(prefix);
-            q += `+path:${prefix}`;
         }
-        const response = await this.octokit.search.code({
-            q: q,
+        const response = await this.octokit.git.getTree({
+            owner: this.owner,
+            repo: this.repo,
+            tree_sha: ref,
+            recursive: 'true',
         });
-        return response.data.items.map(file => {
+        return response.data.tree
+            .filter(file => {
+            const path = file.path;
+            return (path &&
+                // match the filename
+                path.endsWith(filename) &&
+                // match the prefix if provided
+                (!prefix || path.startsWith(prefix)));
+        })
+            .map(file => {
             let path = file.path;
+            // strip the prefix if provided
             if (prefix) {
                 const pfix = new RegExp(`^${prefix}[/\\\\]`);
                 path = path.replace(pfix, '');
@@ -47306,23 +47346,72 @@ class GitHub {
             return path;
         });
     }
-    async findFilesByExtension(extension, prefix) {
-        let q = `extension:${extension}+repo:${this.owner}/${this.repo}`;
+    /**
+     * Returns a list of paths to all files with a given name.
+     *
+     * If a prefix is specified, only return paths that match
+     * the provided prefix.
+     *
+     * @param filename The name of the file to find
+     * @param prefix Optional path prefix used to filter results
+     */
+    async findFilesByFilename(filename, prefix) {
+        return this.findFilesByFilenameAndRef(filename, await this.getDefaultBranch(), prefix);
+    }
+    /**
+     * Returns a list of paths to all files with a given file
+     * extension.
+     *
+     * If a prefix is specified, only return paths that match
+     * the provided prefix.
+     *
+     * @param extension The file extension used to filter results.
+     *   Example: `js`, `java`
+     * @param ref Git reference to search files in
+     * @param prefix Optional path prefix used to filter results
+     */
+    async findFilesByExtensionAndRef(extension, ref, prefix) {
         if (prefix) {
             prefix = this.normalizePrefix(prefix);
-            q += `+path:${prefix}`;
         }
-        const response = await this.octokit.search.code({
-            q: q,
+        const response = await this.octokit.git.getTree({
+            owner: this.owner,
+            repo: this.repo,
+            tree_sha: ref,
+            recursive: 'true',
         });
-        return response.data.items.map(file => {
+        return response.data.tree
+            .filter(file => {
+            const path = file.path;
+            return (path &&
+                // match the file extension
+                path.endsWith(`.${extension}`) &&
+                // match the prefix if provided
+                (!prefix || path.startsWith(prefix)));
+        })
+            .map(file => {
             let path = file.path;
+            // strip the prefix if provided
             if (prefix) {
                 const pfix = new RegExp(`^${prefix}[/\\\\]`);
                 path = path.replace(pfix, '');
             }
             return path;
         });
+    }
+    /**
+     * Returns a list of paths to all files with a given file
+     * extension.
+     *
+     * If a prefix is specified, only return paths that match
+     * the provided prefix.
+     *
+     * @param extension The file extension used to filter results.
+     *   Example: `js`, `java`
+     * @param prefix Optional path prefix used to filter results
+     */
+    async findFilesByExtension(extension, prefix) {
+        return this.findFilesByExtensionAndRef(extension, await this.getDefaultBranch(), prefix);
     }
 }
 exports.GitHub = GitHub;
@@ -51281,10 +51370,19 @@ function pino (...args) {
     [stringifySym]: stringify,
     [formattersSym]: allFormatters
   })
-  const chindings = base === null ? '' : (name === undefined)
-    ? coreChindings(base) : coreChindings(Object.assign({}, base, { name }))
+
+  let chindings = ''
+  if (base !== null) {
+    if (name === undefined) {
+      chindings = coreChindings(base)
+    } else {
+      chindings = coreChindings(Object.assign({}, base, { name }))
+    }
+  }
+
   const time = (timestamp instanceof Function)
-    ? timestamp : (timestamp ? epochTime : nullTime)
+    ? timestamp
+    : (timestamp ? epochTime : nullTime)
   const timeSliceIndex = time().indexOf(':') + 1
 
   if (useOnlyCustomLevels && !customLevels) throw Error('customLevels is required if useOnlyCustomLevels is set true')
@@ -55241,6 +55339,7 @@ const Endpoints = {
     removeRepoFromInstallation: ["DELETE /user/installations/{installation_id}/repositories/{repository_id}"],
     resetToken: ["PATCH /applications/{client_id}/token"],
     revokeInstallationAccessToken: ["DELETE /installation/token"],
+    scopeToken: ["POST /applications/{client_id}/token/scoped"],
     suspendInstallation: ["PUT /app/installations/{installation_id}/suspended"],
     unsuspendInstallation: ["DELETE /app/installations/{installation_id}/suspended"],
     updateWebhookConfigForApp: ["PATCH /app/hook/config"]
@@ -55497,6 +55596,7 @@ const Endpoints = {
   },
   orgs: {
     blockUser: ["PUT /orgs/{org}/blocks/{username}"],
+    cancelInvitation: ["DELETE /orgs/{org}/invitations/{invitation_id}"],
     checkBlockedUser: ["GET /orgs/{org}/blocks/{username}"],
     checkMembershipForUser: ["GET /orgs/{org}/members/{username}"],
     checkPublicMembershipForUser: ["GET /orgs/{org}/public_members/{username}"],
@@ -55512,6 +55612,7 @@ const Endpoints = {
     list: ["GET /organizations"],
     listAppInstallations: ["GET /orgs/{org}/installations"],
     listBlockedUsers: ["GET /orgs/{org}/blocks"],
+    listFailedInvitations: ["GET /orgs/{org}/failed_invitations"],
     listForAuthenticatedUser: ["GET /user/orgs"],
     listForUser: ["GET /users/{username}/orgs"],
     listInvitationTeams: ["GET /orgs/{org}/invitations/{invitation_id}/teams"],
@@ -55993,6 +56094,7 @@ const Endpoints = {
     removeUserAccessRestrictions: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users", {}, {
       mapToData: "users"
     }],
+    renameBranch: ["POST /repos/{owner}/{repo}/branches/{branch}/rename"],
     replaceAllTopics: ["PUT /repos/{owner}/{repo}/topics", {
       mediaType: {
         previews: ["mercy"]
@@ -56134,7 +56236,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "4.4.1";
+const VERSION = "4.8.0";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -57415,7 +57517,7 @@ var pluginRequestLog = __webpack_require__(916);
 var pluginPaginateRest = __webpack_require__(299);
 var pluginRestEndpointMethods = __webpack_require__(842);
 
-const VERSION = "18.0.12";
+const VERSION = "18.0.14";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.restEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`
@@ -59899,7 +60001,7 @@ module.exports = inc
 /* 929 */
 /***/ (function(module) {
 
-module.exports = {"_args":[["pino@6.10.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"pino@6.10.0","_id":"pino@6.10.0","_inBundle":false,"_integrity":"sha512-ZFGE/Wq930gFb1h0RI6S/QOfkyzNj94Xubwlyo4XpxNUgrG1C0iEqnlooG5Fymx6yrUUtEJ8j/u8NCGwgwTXaQ==","_location":"/pino","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"pino@6.10.0","name":"pino","escapedName":"pino","rawSpec":"6.10.0","saveSpec":null,"fetchSpec":"6.10.0"},"_requiredBy":["/code-suggester"],"_resolved":"https://registry.npmjs.org/pino/-/pino-6.10.0.tgz","_spec":"6.10.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Matteo Collina","email":"hello@matteocollina.com"},"bin":{"pino":"bin.js"},"browser":"./browser.js","bugs":{"url":"https://github.com/pinojs/pino/issues"},"contributors":[{"name":"David Mark Clements","email":"huperekchuno@googlemail.com"},{"name":"James Sumners","email":"james.sumners@gmail.com"},{"name":"Thomas Watson Steen","email":"w@tson.dk","url":"https://twitter.com/wa7son"}],"dependencies":{"fast-redact":"^3.0.0","fast-safe-stringify":"^2.0.7","flatstr":"^1.0.12","pino-std-serializers":"^3.1.0","quick-format-unescaped":"^4.0.1","sonic-boom":"^1.0.2"},"description":"super fast, all natural json logger","devDependencies":{"airtap":"3.0.0","benchmark":"^2.1.4","bole":"^4.0.0","bunyan":"^1.8.14","docsify-cli":"^4.4.1","execa":"^4.0.0","fastbench":"^1.0.1","flush-write-stream":"^2.0.0","import-fresh":"^3.2.1","log":"^6.0.0","loglevel":"^1.6.7","pino-pretty":"^4.1.0","pre-commit":"^1.2.2","proxyquire":"^2.1.3","pump":"^3.0.0","semver":"^7.0.0","snazzy":"^8.0.0","split2":"^3.1.1","standard":"^14.3.3","steed":"^1.1.3","strip-ansi":"^6.0.0","tap":"^14.10.8","tape":"^5.0.0","through2":"^4.0.0","winston":"^3.3.3"},"files":["pino.js","bin.js","browser.js","pretty.js","usage.txt","test","docs","example.js","lib"],"homepage":"http://getpino.io","keywords":["fast","logger","stream","json"],"license":"MIT","main":"pino.js","name":"pino","precommit":"test","repository":{"type":"git","url":"git+https://github.com/pinojs/pino.git"},"scripts":{"bench":"node benchmarks/utils/runbench all","bench-basic":"node benchmarks/utils/runbench basic","bench-child":"node benchmarks/utils/runbench child","bench-child-child":"node benchmarks/utils/runbench child-child","bench-child-creation":"node benchmarks/utils/runbench child-creation","bench-deep-object":"node benchmarks/utils/runbench deep-object","bench-formatters":"node benchmarks/utils/runbench formatters","bench-longs-tring":"node benchmarks/utils/runbench long-string","bench-multi-arg":"node benchmarks/utils/runbench multi-arg","bench-object":"node benchmarks/utils/runbench object","browser-test":"airtap --local 8080 test/browser*test.js","cov-ui":"tap --coverage-report=html test/*test.js test/*/*test.js","docs":"docsify serve","test":"standard | snazzy && tap --100 test/*test.js test/*/*test.js","update-bench-doc":"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md"},"version":"6.10.0"};
+module.exports = {"_args":[["pino@6.11.0","/home/runner/work/release-please-action/release-please-action"]],"_from":"pino@6.11.0","_id":"pino@6.11.0","_inBundle":false,"_integrity":"sha512-VPqEE2sU1z6wqkTtr7DdTktayTNE/JgeuWjfXh9g/TI6X7venzv4gaoU24/jSywf6bBeDfZRHWEeO/6f8bNppA==","_location":"/pino","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"pino@6.11.0","name":"pino","escapedName":"pino","rawSpec":"6.11.0","saveSpec":null,"fetchSpec":"6.11.0"},"_requiredBy":["/code-suggester"],"_resolved":"https://registry.npmjs.org/pino/-/pino-6.11.0.tgz","_spec":"6.11.0","_where":"/home/runner/work/release-please-action/release-please-action","author":{"name":"Matteo Collina","email":"hello@matteocollina.com"},"bin":{"pino":"bin.js"},"browser":"./browser.js","bugs":{"url":"https://github.com/pinojs/pino/issues"},"contributors":[{"name":"David Mark Clements","email":"huperekchuno@googlemail.com"},{"name":"James Sumners","email":"james.sumners@gmail.com"},{"name":"Thomas Watson Steen","email":"w@tson.dk","url":"https://twitter.com/wa7son"}],"dependencies":{"fast-redact":"^3.0.0","fast-safe-stringify":"^2.0.7","flatstr":"^1.0.12","pino-std-serializers":"^3.1.0","quick-format-unescaped":"^4.0.1","sonic-boom":"^1.0.2"},"description":"super fast, all natural json logger","devDependencies":{"airtap":"3.0.0","benchmark":"^2.1.4","bole":"^4.0.0","bunyan":"^1.8.14","docsify-cli":"^4.4.1","eslint":"^7.17.0","eslint-config-standard":"^16.0.2","eslint-plugin-import":"^2.22.1","eslint-plugin-node":"^11.1.0","eslint-plugin-promise":"^4.2.1","execa":"^4.0.0","fastbench":"^1.0.1","flush-write-stream":"^2.0.0","import-fresh":"^3.2.1","log":"^6.0.0","loglevel":"^1.6.7","pino-pretty":"^4.1.0","pre-commit":"^1.2.2","proxyquire":"^2.1.3","pump":"^3.0.0","semver":"^7.0.0","split2":"^3.1.1","steed":"^1.1.3","strip-ansi":"^6.0.0","tap":"^14.10.8","tape":"^5.0.0","through2":"^4.0.0","winston":"^3.3.3"},"files":["pino.js","bin.js","browser.js","pretty.js","usage.txt","test","docs","example.js","lib"],"homepage":"http://getpino.io","keywords":["fast","logger","stream","json"],"license":"MIT","main":"pino.js","name":"pino","precommit":"test","repository":{"type":"git","url":"git+https://github.com/pinojs/pino.git"},"scripts":{"bench":"node benchmarks/utils/runbench all","bench-basic":"node benchmarks/utils/runbench basic","bench-child":"node benchmarks/utils/runbench child","bench-child-child":"node benchmarks/utils/runbench child-child","bench-child-creation":"node benchmarks/utils/runbench child-creation","bench-deep-object":"node benchmarks/utils/runbench deep-object","bench-formatters":"node benchmarks/utils/runbench formatters","bench-longs-tring":"node benchmarks/utils/runbench long-string","bench-multi-arg":"node benchmarks/utils/runbench multi-arg","bench-object":"node benchmarks/utils/runbench object","browser-test":"airtap --local 8080 test/browser*test.js","cov-ui":"tap --coverage-report=html test/*test.js test/*/*test.js","docs":"docsify serve","lint":"eslint .","test":"npm run lint && tap --100 test/*test.js test/*/*test.js","update-bench-doc":"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md"},"version":"6.11.0"};
 
 /***/ }),
 /* 930 */
@@ -60687,42 +60789,20 @@ class GoYoshi extends release_pr_1.ReleasePR {
             sha: latestTag === null || latestTag === void 0 ? void 0 : latestTag.sha,
             path: this.path,
         })).filter(commit => {
-            var _a, _b, _c, _d;
-            if (this.isGapicRepo(repo)) {
-                const scope = (_b = (_a = commit.message.match(SCOPE_REGEX)) === null || _a === void 0 ? void 0 : _a.groups) === null || _b === void 0 ? void 0 : _b.scope;
-                // Filter commits that don't have a scope as we don't know where to put
-                // them.
-                if (!scope) {
-                    return false;
-                }
-                // Skipping commits related to sub-modules as they are not apart of the
-                // parent module.
-                if (!this.monorepoTags) {
-                    for (const subModule of SUB_MODULES) {
-                        if (scope === subModule || scope.startsWith(subModule + '/')) {
-                            return false;
-                        }
-                    }
-                }
-                else {
-                    if (!(scope === this.packageName ||
-                        scope.startsWith(this.packageName + '/'))) {
-                        return false;
-                    }
-                }
-            }
+            var _a, _b;
             // Store the very first SHA returned, this represents the HEAD of the
             // release being created:
             if (!sha) {
                 sha = commit.sha;
             }
-            if (this.isMultiClientRepo(repo) && REGEN_PR_REGEX.test(commit.message)) {
+            if (repo === 'google-api-go-client' &&
+                REGEN_PR_REGEX.test(commit.message)) {
                 // Only have a single entry of the nightly regen listed in the changelog.
                 // If there are more than one of these commits, append associated PR.
                 const issueRe = /(?<prefix>.*)\((?<pr>.*)\)(\n|$)/;
                 if (regenPR) {
                     const match = commit.message.match(issueRe);
-                    if ((_c = match === null || match === void 0 ? void 0 : match.groups) === null || _c === void 0 ? void 0 : _c.pr) {
+                    if ((_a = match === null || match === void 0 ? void 0 : match.groups) === null || _a === void 0 ? void 0 : _a.pr) {
                         regenPR.message += `\nRefs ${match.groups.pr}`;
                     }
                     return false;
@@ -60732,7 +60812,7 @@ class GoYoshi extends release_pr_1.ReleasePR {
                     commit.sha = null;
                     regenPR = commit;
                     const match = commit.message.match(issueRe);
-                    if ((_d = match === null || match === void 0 ? void 0 : match.groups) === null || _d === void 0 ? void 0 : _d.pr) {
+                    if ((_b = match === null || match === void 0 ? void 0 : match.groups) === null || _b === void 0 ? void 0 : _b.pr) {
                         regenPR.message = `${match.groups.prefix}\n\nRefs ${match.groups.pr}`;
                     }
                 }
@@ -60743,9 +60823,9 @@ class GoYoshi extends release_pr_1.ReleasePR {
             commits: commits,
             githubRepoUrl: this.repoUrl,
             bumpMinorPreMajor: this.bumpMinorPreMajor,
+            commitFilter: this.filterSubModuleCommits(repo),
         });
-        const candidate = this.monorepoTags ||
-            !(this.isMultiClientRepo(repo) || this.isGapicRepo(repo))
+        const candidate = this.monorepoTags || !this.isMultiClientRepo(repo)
             ? // Submodules use conventional commits to bump major/minor/patch:
                 await super.coerceReleaseCandidate(cc, latestTag)
             : // Root module always bumps minor:
@@ -60802,6 +60882,33 @@ class GoYoshi extends release_pr_1.ReleasePR {
     }
     static tagSeparator() {
         return '/';
+    }
+    filterSubModuleCommits(repo) {
+        return (c) => {
+            if (this.isGapicRepo(repo)) {
+                // Filter commits that don't have a scope as we don't know where to put
+                // them.
+                if (!c.scope) {
+                    return true;
+                }
+                // Skipping commits related to sub-modules as they are not apart of the
+                // parent module.
+                if (!this.monorepoTags) {
+                    for (const subModule of SUB_MODULES) {
+                        if (c.scope === subModule || c.scope.startsWith(subModule + '/')) {
+                            return true;
+                        }
+                    }
+                }
+                else {
+                    if (!(c.scope === this.packageName ||
+                        c.scope.startsWith(this.packageName + '/'))) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        };
     }
 }
 exports.GoYoshi = GoYoshi;
