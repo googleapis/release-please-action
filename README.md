@@ -46,6 +46,7 @@ Automate releases with Conventional Commit Messages.
 | `version-file` | provide a path to a version file to increment (used by ruby releaser) |
 | `fork`          | Should the PR be created from a fork (does not work with `secrets.GITHUB_TOKEN`) |
 | `command`          | release-please command to run, either `github-release`, or `release-pr` (_defaults to running both_) |
+| `default-branch`  | branch to open pull release PR against (detected by default) |
 
 | output | description |
 |:---:|---|
