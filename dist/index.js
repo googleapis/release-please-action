@@ -3957,6 +3957,7 @@ async function main () {
   const changelogTypes = core.getInput('changelog-types')
   const command = core.getInput('command') ? core.getInput('command') : undefined
   const versionFile = core.getInput('version-file') ? core.getInput('version-file') : undefined
+  const defaultBranch = core.getInput('default-branch') ? core.getInput('default-branch') : undefined
 
   // Parse the changelogTypes if there are any
   let changelogSections
@@ -4001,7 +4002,8 @@ async function main () {
       label: RELEASE_LABEL,
       bumpMinorPreMajor,
       changelogSections,
-      versionFile
+      versionFile,
+      defaultBranch
     })
     const pr = await release.run()
     if (pr) {
