@@ -20,10 +20,17 @@ describe('release-please-action', () => {
       upload_url: 'http://example.com',
       tag_name: 'v1.0.0'
     })
+    let ReleaseStub = sinon.stub()
     action.getGitHubRelease = () => {
-      class Release {}
-      Release.prototype.createRelease = createRelease
-      return Release
+      class Release {
+        createRelease () {}
+      }
+      ReleaseStub = sinon.spy(function () {
+        const instance = sinon.createStubInstance(Release)
+        instance.createRelease = createRelease
+        return instance
+      })
+      return ReleaseStub
     }
     const releasePR = sinon.stub().returns(25)
     const buildStatic = sinon.stub().returns({
@@ -36,6 +43,7 @@ describe('release-please-action', () => {
     }
     await action.main()
     sinon.assert.calledOnce(createRelease)
+    sinon.assert.calledWith(ReleaseStub, sinon.match.hasOwn('defaultBranch', undefined))
     sinon.assert.calledWith(buildStatic, 'node', sinon.match.hasOwn('defaultBranch', undefined))
     sinon.assert.calledOnce(releasePR)
     assert.deepStrictEqual(output, {
@@ -62,10 +70,18 @@ describe('release-please-action', () => {
       upload_url: 'http://example.com',
       tag_name: 'v1.0.0'
     })
+
+    let ReleaseStub = sinon.stub()
     action.getGitHubRelease = () => {
-      class Release {}
-      Release.prototype.createRelease = createRelease
-      return Release
+      class Release {
+        createRelease () {}
+      }
+      ReleaseStub = sinon.spy(function () {
+        const instance = sinon.createStubInstance(Release)
+        instance.createRelease = createRelease
+        return instance
+      })
+      return ReleaseStub
     }
     const releasePR = sinon.stub().returns(25)
     const buildStatic = sinon.stub().returns({
@@ -78,6 +94,7 @@ describe('release-please-action', () => {
     }
     await action.main()
     sinon.assert.calledOnce(createRelease)
+    sinon.assert.calledWith(ReleaseStub, sinon.match.hasOwn('defaultBranch', 'dev'))
     sinon.assert.calledWith(buildStatic, 'node', sinon.match.hasOwn('defaultBranch', 'dev'))
     sinon.assert.calledOnce(releasePR)
     assert.deepStrictEqual(output, {
