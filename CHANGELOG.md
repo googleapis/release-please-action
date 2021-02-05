@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.17.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.16.0...v2.17.0) (2021-02-05)
+
+
+### Features
+
+* **release-please:** add default branch input option for github release ([#206](https://www.github.com/google-github-actions/release-please-action/issues/206)) ([534536c](https://www.github.com/google-github-actions/release-please-action/commit/534536c1c22bf1b590511b1ab65c732a67439212))
+
 ## [2.16.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.15.3...v2.16.0) (2021-02-02)
 
 
