@@ -22,7 +22,6 @@ Automate releases with Conventional Commit Messages.
         steps:
           - uses: GoogleCloudPlatform/release-please-action@v2
             with:
-              token: ${{ secrets.GITHUB_TOKEN }}
               release-type: node
               package-name: release-please-action
     ```
@@ -36,7 +35,7 @@ Automate releases with Conventional Commit Messages.
 
 | input | description |
 |:---:|---|
-| `token` | A GitHub secret token, you will most likely want to use the special `secrets.GITHUB_TOKEN` |
+| `token` | A GitHub secret token, the action default use the special `secrets.GITHUB_TOKEN` |
 | `release-type` | What type of project is this a release for? Reference [Release types supported](#release-types-supported); new types of releases can be [added here](https://github.com/googleapis/release-please/tree/master/src/releasers) |
 | `package-name` | A name for the artifact releases are being created for (this might be the `name` field in a `setup.py` or `package.json`) |
 | `bump-minor-pre-major` | Should breaking changes before 1.0.0 produce minor bumps?  Default `No` |
@@ -120,7 +119,6 @@ To output more commit information in the changelog,  a JSON formatted String can
         steps:
           - uses: GoogleCloudPlatform/release-please-action@v2
             with:
-              token: ${{ secrets.GITHUB_TOKEN }}
               release-type: node
               package-name: release-please-action
               changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
@@ -144,7 +142,6 @@ jobs:
       - uses: GoogleCloudPlatform/release-please-action@v2
         id: release
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
           package-name: test-release-please
       # The logic below handles the npm publication:
@@ -194,7 +191,6 @@ jobs:
       - uses: GoogleCloudPlatform/release-please-action@v2
         id: release
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
           package-name: ${{env.ACTION_NAME}}
           command: github-release
