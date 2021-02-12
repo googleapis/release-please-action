@@ -1,6 +1,6 @@
 const core = require('@actions/core')
 const { GitHubRelease } = require('release-please/build/src/github-release')
-const { ReleasePRFactory } = require('release-please/build/src/release-pr-factory')
+const { ReleasePR } = require('release-please/build/src/release-pr')
 
 const RELEASE_LABEL = 'autorelease: pending'
 
@@ -51,7 +51,9 @@ async function main () {
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
   if (!command || command === 'release-pr') {
-    const release = releasePlease.getReleasePRFactory().buildStatic(releaseType, {
+    const GithubReleasePR = releasePlease.getReleasePR()
+    const release = new GithubReleasePR({
+      releaseType,
       monorepoTags,
       packageName,
       path,
@@ -65,6 +67,7 @@ async function main () {
       versionFile,
       defaultBranch
     })
+
     const pr = await release.run()
     if (pr) {
       core.setOutput('pr', pr)
@@ -76,14 +79,14 @@ function getGitHubRelease () {
   return GitHubRelease
 }
 
-function getReleasePRFactory () {
-  return ReleasePRFactory
+function getReleasePR () {
+  return ReleasePR
 }
 
 const releasePlease = {
   main,
   getGitHubRelease,
-  getReleasePRFactory
+  getReleasePR
 }
 
 if (require.main === module) {

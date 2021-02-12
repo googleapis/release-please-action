@@ -32,20 +32,28 @@ describe('release-please-action', () => {
       })
       return ReleaseStub
     }
-    const releasePR = sinon.stub().returns(25)
-    const buildStatic = sinon.stub().returns({
-      run: releasePR
-    })
-    action.getReleasePRFactory = () => {
-      return {
-        buildStatic
+
+    let GithubReleasePRStub = sinon.stub()
+    const runStub = sinon.stub().returns(25)
+
+    action.getReleasePR = () => {
+      class GithubReleasePR {
+        run () {}
       }
+      GithubReleasePRStub = sinon.spy(function () {
+        const instance = sinon.createStubInstance(GithubReleasePR)
+        instance.run = runStub
+        return instance
+      })
+      return GithubReleasePRStub
     }
+
     await action.main()
+
     sinon.assert.calledOnce(createRelease)
     sinon.assert.calledWith(ReleaseStub, sinon.match.hasOwn('defaultBranch', undefined))
-    sinon.assert.calledWith(buildStatic, 'node', sinon.match.hasOwn('defaultBranch', undefined))
-    sinon.assert.calledOnce(releasePR)
+    sinon.assert.calledOnce(runStub)
+    sinon.assert.calledWith(GithubReleasePRStub, sinon.match.hasOwn('defaultBranch', undefined))
     assert.deepStrictEqual(output, {
       release_created: true,
       upload_url: 'http://example.com',
@@ -83,20 +91,28 @@ describe('release-please-action', () => {
       })
       return ReleaseStub
     }
-    const releasePR = sinon.stub().returns(25)
-    const buildStatic = sinon.stub().returns({
-      run: releasePR
-    })
-    action.getReleasePRFactory = () => {
-      return {
-        buildStatic
+
+    let GithubReleasePRStub = sinon.stub()
+    const runStub = sinon.stub().returns(25)
+
+    action.getReleasePR = () => {
+      class GithubReleasePR {
+        run () {}
       }
+      GithubReleasePRStub = sinon.spy(function () {
+        const instance = sinon.createStubInstance(GithubReleasePR)
+        instance.run = runStub
+        return instance
+      })
+      return GithubReleasePRStub
     }
+
     await action.main()
+
     sinon.assert.calledOnce(createRelease)
     sinon.assert.calledWith(ReleaseStub, sinon.match.hasOwn('defaultBranch', 'dev'))
-    sinon.assert.calledWith(buildStatic, 'node', sinon.match.hasOwn('defaultBranch', 'dev'))
-    sinon.assert.calledOnce(releasePR)
+    sinon.assert.calledOnce(runStub)
+    sinon.assert.calledWith(GithubReleasePRStub, sinon.match.hasOwn('defaultBranch', 'dev'))
     assert.deepStrictEqual(output, {
       release_created: true,
       upload_url: 'http://example.com',
@@ -126,19 +142,25 @@ describe('release-please-action', () => {
       Release.prototype.createRelease = githubRelease
       return Release
     }
-    const releasePR = sinon.stub()
-    action.getReleasePRFactory = () => {
-      return {
-        buildStatic: () => {
-          return {
-            run: releasePR
-          }
-        }
+
+    let GithubReleasePRStub = sinon.stub()
+    const runStub = sinon.stub().returns(25)
+
+    action.getReleasePR = () => {
+      class GithubReleasePR {
+        run () {}
       }
+      GithubReleasePRStub = sinon.spy(function () {
+        const instance = sinon.createStubInstance(GithubReleasePR)
+        instance.run = runStub
+        return instance
+      })
+      return GithubReleasePRStub
     }
+
     await action.main()
     sinon.assert.notCalled(githubRelease)
-    sinon.assert.calledOnce(releasePR)
+    sinon.assert.calledOnce(runStub)
   })
 
   it('only creates GitHub release, if command set to github-release', async () => {
@@ -233,15 +255,19 @@ describe('release-please-action', () => {
     core.getInput = (name) => {
       return input[name]
     }
-    const releasePR = sinon.stub().returns(95)
-    action.getReleasePRFactory = () => {
-      return {
-        buildStatic: () => {
-          return {
-            run: releasePR
-          }
-        }
+    let GithubReleasePRStub = sinon.stub()
+    const runStub = sinon.stub().returns(95)
+
+    action.getReleasePR = () => {
+      class GithubReleasePR {
+        run () {}
       }
+      GithubReleasePRStub = sinon.spy(function () {
+        const instance = sinon.createStubInstance(GithubReleasePR)
+        instance.run = runStub
+        return instance
+      })
+      return GithubReleasePRStub
     }
     await action.main()
     assert.strictEqual(output.pr, 95)
@@ -259,15 +285,19 @@ describe('release-please-action', () => {
     core.getInput = (name) => {
       return input[name]
     }
-    const releasePR = sinon.stub().returns(undefined)
-    action.getReleasePRFactory = () => {
-      return {
-        buildStatic: () => {
-          return {
-            run: releasePR
-          }
-        }
+    let GithubReleasePRStub = sinon.stub()
+    const runStub = sinon.stub().returns(undefined)
+
+    action.getReleasePR = () => {
+      class GithubReleasePR {
+        run () {}
       }
+      GithubReleasePRStub = sinon.spy(function () {
+        const instance = sinon.createStubInstance(GithubReleasePR)
+        instance.run = runStub
+        return instance
+      })
+      return GithubReleasePRStub
     }
     await action.main()
     assert.strictEqual(Object.hasOwnProperty.call(output, 'pr'), false)
