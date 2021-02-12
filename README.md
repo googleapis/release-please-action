@@ -10,7 +10,7 @@ Automate releases with Conventional Commit Messages.
   repository (_this is where your actions will live_).
 2. Now create a `.github/workflows/release-please.yml` file with these contents:
 
-   ```yaml
+    ```yaml
     on:
       push:
         branches:
@@ -58,7 +58,6 @@ Automate releases with Conventional Commit Messages.
 | `patch` | Number representing patch semver value |
 | `sha` | sha that a GitHub release was tagged at |
 | `pr` | The PR number of an opened release (undefined if no release created) |
-
 
 ### Release types supported
 
@@ -108,20 +107,20 @@ The most important prefixes you should have in mind are:
 To output more commit information in the changelog,  a JSON formatted String can be added to the Action using the `changelog-types` input parameter.  This could look something like this:
 
 ```yaml
-    on:
-      push:
-        branches:
-          - main
-    name: release-please
-    jobs:
-      release-please:
-        runs-on: ubuntu-latest
-        steps:
-          - uses: GoogleCloudPlatform/release-please-action@v2
-            with:
-              release-type: node
-              package-name: release-please-action
-              changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
+on:
+  push:
+    branches:
+      - main
+name: release-please
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: GoogleCloudPlatform/release-please-action@v2
+        with:
+          release-type: node
+          package-name: release-please-action
+          changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
 ```
 
 ## Automating publication to npm
@@ -164,7 +163,6 @@ jobs:
 
 > So that you can keep 2FA enabled for npm publications, we recommend setting
 `registry-url` to your own [Wombat Dressing Room](https://github.com/GoogleCloudPlatform/wombat-dressing-room) deployment.
-
 
 ## Creating major/minor tags
 
@@ -209,6 +207,38 @@ jobs:
           git tag -a v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} -m "Release v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}"
           git push origin v${{ steps.release.outputs.major }}
           git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
+```
+
+### Use the personal access token in fork repository
+
+You can use the personal access token for the input `token` which default use the `GITHUB_TOKEN`.
+
+You can generate a PAT for GitHub repository by going to
+`Settings(GitHub) -> Developer Settings -> Personal Access Tokens -> Generate new token`,
+and will need to grant repo permission. For more information, see the
+[GitHub documentation](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
+
+After you generated the PAT, go to `Settings(repository) -> Secrets -> New secret`,
+name the secret `REPO_TOKEN`, and copy the PAT into the box. Then, you can use the
+`${{ secrets.REPO_TOKEN }}` to fill with the input `token`.
+
+This could look something like this:
+
+```yaml
+on:
+  push:
+    branches:
+      - main
+name: release-please
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: GoogleCloudPlatform/release-please-action@v2
+        with:
+          token: ${{ secrets.REPO_TOKEN }}
+          release-type: node
+          package-name: release-please-action
 ```
 
 ## License
