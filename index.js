@@ -39,7 +39,7 @@ async function main () {
       releaseType,
       defaultBranch
     })
-    const releaseCreated = await gr.createRelease()
+    const releaseCreated = await gr.run()
     if (releaseCreated) {
       core.setOutput('release_created', true)
       for (const key of Object.keys(releaseCreated)) {
