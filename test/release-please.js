@@ -3,7 +3,8 @@ const action = require('../')
 const assert = require('assert')
 const core = require('@actions/core')
 const sinon = require('sinon')
-const { factory } = require('release-please/build/src')
+const { factory, GitHubRelease } = require('release-please/build/src')
+const { Node } = require('release-please/build/src/releasers/node')
 
 const sandbox = sinon.createSandbox()
 process.env.GITHUB_REPOSITORY = 'google/cloud'
@@ -226,5 +227,37 @@ describe('release-please-action', () => {
 
     await action.main()
     assert.strictEqual(Object.hasOwnProperty.call(output, 'pr'), false)
+  })
+
+  it('creates and runs a ReleasePR instance, using factory', async () => {
+    let maybeReleasePR
+    sandbox.replace(factory, 'run', (runnable) => {
+      maybeReleasePR = runnable
+    })
+    const input = {
+      'release-type': 'node',
+      command: 'release-pr'
+    }
+    core.getInput = (name) => {
+      return input[name]
+    }
+    await action.main()
+    assert.ok(maybeReleasePR instanceof Node)
+  })
+
+  it('creates and runs a GitHubRelease, using factory', async () => {
+    let maybeGitHubRelease
+    sandbox.replace(factory, 'run', (runnable) => {
+      maybeGitHubRelease = runnable
+    })
+    const input = {
+      'release-type': 'node',
+      command: 'github-release'
+    }
+    core.getInput = (name) => {
+      return input[name]
+    }
+    await action.main()
+    assert.ok(maybeGitHubRelease instanceof GitHubRelease)
   })
 })
