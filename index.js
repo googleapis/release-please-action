@@ -1,8 +1,9 @@
 const core = require('@actions/core')
-const { GitHubRelease } = require('release-please/build/src/github-release')
-const { ReleasePR } = require('release-please/build/src/release-pr')
+const { factory } = require('release-please/build/src')
 
 const RELEASE_LABEL = 'autorelease: pending'
+const GITHUB_RELEASE_COMMAND = 'github-release'
+const GITHUB_RELEASE_PR_COMMAND = 'release-pr'
 
 async function main () {
   const bumpMinorPreMajor = Boolean(core.getInput('bump-minor-pre-major'))
@@ -26,9 +27,8 @@ async function main () {
 
   // First we check for any merged release PRs (PRs merged with the label
   // "autorelease: pending"):
-  if (!command || command === 'github-release') {
-    const Release = releasePlease.getGitHubRelease()
-    const gr = new Release({
+  if (!command || command === GITHUB_RELEASE_COMMAND) {
+    const releaseCreated = await factory.runCommand(GITHUB_RELEASE_COMMAND, {
       label: RELEASE_LABEL,
       repoUrl: process.env.GITHUB_REPOSITORY,
       packageName,
@@ -39,7 +39,7 @@ async function main () {
       releaseType,
       defaultBranch
     })
-    const releaseCreated = await gr.run()
+
     if (releaseCreated) {
       core.setOutput('release_created', true)
       for (const key of Object.keys(releaseCreated)) {
@@ -50,9 +50,8 @@ async function main () {
 
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
-  if (!command || command === 'release-pr') {
-    const GithubReleasePR = releasePlease.getReleasePR()
-    const release = new GithubReleasePR({
+  if (!command || command === GITHUB_RELEASE_PR_COMMAND) {
+    const pr = await factory.runCommand(GITHUB_RELEASE_PR_COMMAND, {
       releaseType,
       monorepoTags,
       packageName,
@@ -68,25 +67,14 @@ async function main () {
       defaultBranch
     })
 
-    const pr = await release.run()
     if (pr) {
       core.setOutput('pr', pr)
     }
   }
 }
 
-function getGitHubRelease () {
-  return GitHubRelease
-}
-
-function getReleasePR () {
-  return ReleasePR
-}
-
 const releasePlease = {
-  main,
-  getGitHubRelease,
-  getReleasePR
+  main
 }
 
 if (require.main === module) {
