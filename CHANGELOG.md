@@ -1,5 +1,13 @@
 # Changelog
 
+### [2.18.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.18.0...v2.18.1) (2021-02-15)
+
+
+### Bug Fixes
+
+* **release-please:** update github-release call to new function ([#217](https://www.github.com/google-github-actions/release-please-action/issues/217)) ([efd1c77](https://www.github.com/google-github-actions/release-please-action/commit/efd1c77e85e3e407ac71c4eb338fc1aa86027455))
+* **release-please:** uses factory from latest version ([#222](https://www.github.com/google-github-actions/release-please-action/issues/222)) ([cede8e4](https://www.github.com/google-github-actions/release-please-action/commit/cede8e48374038ce478d27a172085187b4668923))
+
 ## [2.18.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.17.0...v2.18.0) (2021-02-12)
 
 
