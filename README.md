@@ -211,34 +211,19 @@ jobs:
 
 ### Use the personal access token in fork repository
 
-You can use the personal access token for the input `token` which default use the `GITHUB_TOKEN`.
+You can use the personal access token in fork repository for the input `token` which defaults using to the `secrect.GITHUB_TOKEN`.
 
-You can generate a PAT for GitHub repository by going to
-`Settings(GitHub) -> Developer Settings -> Personal Access Tokens -> Generate new token`,
-and will need to grant repo permission. For more information, see the
-[GitHub documentation](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
-
-After you generated the PAT, go to `Settings(repository) -> Secrets -> New secret`,
-name the secret `REPO_TOKEN`, and copy the PAT into the box. Then, you can use the
-`${{ secrets.REPO_TOKEN }}` to fill with the input `token`.
+For more information, see the
+[GitHub documentation - creating-a-personal-access-token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) and [Learn more about creating and using encrypted secrets](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/creating-and-using-encrypted-secrets).
 
 This could look something like this:
 
 ```yaml
-on:
-  push:
-    branches:
-      - main
-name: release-please
-jobs:
-  release-please:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2
-        with:
-          token: ${{ secrets.REPO_TOKEN }}
-          release-type: node
-          package-name: release-please-action
+- uses: GoogleCloudPlatform/release-please-action@v2
+  with:
+    token: ${{ secrets.REPO_TOKEN }}
+    release-type: node
+    package-name: release-please-action
 ```
 
 ## License
