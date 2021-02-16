@@ -5,6 +5,18 @@ const core = require('@actions/core')
 const sinon = require('sinon')
 const { factory, GitHubRelease } = require('release-please/build/src')
 const { Node } = require('release-please/build/src/releasers/node')
+const defaultInput = {
+  fork: 'false',
+  clean: 'true',
+  'bump-minor-pre-major': 'false',
+  path: '',
+  'monorepo-tags': 'false',
+  'changelog-path': '',
+  'changelog-types': '',
+  command: '',
+  'version-file': '',
+  'default-branch': ''
+}
 
 const sandbox = sinon.createSandbox()
 process.env.GITHUB_REPOSITORY = 'google/cloud'
@@ -12,6 +24,47 @@ process.env.GITHUB_REPOSITORY = 'google/cloud'
 describe('release-please-action', () => {
   afterEach(() => {
     sandbox.restore()
+  })
+
+  const trueValue = ['true', 'True', 'TRUE', 'yes', 'Yes', 'YES', 'y', 'Y', 'on', 'On', 'ON']
+  const falseValue = ['false', 'False', 'FALSE', 'no', 'No', 'NO', 'n', 'N', 'off', 'Off', 'OFF']
+
+  trueValue.forEach(value => {
+    it(`get the boolean true with the input of '${value}'`, () => {
+      const input = {
+        fork: value
+      }
+      core.getInput = (name) => {
+        return input[name] || defaultInput[name]
+      }
+      const actual = action.getBooleanInput('fork')
+      assert.strictEqual(actual, true)
+    })
+  })
+
+  falseValue.forEach(value => {
+    it(`get the boolean with the input of '${value}'`, () => {
+      const input = {
+        fork: value
+      }
+      core.getInput = (name) => {
+        return input[name] || defaultInput[name]
+      }
+      const actual = action.getBooleanInput('fork')
+      assert.strictEqual(actual, false)
+    })
+  })
+
+  it('get an error when inputting the wrong boolean value', () => {
+    const input = {
+      fork: 'wrong'
+    }
+    core.getInput = (name) => {
+      return input[name] || defaultInput[name]
+    }
+    assert.throws(() => {
+      action.getBooleanInput('fork')
+    }, { name: 'TypeError', message: 'Wrong boolean value of the input \'fork\'' })
   })
 
   it('both opens PR to the default branch and tags GitHub releases by default', async () => {
@@ -23,7 +76,7 @@ describe('release-please-action', () => {
       'release-type': 'node'
     }
     core.getInput = (name) => {
-      return input[name]
+      return input[name] || defaultInput[name]
     }
 
     const runCommandStub = sandbox.stub(factory, 'runCommand')
@@ -61,7 +114,7 @@ describe('release-please-action', () => {
       'default-branch': 'dev'
     }
     core.getInput = (name) => {
-      return input[name]
+      return input[name] || defaultInput[name]
     }
 
     const runCommandStub = sandbox.stub(factory, 'runCommand')
@@ -100,7 +153,7 @@ describe('release-please-action', () => {
       command: 'release-pr'
     }
     core.getInput = (name) => {
-      return input[name]
+      return input[name] || defaultInput[name]
     }
 
     const runCommandStub = sandbox.stub(factory, 'runCommand')
@@ -129,7 +182,7 @@ describe('release-please-action', () => {
       command: 'github-release'
     }
     core.getInput = (name) => {
-      return input[name]
+      return input[name] || defaultInput[name]
     }
 
     const runCommandStub = sandbox.stub(factory, 'runCommand')
@@ -170,7 +223,7 @@ describe('release-please-action', () => {
       command: 'github-release'
     }
     core.getInput = (name) => {
-      return input[name]
+      return input[name] || defaultInput[name]
     }
 
     const runCommandStub = sandbox.stub(factory, 'runCommand')
@@ -195,7 +248,7 @@ describe('release-please-action', () => {
       command: 'release-pr'
     }
     core.getInput = (name) => {
-      return input[name]
+      return input[name] || defaultInput[name]
     }
 
     const runCommandStub = sandbox.stub(factory, 'runCommand')
@@ -217,7 +270,7 @@ describe('release-please-action', () => {
       command: 'release-pr'
     }
     core.getInput = (name) => {
-      return input[name]
+      return input[name] || defaultInput[name]
     }
 
     const runCommandStub = sandbox.stub(factory, 'runCommand')
@@ -239,7 +292,7 @@ describe('release-please-action', () => {
       command: 'release-pr'
     }
     core.getInput = (name) => {
-      return input[name]
+      return input[name] || defaultInput[name]
     }
     await action.main()
     assert.ok(maybeReleasePR instanceof Node)
@@ -255,7 +308,7 @@ describe('release-please-action', () => {
       command: 'github-release'
     }
     core.getInput = (name) => {
-      return input[name]
+      return input[name] || defaultInput[name]
     }
     await action.main()
     assert.ok(maybeGitHubRelease instanceof GitHubRelease)

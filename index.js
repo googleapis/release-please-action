@@ -11,7 +11,7 @@ function getBooleanInput (input) {
   const stringInput = core.getInput(input)
   if (trueValue.indexOf(stringInput) > -1) return true
   if (falseValue.indexOf(stringInput) > -1) return false
-  core.setFailed(`release-please failed: Wrong input value of ${input}`)
+  throw TypeError(`Wrong boolean value of the input '${input}'`)
 }
 
 async function main () {
@@ -83,7 +83,8 @@ async function main () {
 }
 
 const releasePlease = {
-  main
+  main,
+  getBooleanInput
 }
 
 if (require.main === module) {
