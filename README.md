@@ -43,7 +43,7 @@ Automate releases with Conventional Commit Messages.
 | `monorepo-tags` | add prefix to tags and branches, allowing multiple libraries to be released from the same repository. |
 | `changelog-types` | A JSON formatted String containing to override the outputted changelog sections |
 | `version-file` | provide a path to a version file to increment (used by ruby releaser) |
-| `fork`          | Should the PR be created from a fork (does not work with `secrets.GITHUB_TOKEN`) Default `false`|
+| `fork`          | Should the PR be created from a fork. Default `false`|
 | `command`          | release-please command to run, either `github-release`, or `release-pr` (_defaults to running both_) |
 | `default-branch`  | branch to open pull release PR against (detected by default) |
 
@@ -207,24 +207,6 @@ jobs:
           git tag -a v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} -m "Release v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}"
           git push origin v${{ steps.release.outputs.major }}
           git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
-```
-
-### Use the personal access token in fork repository
-
-You can use the personal access token in fork repository for the input `token` which defaults using to the `secrect.GITHUB_TOKEN`.
-
-For more information, see the
-[GitHub documentation - creating-a-personal-access-token](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) and [Learn more about creating and using encrypted secrets](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/creating-and-using-encrypted-secrets).
-
-This could look something like this:
-
-```yaml
-- uses: GoogleCloudPlatform/release-please-action@v2
-  with:
-    fork: true
-    token: ${{ secrets.REPO_TOKEN }}
-    release-type: node
-    package-name: release-please-action
 ```
 
 ## License
