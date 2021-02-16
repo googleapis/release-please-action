@@ -221,6 +221,7 @@ This could look something like this:
 ```yaml
 - uses: GoogleCloudPlatform/release-please-action@v2
   with:
+    fork: true
     token: ${{ secrets.REPO_TOKEN }}
     release-type: node
     package-name: release-please-action
