@@ -5,14 +5,23 @@ const RELEASE_LABEL = 'autorelease: pending'
 const GITHUB_RELEASE_COMMAND = 'github-release'
 const GITHUB_RELEASE_PR_COMMAND = 'release-pr'
 
+function getBooleanInput (input) {
+  const trueValue = ['true', 'True', 'TRUE', 'yes', 'Yes', 'YES', 'y', 'Y', 'on', 'On', 'ON']
+  const falseValue = ['false', 'False', 'FALSE', 'no', 'No', 'NO', 'n', 'N', 'off', 'Off', 'OFF']
+  const stringInput = core.getInput(input)
+  if (trueValue.indexOf(stringInput) > -1) return true
+  if (falseValue.indexOf(stringInput) > -1) return false
+  core.setFailed(`release-please failed: Wrong input value of ${input}`)
+}
+
 async function main () {
-  const bumpMinorPreMajor = Boolean(core.getInput('bump-minor-pre-major'))
-  const monorepoTags = Boolean(core.getInput('monorepo-tags'))
+  const bumpMinorPreMajor = getBooleanInput('bump-minor-pre-major')
+  const monorepoTags = getBooleanInput('monorepo-tags')
   const packageName = core.getInput('package-name')
   const path = core.getInput('path') ? core.getInput('path') : undefined
   const releaseType = core.getInput('release-type')
   const token = core.getInput('token')
-  const fork = core.getInput('fork') ? true : undefined
+  const fork = getBooleanInput('fork') ? true : undefined
   const changelogPath = core.getInput('changelog-path') ? core.getInput('changelog-path') : undefined
   const changelogTypes = core.getInput('changelog-types')
   const command = core.getInput('command') ? core.getInput('command') : undefined
