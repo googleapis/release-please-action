@@ -8,9 +8,11 @@ inputs:
   fork:
     description: 'should the PR be proposed from a fork (does not work with secrets.GITHUB_TOKEN)'
     required: false
+    default: false
   clean:
     description: 'Should stale release PRs be closed post release? Defaults to true'
     required: false
+    default: true
   package-name:
     description: 'name of the distributions releases are being created for, e.g., "name" in package.json, or "setup.py"'
     required: true
@@ -20,27 +22,35 @@ inputs:
   bump-minor-pre-major:
     description: 'should breaking changes before 1.0.0 produce minor bumps'
     required: false
+    default: false
   path:
     description: "create a release from a path other than the repository's root"
     required: false
+    default: ''
   monorepo-tags:
     description: 'add prefix to tags and branches, allowing multiple libraries to be released from the same repository'
     required: false
+    default: false
   changelog-path:
     description: 'specify a CHANGELOG path other than the root CHANGELOG.md'
     required: false
+    default: ''
   changelog-types:
     description: 'changlelog commit types'
     required: false
+    default: ''
   command:
     description: 'release-please command to run, either "github-release", or "release-pr" (defaults to running both)'
     required: false
+    default: ''
   version-file:
     description: 'provide a path to a version file to increment (used by ruby releaser)'
     required: false
+    default: ''
   default-branch:
     description: 'branch to open pull release PR against (detected by default)'
     required: false
+    default: ''
 runs:
   using: 'node12'
   main: 'dist/index.js'
