@@ -3,8 +3,9 @@ description: 'automated releases based on conventional commits'
 author: Google LLC
 inputs:
   token:
-    description: 'GitHub token for creating and grooming release PRs, e.g., secrets.GITHUB_TOKEN'
-    required: true
+    description: 'GitHub token for creating and grooming release PRs, defaults to using secrets.GITHUB_TOKEN'
+    required: false
+    default: ${{ github.token }}
   fork:
     description: 'should the PR be proposed from a fork (does not work with secrets.GITHUB_TOKEN)'
     required: false
