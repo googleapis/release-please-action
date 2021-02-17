@@ -10,7 +10,7 @@ Automate releases with Conventional Commit Messages.
   repository (_this is where your actions will live_).
 2. Now create a `.github/workflows/release-please.yml` file with these contents:
 
-   ```yaml
+    ```yaml
     on:
       push:
         branches:
@@ -22,7 +22,6 @@ Automate releases with Conventional Commit Messages.
         steps:
           - uses: GoogleCloudPlatform/release-please-action@v2
             with:
-              token: ${{ secrets.GITHUB_TOKEN }}
               release-type: node
               package-name: release-please-action
     ```
@@ -36,7 +35,7 @@ Automate releases with Conventional Commit Messages.
 
 | input | description |
 |:---:|---|
-| `token` | A GitHub secret token, you will most likely want to use the special `secrets.GITHUB_TOKEN` |
+| `token` | A GitHub secret token, the action defaults to using the special `secrets.GITHUB_TOKEN` |
 | `release-type` | What type of project is this a release for? Reference [Release types supported](#release-types-supported); new types of releases can be [added here](https://github.com/googleapis/release-please/tree/master/src/releasers) |
 | `package-name` | A name for the artifact releases are being created for (this might be the `name` field in a `setup.py` or `package.json`) |
 | `bump-minor-pre-major` | Should breaking changes before 1.0.0 produce minor bumps?  Default `No` |
@@ -44,7 +43,7 @@ Automate releases with Conventional Commit Messages.
 | `monorepo-tags` | add prefix to tags and branches, allowing multiple libraries to be released from the same repository. |
 | `changelog-types` | A JSON formatted String containing to override the outputted changelog sections |
 | `version-file` | provide a path to a version file to increment (used by ruby releaser) |
-| `fork`          | Should the PR be created from a fork (does not work with `secrets.GITHUB_TOKEN`) |
+| `fork`          | Should the PR be created from a fork. Default `false`|
 | `command`          | release-please command to run, either `github-release`, or `release-pr` (_defaults to running both_) |
 | `default-branch`  | branch to open pull release PR against (detected by default) |
 
@@ -59,7 +58,6 @@ Automate releases with Conventional Commit Messages.
 | `patch` | Number representing patch semver value |
 | `sha` | sha that a GitHub release was tagged at |
 | `pr` | The PR number of an opened release (undefined if no release created) |
-
 
 ### Release types supported
 
@@ -109,21 +107,20 @@ The most important prefixes you should have in mind are:
 To output more commit information in the changelog,  a JSON formatted String can be added to the Action using the `changelog-types` input parameter.  This could look something like this:
 
 ```yaml
-    on:
-      push:
-        branches:
-          - main
-    name: release-please
-    jobs:
-      release-please:
-        runs-on: ubuntu-latest
-        steps:
-          - uses: GoogleCloudPlatform/release-please-action@v2
-            with:
-              token: ${{ secrets.GITHUB_TOKEN }}
-              release-type: node
-              package-name: release-please-action
-              changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
+on:
+  push:
+    branches:
+      - main
+name: release-please
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: GoogleCloudPlatform/release-please-action@v2
+        with:
+          release-type: node
+          package-name: release-please-action
+          changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
 ```
 
 ## Automating publication to npm
@@ -144,7 +141,6 @@ jobs:
       - uses: GoogleCloudPlatform/release-please-action@v2
         id: release
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
           package-name: test-release-please
       # The logic below handles the npm publication:
@@ -167,7 +163,6 @@ jobs:
 
 > So that you can keep 2FA enabled for npm publications, we recommend setting
 `registry-url` to your own [Wombat Dressing Room](https://github.com/GoogleCloudPlatform/wombat-dressing-room) deployment.
-
 
 ## Creating major/minor tags
 
@@ -194,7 +189,6 @@ jobs:
       - uses: GoogleCloudPlatform/release-please-action@v2
         id: release
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
           package-name: ${{env.ACTION_NAME}}
           command: github-release
