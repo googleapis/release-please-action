@@ -12,25 +12,29 @@ const RELEASE_LABEL = 'autorelease: pending'
 const GITHUB_RELEASE_COMMAND = 'github-release'
 const GITHUB_RELEASE_PR_COMMAND = 'release-pr'
 
-async function main () {
-  const bumpMinorPreMajor = Boolean(core.getInput('bump-minor-pre-major'))
-  const monorepoTags = Boolean(core.getInput('monorepo-tags'))
-  const packageName = core.getInput('package-name')
-  const path = core.getInput('path') ? core.getInput('path') : undefined
-  const releaseType = core.getInput('release-type')
-  const token = core.getInput('token')
-  const fork = core.getInput('fork') ? true : undefined
-  const changelogPath = core.getInput('changelog-path') ? core.getInput('changelog-path') : undefined
-  const changelogTypes = core.getInput('changelog-types')
-  const command = core.getInput('command') ? core.getInput('command') : undefined
-  const versionFile = core.getInput('version-file') ? core.getInput('version-file') : undefined
-  const defaultBranch = core.getInput('default-branch') ? core.getInput('default-branch') : undefined
+function getBooleanInput (input) {
+  const trueValue = ['true', 'True', 'TRUE', 'yes', 'Yes', 'YES', 'y', 'Y', 'on', 'On', 'ON']
+  const falseValue = ['false', 'False', 'FALSE', 'no', 'No', 'NO', 'n', 'N', 'off', 'Off', 'OFF']
+  const stringInput = core.getInput(input)
+  if (trueValue.indexOf(stringInput) > -1) return true
+  if (falseValue.indexOf(stringInput) > -1) return false
+  throw TypeError(`Wrong boolean value of the input '${input}'`)
+}
 
-  // Parse the changelogTypes if there are any
-  let changelogSections
-  if (changelogTypes) {
-    changelogSections = JSON.parse(changelogTypes)
-  }
+async function main () {
+  const bumpMinorPreMajor = getBooleanInput('bump-minor-pre-major')
+  const monorepoTags = getBooleanInput('monorepo-tags')
+  const packageName = core.getInput('package-name', { required: true })
+  const path = core.getInput('path') || undefined
+  const releaseType = core.getInput('release-type', { required: true })
+  const token = core.getInput('token', { required: true })
+  const fork = getBooleanInput('fork')
+  const changelogPath = core.getInput('changelog-path') || undefined
+  const changelogTypes = core.getInput('changelog-types')
+  const changelogSections = changelogTypes && JSON.parse(changelogTypes)
+  const command = core.getInput('command') || undefined
+  const versionFile = core.getInput('version-file') || undefined
+  const defaultBranch = core.getInput('default-branch') || undefined
 
   // First we check for any merged release PRs (PRs merged with the label
   // "autorelease: pending"):
@@ -81,7 +85,8 @@ async function main () {
 }
 
 const releasePlease = {
-  main
+  main,
+  getBooleanInput
 }
 
 if (require.main === require.cache[eval('__filename')]) {
