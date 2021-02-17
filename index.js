@@ -17,22 +17,17 @@ function getBooleanInput (input) {
 async function main () {
   const bumpMinorPreMajor = getBooleanInput('bump-minor-pre-major')
   const monorepoTags = getBooleanInput('monorepo-tags')
-  const packageName = core.getInput('package-name')
-  const path = core.getInput('path') ? core.getInput('path') : undefined
-  const releaseType = core.getInput('release-type')
-  const token = core.getInput('token')
-  const fork = getBooleanInput('fork') ? true : undefined
-  const changelogPath = core.getInput('changelog-path') ? core.getInput('changelog-path') : undefined
+  const packageName = core.getInput('package-name', { required: true })
+  const path = core.getInput('path') || undefined
+  const releaseType = core.getInput('release-type', { required: true })
+  const token = core.getInput('token', { required: true })
+  const fork = getBooleanInput('fork')
+  const changelogPath = core.getInput('changelog-path') || undefined
   const changelogTypes = core.getInput('changelog-types')
-  const command = core.getInput('command') ? core.getInput('command') : undefined
-  const versionFile = core.getInput('version-file') ? core.getInput('version-file') : undefined
-  const defaultBranch = core.getInput('default-branch') ? core.getInput('default-branch') : undefined
-
-  // Parse the changelogTypes if there are any
-  let changelogSections
-  if (changelogTypes) {
-    changelogSections = JSON.parse(changelogTypes)
-  }
+  const changelogSections = changelogTypes && JSON.parse(changelogTypes)
+  const command = core.getInput('command') || undefined
+  const versionFile = core.getInput('version-file') || undefined
+  const defaultBranch = core.getInput('default-branch') || undefined
 
   // First we check for any merged release PRs (PRs merged with the label
   // "autorelease: pending"):
