@@ -72,6 +72,8 @@ Release Please automates releases for the following flavors of repositories:
 | rust              | A Rust repository, with a Cargo.toml (either as a crate or workspace) and a CHANGELOG.md |
 | ocaml             | [An OCaml repository, containing 1 or more opam or esy files and a CHANGELOG.md](https://github.com/grain-lang/binaryen.ml) |
 | `simple` | [A repository with a version.txt and a CHANGELOG.md](https://github.com/googleapis/gapic-generator) |
+| helm | A helm chart repository with a Chart.yaml and a CHANGELOG.md |
+
 
 ## How release please works
 
