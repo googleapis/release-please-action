@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.19.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.18.1...v2.19.0) (2021-02-17)
+
+
+### Features
+
+* **release-please:** add default token input option ([#212](https://www.github.com/google-github-actions/release-please-action/issues/212)) ([eea7db7](https://www.github.com/google-github-actions/release-please-action/commit/eea7db7fda9e26271d7bcd313f760e7443fee321))
+
+
+### Bug Fixes
+
+* get the correct boolean value of the input ([#233](https://www.github.com/google-github-actions/release-please-action/issues/233)) ([c23605f](https://www.github.com/google-github-actions/release-please-action/commit/c23605fcb2b0807911f30bf19060ddeda84e105a))
+
 ### [2.18.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.18.0...v2.18.1) (2021-02-15)
 
 
