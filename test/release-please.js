@@ -5,6 +5,7 @@ const core = require('@actions/core')
 const sinon = require('sinon')
 const { factory, GitHubRelease } = require('release-please/build/src')
 const { Node } = require('release-please/build/src/releasers/node')
+// As defined in action.yml
 const defaultInput = {
   fork: 'false',
   clean: 'true',
