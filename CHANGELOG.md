@@ -1,5 +1,13 @@
 # Changelog
 
+### [2.19.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.19.0...v2.19.1) (2021-02-18)
+
+
+### Bug Fixes
+
+* **config:** packageName is optional ([#239](https://www.github.com/google-github-actions/release-please-action/issues/239)) ([df8698c](https://www.github.com/google-github-actions/release-please-action/commit/df8698c999dd72a46a62b8421c1d20eaba363488))
+* fix workflow env missing bug ([#238](https://www.github.com/google-github-actions/release-please-action/issues/238)) ([0d18e74](https://www.github.com/google-github-actions/release-please-action/commit/0d18e7461f484869df6b9b604019d73f24291e9a)), closes [#237](https://www.github.com/google-github-actions/release-please-action/issues/237)
+
 ## [2.19.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.18.1...v2.19.0) (2021-02-17)
 
 
