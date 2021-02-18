@@ -16,7 +16,7 @@ inputs:
     default: true
   package-name:
     description: 'name of the distributions releases are being created for, e.g., "name" in package.json, or "setup.py"'
-    required: true
+    required: false
   release-type:
     description: 'what type of release is this, one of (ruby, python, node, terraform-module)'
     required: true
