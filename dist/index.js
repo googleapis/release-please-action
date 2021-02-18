@@ -24,7 +24,7 @@ function getBooleanInput (input) {
 async function main () {
   const bumpMinorPreMajor = getBooleanInput('bump-minor-pre-major')
   const monorepoTags = getBooleanInput('monorepo-tags')
-  const packageName = core.getInput('package-name', { required: true })
+  const packageName = core.getInput('package-name')
   const path = core.getInput('path') || undefined
   const releaseType = core.getInput('release-type', { required: true })
   const token = core.getInput('token', { required: true })
@@ -9494,10 +9494,10 @@ module.exports = function (config) {
   })
 
   return Q.all([
-    readFile(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
+    readFile(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
   ])
     .spread((template, header, commit, footer) => {
       const writerOpts = getWriterOpts(config)
@@ -9709,10 +9709,10 @@ function conventionalChangelogWriterInit (context, options) {
     includeDetails: false,
     ignoreReverted: true,
     doFlush: true,
-    mainTemplate: readFileSync(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
-    headerPartial: readFileSync(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
-    commitPartial: readFileSync(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
-    footerPartial: readFileSync(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
+    mainTemplate: readFileSync(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
+    headerPartial: readFileSync(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
+    commitPartial: readFileSync(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
+    footerPartial: readFileSync(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
   }, options)
 
   if ((!_.isFunction(options.transform) && _.isObject(options.transform)) || _.isUndefined(options.transform)) {
