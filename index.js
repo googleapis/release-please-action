@@ -17,7 +17,7 @@ function getBooleanInput (input) {
 async function main () {
   const bumpMinorPreMajor = getBooleanInput('bump-minor-pre-major')
   const monorepoTags = getBooleanInput('monorepo-tags')
-  const packageName = core.getInput('package-name', { required: true })
+  const packageName = core.getInput('package-name')
   const path = core.getInput('path') || undefined
   const releaseType = core.getInput('release-type', { required: true })
   const token = core.getInput('token', { required: true })
