@@ -3,10 +3,10 @@ on:
     branches:
       - main
 name: release-please
+env:
+  ACTION_NAME: release-please-action
 jobs:
-  build: 
-    env:
-      ACTION_NAME: release-please-action
+  build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
