@@ -285,7 +285,7 @@ describe('release-please-action', () => {
 
   it('creates and runs a ReleasePR instance, using factory', async () => {
     let maybeReleasePR
-    sandbox.replace(factory, 'run', (runnable) => {
+    sandbox.replace(factory, 'call', (runnable) => {
       maybeReleasePR = runnable
     })
     const input = {
@@ -301,7 +301,7 @@ describe('release-please-action', () => {
 
   it('creates and runs a GitHubRelease, using factory', async () => {
     let maybeGitHubRelease
-    sandbox.replace(factory, 'run', (runnable) => {
+    sandbox.replace(factory, 'call', (runnable) => {
       maybeGitHubRelease = runnable
     })
     const input = {
