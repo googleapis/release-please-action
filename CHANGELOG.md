@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.19.2](https://www.github.com/google-github-actions/release-please-action/compare/v2.19.1...v2.19.2) (2021-02-20)
+
+
+### Bug Fixes
+
+* **release-please:** setup.py retains formatting ([#246](https://www.github.com/google-github-actions/release-please-action/issues/246)) ([038a2f3](https://www.github.com/google-github-actions/release-please-action/commit/038a2f320b92c8a4009d3fe7261fc34c6070b446))
+
 ### [2.19.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.19.0...v2.19.1) (2021-02-18)
 
 
