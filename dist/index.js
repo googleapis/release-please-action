@@ -53890,7 +53890,7 @@ function getGitHubFactoryOpts(options) {
 function githubRelease(options) {
     const [GHFactoryOptions, GHRAndRPFactoryOptions] = getGitHubFactoryOpts(options);
     const github = gitHubInstance(GHFactoryOptions);
-    const { releaseType, label, path, packageName, bumpMinorPreMajor, releaseAs, snapshot, monorepoTags, changelogSections, lastPackageVersion, versionFile, ...GHRFactoryOptions } = GHRAndRPFactoryOptions;
+    const { releaseType, label, path, packageName, bumpMinorPreMajor, releaseAs, snapshot, monorepoTags, changelogSections, changelogPath, lastPackageVersion, versionFile, ...GHRFactoryOptions } = GHRAndRPFactoryOptions;
     const labels = getLabels(label);
     const releasePR = new (releasePRClass(releaseType))({
         github,
@@ -53902,6 +53902,7 @@ function githubRelease(options) {
         snapshot,
         monorepoTags,
         changelogSections,
+        changelogPath,
         lastPackageVersion,
         versionFile,
     });
@@ -53970,14 +53971,12 @@ const semver_1 = __nccwpck_require__(1383);
 const GITHUB_RELEASE_LABEL = 'autorelease: tagged';
 class GitHubRelease {
     constructor(options) {
-        var _a;
         this.draft = !!options.draft;
-        this.changelogPath = (_a = options.changelogPath) !== null && _a !== void 0 ? _a : 'CHANGELOG.md';
         this.gh = options.github;
         this.releasePR = options.releasePR;
     }
     async run() {
-        const candidate = await this.releasePR.buildRelease(this.changelogPath);
+        const candidate = await this.releasePR.buildRelease();
         if (!candidate) {
             checkpoint_1.checkpoint('Unable to build candidate', checkpoint_1.CheckpointType.Failure);
             return undefined;
@@ -54006,6 +54005,7 @@ class GitHubRelease {
                 tag_name: release.tag_name,
                 upload_url: release.upload_url,
                 draft: release.draft,
+                body: release.body,
             };
         }
         else {
@@ -55255,7 +55255,8 @@ const release_notes_1 = __nccwpck_require__(746);
 const pull_request_title_1 = __nccwpck_require__(1158);
 class ReleasePR {
     constructor(options) {
-        var _a;
+        var _a, _b;
+        this.changelogPath = 'CHANGELOG.md';
         this.bumpMinorPreMajor = options.bumpMinorPreMajor || false;
         this.labels = (_a = options.labels) !== null && _a !== void 0 ? _a : constants_1.DEFAULT_LABELS;
         this.path = options.path;
@@ -55269,6 +55270,7 @@ class ReleasePR {
             : undefined;
         this.gh = options.github;
         this.changelogSections = options.changelogSections;
+        this.changelogPath = (_b = options.changelogPath) !== null && _b !== void 0 ? _b : this.changelogPath;
     }
     // A releaser can override this method to automatically detect the
     // packageName from source code (e.g. package.json "name")
@@ -55291,7 +55293,7 @@ class ReleasePR {
             checkpoint_1.checkpoint('snapshot releases not supported for this releaser', checkpoint_1.CheckpointType.Failure);
             return;
         }
-        const mergedPR = await this.gh.findMergedReleasePR(this.labels);
+        const mergedPR = await this.gh.findMergedReleasePR(this.labels, undefined, true, 100);
         if (mergedPR) {
             // a PR already exists in the autorelease: pending state.
             checkpoint_1.checkpoint(`pull #${mergedPR.number} ${mergedPR.sha} has not yet been released`, checkpoint_1.CheckpointType.Failure);
@@ -55411,7 +55413,7 @@ class ReleasePR {
     }
     // Override this method to modify the pull request body
     async buildPullRequestBody(_version, changelogEntry) {
-        return `:robot: I have created a release \\*beep\\* \\*boop\\* \n---\n${changelogEntry}\n\nThis PR was generated with [Release Please](https://github.com/googleapis/${constants_1.RELEASE_PLEASE}). See [documentation](https://github.com/googleapis/${constants_1.RELEASE_PLEASE}#${constants_1.RELEASE_PLEASE}).`;
+        return `:robot: I have created a release \\*beep\\* \\*boop\\*\n---\n${changelogEntry}\n\nThis PR was generated with [Release Please](https://github.com/googleapis/${constants_1.RELEASE_PLEASE}). See [documentation](https://github.com/googleapis/${constants_1.RELEASE_PLEASE}#${constants_1.RELEASE_PLEASE}).`;
     }
     async openPR(options) {
         const changelogEntry = options.changelogEntry;
@@ -55484,7 +55486,7 @@ class ReleasePR {
         }
     }
     // Logic for determining what to include in a GitHub release.
-    async buildRelease(changelogPath) {
+    async buildRelease() {
         await this.validateConfiguration();
         const packageName = await this.getPackageName();
         const mergedPR = await this.findMergedRelease();
@@ -55499,7 +55501,7 @@ class ReleasePR {
             return undefined;
         }
         const tag = this.formatReleaseTagName(version, packageName);
-        const changelogContents = (await this.gh.getFileContents(this.addPath(changelogPath))).parsedContent;
+        const changelogContents = (await this.gh.getFileContents(this.addPath(this.changelogPath))).parsedContent;
         const notes = release_notes_1.extractReleaseNotes(changelogContents, version);
         return {
             sha: mergedPR.sha,
@@ -55632,6 +55634,10 @@ const SUB_MODULES = [
 ];
 const REGEN_PR_REGEX = /.*auto-regenerate.*/;
 class GoYoshi extends release_pr_1.ReleasePR {
+    constructor() {
+        super(...arguments);
+        this.changelogPath = 'CHANGES.md';
+    }
     async _run() {
         const packageName = await this.getPackageName();
         const latestTag = await this.latestTag(this.monorepoTags ? `${packageName.getComponent()}-` : undefined, false);
@@ -55695,7 +55701,7 @@ class GoYoshi extends release_pr_1.ReleasePR {
         }
         const updates = [];
         updates.push(new changelog_1.Changelog({
-            path: this.addPath('CHANGES.md'),
+            path: this.addPath(this.changelogPath),
             changelogEntry,
             version: candidate.version,
             packageName: packageName.name,
@@ -55815,7 +55821,7 @@ class Helm extends release_pr_1.ReleasePR {
         }
         const updates = [];
         updates.push(new changelog_1.Changelog({
-            path: this.addPath('CHANGELOG.md'),
+            path: this.addPath(this.changelogPath),
             changelogEntry,
             version: candidate.version,
             packageName: packageName.name,
@@ -56047,7 +56053,7 @@ class JavaBom extends release_pr_1.ReleasePR {
         const packageName = await this.getPackageName();
         if (!this.snapshot) {
             updates.push(new changelog_1.Changelog({
-                path: 'CHANGELOG.md',
+                path: this.changelogPath,
                 changelogEntry,
                 versions: candidateVersions,
                 version: candidate.version,
@@ -56265,7 +56271,7 @@ class JavaYoshi extends release_pr_1.ReleasePR {
         const packageName = await this.getPackageName();
         if (!this.snapshot) {
             updates.push(new changelog_1.Changelog({
-                path: 'CHANGELOG.md',
+                path: this.changelogPath,
                 changelogEntry,
                 versions: candidateVersions,
                 version: candidate.version,
@@ -56634,7 +56640,7 @@ class Node extends release_pr_1.ReleasePR {
             packageName,
         }));
         updates.push(new changelog_1.Changelog({
-            path: this.addPath('CHANGELOG.md'),
+            path: this.addPath(this.changelogPath),
             changelogEntry,
             version: candidate.version,
             packageName,
@@ -56788,7 +56794,7 @@ class OCaml extends release_pr_1.ReleasePR {
             }));
         });
         updates.push(new changelog_1.Changelog({
-            path: this.addPath('CHANGELOG.md'),
+            path: this.addPath(this.changelogPath),
             changelogEntry,
             version: candidate.version,
             packageName: packageName.name,
@@ -56893,7 +56899,7 @@ class PHPYoshi extends release_pr_1.ReleasePR {
             packageName: packageName.name,
         }));
         updates.push(new changelog_1.Changelog({
-            path: 'CHANGELOG.md',
+            path: this.changelogPath,
             changelogEntry,
             version: candidate.version,
             packageName: packageName.name,
@@ -57073,7 +57079,7 @@ class Python extends release_pr_1.ReleasePR {
         const updates = [];
         const packageName = await this.getPackageName();
         updates.push(new changelog_1.Changelog({
-            path: this.addPath('CHANGELOG.md'),
+            path: this.addPath(this.changelogPath),
             changelogEntry,
             version: candidate.version,
             packageName: packageName.name,
@@ -57337,7 +57343,7 @@ class Ruby extends release_pr_1.ReleasePR {
         }
         const updates = [];
         updates.push(new changelog_1.Changelog({
-            path: this.addPath('CHANGELOG.md'),
+            path: this.addPath(this.changelogPath),
             changelogEntry,
             version: candidate.version,
             packageName: packageName.name,
@@ -57439,7 +57445,7 @@ class Rust extends release_pr_1.ReleasePR {
         const workspaceManifest = await this.getWorkspaceManifest();
         const updates = [];
         updates.push(new changelog_1.Changelog({
-            path: this.addPath('CHANGELOG.md'),
+            path: this.addPath(this.changelogPath),
             changelogEntry,
             version: candidate.version,
             packageName: this.packageName,
@@ -57605,7 +57611,7 @@ class Simple extends release_pr_1.ReleasePR {
         }
         const updates = [];
         updates.push(new changelog_1.Changelog({
-            path: 'CHANGELOG.md',
+            path: this.changelogPath,
             changelogEntry,
             version: candidate.version,
             packageName: packageName.name,
@@ -57688,7 +57694,7 @@ class TerraformModule extends release_pr_1.ReleasePR {
         }
         const updates = [];
         updates.push(new changelog_1.Changelog({
-            path: this.addPath('CHANGELOG.md'),
+            path: this.addPath(this.changelogPath),
             changelogEntry,
             version: candidate.version,
             packageName: packageName.name,
@@ -67015,7 +67021,7 @@ module.exports = JSON.parse("{\"_args\":[[\"pino@6.11.1\",\"/home/runner/work/re
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"i8\":\"11.0.0-candidate.3\"}");
+module.exports = {"i8":"11.0.0"};
 
 /***/ }),
 
