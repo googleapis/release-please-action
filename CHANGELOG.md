@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.20.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.20.0...v2.20.1) (2021-02-23)
+
+
+### Bug Fixes
+
+* **release-please:** missing js-yaml dependency ([#254](https://www.github.com/google-github-actions/release-please-action/issues/254)) ([faf27ee](https://www.github.com/google-github-actions/release-please-action/commit/faf27eea7cfff4bb3dfe752f4f87c8e0b6e07378))
+
 ## [2.20.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.19.2...v2.20.0) (2021-02-23)
 
 
