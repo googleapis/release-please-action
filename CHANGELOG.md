@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.20.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.19.2...v2.20.0) (2021-02-23)
+
+
+### Features
+
+* **release-please:** update to v11.0.0 of release please ([#250](https://www.github.com/google-github-actions/release-please-action/issues/250)) ([d7ed0b8](https://www.github.com/google-github-actions/release-please-action/commit/d7ed0b8f09544ebc80152b2f8b1b4736d2cb9b9b))
+
 ### [2.19.2](https://www.github.com/google-github-actions/release-please-action/compare/v2.19.1...v2.19.2) (2021-02-20)
 
 
