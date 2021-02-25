@@ -23,11 +23,12 @@ async function main () {
   const token = core.getInput('token', { required: true })
   const fork = getBooleanInput('fork')
   const changelogPath = core.getInput('changelog-path') || undefined
-  const changelogTypes = core.getInput('changelog-types')
+  const changelogTypes = core.getInput('changelog-types') || undefined
   const changelogSections = changelogTypes && JSON.parse(changelogTypes)
   const command = core.getInput('command') || undefined
   const versionFile = core.getInput('version-file') || undefined
   const defaultBranch = core.getInput('default-branch') || undefined
+  const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
 
   // First we check for any merged release PRs (PRs merged with the label
   // "autorelease: pending"):
@@ -41,7 +42,8 @@ async function main () {
       token,
       changelogPath,
       releaseType,
-      defaultBranch
+      defaultBranch,
+      pullRequestTitlePattern
     })
 
     if (releaseCreated) {
@@ -68,7 +70,8 @@ async function main () {
       bumpMinorPreMajor,
       changelogSections,
       versionFile,
-      defaultBranch
+      defaultBranch,
+      pullRequestTitlePattern
     })
 
     if (pr) {
@@ -82,6 +85,7 @@ const releasePlease = {
   getBooleanInput
 }
 
+/* c8 ignore next 4 */
 if (require.main === module) {
   main().catch(err => {
     core.setFailed(`release-please failed: ${err.message}`)

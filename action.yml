@@ -7,7 +7,7 @@ inputs:
     required: false
     default: ${{ github.token }}
   fork:
-    description: 'should the PR be proposed from a fork (does not work with secrets.GITHUB_TOKEN)'
+    description: 'should the PR be proposed from a fork, Default to false'
     required: false
     default: false
   clean:
@@ -52,6 +52,11 @@ inputs:
     description: 'branch to open pull release PR against (detected by default)'
     required: false
     default: ''
+  pull-request-title-pattern:
+    description: 'add title pattern to make release PR, defaults to using "chore${scope}: release${component} ${version}".'
+    required: false
+    default: 'chore${scope}: release${component} ${version}'
+
 runs:
   using: 'node12'
   main: 'dist/index.js'
