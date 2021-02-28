@@ -102,7 +102,7 @@ describe('release-please-action', () => {
     )
   })
 
-  it('opens PR to the custom changelogSections', async () => {
+  it('opens PR with custom changelogSections', async () => {
     input = {
       'release-type': 'node',
       'changelog-types':
