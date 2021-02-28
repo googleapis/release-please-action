@@ -81,7 +81,7 @@ describe('release-please-action', () => {
     )
   })
 
-  it('opens PR to the empty pullRequestTitlePattern', async () => {
+  it('sets pull pullRequestTitlePattern to undefined, if empty string provided', async () => {
     input = {
       'release-type': 'node',
       // eslint-disable-next-line no-template-curly-in-string
