@@ -46,7 +46,7 @@ Automate releases with Conventional Commit Messages.
 | `fork`          | Should the PR be created from a fork. Default `false`|
 | `command`          | release-please command to run, either `github-release`, or `release-pr` (_defaults to running both_) |
 | `default-branch`  | branch to open pull release PR against (detected by default) |
-| `pull-request-title-pattern`  | add title pattern to make release PR, defaults to using `chore${scope}: release${component} ${version}`. |
+| `pull-request-title-pattern`  | title pattern used to make release PR, defaults to using `chore${scope}: release${component} ${version}`. |
 
 | output | description |
 |:---:|---|
