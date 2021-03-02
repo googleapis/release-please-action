@@ -126,6 +126,46 @@ jobs:
           changelog-types: '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
 ```
 
+### Supporting multiple release branches
+
+`release-please` has the ability to target not default branches. You can even use separate release strategies (`release-type`).
+To configure, simply configure multiple workflows that specify a different `default-branch`:
+
+Configuration for `main` (default) branch (`.github/workflows/release-main.yaml`):
+```yaml
+on:
+  push:
+    branches:
+      - main
+name: release-please
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: GoogleCloudPlatform/release-please-action@v2
+        with:
+          release-type: node
+          package-name: release-please-action
+```
+
+Configuration for `1.x` (default) branch (`.github/workflows/release-1.x.yaml`):
+```yaml
+on:
+  push:
+    branches:
+      - 1.x
+name: release-please
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: GoogleCloudPlatform/release-please-action@v2
+        with:
+          release-type: node
+          package-name: release-please-action
+          default-branch: 1.x
+```
+
 ## Automating publication to npm
 
 With a few additions, the Release Please action can be made to publish to
