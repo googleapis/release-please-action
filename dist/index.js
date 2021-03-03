@@ -30,11 +30,12 @@ async function main () {
   const token = core.getInput('token', { required: true })
   const fork = getBooleanInput('fork')
   const changelogPath = core.getInput('changelog-path') || undefined
-  const changelogTypes = core.getInput('changelog-types')
+  const changelogTypes = core.getInput('changelog-types') || undefined
   const changelogSections = changelogTypes && JSON.parse(changelogTypes)
   const command = core.getInput('command') || undefined
   const versionFile = core.getInput('version-file') || undefined
   const defaultBranch = core.getInput('default-branch') || undefined
+  const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
 
   // First we check for any merged release PRs (PRs merged with the label
   // "autorelease: pending"):
@@ -48,7 +49,8 @@ async function main () {
       token,
       changelogPath,
       releaseType,
-      defaultBranch
+      defaultBranch,
+      pullRequestTitlePattern
     })
 
     if (releaseCreated) {
@@ -75,7 +77,8 @@ async function main () {
       bumpMinorPreMajor,
       changelogSections,
       versionFile,
-      defaultBranch
+      defaultBranch,
+      pullRequestTitlePattern
     })
 
     if (pr) {
@@ -89,6 +92,7 @@ const releasePlease = {
   getBooleanInput
 }
 
+/* c8 ignore next 4 */
 if (require.main === require.cache[eval('__filename')]) {
   main().catch(err => {
     core.setFailed(`release-please failed: ${err.message}`)
@@ -5411,7 +5415,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "4.12.0";
+const VERSION = "4.12.2";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -5737,7 +5741,7 @@ var pluginRequestLog = __nccwpck_require__(8883);
 var pluginPaginateRest = __nccwpck_require__(4193);
 var pluginRestEndpointMethods = __nccwpck_require__(3044);
 
-const VERSION = "18.2.0";
+const VERSION = "18.2.1";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.restEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`
@@ -9506,10 +9510,10 @@ module.exports = function (config) {
   })
 
   return Q.all([
-    readFile(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
+    readFile(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
   ])
     .spread((template, header, commit, footer) => {
       const writerOpts = getWriterOpts(config)
@@ -9721,10 +9725,10 @@ function conventionalChangelogWriterInit (context, options) {
     includeDetails: false,
     ignoreReverted: true,
     doFlush: true,
-    mainTemplate: readFileSync(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
-    headerPartial: readFileSync(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
-    commitPartial: readFileSync(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
-    footerPartial: readFileSync(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
+    mainTemplate: readFileSync(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
+    headerPartial: readFileSync(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
+    commitPartial: readFileSync(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
+    footerPartial: readFileSync(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
   }, options)
 
   if ((!_.isFunction(options.transform) && _.isObject(options.transform)) || _.isUndefined(options.transform)) {
@@ -51104,6 +51108,7 @@ class ReleasePR {
         this.gh = options.github;
         this.changelogSections = options.changelogSections;
         this.changelogPath = (_b = options.changelogPath) !== null && _b !== void 0 ? _b : this.changelogPath;
+        this.pullRequestTitlePattern = options.pullRequestTitlePattern;
     }
     // A releaser can override this method to automatically detect the
     // packageName from source code (e.g. package.json "name")
@@ -51221,14 +51226,14 @@ class ReleasePR {
     async buildPullRequestTitle(version, includePackageName) {
         const packageName = await this.getPackageName();
         const pullRequestTitle = includePackageName
-            ? pull_request_title_1.PullRequestTitle.ofComponentVersion(packageName.name, version)
-            : pull_request_title_1.PullRequestTitle.ofVersion(version);
+            ? pull_request_title_1.PullRequestTitle.ofComponentVersion(packageName.name, version, this.pullRequestTitlePattern)
+            : pull_request_title_1.PullRequestTitle.ofVersion(version, this.pullRequestTitlePattern);
         return pullRequestTitle.toString();
     }
     // Override this method to detect the release version from code (if it cannot be
     // inferred from the release PR head branch)
     detectReleaseVersionFromTitle(title) {
-        const pullRequestTitle = pull_request_title_1.PullRequestTitle.parse(title);
+        const pullRequestTitle = pull_request_title_1.PullRequestTitle.parse(title, this.pullRequestTitlePattern);
         if (pullRequestTitle) {
             return pullRequestTitle.getVersion();
         }
@@ -54716,11 +54721,11 @@ class ModuleVersion {
         this.packageName = options.packageName;
     }
     updateContent(content) {
-        const oldVersion = content.match(/v[0-9]\.[0-9]+\.[0-9](-\w+)?/);
+        const oldVersion = content.match(/v[0-9]+\.[0-9]+\.[0-9]+(-\w+)?/);
         if (oldVersion) {
             checkpoint_1.checkpoint(`updating ${this.path} from ${oldVersion} to v${this.version}`, checkpoint_1.CheckpointType.Success);
         }
-        return content.replace(/v[0-9]\.[0-9]+\.[0-9](-\w+)?/g, `v${this.version}`);
+        return content.replace(/v[0-9]+\.[0-9]+\.[0-9]+(-\w+)?/g, `v${this.version}`);
     }
 }
 exports.ModuleVersion = ModuleVersion;
@@ -55106,42 +55111,69 @@ exports.indentCommit = indentCommit;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PullRequestTitle = void 0;
+exports.PullRequestTitle = exports.generateMatchPattern = void 0;
 // cannot import from '..' - transpiled code references to RELEASE_PLEASE
 // at the script level are undefined, they are only defined inside function
 // or instance methods/properties.
-const DEFAULT_PATTERN = /^chore(\((?<branch>[\w-.]+)\))?: release ?(?<component>[\w-.]*)? v?(?<version>[0-9].*)$/;
+const DEFAULT_PR_TITLE_PATTERN = 'chore${scope}: release${component} ${version}';
+function generateMatchPattern(pullRequestTitlePattern) {
+    if (pullRequestTitlePattern &&
+        pullRequestTitlePattern.search(/\$\{scope\}/) === -1)
+        throw Error("pullRequestTitlePattern miss the part of '${scope}'");
+    if (pullRequestTitlePattern &&
+        pullRequestTitlePattern.search(/\$\{component\}/) === -1)
+        throw Error("pullRequestTitlePattern miss the part of '${component}'");
+    if (pullRequestTitlePattern &&
+        pullRequestTitlePattern.search(/\$\{version\}/) === -1)
+        throw Error("pullRequestTitlePattern miss the part of '${version}'");
+    return new RegExp(`^${(pullRequestTitlePattern || DEFAULT_PR_TITLE_PATTERN)
+        .replace('${scope}', '(\\((?<branch>[\\w-.]+)\\))?')
+        .replace('${component}', ' ?(?<component>[\\w-.]*)?')
+        .replace('${version}', 'v?(?<version>[0-9].*)')}$`);
+}
+exports.generateMatchPattern = generateMatchPattern;
 class PullRequestTitle {
     constructor(opts) {
         this.version = opts.version;
         this.component = opts.component;
         this.targetBranch = opts.targetBranch;
+        this.pullRequestTitlePattern =
+            opts.pullRequestTitlePattern || DEFAULT_PR_TITLE_PATTERN;
+        this.matchPattern = generateMatchPattern(this.pullRequestTitlePattern);
     }
-    static parse(title) {
-        const match = title.match(DEFAULT_PATTERN);
+    static parse(title, pullRequestTitlePattern) {
+        const matchPattern = generateMatchPattern(pullRequestTitlePattern);
+        const match = title.match(matchPattern);
         if (match === null || match === void 0 ? void 0 : match.groups) {
             return new PullRequestTitle({
                 version: match.groups['version'],
                 component: match.groups['component'],
                 targetBranch: match.groups['branch'],
+                pullRequestTitlePattern: pullRequestTitlePattern,
             });
         }
         return undefined;
     }
-    static create(_title) {
-        return undefined;
+    static ofComponentVersion(component, version, pullRequestTitlePattern) {
+        return new PullRequestTitle({ version, component, pullRequestTitlePattern });
     }
-    static ofComponentVersion(component, version) {
-        return new PullRequestTitle({ version, component });
+    static ofVersion(version, pullRequestTitlePattern) {
+        return new PullRequestTitle({ version, pullRequestTitlePattern });
     }
-    static ofVersion(version) {
-        return new PullRequestTitle({ version });
+    static ofTargetBranchVersion(targetBranch, version, pullRequestTitlePattern) {
+        return new PullRequestTitle({
+            version,
+            targetBranch,
+            pullRequestTitlePattern,
+        });
     }
-    static ofTargetBranchVersion(targetBranch, version) {
-        return new PullRequestTitle({ version, targetBranch });
-    }
-    static ofComponentTargetBranchVersion(component, targetBranch, version) {
-        return new PullRequestTitle({ version, component, targetBranch });
+    static ofComponentTargetBranchVersion(component, targetBranch, version, pullRequestTitlePattern) {
+        return new PullRequestTitle({
+            version,
+            component,
+            targetBranch,
+            pullRequestTitlePattern,
+        });
     }
     getTargetBranch() {
         return this.targetBranch;
@@ -55155,7 +55187,10 @@ class PullRequestTitle {
     toString() {
         const scope = this.targetBranch ? `(${this.targetBranch})` : '';
         const component = this.component ? ` ${this.component}` : '';
-        return `chore${scope}: release${component} ${this.version}`;
+        return this.pullRequestTitlePattern
+            .replace('${scope}', scope)
+            .replace('${component}', component)
+            .replace('${version}', this.getVersion());
     }
 }
 exports.PullRequestTitle = PullRequestTitle;
@@ -66944,7 +66979,7 @@ module.exports = JSON.parse("{\"_args\":[[\"pino@6.11.1\",\"/home/runner/work/re
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"11.0.1"};
+module.exports = {"i8":"11.1.0"};
 
 /***/ }),
 
