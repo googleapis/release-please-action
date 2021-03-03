@@ -1,4 +1,4 @@
-const { describe, it, afterEach } = require('mocha')
+const { describe, it, beforeEach, afterEach } = require('mocha')
 const action = require('../')
 const assert = require('assert')
 const core = require('@actions/core')
@@ -16,13 +16,32 @@ const defaultInput = {
   'changelog-types': '',
   command: '',
   'version-file': '',
-  'default-branch': ''
+  'default-branch': '',
+  // eslint-disable-next-line no-template-curly-in-string
+  'pull-request-title-pattern': 'chore${scope}: release${component} ${version}'
 }
+
+let input
+let output
 
 const sandbox = sinon.createSandbox()
 process.env.GITHUB_REPOSITORY = 'google/cloud'
 
 describe('release-please-action', () => {
+  beforeEach(() => {
+    input = {}
+    output = {}
+    core.setOutput = (name, value) => {
+      output[name] = value
+    }
+    core.getInput = name => {
+      if (input[name] === undefined || input[name] == null) {
+        return defaultInput[name]
+      } else {
+        return input[name]
+      }
+    }
+  })
   afterEach(() => {
     sandbox.restore()
   })
@@ -32,11 +51,8 @@ describe('release-please-action', () => {
 
   trueValue.forEach(value => {
     it(`get the boolean true with the input of '${value}'`, () => {
-      const input = {
+      input = {
         fork: value
-      }
-      core.getInput = (name) => {
-        return input[name] || defaultInput[name]
       }
       const actual = action.getBooleanInput('fork')
       assert.strictEqual(actual, true)
@@ -45,11 +61,8 @@ describe('release-please-action', () => {
 
   falseValue.forEach(value => {
     it(`get the boolean with the input of '${value}'`, () => {
-      const input = {
+      input = {
         fork: value
-      }
-      core.getInput = (name) => {
-        return input[name] || defaultInput[name]
       }
       const actual = action.getBooleanInput('fork')
       assert.strictEqual(actual, false)
@@ -57,46 +70,91 @@ describe('release-please-action', () => {
   })
 
   it('get an error when inputting the wrong boolean value', () => {
-    const input = {
+    input = {
       fork: 'wrong'
     }
-    core.getInput = (name) => {
-      return input[name] || defaultInput[name]
+    assert.throws(
+      () => {
+        action.getBooleanInput('fork')
+      },
+      { name: 'TypeError', message: "Wrong boolean value of the input 'fork'" }
+    )
+  })
+
+  it('sets pull pullRequestTitlePattern to undefined, if empty string provided', async () => {
+    input = {
+      'release-type': 'node',
+      // eslint-disable-next-line no-template-curly-in-string
+      'pull-request-title-pattern': ''
     }
-    assert.throws(() => {
-      action.getBooleanInput('fork')
-    }, { name: 'TypeError', message: 'Wrong boolean value of the input \'fork\'' })
+
+    const runCommandStub = sandbox.stub(factory, 'runCommand')
+    const githubReleasePRStub = runCommandStub.withArgs('release-pr').returns(25)
+
+    await action.main()
+
+    sinon.assert.calledOnce(githubReleasePRStub)
+    sinon.assert.calledWith(
+      githubReleasePRStub,
+      'release-pr',
+      // eslint-disable-next-line no-template-curly-in-string
+      sinon.match.hasOwn('pullRequestTitlePattern', undefined)
+    )
+  })
+
+  it('opens PR with custom changelogSections', async () => {
+    input = {
+      'release-type': 'node',
+      'changelog-types':
+        '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
+    }
+
+    const runCommandStub = sandbox.stub(factory, 'runCommand')
+    const githubReleasePRStub = runCommandStub.withArgs('release-pr').returns(25)
+
+    await action.main()
+
+    sinon.assert.calledOnce(githubReleasePRStub)
+    sinon.assert.calledWith(
+      githubReleasePRStub,
+      'release-pr',
+      sinon.match.hasOwn(
+        'changelogSections',
+        JSON.parse(
+          '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
+        )
+      )
+    )
   })
 
   it('both opens PR to the default branch and tags GitHub releases by default', async () => {
-    const output = {}
-    core.setOutput = (name, value) => {
-      output[name] = value
-    }
-    const input = {
+    input = {
       'release-type': 'node'
-    }
-    core.getInput = (name) => {
-      return input[name] || defaultInput[name]
     }
 
     const runCommandStub = sandbox.stub(factory, 'runCommand')
 
-    const githubReleaseStub = runCommandStub.withArgs('github-release')
-      .returns({
-        upload_url: 'http://example.com',
-        tag_name: 'v1.0.0'
-      })
+    const githubReleaseStub = runCommandStub.withArgs('github-release').returns({
+      upload_url: 'http://example.com',
+      tag_name: 'v1.0.0'
+    })
 
-    const githubReleasePRStub = runCommandStub.withArgs('release-pr')
-      .returns(25)
+    const githubReleasePRStub = runCommandStub.withArgs('release-pr').returns(25)
 
     await action.main()
 
     sinon.assert.calledOnce(githubReleaseStub)
     sinon.assert.calledOnce(githubReleasePRStub)
-    sinon.assert.calledWith(githubReleaseStub, 'github-release', sinon.match.hasOwn('defaultBranch', undefined))
-    sinon.assert.calledWith(githubReleasePRStub, 'release-pr', sinon.match.hasOwn('defaultBranch', undefined))
+    sinon.assert.calledWith(
+      githubReleaseStub,
+      'github-release',
+      sinon.match.hasOwn('defaultBranch', undefined)
+    )
+    sinon.assert.calledWith(
+      githubReleasePRStub,
+      'release-pr',
+      sinon.match.hasOwn('defaultBranch', undefined)
+    )
     assert.deepStrictEqual(output, {
       release_created: true,
       upload_url: 'http://example.com',
@@ -106,35 +164,34 @@ describe('release-please-action', () => {
   })
 
   it('both opens PR to a different default branch and tags GitHub releases by default', async () => {
-    const output = {}
-    core.setOutput = (name, value) => {
-      output[name] = value
-    }
-    const input = {
+    input = {
       'release-type': 'node',
       'default-branch': 'dev'
-    }
-    core.getInput = (name) => {
-      return input[name] || defaultInput[name]
     }
 
     const runCommandStub = sandbox.stub(factory, 'runCommand')
 
-    const githubReleaseStub = runCommandStub.withArgs('github-release')
-      .returns({
-        upload_url: 'http://example.com',
-        tag_name: 'v1.0.0'
-      })
+    const githubReleaseStub = runCommandStub.withArgs('github-release').returns({
+      upload_url: 'http://example.com',
+      tag_name: 'v1.0.0'
+    })
 
-    const githubReleasePRStub = runCommandStub.withArgs('release-pr')
-      .returns(25)
+    const githubReleasePRStub = runCommandStub.withArgs('release-pr').returns(25)
 
     await action.main()
 
     sinon.assert.calledOnce(githubReleaseStub)
-    sinon.assert.calledWith(githubReleaseStub, 'github-release', sinon.match.hasOwn('defaultBranch', 'dev'))
+    sinon.assert.calledWith(
+      githubReleaseStub,
+      'github-release',
+      sinon.match.hasOwn('defaultBranch', 'dev')
+    )
     sinon.assert.calledOnce(githubReleasePRStub)
-    sinon.assert.calledWith(githubReleasePRStub, 'release-pr', sinon.match.hasOwn('defaultBranch', 'dev'))
+    sinon.assert.calledWith(
+      githubReleasePRStub,
+      'release-pr',
+      sinon.match.hasOwn('defaultBranch', 'dev')
+    )
 
     assert.deepStrictEqual(output, {
       release_created: true,
@@ -145,28 +202,19 @@ describe('release-please-action', () => {
   })
 
   it('only opens PR, if command set to release-pr', async () => {
-    const output = {}
-    core.setOutput = (name, value) => {
-      output[name] = value
-    }
-    const input = {
+    input = {
       'release-type': 'node',
       command: 'release-pr'
-    }
-    core.getInput = (name) => {
-      return input[name] || defaultInput[name]
     }
 
     const runCommandStub = sandbox.stub(factory, 'runCommand')
 
-    const githubReleaseStub = runCommandStub.withArgs('github-release')
-      .returns({
-        upload_url: 'http://example.com',
-        tag_name: 'v1.0.0'
-      })
+    const githubReleaseStub = runCommandStub.withArgs('github-release').returns({
+      upload_url: 'http://example.com',
+      tag_name: 'v1.0.0'
+    })
 
-    const githubReleasePRStub = runCommandStub.withArgs('release-pr')
-      .returns(25)
+    const githubReleasePRStub = runCommandStub.withArgs('release-pr').returns(25)
 
     await action.main()
     sinon.assert.notCalled(githubReleaseStub)
@@ -174,35 +222,26 @@ describe('release-please-action', () => {
   })
 
   it('only creates GitHub release, if command set to github-release', async () => {
-    const output = {}
-    core.setOutput = (name, value) => {
-      output[name] = value
-    }
-    const input = {
+    input = {
       'release-type': 'node',
       command: 'github-release'
-    }
-    core.getInput = (name) => {
-      return input[name] || defaultInput[name]
     }
 
     const runCommandStub = sandbox.stub(factory, 'runCommand')
 
-    const githubReleaseStub = runCommandStub.withArgs('github-release')
-      .returns({
-        upload_url: 'http://example.com',
-        tag_name: 'v1.0.0'
-      })
+    const githubReleaseStub = runCommandStub.withArgs('github-release').returns({
+      upload_url: 'http://example.com',
+      tag_name: 'v1.0.0'
+    })
 
-    const githubReleasePRStub = runCommandStub.withArgs('release-pr')
-      .returns(25)
+    const githubReleasePRStub = runCommandStub.withArgs('release-pr').returns(25)
 
     await action.main()
     sinon.assert.calledOnce(githubReleaseStub)
     sinon.assert.notCalled(githubReleasePRStub)
   })
 
-  it('sets approprite outputs when GitHub release created', async () => {
+  it('sets appropriate outputs when GitHub release created', async () => {
     const expected = {
       release_created: true,
       upload_url: 'http://example.com',
@@ -215,69 +254,44 @@ describe('release-please-action', () => {
       sha: 'abc123',
       pr: 33
     }
-    const output = {}
-    core.setOutput = (name, value) => {
-      output[name] = value
-    }
-    const input = {
+    input = {
       'release-type': 'node',
       command: 'github-release'
-    }
-    core.getInput = (name) => {
-      return input[name] || defaultInput[name]
     }
 
     const runCommandStub = sandbox.stub(factory, 'runCommand')
 
-    runCommandStub.withArgs('github-release')
-      .returns(expected)
+    runCommandStub.withArgs('github-release').returns(expected)
 
-    runCommandStub.withArgs('release-pr')
-      .returns(25)
+    runCommandStub.withArgs('release-pr').returns(25)
 
     await action.main()
     assert.deepStrictEqual(output, expected)
   })
 
   it('sets appropriate outputs when release PR opened', async () => {
-    const output = {}
-    core.setOutput = (name, value) => {
-      output[name] = value
-    }
-    const input = {
+    input = {
       'release-type': 'node',
       command: 'release-pr'
-    }
-    core.getInput = (name) => {
-      return input[name] || defaultInput[name]
     }
 
     const runCommandStub = sandbox.stub(factory, 'runCommand')
 
-    runCommandStub.withArgs('release-pr')
-      .returns(95)
+    runCommandStub.withArgs('release-pr').returns(95)
 
     await action.main()
     assert.strictEqual(output.pr, 95)
   })
 
   it('does not set PR output, when no release PR is returned', async () => {
-    const output = {}
-    core.setOutput = (name, value) => {
-      output[name] = value
-    }
-    const input = {
+    input = {
       'release-type': 'node',
       command: 'release-pr'
-    }
-    core.getInput = (name) => {
-      return input[name] || defaultInput[name]
     }
 
     const runCommandStub = sandbox.stub(factory, 'runCommand')
 
-    runCommandStub.withArgs('release-pr')
-      .returns(undefined)
+    runCommandStub.withArgs('release-pr').returns(undefined)
 
     await action.main()
     assert.strictEqual(Object.hasOwnProperty.call(output, 'pr'), false)
@@ -285,15 +299,12 @@ describe('release-please-action', () => {
 
   it('creates and runs a ReleasePR instance, using factory', async () => {
     let maybeReleasePR
-    sandbox.replace(factory, 'call', (runnable) => {
+    sandbox.replace(factory, 'call', runnable => {
       maybeReleasePR = runnable
     })
-    const input = {
+    input = {
       'release-type': 'node',
       command: 'release-pr'
-    }
-    core.getInput = (name) => {
-      return input[name] || defaultInput[name]
     }
     await action.main()
     assert.ok(maybeReleasePR instanceof Node)
@@ -301,15 +312,12 @@ describe('release-please-action', () => {
 
   it('creates and runs a GitHubRelease, using factory', async () => {
     let maybeGitHubRelease
-    sandbox.replace(factory, 'call', (runnable) => {
+    sandbox.replace(factory, 'call', runnable => {
       maybeGitHubRelease = runnable
     })
-    const input = {
+    input = {
       'release-type': 'node',
       command: 'github-release'
-    }
-    core.getInput = (name) => {
-      return input[name] || defaultInput[name]
     }
     await action.main()
     assert.ok(maybeGitHubRelease instanceof GitHubRelease)
