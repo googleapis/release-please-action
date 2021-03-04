@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.21.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.20.1...v2.21.0) (2021-03-04)
+
+
+### Features
+
+* add pull-request-title-pattern option ([#259](https://www.github.com/google-github-actions/release-please-action/issues/259)) ([d447fdb](https://www.github.com/google-github-actions/release-please-action/commit/d447fdb6322f194c2dd23e2d39c8bd419e3d8ab6))
+
 ### [2.20.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.20.0...v2.20.1) (2021-02-23)
 
 
