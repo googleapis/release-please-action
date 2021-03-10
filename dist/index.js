@@ -3519,7 +3519,7 @@ function _objectWithoutProperties(source, excluded) {
   return target;
 }
 
-const VERSION = "3.2.5";
+const VERSION = "3.3.0";
 
 class Octokit {
   constructor(options = {}) {
@@ -3528,6 +3528,7 @@ class Octokit {
       baseUrl: request.request.endpoint.DEFAULTS.baseUrl,
       headers: {},
       request: Object.assign({}, options.request, {
+        // @ts-ignore internal usage only, no need to type
         hook: hook.bind(null, "request")
       }),
       mediaType: {
@@ -4060,7 +4061,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 var request = __nccwpck_require__(6234);
 var universalUserAgent = __nccwpck_require__(5030);
 
-const VERSION = "4.6.0";
+const VERSION = "4.6.1";
 
 class GraphqlError extends Error {
   constructor(request, response) {
@@ -4083,10 +4084,18 @@ class GraphqlError extends Error {
 }
 
 const NON_VARIABLE_OPTIONS = ["method", "baseUrl", "url", "headers", "request", "query", "mediaType"];
+const FORBIDDEN_VARIABLE_OPTIONS = ["query", "method", "url"];
 const GHES_V3_SUFFIX_REGEX = /\/api\/v3\/?$/;
 function graphql(request, query, options) {
-  if (typeof query === "string" && options && "query" in options) {
-    return Promise.reject(new Error(`[@octokit/graphql] "query" cannot be used as variable name`));
+  if (options) {
+    if (typeof query === "string" && "query" in options) {
+      return Promise.reject(new Error(`[@octokit/graphql] "query" cannot be used as variable name`));
+    }
+
+    for (const key in options) {
+      if (!FORBIDDEN_VARIABLE_OPTIONS.includes(key)) continue;
+      return Promise.reject(new Error(`[@octokit/graphql] "${key}" cannot be used as variable name`));
+    }
   }
 
   const parsedOptions = typeof query === "string" ? Object.assign({
@@ -4173,7 +4182,7 @@ exports.withCustomRequest = withCustomRequest;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-const VERSION = "2.10.0";
+const VERSION = "2.11.0";
 
 /**
  * Some “list” response that can be paginated have a different response structure
@@ -4355,6 +4364,7 @@ const Endpoints = {
   actions: {
     addSelectedRepoToOrgSecret: ["PUT /orgs/{org}/actions/secrets/{secret_name}/repositories/{repository_id}"],
     cancelWorkflowRun: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel"],
+    createOrUpdateEnvironmentSecret: ["PUT /repositories/{repository_id}/environments/{environment_name}/secrets/{secret_name}"],
     createOrUpdateOrgSecret: ["PUT /orgs/{org}/actions/secrets/{secret_name}"],
     createOrUpdateRepoSecret: ["PUT /repos/{owner}/{repo}/actions/secrets/{secret_name}"],
     createRegistrationTokenForOrg: ["POST /orgs/{org}/actions/runners/registration-token"],
@@ -4363,6 +4373,7 @@ const Endpoints = {
     createRemoveTokenForRepo: ["POST /repos/{owner}/{repo}/actions/runners/remove-token"],
     createWorkflowDispatch: ["POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches"],
     deleteArtifact: ["DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"],
+    deleteEnvironmentSecret: ["DELETE /repositories/{repository_id}/environments/{environment_name}/secrets/{secret_name}"],
     deleteOrgSecret: ["DELETE /orgs/{org}/actions/secrets/{secret_name}"],
     deleteRepoSecret: ["DELETE /repos/{owner}/{repo}/actions/secrets/{secret_name}"],
     deleteSelfHostedRunnerFromOrg: ["DELETE /orgs/{org}/actions/runners/{runner_id}"],
@@ -4379,16 +4390,20 @@ const Endpoints = {
     getAllowedActionsOrganization: ["GET /orgs/{org}/actions/permissions/selected-actions"],
     getAllowedActionsRepository: ["GET /repos/{owner}/{repo}/actions/permissions/selected-actions"],
     getArtifact: ["GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"],
+    getEnvironmentPublicKey: ["GET /repositories/{repository_id}/environments/{environment_name}/secrets/public-key"],
+    getEnvironmentSecret: ["GET /repositories/{repository_id}/environments/{environment_name}/secrets/{secret_name}"],
     getGithubActionsPermissionsOrganization: ["GET /orgs/{org}/actions/permissions"],
     getGithubActionsPermissionsRepository: ["GET /repos/{owner}/{repo}/actions/permissions"],
     getJobForWorkflowRun: ["GET /repos/{owner}/{repo}/actions/jobs/{job_id}"],
     getOrgPublicKey: ["GET /orgs/{org}/actions/secrets/public-key"],
     getOrgSecret: ["GET /orgs/{org}/actions/secrets/{secret_name}"],
+    getPendingDeploymentsForRun: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/pending_deployments"],
     getRepoPermissions: ["GET /repos/{owner}/{repo}/actions/permissions", {}, {
       renamed: ["actions", "getGithubActionsPermissionsRepository"]
     }],
     getRepoPublicKey: ["GET /repos/{owner}/{repo}/actions/secrets/public-key"],
     getRepoSecret: ["GET /repos/{owner}/{repo}/actions/secrets/{secret_name}"],
+    getReviewsForRun: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/approvals"],
     getSelfHostedRunnerForOrg: ["GET /orgs/{org}/actions/runners/{runner_id}"],
     getSelfHostedRunnerForRepo: ["GET /repos/{owner}/{repo}/actions/runners/{runner_id}"],
     getWorkflow: ["GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}"],
@@ -4396,6 +4411,7 @@ const Endpoints = {
     getWorkflowRunUsage: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/timing"],
     getWorkflowUsage: ["GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/timing"],
     listArtifactsForRepo: ["GET /repos/{owner}/{repo}/actions/artifacts"],
+    listEnvironmentSecrets: ["GET /repositories/{repository_id}/environments/{environment_name}/secrets"],
     listJobsForWorkflowRun: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs"],
     listOrgSecrets: ["GET /orgs/{org}/actions/secrets"],
     listRepoSecrets: ["GET /repos/{owner}/{repo}/actions/secrets"],
@@ -4411,6 +4427,7 @@ const Endpoints = {
     listWorkflowRunsForRepo: ["GET /repos/{owner}/{repo}/actions/runs"],
     reRunWorkflow: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun"],
     removeSelectedRepoFromOrgSecret: ["DELETE /orgs/{org}/actions/secrets/{secret_name}/repositories/{repository_id}"],
+    reviewPendingDeploymentsForRun: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/pending_deployments"],
     setAllowedActionsOrganization: ["PUT /orgs/{org}/actions/permissions/selected-actions"],
     setAllowedActionsRepository: ["PUT /repos/{owner}/{repo}/actions/permissions/selected-actions"],
     setGithubActionsPermissionsOrganization: ["PUT /orgs/{org}/actions/permissions"],
@@ -5043,7 +5060,7 @@ const Endpoints = {
         previews: ["squirrel-girl"]
       }
     }, {
-      deprecated: "octokit.reactions.deleteLegacy() is deprecated, see https://docs.github.com/v3/reactions/#delete-a-reaction-legacy"
+      deprecated: "octokit.reactions.deleteLegacy() is deprecated, see https://docs.github.com/rest/reference/reactions/#delete-a-reaction-legacy"
     }],
     listForCommitComment: ["GET /repos/{owner}/{repo}/comments/{comment_id}/reactions", {
       mediaType: {
@@ -5112,6 +5129,7 @@ const Endpoints = {
     createForAuthenticatedUser: ["POST /user/repos"],
     createFork: ["POST /repos/{owner}/{repo}/forks"],
     createInOrg: ["POST /orgs/{org}/repos"],
+    createOrUpdateEnvironment: ["PUT /repos/{owner}/{repo}/environments/{environment_name}"],
     createOrUpdateFileContents: ["PUT /repos/{owner}/{repo}/contents/{path}"],
     createPagesSite: ["POST /repos/{owner}/{repo}/pages", {
       mediaType: {
@@ -5129,6 +5147,7 @@ const Endpoints = {
     delete: ["DELETE /repos/{owner}/{repo}"],
     deleteAccessRestrictions: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions"],
     deleteAdminBranchProtection: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"],
+    deleteAnEnvironment: ["DELETE /repos/{owner}/{repo}/environments/{environment_name}"],
     deleteBranchProtection: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection"],
     deleteCommitComment: ["DELETE /repos/{owner}/{repo}/comments/{comment_id}"],
     deleteCommitSignatureProtection: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures", {
@@ -5177,6 +5196,7 @@ const Endpoints = {
     get: ["GET /repos/{owner}/{repo}"],
     getAccessRestrictions: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions"],
     getAdminBranchProtection: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"],
+    getAllEnvironments: ["GET /repos/{owner}/{repo}/environments"],
     getAllStatusCheckContexts: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts"],
     getAllTopics: ["GET /repos/{owner}/{repo}/topics", {
       mediaType: {
@@ -5204,6 +5224,7 @@ const Endpoints = {
     getDeployKey: ["GET /repos/{owner}/{repo}/keys/{key_id}"],
     getDeployment: ["GET /repos/{owner}/{repo}/deployments/{deployment_id}"],
     getDeploymentStatus: ["GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses/{status_id}"],
+    getEnvironment: ["GET /repos/{owner}/{repo}/environments/{environment_name}"],
     getLatestPagesBuild: ["GET /repos/{owner}/{repo}/pages/builds/latest"],
     getLatestRelease: ["GET /repos/{owner}/{repo}/releases/latest"],
     getPages: ["GET /repos/{owner}/{repo}/pages"],
@@ -5415,7 +5436,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "4.12.2";
+const VERSION = "4.13.5";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -5741,7 +5762,7 @@ var pluginRequestLog = __nccwpck_require__(8883);
 var pluginPaginateRest = __nccwpck_require__(4193);
 var pluginRestEndpointMethods = __nccwpck_require__(3044);
 
-const VERSION = "18.2.1";
+const VERSION = "18.3.5";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.restEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`
@@ -7754,7 +7775,57 @@ var commit_and_push_handler_1 = __nccwpck_require__(1663);
 Object.defineProperty(exports, "commitAndPush", ({ enumerable: true, get: function () { return commit_and_push_handler_1.commitAndPush; } }));
 __exportStar(__nccwpck_require__(7268), exports);
 __exportStar(__nccwpck_require__(7693), exports);
+__exportStar(__nccwpck_require__(1630), exports);
 //# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 1630:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.addLabels = void 0;
+const logger_1 = __nccwpck_require__(8353);
+/**
+ * Create a GitHub PR on the upstream organization's repo
+ * Throws an error if the GitHub API fails
+ * @param {Octokit} octokit The authenticated octokit instance
+ * @param {RepoDomain} upstream The upstream repository
+ * @param {BranchDomain} origin The remote origin information that contains the origin branch
+ * @param {number} issue_number The issue number to add labels to. Can also be a PR number
+ * @param {string[]} labels The list of labels to apply to the issue/pull request. Default is []. the funciton will no-op.
+ * @returns {Promise<string[]>} The list of resulting labels after the addition of the given labels
+ */
+async function addLabels(octokit, upstream, origin, issue_number, labels) {
+    if (!labels || labels.length === 0) {
+        return [];
+    }
+    const labelsResponseData = (await octokit.issues.addLabels({
+        owner: upstream.owner,
+        repo: origin.repo,
+        issue_number: issue_number,
+        labels: labels,
+    })).data;
+    logger_1.logger.info(`Successfully added labels ${labels} to issue: ${issue_number}`);
+    return labelsResponseData.map(l => l.name);
+}
+exports.addLabels = addLabels;
+//# sourceMappingURL=issue-handler.js.map
 
 /***/ }),
 
@@ -7938,6 +8009,8 @@ async function createPullRequest(octokit, changes, options, loggerOption) {
     };
     const prNumber = await handler.openPullRequest(octokit, upstream, originBranch, description, gitHubConfigs.maintainersCanModify, gitHubConfigs.primary);
     logger_1.logger.info(`Successfully opened pull request: ${prNumber}.`);
+    // addLabels will no-op if options.labels is undefined or empty.
+    await handler.addLabels(octokit, upstream, originBranch, prNumber, options.labels);
     return prNumber;
 }
 exports.createPullRequest = createPullRequest;
@@ -9510,10 +9583,10 @@ module.exports = function (config) {
   })
 
   return Q.all([
-    readFile(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
+    readFile(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
   ])
     .spread((template, header, commit, footer) => {
       const writerOpts = getWriterOpts(config)
@@ -9725,10 +9798,10 @@ function conventionalChangelogWriterInit (context, options) {
     includeDetails: false,
     ignoreReverted: true,
     doFlush: true,
-    mainTemplate: readFileSync(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
-    headerPartial: readFileSync(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
-    commitPartial: readFileSync(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
-    footerPartial: readFileSync(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
+    mainTemplate: readFileSync(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
+    headerPartial: readFileSync(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
+    commitPartial: readFileSync(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
+    footerPartial: readFileSync(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
   }, options)
 
   if ((!_.isFunction(options.transform) && _.isObject(options.transform)) || _.isUndefined(options.transform)) {
@@ -49354,7 +49427,7 @@ if (process.env.READABLE_STREAM === 'disable' && Stream) {
 /***/ }),
 
 /***/ 2475:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
@@ -49373,21 +49446,31 @@ if (process.env.READABLE_STREAM === 'disable' && Stream) {
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CommitSplit = void 0;
-const path_1 = __nccwpck_require__(5622);
 class CommitSplit {
     constructor(opts) {
         opts = opts || {};
-        this.root = opts.root || './';
         this.includeEmpty = !!opts.includeEmpty;
         if (opts.packagePaths) {
             const paths = [];
             for (let newPath of opts.packagePaths) {
-                newPath = newPath.replace(/[/\\]$/, '');
-                for (const exPath of paths) {
+                // normalize so that all paths have leading and trailing slashes for
+                // non-overlap validation.
+                // NOTE: GitHub API always returns paths using the `/` separator,
+                // regardless of what platform the client code is running on
+                newPath = newPath.replace(/\/$/, '');
+                newPath = newPath.replace(/^\//, '');
+                newPath = newPath.replace(/$/, '/');
+                newPath = newPath.replace(/^/, '/');
+                for (let exPath of paths) {
+                    exPath = exPath.replace(/$/, '/');
+                    exPath = exPath.replace(/^/, '/');
                     if (newPath.indexOf(exPath) >= 0 || exPath.indexOf(newPath) >= 0) {
                         throw new Error(`Path prefixes must be unique: ${newPath}, ${exPath}`);
                     }
                 }
+                // store them with leading and trailing slashes removed.
+                newPath = newPath.replace(/\/$/, '');
+                newPath = newPath.replace(/^\//, '');
                 paths.push(newPath);
             }
             this.packagePaths = paths;
@@ -49399,8 +49482,9 @@ class CommitSplit {
             const dedupe = new Set();
             for (let i = 0; i < commit.files.length; i++) {
                 const file = commit.files[i];
-                const path = path_1.relative(this.root, file);
-                const splitPath = path.split(/[/\\]/);
+                // NOTE: GitHub API always returns paths using the `/` separator,
+                // regardless of what platform the client code is running on
+                const splitPath = file.split('/');
                 // indicates that we have a top-level file and not a folder
                 // in this edge-case we should not attempt to update the path.
                 if (splitPath.length === 1)
@@ -49408,7 +49492,7 @@ class CommitSplit {
                 let pkgName;
                 if (this.packagePaths) {
                     // only track paths under this.packagePaths
-                    pkgName = this.packagePaths.find(p => path.indexOf(p) >= 0);
+                    pkgName = this.packagePaths.find(p => file.indexOf(p) >= 0);
                 }
                 else {
                     // track paths by top level folder
@@ -49801,52 +49885,75 @@ exports.factory = {
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.GitHubRelease = void 0;
+exports.GitHubRelease = exports.GITHUB_RELEASE_LABEL = void 0;
 const checkpoint_1 = __nccwpck_require__(5279);
 const semver_1 = __nccwpck_require__(1383);
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const GITHUB_RELEASE_LABEL = 'autorelease: tagged';
+exports.GITHUB_RELEASE_LABEL = 'autorelease: tagged';
 class GitHubRelease {
     constructor(options) {
         this.draft = !!options.draft;
         this.gh = options.github;
         this.releasePR = options.releasePR;
     }
-    async run() {
-        const candidate = await this.releasePR.buildRelease();
-        if (!candidate) {
-            checkpoint_1.checkpoint('Unable to build candidate', checkpoint_1.CheckpointType.Failure);
-            return undefined;
+    async createRelease(version, mergedPR) {
+        let candidate;
+        if (version && mergedPR) {
+            candidate = await this.releasePR.buildReleaseForVersion(version, mergedPR);
+            return await this.gh.createRelease(candidate.name, candidate.tag, candidate.sha, candidate.notes, this.draft);
         }
-        const release = await this.gh.createRelease(candidate.name, candidate.tag, candidate.sha, candidate.notes, this.draft);
-        checkpoint_1.checkpoint(`Created release: ${release.html_url}.`, checkpoint_1.CheckpointType.Success);
+        else {
+            candidate = await this.releasePR.buildRelease();
+        }
+        if (candidate !== undefined) {
+            const release = await this.gh.createRelease(candidate.name, candidate.tag, candidate.sha, candidate.notes, this.draft);
+            return [candidate, release];
+        }
+        else {
+            checkpoint_1.checkpoint('Unable to build candidate', checkpoint_1.CheckpointType.Failure);
+            return [undefined, undefined];
+        }
+    }
+    async run() {
+        const [candidate, release] = await this.createRelease();
+        if (!(candidate && release)) {
+            return;
+        }
         // Comment on the release PR with the
         await this.gh.commentOnIssue(`:robot: Release is at ${release.html_url} :sunflower:`, candidate.pullNumber);
         // Add a label indicating that a release has been created on GitHub,
         // but a publication has not yet occurred.
-        await this.gh.addLabels([GITHUB_RELEASE_LABEL], candidate.pullNumber);
+        await this.gh.addLabels([exports.GITHUB_RELEASE_LABEL], candidate.pullNumber);
         // Remove 'autorelease: pending' which indicates a GitHub release
         // has not yet been created.
         await this.gh.removeLabels(this.releasePR.labels, candidate.pullNumber);
-        const parsedVersion = semver_1.parse(candidate.version, { loose: true });
+        return this.releaseResponse({
+            release,
+            version: candidate.version,
+            sha: candidate.sha,
+            number: candidate.pullNumber,
+        });
+    }
+    releaseResponse(params) {
+        checkpoint_1.checkpoint(`Created release: ${params.release.html_url}.`, checkpoint_1.CheckpointType.Success);
+        const parsedVersion = semver_1.parse(params.version, { loose: true });
         if (parsedVersion) {
             return {
                 major: parsedVersion.major,
                 minor: parsedVersion.minor,
                 patch: parsedVersion.patch,
-                sha: candidate.sha,
-                version: candidate.version,
-                pr: candidate.pullNumber,
-                html_url: release.html_url,
-                name: release.name,
-                tag_name: release.tag_name,
-                upload_url: release.upload_url,
-                draft: release.draft,
-                body: release.body,
+                sha: params.sha,
+                version: params.version,
+                pr: params.number,
+                html_url: params.release.html_url,
+                name: params.release.name,
+                tag_name: params.release.tag_name,
+                upload_url: params.release.upload_url,
+                draft: params.release.draft,
+                body: params.release.body,
             };
         }
         else {
-            console.warn(`failed to parse version information from ${candidate.version}`);
+            console.warn(`failed to parse version information from ${params.version}`);
             return undefined;
         }
     }
@@ -50139,6 +50246,75 @@ class GitHub {
         }));
         return refResponse.data.object.sha;
     }
+    /**
+     * Find the "last" merged PR given a headBranch. "last" here means
+     * the most recently created. Includes all associated files.
+     *
+     * @param {string} headBranch - e.g. "release-please/branches/main"
+     * @returns {MergedGitHubPRWithFiles} - if found, otherwise undefined.
+     */
+    async lastMergedPRByHeadBranch(headBranch) {
+        const baseBranch = await this.getDefaultBranch();
+        const response = await this.graphqlRequest({
+            query: `query lastMergedPRByHeadBranch($owner: String!, $repo: String!, $baseBranch: String!, $headBranch: String!) {
+          repository(owner: $owner, name: $repo) {
+            pullRequests(baseRefName: $baseBranch, states: MERGED, orderBy: {field: CREATED_AT, direction: DESC}, first: 1, headRefName: $headBranch) {
+            nodes {
+              title
+              body
+              number
+              mergeCommit {
+                oid
+              }
+              files(first: 100) {
+                nodes {
+                  path
+                }
+                pageInfo {
+                  hasNextPage
+                  endCursor
+                }
+              }
+              labels(first: 10) {
+                nodes {
+                  name
+                }
+              }
+            }
+          }
+        }
+      }`,
+            owner: this.owner,
+            repo: this.repo,
+            baseBranch,
+            headBranch,
+        });
+        let result = undefined;
+        const pr = response.repository.pullRequests.nodes[0];
+        if (pr) {
+            const files = pr.files.nodes.map(({ path }) => path);
+            let hasMoreFiles = pr.files.pageInfo.hasNextPage;
+            let cursor = pr.files.pageInfo.endCursor;
+            while (hasMoreFiles) {
+                const next = await this.pullRequestFiles(pr.number, cursor);
+                const nextFiles = next.node.files.edges.map(fe => fe.node.path);
+                files.push(...nextFiles);
+                cursor = next.node.files.pageInfo.endCursor;
+                hasMoreFiles = next.node.files.pageInfo.hasNextPage;
+            }
+            result = {
+                sha: pr.mergeCommit.oid,
+                title: pr.title,
+                body: pr.body,
+                number: pr.number,
+                baseRefName: baseBranch,
+                headRefName: headBranch,
+                files,
+                labels: pr.labels.nodes.map(({ name }) => name),
+            };
+        }
+        return result;
+    }
     // If we can't find a release branch (a common cause of this, as an example
     // is that we might be dealing with the first relese), use the last semver
     // tag that's available on the repository:
@@ -50221,7 +50397,7 @@ class GitHub {
               ... on Commit {
                 history(first: $num, after: $cursor) {
                   nodes {
-                    associatedPullRequests(first: 1) {
+                    associatedPullRequests(first: 10) {
                       nodes {
                         number
                         title
@@ -50233,6 +50409,9 @@ class GitHub {
                           }
                         }
                         body
+                        mergeCommit {
+                          oid
+                        }
                       }
                     }
                     sha: oid
@@ -50264,8 +50443,10 @@ class GitHub {
                     message: graphCommit.message,
                     files: [],
                 };
-                if (graphCommit.associatedPullRequests.nodes.length > 0) {
-                    const pullRequest = graphCommit.associatedPullRequests.nodes[0];
+                const pullRequest = graphCommit.associatedPullRequests.nodes.find(pr => {
+                    return pr.mergeCommit && pr.mergeCommit.oid === graphCommit.sha;
+                });
+                if (pullRequest) {
                     return {
                         commit,
                         pullRequest: {
@@ -50649,10 +50830,10 @@ class GitHub {
      * @returns {string}
      */
     async getDefaultBranch() {
-        if (this.defaultBranch) {
-            return this.defaultBranch;
+        if (!this.defaultBranch) {
+            this.defaultBranch = await this.getRepositoryDefaultBranch();
         }
-        return this.getRepositoryDefaultBranch();
+        return this.defaultBranch;
     }
     /**
      * Returns the repository's default/primary branch.
@@ -51326,7 +51507,6 @@ class ReleasePR {
     // Logic for determining what to include in a GitHub release.
     async buildRelease() {
         await this.validateConfiguration();
-        const packageName = await this.getPackageName();
         const mergedPR = await this.findMergedRelease();
         if (!mergedPR) {
             checkpoint_1.checkpoint('No merged release PR found', checkpoint_1.CheckpointType.Failure);
@@ -51338,6 +51518,10 @@ class ReleasePR {
             checkpoint_1.checkpoint('Unable to detect release version', checkpoint_1.CheckpointType.Failure);
             return undefined;
         }
+        return this.buildReleaseForVersion(version, mergedPR);
+    }
+    async buildReleaseForVersion(version, mergedPR) {
+        const packageName = await this.getPackageName();
         const tag = this.formatReleaseTagName(version, packageName);
         const changelogContents = (await this.gh.getFileContents(this.addPath(this.changelogPath))).parsedContent;
         const notes = release_notes_1.extractReleaseNotes(changelogContents, version);
@@ -51730,6 +51914,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getReleaserTypes = exports.getReleaserNames = exports.getReleasers = void 0;
 const go_yoshi_1 = __nccwpck_require__(2831);
 const java_bom_1 = __nccwpck_require__(4965);
+const java_lts_1 = __nccwpck_require__(9096);
 const java_yoshi_1 = __nccwpck_require__(2334);
 const node_1 = __nccwpck_require__(4564);
 const php_yoshi_1 = __nccwpck_require__(4839);
@@ -51745,6 +51930,7 @@ const releasers = {
     go: go_yoshi_1.GoYoshi,
     'go-yoshi': go_yoshi_1.GoYoshi,
     'java-bom': java_bom_1.JavaBom,
+    'java-lts': java_lts_1.JavaLTS,
     'java-yoshi': java_yoshi_1.JavaYoshi,
     node: node_1.Node,
     ocaml: ocaml_1.OCaml,
@@ -51798,151 +51984,40 @@ exports.getReleaserTypes = getReleaserTypes;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.JavaBom = void 0;
-const release_pr_1 = __nccwpck_require__(6786);
-const conventional_commits_1 = __nccwpck_require__(4771);
-const checkpoint_1 = __nccwpck_require__(5279);
-// Generic
-const changelog_1 = __nccwpck_require__(3325);
 // Java
-const pom_xml_1 = __nccwpck_require__(255);
-const versions_manifest_1 = __nccwpck_require__(8345);
-const readme_1 = __nccwpck_require__(2600);
 const bump_type_1 = __nccwpck_require__(3826);
 const version_1 = __nccwpck_require__(8074);
-const CHANGELOG_SECTIONS = [
-    { type: 'feat', section: 'Features' },
-    { type: 'fix', section: 'Bug Fixes' },
-    { type: 'perf', section: 'Performance Improvements' },
-    { type: 'deps', section: 'Dependencies' },
-    { type: 'revert', section: 'Reverts' },
-    { type: 'docs', section: 'Documentation' },
-    { type: 'style', section: 'Styles', hidden: true },
-    { type: 'chore', section: 'Miscellaneous Chores', hidden: true },
-    { type: 'refactor', section: 'Code Refactoring', hidden: true },
-    { type: 'test', section: 'Tests', hidden: true },
-    { type: 'build', section: 'Build System', hidden: true },
-    { type: 'ci', section: 'Continuous Integration', hidden: true },
-];
+const java_yoshi_1 = __nccwpck_require__(2334);
 const DEPENDENCY_UPDATE_REGEX = /^deps: update dependency (.*) to (v.*)(\s\(#\d+\))?$/m;
 const DEPENDENCY_PATCH_VERSION_REGEX = /^v\d+\.\d+\.[1-9]\d*(-.*)?/;
-class JavaBom extends release_pr_1.ReleasePR {
-    async _run() {
-        const versionsManifestContent = await this.gh.getFileContents('versions.txt');
-        const currentVersions = versions_manifest_1.VersionsManifest.parseVersions(versionsManifestContent.parsedContent);
-        const snapshotNeeded = versions_manifest_1.VersionsManifest.needsSnapshot(versionsManifestContent.parsedContent);
-        if (!this.snapshot) {
-            // if a snapshot is not explicitly requested, decided what type
-            // of release based on whether a snapshot is needed or not
-            this.snapshot = snapshotNeeded;
-        }
-        else if (!snapshotNeeded) {
-            checkpoint_1.checkpoint('release asked for a snapshot, but no snapshot is needed', checkpoint_1.CheckpointType.Failure);
-            return undefined;
-        }
-        if (this.snapshot) {
-            this.labels = ['type: process'];
-        }
-        const latestTag = await this.latestTag();
-        const commits = await this.commits({
-            sha: latestTag ? latestTag.sha : undefined,
-            perPage: this.snapshot ? 1 : 100,
-            labels: true,
-        });
-        if (commits.length === 0) {
-            checkpoint_1.checkpoint(`no commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return undefined;
-        }
-        const prSHA = commits[0].sha;
-        const cc = new conventional_commits_1.ConventionalCommits({
-            commits,
-            owner: this.gh.owner,
-            repository: this.gh.repo,
-            bumpMinorPreMajor: this.bumpMinorPreMajor,
-            changelogSections: CHANGELOG_SECTIONS,
-        });
-        const bumpType = this.snapshot
-            ? 'snapshot'
-            : bump_type_1.maxBumpType([
-                JavaBom.determineBumpType(commits),
-                bump_type_1.fromSemverReleaseType((await cc.suggestBump((latestTag === null || latestTag === void 0 ? void 0 : latestTag.version) || this.defaultInitialVersion())).releaseType),
-            ]);
-        const candidate = {
-            version: latestTag
-                ? version_1.Version.parse(latestTag.version).bump(bumpType).toString()
-                : this.defaultInitialVersion(),
-            previousTag: latestTag === null || latestTag === void 0 ? void 0 : latestTag.version,
-        };
-        const changelogEntry = this.snapshot
-            ? '### Updating meta-information for bleeding-edge SNAPSHOT release.'
-            : await cc.generateChangelogEntry({
-                version: candidate.version,
-                currentTag: `v${candidate.version}`,
-                previousTag: candidate.previousTag,
-            });
-        // don't create a release candidate until user facing changes
-        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
-        // one line is a good indicator that there were no interesting commits.
-        if (this.changelogEmpty(changelogEntry) && !this.snapshot) {
-            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
-            return undefined;
-        }
-        const candidateVersions = JavaBom.bumpAllVersions(bumpType, currentVersions);
-        const updates = [];
-        const packageName = await this.getPackageName();
-        if (!this.snapshot) {
-            updates.push(new changelog_1.Changelog({
-                path: this.changelogPath,
-                changelogEntry,
-                versions: candidateVersions,
-                version: candidate.version,
-                packageName: packageName.name,
-            }));
-            updates.push(new readme_1.Readme({
-                path: 'README.md',
-                changelogEntry,
-                versions: candidateVersions,
-                version: candidate.version,
-                packageName: packageName.name,
-            }));
-        }
-        updates.push(new versions_manifest_1.VersionsManifest({
-            path: 'versions.txt',
-            changelogEntry,
-            versions: candidateVersions,
-            version: candidate.version,
-            packageName: packageName.name,
-            contents: versionsManifestContent,
-        }));
-        const pomFiles = await this.gh.findFilesByFilename('pom.xml');
-        pomFiles.forEach(path => {
-            updates.push(new pom_xml_1.PomXML({
-                path,
-                changelogEntry,
-                versions: candidateVersions,
-                version: candidate.version,
-                packageName: packageName.name,
-            }));
-        });
-        return await this.openPR({
-            sha: prSHA,
-            changelogEntry: `${changelogEntry}\n---\n`,
-            updates,
-            version: candidate.version,
-            includePackageName: this.monorepoTags,
-        });
-    }
-    supportsSnapshots() {
-        return true;
-    }
-    defaultInitialVersion() {
-        return '0.1.0';
-    }
-    static bumpAllVersions(bumpType, currentVersions) {
+class JavaBom extends java_yoshi_1.JavaYoshi {
+    async coerceVersions(cc, _candidate, latestTag, currentVersions) {
+        const bumpType = await this.getBumpType(cc, latestTag);
         const newVersions = new Map();
         for (const [k, version] of currentVersions) {
             newVersions.set(k, version_1.Version.parse(version).bump(bumpType).toString());
         }
         return newVersions;
+    }
+    async getBumpType(cc, latestTag) {
+        if (!this.bumpType) {
+            this.bumpType = this.snapshot
+                ? 'snapshot'
+                : bump_type_1.maxBumpType([
+                    JavaBom.determineBumpType(cc.commits),
+                    bump_type_1.fromSemverReleaseType((await cc.suggestBump((latestTag === null || latestTag === void 0 ? void 0 : latestTag.version) || this.defaultInitialVersion())).releaseType),
+                ]);
+        }
+        return this.bumpType;
+    }
+    async coerceReleaseCandidate(cc, latestTag, _preRelease = false) {
+        const bumpType = await this.getBumpType(cc, latestTag);
+        return {
+            version: latestTag
+                ? version_1.Version.parse(latestTag.version).bump(bumpType).toString()
+                : this.defaultInitialVersion(),
+            previousTag: latestTag === null || latestTag === void 0 ? void 0 : latestTag.version,
+        };
     }
     static dependencyUpdates(commits) {
         const versionsMap = new Map();
@@ -51979,6 +52054,55 @@ exports.JavaBom = JavaBom;
 
 /***/ }),
 
+/***/ 9096:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.JavaLTS = void 0;
+// Java
+const version_1 = __nccwpck_require__(8074);
+const java_yoshi_1 = __nccwpck_require__(2334);
+class JavaLTS extends java_yoshi_1.JavaYoshi {
+    async coerceVersions(_cc, _candidate, _latestTag, currentVersions) {
+        const bumpType = this.snapshot ? 'snapshot' : 'lts';
+        const newVersions = new Map();
+        for (const [k, version] of currentVersions) {
+            newVersions.set(k, version_1.Version.parse(version).bump(bumpType).toString());
+        }
+        return newVersions;
+    }
+    async coerceReleaseCandidate(cc, latestTag, _preRelease = false) {
+        var _a;
+        const bumpType = this.snapshot ? 'snapshot' : 'lts';
+        const version = version_1.Version.parse((_a = latestTag === null || latestTag === void 0 ? void 0 : latestTag.version) !== null && _a !== void 0 ? _a : this.defaultInitialVersion())
+            .bump(bumpType)
+            .toString();
+        return {
+            previousTag: latestTag === null || latestTag === void 0 ? void 0 : latestTag.version,
+            version,
+        };
+    }
+}
+exports.JavaLTS = JavaLTS;
+//# sourceMappingURL=java-lts.js.map
+
+/***/ }),
+
 /***/ 2334:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -51999,22 +52123,20 @@ exports.JavaBom = JavaBom;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.JavaYoshi = void 0;
-const release_pr_1 = __nccwpck_require__(6786);
-const conventional_commits_1 = __nccwpck_require__(4771);
-const checkpoint_1 = __nccwpck_require__(5279);
-// Generic
-const changelog_1 = __nccwpck_require__(3325);
-// Java
-const google_utils_1 = __nccwpck_require__(6216);
-const pom_xml_1 = __nccwpck_require__(255);
-const versions_manifest_1 = __nccwpck_require__(8345);
-const readme_1 = __nccwpck_require__(2600);
-const version_1 = __nccwpck_require__(8074);
-const bump_type_1 = __nccwpck_require__(3826);
-const java_update_1 = __nccwpck_require__(301);
-const stability_1 = __nccwpck_require__(8824);
 const branch_name_1 = __nccwpck_require__(6344);
 const pull_request_title_1 = __nccwpck_require__(1158);
+const versions_manifest_1 = __nccwpck_require__(8345);
+const checkpoint_1 = __nccwpck_require__(5279);
+const conventional_commits_1 = __nccwpck_require__(4771);
+const version_1 = __nccwpck_require__(8074);
+const release_pr_1 = __nccwpck_require__(6786);
+const changelog_1 = __nccwpck_require__(3325);
+const readme_1 = __nccwpck_require__(2600);
+const google_utils_1 = __nccwpck_require__(6216);
+const pom_xml_1 = __nccwpck_require__(255);
+const java_update_1 = __nccwpck_require__(301);
+const stability_1 = __nccwpck_require__(8824);
+const bump_type_1 = __nccwpck_require__(3826);
 const CHANGELOG_SECTIONS = [
     { type: 'feat', section: 'Features' },
     { type: 'fix', section: 'Bug Fixes' },
@@ -52030,8 +52152,14 @@ const CHANGELOG_SECTIONS = [
     { type: 'ci', section: 'Continuous Integration', hidden: true },
 ];
 class JavaYoshi extends release_pr_1.ReleasePR {
+    async getVersionManifestContent() {
+        if (!this.versionsManifestContent) {
+            this.versionsManifestContent = await this.gh.getFileContents('versions.txt');
+        }
+        return this.versionsManifestContent;
+    }
     async _run() {
-        const versionsManifestContent = await this.gh.getFileContents('versions.txt');
+        const versionsManifestContent = await this.getVersionManifestContent();
         const currentVersions = versions_manifest_1.VersionsManifest.parseVersions(versionsManifestContent.parsedContent);
         const snapshotNeeded = versions_manifest_1.VersionsManifest.needsSnapshot(versionsManifestContent.parsedContent);
         if (!this.snapshot) {
@@ -52083,21 +52211,8 @@ class JavaYoshi extends release_pr_1.ReleasePR {
             changelogSections: CHANGELOG_SECTIONS,
         });
         const candidate = await this.coerceReleaseCandidate(cc, latestTag);
-        const candidateVersions = await this.coerceVersions(cc, currentVersions, candidate);
-        let changelogEntry = await cc.generateChangelogEntry({
-            version: candidate.version,
-            currentTag: `v${candidate.version}`,
-            previousTag: candidate.previousTag,
-        });
-        // snapshot entries are special:
-        // 1. they don't update the README or CHANGELOG.
-        // 2. they always update a patch with the -SNAPSHOT suffix.
-        // 3. they're haunted.
-        if (this.snapshot) {
-            candidate.version = `${candidate.version}-SNAPSHOT`;
-            changelogEntry =
-                '### Updating meta-information for bleeding-edge SNAPSHOT release.';
-        }
+        const candidateVersions = await this.coerceVersions(cc, candidate, latestTag, currentVersions);
+        const changelogEntry = await this.generateChangelog(cc, candidate);
         // don't create a release candidate until user facing changes
         // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
         // one line is a good indicator that there were no interesting commits.
@@ -52105,8 +52220,41 @@ class JavaYoshi extends release_pr_1.ReleasePR {
             checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
             return undefined;
         }
-        const updates = [];
         const packageName = await this.getPackageName();
+        const updates = await this.buildUpdates(changelogEntry, candidateVersions, candidate, packageName);
+        return await this.openPR({
+            sha: prSHA,
+            changelogEntry: `${changelogEntry}\n---\n`,
+            updates,
+            version: candidate.version,
+            includePackageName: this.monorepoTags,
+        });
+    }
+    async generateChangelog(cc, candidate) {
+        if (this.snapshot) {
+            return '### Updating meta-information for bleeding-edge SNAPSHOT release.';
+        }
+        return await cc.generateChangelogEntry({
+            version: candidate.version,
+            currentTag: `v${candidate.version}`,
+            previousTag: candidate.previousTag,
+        });
+    }
+    async coerceReleaseCandidate(cc, latestTag, preRelease = false) {
+        var _a;
+        if (this.snapshot) {
+            const version = version_1.Version.parse((_a = latestTag === null || latestTag === void 0 ? void 0 : latestTag.version) !== null && _a !== void 0 ? _a : this.defaultInitialVersion())
+                .bump('snapshot')
+                .toString();
+            return {
+                previousTag: latestTag === null || latestTag === void 0 ? void 0 : latestTag.version,
+                version,
+            };
+        }
+        return await super.coerceReleaseCandidate(cc, latestTag, preRelease);
+    }
+    async buildUpdates(changelogEntry, candidateVersions, candidate, packageName) {
+        const updates = [];
         if (!this.snapshot) {
             updates.push(new changelog_1.Changelog({
                 path: this.changelogPath,
@@ -52129,7 +52277,6 @@ class JavaYoshi extends release_pr_1.ReleasePR {
                 versions: candidateVersions,
                 version: candidate.version,
                 packageName: packageName.name,
-                contents: versionsManifestContent,
             }));
         }
         updates.push(new versions_manifest_1.VersionsManifest({
@@ -52138,7 +52285,7 @@ class JavaYoshi extends release_pr_1.ReleasePR {
             versions: candidateVersions,
             version: candidate.version,
             packageName: packageName.name,
-            contents: versionsManifestContent,
+            contents: await this.getVersionManifestContent(),
         }));
         const pomFilesSearch = this.gh.findFilesByFilename('pom.xml');
         const buildFilesSearch = this.gh.findFilesByFilename('build.gradle');
@@ -52173,13 +52320,7 @@ class JavaYoshi extends release_pr_1.ReleasePR {
                 packageName: packageName.name,
             }));
         });
-        return await this.openPR({
-            sha: prSHA,
-            changelogEntry: `${changelogEntry}\n---\n`,
-            updates,
-            version: candidate.version,
-            includePackageName: this.monorepoTags,
-        });
+        return updates;
     }
     supportsSnapshots() {
         return true;
@@ -52187,7 +52328,7 @@ class JavaYoshi extends release_pr_1.ReleasePR {
     defaultInitialVersion() {
         return '0.1.0';
     }
-    async coerceVersions(cc, currentVersions, candidate) {
+    async coerceVersions(cc, candidate, _latestTag, currentVersions) {
         const newVersions = new Map();
         for (const [k, version] of currentVersions) {
             if (candidate.version === '1.0.0' && stability_1.isStableArtifact(k)) {
@@ -52345,16 +52486,25 @@ exports.isStableArtifact = isStableArtifact;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Version = void 0;
-const VERSION_REGEX = /(\d+)\.(\d+)\.(\d+)(-\w+)?(-SNAPSHOT)?/;
+const VERSION_REGEX = /(\d+)\.(\d+)\.(\d+)(-.+)?/;
+const LTS_REGEX = /(-.+)?-lts.(\d+)/;
 class Version {
-    constructor(major, minor, patch, extra, snapshot) {
+    constructor(major, minor, patch, extra, snapshot, lts) {
         this.major = major;
         this.minor = minor;
         this.patch = patch;
         this.extra = extra;
         this.snapshot = snapshot;
+        this.lts = lts;
     }
     static parse(version) {
+        var _a;
+        let extra = '';
+        let snapshot = false;
+        if (version.endsWith('-SNAPSHOT')) {
+            snapshot = true;
+            version = version.slice(0, -9);
+        }
         const match = version.match(VERSION_REGEX);
         if (!match) {
             throw Error(`unable to parse version string: ${version}`);
@@ -52362,21 +52512,18 @@ class Version {
         const major = Number(match[1]);
         const minor = Number(match[2]);
         const patch = Number(match[3]);
-        let extra = '';
-        let snapshot = false;
-        if (match[5]) {
-            extra = match[4];
-            snapshot = match[5] === '-SNAPSHOT';
-        }
-        else if (match[4]) {
-            if (match[4] === '-SNAPSHOT') {
-                snapshot = true;
+        let lts = undefined;
+        if (match[4]) {
+            const ltsMatch = match[4].match(LTS_REGEX);
+            if (ltsMatch && ltsMatch[2]) {
+                extra = (_a = ltsMatch[1]) !== null && _a !== void 0 ? _a : '';
+                lts = Number(ltsMatch[2]);
             }
             else {
                 extra = match[4];
             }
         }
-        return new Version(major, minor, patch, extra, snapshot);
+        return new Version(major, minor, patch, extra, snapshot, lts);
     }
     bump(bumpType) {
         switch (bumpType) {
@@ -52396,8 +52543,25 @@ class Version {
                 this.snapshot = false;
                 break;
             case 'snapshot':
-                this.patch += 1;
+                if (this.lts) {
+                    this.lts += 1;
+                }
+                else {
+                    this.patch += 1;
+                }
                 this.snapshot = true;
+                break;
+            case 'lts':
+                if (this.lts) {
+                    this.lts += 1;
+                }
+                else {
+                    if (!this.snapshot) {
+                        this.patch += 1;
+                    }
+                    this.lts = 1;
+                }
+                this.snapshot = false;
                 break;
             default:
                 throw Error(`unsupported bump type: ${bumpType}`);
@@ -52405,7 +52569,7 @@ class Version {
         return this;
     }
     toString() {
-        return `${this.major}.${this.minor}.${this.patch}${this.extra}${this.snapshot ? '-SNAPSHOT' : ''}`;
+        return `${this.major}.${this.minor}.${this.patch}${this.extra}${this.lts ? `-lts.${this.lts}` : ''}${this.snapshot ? '-SNAPSHOT' : ''}`;
     }
 }
 exports.Version = Version;
@@ -53549,8 +53713,13 @@ class TerraformModule extends release_pr_1.ReleasePR {
             }));
         });
         // Update versions.tf to current candidate version.
-        // A module may have submodules, so find all versions.tf to update.
-        const versionFiles = await this.gh.findFilesByFilename('versions.tf');
+        // A module may have submodules, so find all versions.tfand versions.tf.tmpl to update.
+        const versionFiles = await Promise.all([
+            this.gh.findFilesByFilename('versions.tf'),
+            this.gh.findFilesByFilename('versions.tf.tmpl'),
+        ]).then(([v, vt]) => {
+            return v.concat(vt);
+        });
         versionFiles.forEach(path => {
             updates.push(new module_version_1.ModuleVersion({
                 path: this.addPath(path),
@@ -54027,6 +54196,7 @@ class PackageJson {
         this.changelogEntry = options.changelogEntry;
         this.version = options.version;
         this.packageName = options.packageName;
+        this.contents = options.contents;
     }
     updateContent(content) {
         const parsed = JSON.parse(content);
@@ -66979,7 +67149,7 @@ module.exports = JSON.parse("{\"_args\":[[\"pino@6.11.1\",\"/home/runner/work/re
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"11.1.0"};
+module.exports = {"i8":"11.2.0"};
 
 /***/ }),
 
