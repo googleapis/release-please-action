@@ -3519,7 +3519,7 @@ function _objectWithoutProperties(source, excluded) {
   return target;
 }
 
-const VERSION = "3.3.0";
+const VERSION = "3.3.1";
 
 class Octokit {
   constructor(options = {}) {
@@ -4182,7 +4182,7 @@ exports.withCustomRequest = withCustomRequest;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-const VERSION = "2.11.0";
+const VERSION = "2.13.2";
 
 /**
  * Some “list” response that can be paginated have a different response structure
@@ -4293,6 +4293,16 @@ const composePaginateRest = Object.assign(paginate, {
   iterator
 });
 
+const paginatingEndpoints = ["GET /app/installations", "GET /applications/grants", "GET /authorizations", "GET /enterprises/{enterprise}/actions/permissions/organizations", "GET /enterprises/{enterprise}/actions/runner-groups", "GET /enterprises/{enterprise}/actions/runner-groups/{runner_group_id}/organizations", "GET /enterprises/{enterprise}/actions/runner-groups/{runner_group_id}/runners", "GET /enterprises/{enterprise}/actions/runners", "GET /enterprises/{enterprise}/actions/runners/downloads", "GET /events", "GET /gists", "GET /gists/public", "GET /gists/starred", "GET /gists/{gist_id}/comments", "GET /gists/{gist_id}/commits", "GET /gists/{gist_id}/forks", "GET /installation/repositories", "GET /issues", "GET /marketplace_listing/plans", "GET /marketplace_listing/plans/{plan_id}/accounts", "GET /marketplace_listing/stubbed/plans", "GET /marketplace_listing/stubbed/plans/{plan_id}/accounts", "GET /networks/{owner}/{repo}/events", "GET /notifications", "GET /organizations", "GET /orgs/{org}/actions/permissions/repositories", "GET /orgs/{org}/actions/runner-groups", "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/repositories", "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/runners", "GET /orgs/{org}/actions/runners", "GET /orgs/{org}/actions/runners/downloads", "GET /orgs/{org}/actions/secrets", "GET /orgs/{org}/actions/secrets/{secret_name}/repositories", "GET /orgs/{org}/blocks", "GET /orgs/{org}/credential-authorizations", "GET /orgs/{org}/events", "GET /orgs/{org}/failed_invitations", "GET /orgs/{org}/hooks", "GET /orgs/{org}/installations", "GET /orgs/{org}/invitations", "GET /orgs/{org}/invitations/{invitation_id}/teams", "GET /orgs/{org}/issues", "GET /orgs/{org}/members", "GET /orgs/{org}/migrations", "GET /orgs/{org}/migrations/{migration_id}/repositories", "GET /orgs/{org}/outside_collaborators", "GET /orgs/{org}/projects", "GET /orgs/{org}/public_members", "GET /orgs/{org}/repos", "GET /orgs/{org}/team-sync/groups", "GET /orgs/{org}/teams", "GET /orgs/{org}/teams/{team_slug}/discussions", "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments", "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions", "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions", "GET /orgs/{org}/teams/{team_slug}/invitations", "GET /orgs/{org}/teams/{team_slug}/members", "GET /orgs/{org}/teams/{team_slug}/projects", "GET /orgs/{org}/teams/{team_slug}/repos", "GET /orgs/{org}/teams/{team_slug}/team-sync/group-mappings", "GET /orgs/{org}/teams/{team_slug}/teams", "GET /projects/columns/{column_id}/cards", "GET /projects/{project_id}/collaborators", "GET /projects/{project_id}/columns", "GET /repos/{owner}/{repo}/actions/artifacts", "GET /repos/{owner}/{repo}/actions/runners", "GET /repos/{owner}/{repo}/actions/runners/downloads", "GET /repos/{owner}/{repo}/actions/runs", "GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts", "GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs", "GET /repos/{owner}/{repo}/actions/secrets", "GET /repos/{owner}/{repo}/actions/workflows", "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs", "GET /repos/{owner}/{repo}/assignees", "GET /repos/{owner}/{repo}/branches", "GET /repos/{owner}/{repo}/check-runs/{check_run_id}/annotations", "GET /repos/{owner}/{repo}/check-suites/{check_suite_id}/check-runs", "GET /repos/{owner}/{repo}/code-scanning/alerts", "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances", "GET /repos/{owner}/{repo}/code-scanning/analyses", "GET /repos/{owner}/{repo}/collaborators", "GET /repos/{owner}/{repo}/comments", "GET /repos/{owner}/{repo}/comments/{comment_id}/reactions", "GET /repos/{owner}/{repo}/commits", "GET /repos/{owner}/{repo}/commits/{commit_sha}/branches-where-head", "GET /repos/{owner}/{repo}/commits/{commit_sha}/comments", "GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls", "GET /repos/{owner}/{repo}/commits/{ref}/check-runs", "GET /repos/{owner}/{repo}/commits/{ref}/check-suites", "GET /repos/{owner}/{repo}/commits/{ref}/statuses", "GET /repos/{owner}/{repo}/contributors", "GET /repos/{owner}/{repo}/deployments", "GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses", "GET /repos/{owner}/{repo}/events", "GET /repos/{owner}/{repo}/forks", "GET /repos/{owner}/{repo}/git/matching-refs/{ref}", "GET /repos/{owner}/{repo}/hooks", "GET /repos/{owner}/{repo}/invitations", "GET /repos/{owner}/{repo}/issues", "GET /repos/{owner}/{repo}/issues/comments", "GET /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions", "GET /repos/{owner}/{repo}/issues/events", "GET /repos/{owner}/{repo}/issues/{issue_number}/comments", "GET /repos/{owner}/{repo}/issues/{issue_number}/events", "GET /repos/{owner}/{repo}/issues/{issue_number}/labels", "GET /repos/{owner}/{repo}/issues/{issue_number}/reactions", "GET /repos/{owner}/{repo}/issues/{issue_number}/timeline", "GET /repos/{owner}/{repo}/keys", "GET /repos/{owner}/{repo}/labels", "GET /repos/{owner}/{repo}/milestones", "GET /repos/{owner}/{repo}/milestones/{milestone_number}/labels", "GET /repos/{owner}/{repo}/notifications", "GET /repos/{owner}/{repo}/pages/builds", "GET /repos/{owner}/{repo}/projects", "GET /repos/{owner}/{repo}/pulls", "GET /repos/{owner}/{repo}/pulls/comments", "GET /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions", "GET /repos/{owner}/{repo}/pulls/{pull_number}/comments", "GET /repos/{owner}/{repo}/pulls/{pull_number}/commits", "GET /repos/{owner}/{repo}/pulls/{pull_number}/files", "GET /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers", "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews", "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments", "GET /repos/{owner}/{repo}/releases", "GET /repos/{owner}/{repo}/releases/{release_id}/assets", "GET /repos/{owner}/{repo}/secret-scanning/alerts", "GET /repos/{owner}/{repo}/stargazers", "GET /repos/{owner}/{repo}/subscribers", "GET /repos/{owner}/{repo}/tags", "GET /repos/{owner}/{repo}/teams", "GET /repositories", "GET /repositories/{repository_id}/environments/{environment_name}/secrets", "GET /scim/v2/enterprises/{enterprise}/Groups", "GET /scim/v2/enterprises/{enterprise}/Users", "GET /scim/v2/organizations/{org}/Users", "GET /search/code", "GET /search/commits", "GET /search/issues", "GET /search/labels", "GET /search/repositories", "GET /search/topics", "GET /search/users", "GET /teams/{team_id}/discussions", "GET /teams/{team_id}/discussions/{discussion_number}/comments", "GET /teams/{team_id}/discussions/{discussion_number}/comments/{comment_number}/reactions", "GET /teams/{team_id}/discussions/{discussion_number}/reactions", "GET /teams/{team_id}/invitations", "GET /teams/{team_id}/members", "GET /teams/{team_id}/projects", "GET /teams/{team_id}/repos", "GET /teams/{team_id}/team-sync/group-mappings", "GET /teams/{team_id}/teams", "GET /user/blocks", "GET /user/emails", "GET /user/followers", "GET /user/following", "GET /user/gpg_keys", "GET /user/installations", "GET /user/installations/{installation_id}/repositories", "GET /user/issues", "GET /user/keys", "GET /user/marketplace_purchases", "GET /user/marketplace_purchases/stubbed", "GET /user/memberships/orgs", "GET /user/migrations", "GET /user/migrations/{migration_id}/repositories", "GET /user/orgs", "GET /user/public_emails", "GET /user/repos", "GET /user/repository_invitations", "GET /user/starred", "GET /user/subscriptions", "GET /user/teams", "GET /users", "GET /users/{username}/events", "GET /users/{username}/events/orgs/{org}", "GET /users/{username}/events/public", "GET /users/{username}/followers", "GET /users/{username}/following", "GET /users/{username}/gists", "GET /users/{username}/gpg_keys", "GET /users/{username}/keys", "GET /users/{username}/orgs", "GET /users/{username}/projects", "GET /users/{username}/received_events", "GET /users/{username}/received_events/public", "GET /users/{username}/repos", "GET /users/{username}/starred", "GET /users/{username}/subscriptions"];
+
+function isPaginatingEndpoint(arg) {
+  if (typeof arg === "string") {
+    return paginatingEndpoints.includes(arg);
+  } else {
+    return false;
+  }
+}
+
 /**
  * @param octokit Octokit instance
  * @param options Options passed to Octokit constructor
@@ -4308,7 +4318,9 @@ function paginateRest(octokit) {
 paginateRest.VERSION = VERSION;
 
 exports.composePaginateRest = composePaginateRest;
+exports.isPaginatingEndpoint = isPaginatingEndpoint;
 exports.paginateRest = paginateRest;
+exports.paginatingEndpoints = paginatingEndpoints;
 //# sourceMappingURL=index.js.map
 
 
@@ -9583,10 +9595,10 @@ module.exports = function (config) {
   })
 
   return Q.all([
-    readFile(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
+    readFile(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
   ])
     .spread((template, header, commit, footer) => {
       const writerOpts = getWriterOpts(config)
@@ -9798,10 +9810,10 @@ function conventionalChangelogWriterInit (context, options) {
     includeDetails: false,
     ignoreReverted: true,
     doFlush: true,
-    mainTemplate: readFileSync(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
-    headerPartial: readFileSync(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
-    commitPartial: readFileSync(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
-    footerPartial: readFileSync(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
+    mainTemplate: readFileSync(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
+    headerPartial: readFileSync(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
+    commitPartial: readFileSync(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
+    footerPartial: readFileSync(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
   }, options)
 
   if ((!_.isFunction(options.transform) && _.isObject(options.transform)) || _.isUndefined(options.transform)) {
@@ -42155,220 +42167,9 @@ function onceStrict (fn) {
 /***/ 4833:
 /***/ ((module) => {
 
-// Generated by CoffeeScript 2.5.1
-  // parses unified diff
-  // http://www.gnu.org/software/diffutils/manual/diffutils.html#Unified-Format
-var defaultToWhiteSpace, escapeRegExp, ltrim, makeString, parseFile, parseFileFallback, trimLeft,
-  slice = [].slice;
-
-module.exports = function(input) {
-  var add, chunk, current, del, deleted_file, eof, file, files, from_file, index, j, len, line, lines, ln_add, ln_del, new_file, normal, parse, restart, schema, start, to_file;
-  if (!input) {
-    return [];
-  }
-  if (input.match(/^\s+$/)) {
-    return [];
-  }
-  lines = input.split('\n');
-  if (lines.length === 0) {
-    return [];
-  }
-  files = [];
-  file = null;
-  ln_del = 0;
-  ln_add = 0;
-  current = null;
-  start = function(line) {
-    var fileNames;
-    file = {
-      chunks: [],
-      deletions: 0,
-      additions: 0
-    };
-    files.push(file);
-    if (!file.to && !file.from) {
-      fileNames = parseFile(line);
-      if (fileNames) {
-        file.from = fileNames[0];
-        return file.to = fileNames[1];
-      }
-    }
-  };
-  restart = function() {
-    if (!file || file.chunks.length) {
-      return start();
-    }
-  };
-  new_file = function() {
-    restart();
-    file.new = true;
-    return file.from = '/dev/null';
-  };
-  deleted_file = function() {
-    restart();
-    file.deleted = true;
-    return file.to = '/dev/null';
-  };
-  index = function(line) {
-    restart();
-    return file.index = line.split(' ').slice(1);
-  };
-  from_file = function(line) {
-    restart();
-    return file.from = parseFileFallback(line);
-  };
-  to_file = function(line) {
-    restart();
-    return file.to = parseFileFallback(line);
-  };
-  chunk = function(line, match) {
-    var newLines, newStart, oldLines, oldStart;
-    ln_del = oldStart = +match[1];
-    oldLines = +(match[2] || 1);
-    ln_add = newStart = +match[3];
-    newLines = +(match[4] || 1);
-    current = {
-      content: line,
-      changes: [],
-      oldStart,
-      oldLines,
-      newStart,
-      newLines
-    };
-    return file.chunks.push(current);
-  };
-  del = function(line) {
-    if (!current) {
-      return;
-    }
-    current.changes.push({
-      type: 'del',
-      del: true,
-      ln: ln_del++,
-      content: line
-    });
-    return file.deletions++;
-  };
-  add = function(line) {
-    if (!current) {
-      return;
-    }
-    current.changes.push({
-      type: 'add',
-      add: true,
-      ln: ln_add++,
-      content: line
-    });
-    return file.additions++;
-  };
-  normal = function(line) {
-    if (!current) {
-      return;
-    }
-    return current.changes.push({
-      type: 'normal',
-      normal: true,
-      ln1: ln_del++,
-      ln2: ln_add++,
-      content: line
-    });
-  };
-  eof = function(line) {
-    var recentChange, ref;
-    ref = current.changes, [recentChange] = slice.call(ref, -1);
-    return current.changes.push({
-      type: recentChange.type,
-      [`${recentChange.type}`]: true,
-      ln1: recentChange.ln1,
-      ln2: recentChange.ln2,
-      ln: recentChange.ln,
-      content: line
-    });
-  };
-  // todo beter regexp to avoid detect normal line starting with diff
-  schema = [[/^\s+/, normal], [/^diff\s/, start], [/^new file mode \d+$/, new_file], [/^deleted file mode \d+$/, deleted_file], [/^index\s[\da-zA-Z]+\.\.[\da-zA-Z]+(\s(\d+))?$/, index], [/^---\s/, from_file], [/^\+\+\+\s/, to_file], [/^@@\s+\-(\d+),?(\d+)?\s+\+(\d+),?(\d+)?\s@@/, chunk], [/^-/, del], [/^\+/, add], [/^\\ No newline at end of file$/, eof]];
-  parse = function(line) {
-    var j, len, m, p;
-    for (j = 0, len = schema.length; j < len; j++) {
-      p = schema[j];
-      m = line.match(p[0]);
-      if (m) {
-        p[1](line, m);
-        return true;
-      }
-    }
-    return false;
-  };
-  for (j = 0, len = lines.length; j < len; j++) {
-    line = lines[j];
-    parse(line);
-  }
-  return files;
-};
-
-parseFile = function(s) {
-  var fileNames;
-  if (!s) {
-    return;
-  }
-  fileNames = s.match(/a\/.*(?=["']? ["']?b\/)|b\/.*$/g);
-  fileNames.map(function(fileName, i) {
-    return fileNames[i] = fileName.replace(/^(a|b)\//, '').replace(/("|')$/, '');
-  });
-  return fileNames;
-};
-
-// fallback function to overwrite file.from and file.to if executed
-parseFileFallback = function(s) {
-  var t;
-  s = ltrim(s, '-');
-  s = ltrim(s, '+');
-  s = s.trim();
-  // ignore possible time stamp
-  t = /\t.*|\d{4}-\d\d-\d\d\s\d\d:\d\d:\d\d(.\d+)?\s(\+|-)\d\d\d\d/.exec(s);
-  if (t) {
-    s = s.substring(0, t.index).trim();
-  }
-  // ignore git prefixes a/ or b/
-  if (s.match(/^(a|b)\//)) {
-    return s.substr(2);
-  } else {
-    return s;
-  }
-};
-
-ltrim = function(s, chars) {
-  s = makeString(s);
-  if (!chars && trimLeft) {
-    return trimLeft.call(s);
-  }
-  chars = defaultToWhiteSpace(chars);
-  return s.replace(new RegExp('^' + chars + '+'), '');
-};
-
-makeString = function(s) {
-  if (s === null) {
-    return '';
-  } else {
-    return s + '';
-  }
-};
-
-trimLeft = String.prototype.trimLeft;
-
-defaultToWhiteSpace = function(chars) {
-  if (chars === null) {
-    return '\\s';
-  }
-  if (chars.source) {
-    return chars.source;
-  }
-  return '[' + escapeRegExp(chars) + ']';
-};
-
-escapeRegExp = function(s) {
-  return makeString(s).replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
-};
+"use strict";
+function _createForOfIteratorHelper(o,allowArrayLike){var it;if(typeof Symbol==="undefined"||o[Symbol.iterator]==null){if(Array.isArray(o)||(it=_unsupportedIterableToArray(o))||allowArrayLike&&o&&typeof o.length==="number"){if(it)o=it;var i=0;var F=function F(){};return{s:F,n:function n(){if(i>=o.length)return{done:true};return{done:false,value:o[i++]}},e:function e(_e2){throw _e2},f:F}}throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}var normalCompletion=true,didErr=false,err;return{s:function s(){it=o[Symbol.iterator]()},n:function n(){var step=it.next();normalCompletion=step.done;return step},e:function e(_e3){didErr=true;err=_e3},f:function f(){try{if(!normalCompletion&&it["return"]!=null)it["return"]()}finally{if(didErr)throw err}}}}function _defineProperty(obj,key,value){if(key in obj){Object.defineProperty(obj,key,{value:value,enumerable:true,configurable:true,writable:true})}else{obj[key]=value}return obj}function _slicedToArray(arr,i){return _arrayWithHoles(arr)||_iterableToArrayLimit(arr,i)||_unsupportedIterableToArray(arr,i)||_nonIterableRest()}function _nonIterableRest(){throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}function _unsupportedIterableToArray(o,minLen){if(!o)return;if(typeof o==="string")return _arrayLikeToArray(o,minLen);var n=Object.prototype.toString.call(o).slice(8,-1);if(n==="Object"&&o.constructor)n=o.constructor.name;if(n==="Map"||n==="Set")return Array.from(o);if(n==="Arguments"||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n))return _arrayLikeToArray(o,minLen)}function _arrayLikeToArray(arr,len){if(len==null||len>arr.length)len=arr.length;for(var i=0,arr2=new Array(len);i<len;i++){arr2[i]=arr[i]}return arr2}function _iterableToArrayLimit(arr,i){if(typeof Symbol==="undefined"||!(Symbol.iterator in Object(arr)))return;var _arr=[];var _n=true;var _d=false;var _e=undefined;try{for(var _i=arr[Symbol.iterator](),_s;!(_n=(_s=_i.next()).done);_n=true){_arr.push(_s.value);if(i&&_arr.length===i)break}}catch(err){_d=true;_e=err}finally{try{if(!_n&&_i["return"]!=null)_i["return"]()}finally{if(_d)throw _e}}return _arr}function _arrayWithHoles(arr){if(Array.isArray(arr))return arr}module.exports=function(input){if(!input)return[];if(typeof input!=="string"||input.match(/^\s+$/))return[];var lines=input.split("\n");if(lines.length===0)return[];var files=[];var currentFile=null;var currentChunk=null;var deletedLineCounter=0;var addedLineCounter=0;var normal=function normal(line){var _currentChunk;(_currentChunk=currentChunk)===null||_currentChunk===void 0?void 0:_currentChunk.changes.push({type:"normal",normal:true,ln1:deletedLineCounter++,ln2:addedLineCounter++,content:line})};var start=function start(line){var _parseFiles;var _ref=(_parseFiles=parseFiles(line))!==null&&_parseFiles!==void 0?_parseFiles:[],_ref2=_slicedToArray(_ref,2),fromFileName=_ref2[0],toFileName=_ref2[1];currentFile={chunks:[],deletions:0,additions:0,from:fromFileName,to:toFileName};files.push(currentFile)};var restart=function restart(){if(!currentFile||currentFile.chunks.length)start()};var newFile=function newFile(){restart();currentFile["new"]=true;currentFile.from="/dev/null"};var deletedFile=function deletedFile(){restart();currentFile.deleted=true;currentFile.to="/dev/null"};var index=function index(line){restart();currentFile.index=line.split(" ").slice(1)};var fromFile=function fromFile(line){restart();currentFile.from=parseOldOrNewFile(line)};var toFile=function toFile(line){restart();currentFile.to=parseOldOrNewFile(line)};var chunk=function chunk(line,match){if(!currentFile)return;var _match$slice=match.slice(1),_match$slice2=_slicedToArray(_match$slice,4),oldStart=_match$slice2[0],oldNumLines=_match$slice2[1],newStart=_match$slice2[2],newNumLines=_match$slice2[3];deletedLineCounter=+oldStart;addedLineCounter=+newStart;currentChunk={content:line,changes:[],oldStart:+oldStart,oldLines:+(oldNumLines||1),newStart:+newStart,newLines:+(newNumLines||1)};currentFile.chunks.push(currentChunk)};var del=function del(line){if(!currentChunk)return;currentChunk.changes.push({type:"del",del:true,ln:deletedLineCounter++,content:line});currentFile.deletions++};var add=function add(line){if(!currentChunk)return;currentChunk.changes.push({type:"add",add:true,ln:addedLineCounter++,content:line});currentFile.additions++};var eof=function eof(line){var _currentChunk$changes3;if(!currentChunk)return;var _currentChunk$changes=currentChunk.changes.slice(-1),_currentChunk$changes2=_slicedToArray(_currentChunk$changes,1),mostRecentChange=_currentChunk$changes2[0];currentChunk.changes.push((_currentChunk$changes3={type:mostRecentChange.type},_defineProperty(_currentChunk$changes3,mostRecentChange.type,true),_defineProperty(_currentChunk$changes3,"ln1",mostRecentChange.ln1),_defineProperty(_currentChunk$changes3,"ln2",mostRecentChange.ln2),_defineProperty(_currentChunk$changes3,"ln",mostRecentChange.ln),_defineProperty(_currentChunk$changes3,"content",line),_currentChunk$changes3))};var schema=[// TODO: better regexp to avoid detect normal line starting with diff
+[/^\s+/,normal],[/^diff\s/,start],[/^new file mode \d+$/,newFile],[/^deleted file mode \d+$/,deletedFile],[/^index\s[\da-zA-Z]+\.\.[\da-zA-Z]+(\s(\d+))?$/,index],[/^---\s/,fromFile],[/^\+\+\+\s/,toFile],[/^@@\s+-(\d+),?(\d+)?\s+\+(\d+),?(\d+)?\s@@/,chunk],[/^-/,del],[/^\+/,add],[/^\\ No newline at end of file$/,eof]];var parseLine=function parseLine(line){var _iterator=_createForOfIteratorHelper(schema),_step;try{for(_iterator.s();!(_step=_iterator.n()).done;){var _step$value=_slicedToArray(_step.value,2),pattern=_step$value[0],handler=_step$value[1];var match=line.match(pattern);if(match){handler(line,match);return true}}}catch(err){_iterator.e(err)}finally{_iterator.f()}return false};var _iterator2=_createForOfIteratorHelper(lines),_step2;try{for(_iterator2.s();!(_step2=_iterator2.n()).done;){var line=_step2.value;parseLine(line)}}catch(err){_iterator2.e(err)}finally{_iterator2.f()}return files};var fileNameDiffRegex=/a\/.*(?=["']? ["']?b\/)|b\/.*$/g;var gitFileHeaderRegex=/^(a|b)\//;var parseFiles=function parseFiles(line){var fileNames=line===null||line===void 0?void 0:line.match(fileNameDiffRegex);return fileNames===null||fileNames===void 0?void 0:fileNames.map(function(fileName){return fileName.replace(gitFileHeaderRegex,"").replace(/("|')$/,"")})};var qoutedFileNameRegex=/^\\?['"]|\\?['"]$/g;var parseOldOrNewFile=function parseOldOrNewFile(line){var fileName=leftTrimChars(line,"-+").trim();fileName=removeTimeStamp(fileName);return fileName.replace(qoutedFileNameRegex,"").replace(gitFileHeaderRegex,"")};var leftTrimChars=function leftTrimChars(string,trimmingChars){string=makeString(string);if(!trimmingChars&&String.prototype.trimLeft)return string.trimLeft();var trimmingString=formTrimmingString(trimmingChars);return string.replace(new RegExp("^".concat(trimmingString,"+")),"")};var timeStampRegex=/\t.*|\d{4}-\d\d-\d\d\s\d\d:\d\d:\d\d(.\d+)?\s(\+|-)\d\d\d\d/;var removeTimeStamp=function removeTimeStamp(string){var timeStamp=timeStampRegex.exec(string);if(timeStamp){string=string.substring(0,timeStamp.index).trim()}return string};var formTrimmingString=function formTrimmingString(trimmingChars){if(trimmingChars===null||trimmingChars===undefined)return"\\s";else if(trimmingChars instanceof RegExp)return trimmingChars.source;return"[".concat(makeString(trimmingChars).replace(/([.*+?^=!:${}()|[\]/\\])/g,"\\$1"),"]")};var makeString=function makeString(itemToConvert){return(itemToConvert!==null&&itemToConvert!==void 0?itemToConvert:"")+""};
 
 
 /***/ }),
@@ -49746,8 +49547,14 @@ const github_release_1 = __nccwpck_require__(3008);
 const releasers_1 = __nccwpck_require__(4606);
 const github_1 = __nccwpck_require__(9746);
 const constants_1 = __nccwpck_require__(2661);
+const manifest_1 = __nccwpck_require__(1999);
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const parseGithubRepoUrl = __nccwpck_require__(3396);
+function isManifestCmd(cmdOpts) {
+    const { command, options } = cmdOpts;
+    return ((command === 'manifest-pr' || command === 'manifest-release') &&
+        typeof options === 'object');
+}
 function isGitHubReleaseCmd(cmdOpts) {
     const { command, options } = cmdOpts;
     return command === 'github-release' && typeof options === 'object';
@@ -49758,20 +49565,38 @@ function isReleasePRCmd(cmdOpts) {
         typeof options === 'object');
 }
 function runCommand(command, options) {
+    const errMsg = `Invalid command(${command}) with options(${JSON.stringify(options)})`;
     let result;
     const cmdOpts = { command, options };
-    if (isGitHubReleaseCmd(cmdOpts)) {
+    if (isManifestCmd(cmdOpts)) {
+        const m = manifest(cmdOpts.options);
+        if (cmdOpts.command === 'manifest-pr') {
+            result = exports.factory.call(m, 'pullRequest');
+        }
+        else if (cmdOpts.command === 'manifest-release') {
+            result = exports.factory.call(m, 'githubRelease');
+        }
+        else {
+            throw new Error(errMsg);
+        }
+    }
+    else if (isGitHubReleaseCmd(cmdOpts)) {
         result = exports.factory.call(githubRelease(cmdOpts.options), 'run');
     }
     else if (isReleasePRCmd(cmdOpts)) {
-        let method = 'run';
-        if (command === 'latest-tag') {
-            method = 'latestTag';
+        const releasePr = releasePR(cmdOpts.options);
+        if (cmdOpts.command === 'release-pr') {
+            result = exports.factory.call(releasePr, 'run');
         }
-        result = exports.factory.call(releasePR(cmdOpts.options), method);
+        else if (cmdOpts.command === 'latest-tag') {
+            result = exports.factory.call(releasePr, 'latestTag');
+        }
+        else {
+            throw new Error(errMsg);
+        }
     }
     else {
-        throw new Error(`Invalid command(${command}) with options(${JSON.stringify(options)})`);
+        throw new Error(errMsg);
     }
     return result;
 }
@@ -49780,7 +49605,10 @@ function call(instance, method) {
         throw new Error(`No such method(${method}) on ${instance.constructor.name}`);
     }
     let result;
-    if (instance instanceof release_pr_1.ReleasePR) {
+    if (instance instanceof manifest_1.Manifest) {
+        result = instance[method]();
+    }
+    else if (instance instanceof release_pr_1.ReleasePR) {
         result = instance[method]();
     }
     else if (instance instanceof github_release_1.GitHubRelease) {
@@ -49807,6 +49635,11 @@ function getGitHubFactoryOpts(options) {
         },
         remaining,
     ];
+}
+function manifest(options) {
+    const [GHFactoryOptions, ManifestFactoryOptions] = getGitHubFactoryOpts(options);
+    const github = gitHubInstance(GHFactoryOptions);
+    return new manifest_1.Manifest({ github, ...ManifestFactoryOptions });
 }
 function githubRelease(options) {
     const [GHFactoryOptions, GHRAndRPFactoryOptions] = getGitHubFactoryOpts(options);
@@ -49857,6 +49690,7 @@ function releasePRClass(releaseType) {
 exports.factory = {
     gitHubInstance,
     githubRelease,
+    manifest,
     releasePR,
     releasePRClass,
     call,
@@ -50063,6 +49897,73 @@ class GitHub {
                 },
             });
         }
+    }
+    async commitsSinceShaRest(sha, path, per_page = 100) {
+        let page = 1;
+        let found = false;
+        const baseBranch = await this.getDefaultBranch();
+        const commits = [];
+        while (!found) {
+            const response = await this.request('GET /repos/{owner}/{repo}/commits{?sha,page,per_page,path}', {
+                owner: this.owner,
+                repo: this.repo,
+                sha: baseBranch,
+                page,
+                per_page,
+                path,
+            });
+            for (const commit of response.data) {
+                if (commit.sha === sha) {
+                    found = true;
+                    break;
+                }
+                // skip merge commits
+                if (commit.parents.length === 2) {
+                    continue;
+                }
+                commits.push([commit.sha, commit.commit.message]);
+            }
+            page++;
+        }
+        const ret = [];
+        for (const [ref, message] of commits) {
+            const files = [];
+            let page = 1;
+            let moreFiles = true;
+            while (moreFiles) {
+                // the "Get Commit" resource is a bit of an outlier in terms of GitHub's
+                // normal pagination: https://git.io/JmVZq
+                // The behavior is to return an object representing the commit, a
+                // property of which is an array of files. GitHub will return as many
+                // associated files as there are, up to a limit of 300, on the initial
+                // request. If there are more associated files, it will send "Links"
+                // headers to get the next set. There is a total limit of 3000
+                // files returned per commit.
+                // In practice, the links headers are just the same resourceID plus a
+                // "page=N" query parameter with "page=1" being the initial set.
+                //
+                // TODO: it is more robust to follow the link.next headers (in case
+                // GitHub ever changes the pattern) OR use ocktokit pagination for this
+                // endpoint when https://git.io/JmVll is addressed.
+                const response = (await this.request('GET /repos/{owner}/{repo}/commits/{ref}{?page}', { owner: this.owner, repo: this.repo, ref, page }));
+                const commitFiles = response.data.files;
+                if (!commitFiles) {
+                    moreFiles = false;
+                    break;
+                }
+                files.push(...commitFiles.map(f => { var _a; return (_a = f.filename) !== null && _a !== void 0 ? _a : ''; }));
+                // < 300 files means we hit the end
+                // page === 10 means we're at 3000 and that's the limit GH is gonna
+                // cough up anyway.
+                if (commitFiles.length < 300 || page === 10) {
+                    moreFiles = false;
+                    break;
+                }
+                page++;
+            }
+            ret.push({ sha: ref, message, files });
+        }
+        return ret;
     }
     // Commit.files only for commits from PRs.
     async commitsSinceSha(sha, perPage = 100, labels = false, path = null) {
@@ -51245,6 +51146,476 @@ Object.defineProperty(exports, "Ruby", ({ enumerable: true, get: function () { r
 
 /***/ }),
 
+/***/ 1999:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Manifest = void 0;
+const commit_split_1 = __nccwpck_require__(2475);
+const constants_1 = __nccwpck_require__(2661);
+const branch_name_1 = __nccwpck_require__(6344);
+const _1 = __nccwpck_require__(4363);
+const release_please_manifest_1 = __nccwpck_require__(9817);
+const checkpoint_1 = __nccwpck_require__(5279);
+const github_release_1 = __nccwpck_require__(3008);
+class Manifest {
+    constructor(options) {
+        this.gh = options.github;
+        this.configFileName = options.configFile || constants_1.RELEASE_PLEASE_CONFIG;
+        this.manifestFileName = options.manifestFile || constants_1.RELEASE_PLEASE_MANIFEST;
+        this.checkpoint = options.checkpoint || checkpoint_1.checkpoint;
+    }
+    async getBranchName() {
+        return branch_name_1.BranchName.ofTargetBranch(await this.gh.getDefaultBranch());
+    }
+    async getFileJson(fileName, sha) {
+        let content;
+        try {
+            if (sha) {
+                content = await this.gh.getFileContentsWithSimpleAPI(fileName, sha, false);
+            }
+            else {
+                content = await this.gh.getFileContents(fileName);
+            }
+        }
+        catch (e) {
+            this.checkpoint(`Failed to get ${fileName} at ${sha !== null && sha !== void 0 ? sha : 'HEAD'}: ${e.status}`, checkpoint_1.CheckpointType.Failure);
+            // If a sha is provided this is a request for the manifest file at the
+            // last merged Release PR. The only reason it would not exist is if a user
+            // checkedout that branch and deleted the manifest file right before
+            // merging. There is no recovery from that so we'll fall back to using
+            // the manifest at the tip of the defaultBranch.
+            if (sha === undefined) {
+                // !sha means this is a request against the tip of the defaultBranch and
+                // we require that the manifest and config exist there. If they don't,
+                // they can be added and this exception will not be thrown.
+                throw e;
+            }
+            return;
+        }
+        return JSON.parse(content.parsedContent);
+    }
+    async getManifestJson(sha) {
+        // cache headManifest since it's loaded in validate() as well as later on
+        // and we never write to it.
+        let manifest;
+        if (sha === undefined) {
+            if (!this.headManifest) {
+                this.headManifest = await this.getFileJson(this.manifestFileName);
+            }
+            manifest = this.headManifest;
+        }
+        else {
+            manifest = await this.getFileJson(this.manifestFileName, sha);
+        }
+        return manifest;
+    }
+    async getManifestVersions(sha, newPaths) {
+        let manifestJson;
+        const defaultBranch = await this.gh.getDefaultBranch();
+        const bootstrapMsg = `Bootstrapping from ${this.manifestFileName} ` +
+            `at tip of ${defaultBranch}`;
+        if (sha === undefined) {
+            this.checkpoint(bootstrapMsg, checkpoint_1.CheckpointType.Failure);
+        }
+        if (sha === false) {
+            this.checkpoint(`${bootstrapMsg} for missing paths [${newPaths.join(', ')}]`, checkpoint_1.CheckpointType.Failure);
+        }
+        let atSha = 'tip';
+        if (!sha) {
+            manifestJson = await this.getManifestJson();
+        }
+        else {
+            // try to retrieve manifest from last release sha.
+            const maybeManifestJson = await this.getManifestJson(sha);
+            atSha = sha;
+            if (maybeManifestJson === undefined) {
+                // user deleted manifest from last release PR before merging.
+                this.checkpoint(bootstrapMsg, checkpoint_1.CheckpointType.Failure);
+                manifestJson = await this.getManifestJson();
+                atSha = 'tip';
+            }
+            else {
+                manifestJson = maybeManifestJson;
+            }
+        }
+        const parsed = new Map(Object.entries(manifestJson));
+        if (sha === false) {
+            return parsed;
+        }
+        else {
+            return [parsed, atSha];
+        }
+    }
+    async getConfigJson() {
+        var _a, _b, _c, _d, _e;
+        // cache config since it's loaded in validate() as well as later on and we
+        // never write to it.
+        if (!this.configFile) {
+            const config = await this.getFileJson(this.configFileName);
+            const packages = [];
+            for (const pkgPath in config.packages) {
+                const pkgCfg = config.packages[pkgPath];
+                const pkg = {
+                    path: pkgPath,
+                    releaseType: (_b = (_a = pkgCfg['release-type']) !== null && _a !== void 0 ? _a : config['release-type']) !== null && _b !== void 0 ? _b : 'node',
+                    packageName: pkgCfg['package-name'],
+                    bumpMinorPreMajor: (_c = pkgCfg['bump-minor-pre-major']) !== null && _c !== void 0 ? _c : config['bump-minor-pre-major'],
+                    changelogSections: (_d = pkgCfg['changelog-sections']) !== null && _d !== void 0 ? _d : config['changelog-sections'],
+                    changelogPath: pkgCfg['changelog-path'],
+                    releaseAs: this.resolveReleaseAs(pkgCfg['release-as'], config['release-as']),
+                    releaseDraft: !!((_e = pkgCfg['release-draft']) !== null && _e !== void 0 ? _e : config['release-draft']),
+                };
+                packages.push(pkg);
+            }
+            this.configFile = { parsedPackages: packages, ...config };
+        }
+        return this.configFile;
+    }
+    // Default release-as only considered if non-empty string.
+    // Per-pkg release-as may be:
+    //   1. undefined: use default release-as if present, otherwise normal version
+    //      resolution (auto-increment from CC, fallback to defaultInitialVersion)
+    //   1. non-empty string: use this version
+    //   2. empty string: override default release-as if present, otherwise normal
+    //      version resolution.
+    resolveReleaseAs(pkgRA, defaultRA) {
+        let releaseAs;
+        if (defaultRA) {
+            releaseAs = defaultRA;
+        }
+        if (pkgRA !== undefined) {
+            releaseAs = pkgRA;
+        }
+        if (!releaseAs) {
+            releaseAs = undefined;
+        }
+        return releaseAs;
+    }
+    async getPackagesToRelease(commits, sha) {
+        const packages = (await this.getConfigJson()).parsedPackages;
+        const [manifestVersions, atSha] = await this.getManifestVersions(sha);
+        const cs = new commit_split_1.CommitSplit({
+            includeEmpty: true,
+            packagePaths: packages.map(p => p.path),
+        });
+        const commitsPerPath = cs.split(commits);
+        const packagesToRelease = {};
+        const missingVersionPaths = [];
+        const defaultBranch = await this.gh.getDefaultBranch();
+        for (const pkg of packages) {
+            const commits = commitsPerPath[pkg.path];
+            if (!commits || commits.length === 0) {
+                continue;
+            }
+            const lastVersion = manifestVersions.get(pkg.path);
+            if (!lastVersion) {
+                this.checkpoint(`Failed to find version for ${pkg.path} in ` +
+                    `${this.manifestFileName} at ${atSha} of ${defaultBranch}`, checkpoint_1.CheckpointType.Failure);
+                missingVersionPaths.push(pkg.path);
+            }
+            else {
+                this.checkpoint(`Found version ${lastVersion} for ${pkg.path} in ` +
+                    `${this.manifestFileName} at ${atSha} of ${defaultBranch}`, checkpoint_1.CheckpointType.Success);
+            }
+            const { releaseDraft, ...rest } = pkg;
+            const releaserOptions = {
+                monorepoTags: true,
+                draft: releaseDraft,
+                ...rest,
+            };
+            packagesToRelease[pkg.path] = {
+                commits,
+                lastVersion,
+                releaserOptions,
+                ...pkg,
+            };
+        }
+        if (missingVersionPaths.length > 0) {
+            const headManifestVersions = await this.getManifestVersions(false, missingVersionPaths);
+            for (const missingVersionPath of missingVersionPaths) {
+                const headVersion = headManifestVersions.get(missingVersionPath);
+                if (headVersion === undefined) {
+                    this.checkpoint(`Failed to find version for ${missingVersionPath} in ` +
+                        `${this.manifestFileName} at tip of ${defaultBranch}`, checkpoint_1.CheckpointType.Failure);
+                }
+                packagesToRelease[missingVersionPath].lastVersion = headVersion;
+            }
+        }
+        return Object.values(packagesToRelease);
+    }
+    async validateJsonFile(getFileMethod, fileName) {
+        let response = {
+            valid: false,
+            obj: undefined,
+        };
+        try {
+            const obj = await this[getFileMethod]();
+            if (obj.constructor.name === 'Object') {
+                response = { valid: true, obj: obj };
+            }
+        }
+        catch (e) {
+            let errMsg;
+            if (e instanceof SyntaxError) {
+                errMsg = `Invalid JSON in ${fileName}`;
+            }
+            else {
+                errMsg = `Unable to ${getFileMethod}(${fileName}): ${e.message}`;
+            }
+            this.checkpoint(errMsg, checkpoint_1.CheckpointType.Failure);
+        }
+        return response;
+    }
+    async validate() {
+        var _a;
+        const configValidation = await this.validateJsonFile('getConfigJson', this.configFileName);
+        let validConfig = false;
+        if (configValidation.valid) {
+            const obj = configValidation.obj;
+            validConfig = !!Object.keys((_a = obj.packages) !== null && _a !== void 0 ? _a : {}).length;
+            if (!validConfig) {
+                this.checkpoint(`No packages found: ${this.configFileName}`, checkpoint_1.CheckpointType.Failure);
+            }
+        }
+        const manifestValidation = await this.validateJsonFile('getManifestJson', this.manifestFileName);
+        let validManifest = false;
+        if (manifestValidation.valid) {
+            validManifest = true;
+            const versions = new Map(Object.entries(manifestValidation.obj));
+            for (const [_, version] of versions) {
+                if (typeof version !== 'string') {
+                    validManifest = false;
+                    this.checkpoint(`${this.manifestFileName} must only contain string values`, checkpoint_1.CheckpointType.Failure);
+                    break;
+                }
+            }
+        }
+        return validConfig && validManifest;
+    }
+    async runReleasers(packages, sha) {
+        const manifestUpdates = new Map();
+        const openPRPackages = [];
+        for (const pkg of packages) {
+            const { releaseType, ...options } = pkg.releaserOptions;
+            const releaserClass = _1.factory.releasePRClass(releaseType);
+            const releasePR = new releaserClass({ github: this.gh, ...options });
+            const pkgName = await releasePR.getPackageName();
+            this.checkpoint(`Processing package: ${releaserClass.name}(${pkgName.name})`, checkpoint_1.CheckpointType.Success);
+            if (pkg.lastVersion === undefined) {
+                this.checkpoint(`Falling back to default version for ${releaserClass.name}(${pkgName.name}): ${releasePR.defaultInitialVersion()}`, checkpoint_1.CheckpointType.Failure);
+            }
+            const openPROptions = await releasePR.getOpenPROptions(pkg.commits, pkg.lastVersion
+                ? {
+                    name: pkgName.getComponent() +
+                        releasePR.tagSeparator() +
+                        'v' +
+                        pkg.lastVersion,
+                    sha: sha !== null && sha !== void 0 ? sha : 'beginning of time',
+                    version: pkg.lastVersion,
+                }
+                : undefined);
+            if (openPROptions) {
+                openPRPackages.push({ name: releasePR.packageName, openPROptions });
+                manifestUpdates.set(pkg.path, openPROptions.version);
+            }
+        }
+        return [manifestUpdates, openPRPackages];
+    }
+    async buildManifestPR(manifestUpdates, openPRPackages) {
+        let body = ':robot: I have created a release \\*beep\\* \\*boop\\*';
+        const updates = [];
+        for (const openPRPackage of openPRPackages) {
+            body +=
+                '\n\n---\n' +
+                    `${openPRPackage.name}: ${openPRPackage.openPROptions.version}\n` +
+                    `${openPRPackage.openPROptions.changelogEntry}`;
+            updates.push(...openPRPackage.openPROptions.updates);
+        }
+        // TODO: `Update` interface to supply cached contents for use in
+        // GitHub.getChangeSet processing could be simplified to just use a
+        // string - no need for a full blown GitHubFileContents
+        const manifestContents = {
+            sha: '',
+            parsedContent: '',
+            content: Buffer.from(JSON.stringify(await this.getManifestJson())).toString('base64'),
+        };
+        updates.push(new release_please_manifest_1.ReleasePleaseManifest({
+            changelogEntry: '',
+            packageName: '',
+            path: this.manifestFileName,
+            version: '',
+            versions: manifestUpdates,
+            contents: manifestContents,
+        }));
+        body +=
+            '\n\nThis PR was generated with [Release Please]' +
+                `(https://github.com/googleapis/${constants_1.RELEASE_PLEASE}). See [documentation]` +
+                `(https://github.com/googleapis/${constants_1.RELEASE_PLEASE}#${constants_1.RELEASE_PLEASE}).`;
+        return [body, updates];
+    }
+    async commitsSinceSha(sha) {
+        let fromSha = sha;
+        if (fromSha === undefined) {
+            fromSha = (await this.getConfigJson())['bootstrap-sha'];
+        }
+        return this.gh.commitsSinceShaRest(fromSha);
+    }
+    async pullRequest() {
+        const valid = await this.validate();
+        if (!valid) {
+            return;
+        }
+        const branchName = (await this.getBranchName()).toString();
+        const lastMergedPR = await this.gh.lastMergedPRByHeadBranch(branchName);
+        const commits = await this.commitsSinceSha(lastMergedPR === null || lastMergedPR === void 0 ? void 0 : lastMergedPR.sha);
+        const packages = await this.getPackagesToRelease(commits, lastMergedPR === null || lastMergedPR === void 0 ? void 0 : lastMergedPR.sha);
+        const [manifestUpdates, openPRPackages] = await this.runReleasers(packages, lastMergedPR === null || lastMergedPR === void 0 ? void 0 : lastMergedPR.sha);
+        if (openPRPackages.length === 0) {
+            this.checkpoint('No user facing changes to release', checkpoint_1.CheckpointType.Success);
+            return;
+        }
+        const [body, updates] = await this.buildManifestPR(manifestUpdates, openPRPackages);
+        const pr = await this.gh.openPR({
+            branch: branchName,
+            title: 'chore: release',
+            body: body,
+            updates,
+            labels: constants_1.DEFAULT_LABELS,
+        });
+        if (pr) {
+            await this.gh.addLabels(constants_1.DEFAULT_LABELS, pr);
+        }
+        return pr;
+    }
+    async githubRelease() {
+        var _a;
+        const valid = await this.validate();
+        if (!valid) {
+            return;
+        }
+        const branchName = (await this.getBranchName()).toString();
+        const lastMergedPR = await this.gh.lastMergedPRByHeadBranch(branchName);
+        if (lastMergedPR === undefined) {
+            this.checkpoint('Unable to find last merged Manifest PR for tagging', checkpoint_1.CheckpointType.Failure);
+            return;
+        }
+        if (lastMergedPR.labels.includes(github_release_1.GITHUB_RELEASE_LABEL)) {
+            this.checkpoint('Releases already created for last merged release PR', checkpoint_1.CheckpointType.Success);
+            return;
+        }
+        if (!lastMergedPR.labels.includes(constants_1.DEFAULT_LABELS[0])) {
+            this.checkpoint(`Warning: last merged PR(#${lastMergedPR.number}) is missing ` +
+                `label "${constants_1.DEFAULT_LABELS[0]}" but has not yet been ` +
+                `labeled "${github_release_1.GITHUB_RELEASE_LABEL}". If PR(#${lastMergedPR.number}) ` +
+                'is meant to be a release PR, please apply the ' +
+                `label "${constants_1.DEFAULT_LABELS[0]}".`, checkpoint_1.CheckpointType.Failure);
+            return;
+        }
+        const packages = await this.getPackagesToRelease(
+        // use the lastMergedPR.sha as a Commit: lastMergedPR.files will inform
+        // getPackagesToRelease() what packages had changes (i.e. at least one
+        // file under their path changed in the lastMergedPR such as
+        // "packages/mypkg/package.json"). These are exactly the packages we want
+        // to create releases/tags for.
+        [{ sha: lastMergedPR.sha, message: '', files: lastMergedPR.files }], lastMergedPR.sha);
+        const releases = {};
+        let allReleasesCreated = !!packages.length;
+        for (const pkg of packages) {
+            const { releaseType, draft, ...options } = pkg.releaserOptions;
+            const releaserClass = _1.factory.releasePRClass(releaseType);
+            const releasePR = new releaserClass({ github: this.gh, ...options });
+            const pkgName = (await releasePR.getPackageName()).name;
+            const pkgLogDisp = `${releaserClass.name}(${pkgName})`;
+            if (!pkg.lastVersion) {
+                // a user manually modified the manifest file on the release branch
+                // right before merging it and deleted the entry for this pkg.
+                this.checkpoint(`Unable to find last version for ${pkgLogDisp}.`, checkpoint_1.CheckpointType.Failure);
+                releases[pkg.path] = undefined;
+                continue;
+            }
+            this.checkpoint('Creating release for ' + `${pkgLogDisp}@${pkg.lastVersion}`, checkpoint_1.CheckpointType.Success);
+            const releaser = new github_release_1.GitHubRelease({
+                github: this.gh,
+                releasePR,
+                draft,
+            });
+            let release;
+            try {
+                release = await releaser.createRelease(pkg.lastVersion, lastMergedPR);
+            }
+            catch (err) {
+                // There is no transactional bulk create releases API. Previous runs
+                // may have failed due to transient infrastructure problems part way
+                // through creating releases. Here we skip any releases that were
+                // already successfully created.
+                //
+                // Note about `draft` releases: The GitHub API Release unique key is
+                // `tag_name`. However, if `draft` is true, no git tag is created. Thus
+                // multiple `draft` releases can be created with the exact same inputs.
+                // (It's a tad confusing because `tag_name` still comes back populated
+                // in these calls but the tag doesn't actually exist).
+                // A draft release can even be created with a `tag_name` referring to an
+                // existing tag referenced by another release.
+                // However, GitHub will prevent "publishing" any draft release that
+                // would cause a duplicate tag to be created. release-please manifest
+                // users specifying the "release-draft" option could run into this
+                // duplicate releases scenario. It's easy enough to just delete the
+                // duplicate draft entries in the UI (or API).
+                if (err.status === 422 && ((_a = err.errors) === null || _a === void 0 ? void 0 : _a.length)) {
+                    if (err.errors[0].code === 'already_exists' &&
+                        err.errors[0].field === 'tag_name') {
+                        this.checkpoint(`Release for ${pkgLogDisp}@${pkg.lastVersion} already exists`, checkpoint_1.CheckpointType.Success);
+                    }
+                }
+                else {
+                    // PR will not be tagged with GITHUB_RELEASE_LABEL so another run
+                    // can try again.
+                    allReleasesCreated = false;
+                    await this.gh.commentOnIssue(`:robot: Failed to create release for ${pkgName} :cloud:`, lastMergedPR.number);
+                    this.checkpoint('Failed to create release for ' +
+                        `${pkgLogDisp}@${pkg.lastVersion}: ${err.message}`, checkpoint_1.CheckpointType.Failure);
+                }
+                releases[pkg.path] = undefined;
+                continue;
+            }
+            if (release) {
+                await this.gh.commentOnIssue(`:robot: Release for ${pkgName} is at ${release.html_url} :sunflower:`, lastMergedPR.number);
+                releases[pkg.path] = releaser.releaseResponse({
+                    release,
+                    version: pkg.lastVersion,
+                    sha: lastMergedPR.sha,
+                    number: lastMergedPR.number,
+                });
+            }
+        }
+        if (allReleasesCreated) {
+            await this.gh.addLabels([github_release_1.GITHUB_RELEASE_LABEL], lastMergedPR.number);
+            await this.gh.removeLabels(constants_1.DEFAULT_LABELS, lastMergedPR.number);
+        }
+        return releases;
+    }
+}
+exports.Manifest = Manifest;
+//# sourceMappingURL=manifest.js.map
+
+/***/ }),
+
 /***/ 6786:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -51350,6 +51721,15 @@ class ReleasePR {
     }
     tagSeparator() {
         return '-';
+    }
+    async normalizeTagName(versionOrTagName) {
+        if (!this.monorepoTags) {
+            return versionOrTagName.replace(/^v?/, 'v');
+        }
+        const pkgName = await this.getPackageName();
+        const tagPrefix = pkgName.getComponent() + this.tagSeparator() + 'v';
+        const re = new RegExp(`^(${tagPrefix}|)`);
+        return versionOrTagName.replace(re, tagPrefix);
     }
     async coerceReleaseCandidate(cc, latestTag, preRelease = false) {
         var _a, _b;
@@ -51602,7 +51982,7 @@ class ReleasePR {
                 continue;
             }
             return {
-                name: `v${normalizedVersion}`,
+                name: await this.normalizeTagName(normalizedVersion),
                 sha: mergedPullRequest.sha,
                 version: normalizedVersion,
             };
@@ -51711,8 +52091,10 @@ class GoYoshi extends release_pr_1.ReleasePR {
         // PR references these other commits:
         const changelogEntry = (await cc.generateChangelogEntry({
             version: candidate.version,
-            currentTag: `v${candidate.version}`,
-            previousTag: candidate.previousTag,
+            currentTag: await this.normalizeTagName(candidate.version),
+            previousTag: candidate.previousTag
+                ? await this.normalizeTagName(candidate.previousTag)
+                : undefined,
         })).replace(/, closes /g, ', refs ');
         // don't create a release candidate until user facing changes
         // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
@@ -52617,8 +52999,10 @@ class Node extends release_pr_1.ReleasePR {
         const candidate = await this.coerceReleaseCandidate(cc, latestTag);
         const changelogEntry = await cc.generateChangelogEntry({
             version: candidate.version,
-            currentTag: `v${candidate.version}`,
-            previousTag: candidate.previousTag,
+            currentTag: await this.normalizeTagName(candidate.version),
+            previousTag: candidate.previousTag
+                ? await this.normalizeTagName(candidate.previousTag)
+                : undefined,
         });
         // don't create a release candidate until user facing changes
         // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
@@ -53068,8 +53452,10 @@ class Python extends release_pr_1.ReleasePR {
         const candidate = await this.coerceReleaseCandidate(cc, latestTag);
         const changelogEntry = await cc.generateChangelogEntry({
             version: candidate.version,
-            currentTag: `v${candidate.version}`,
-            previousTag: candidate.previousTag,
+            currentTag: await this.normalizeTagName(candidate.version),
+            previousTag: candidate.previousTag
+                ? await this.normalizeTagName(candidate.previousTag)
+                : undefined,
         });
         // don't create a release candidate until user facing changes
         // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
@@ -53333,8 +53719,10 @@ class Ruby extends release_pr_1.ReleasePR {
         const candidate = await this.coerceReleaseCandidate(cc, latestTag);
         const changelogEntry = await cc.generateChangelogEntry({
             version: candidate.version,
-            currentTag: `v${candidate.version}`,
-            previousTag: candidate.previousTag,
+            currentTag: await this.normalizeTagName(candidate.version),
+            previousTag: candidate.previousTag
+                ? await this.normalizeTagName(candidate.previousTag)
+                : undefined,
         });
         // don't create a release candidate until user facing changes
         // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
@@ -53411,12 +53799,6 @@ const common_1 = __nccwpck_require__(1659);
 class Rust extends release_pr_1.ReleasePR {
     async _run() {
         const prefix = this.monorepoTags ? `${this.packageName}-` : undefined;
-        const addPrefix = (tagOrBranch) => {
-            if (typeof tagOrBranch === 'string') {
-                return prefix ? `${prefix}${tagOrBranch}` : `${tagOrBranch}`;
-            }
-            return tagOrBranch;
-        };
         const latestTag = await this.latestTag(prefix);
         const commits = await this.commits({
             sha: latestTag ? latestTag.sha : undefined,
@@ -53432,10 +53814,10 @@ class Rust extends release_pr_1.ReleasePR {
         const candidate = await this.coerceReleaseCandidate(cc, latestTag);
         const changelogEntry = await cc.generateChangelogEntry({
             version: candidate.version,
-            // those need to be prefixed so that the links generated by
-            // the changelog generator go to the proper tags
-            currentTag: addPrefix(`v${candidate.version}`),
-            previousTag: addPrefix(candidate.previousTag),
+            currentTag: await this.normalizeTagName(candidate.version),
+            previousTag: candidate.previousTag
+                ? await this.normalizeTagName(candidate.previousTag)
+                : undefined,
         });
         // don't create a release candidate until user facing changes
         // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
@@ -54415,6 +54797,49 @@ class VersionPy {
 }
 exports.VersionPy = VersionPy;
 //# sourceMappingURL=version-py.js.map
+
+/***/ }),
+
+/***/ 9817:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ReleasePleaseManifest = void 0;
+class ReleasePleaseManifest {
+    constructor(options) {
+        this.changelogEntry = '';
+        this.version = '';
+        this.packageName = '';
+        this.create = false;
+        this.path = options.path;
+        this.versions = options.versions;
+        this.contents = options.contents;
+    }
+    updateContent(content) {
+        const parsed = JSON.parse(content);
+        for (const [path, version] of this.versions) {
+            parsed[path] = version;
+        }
+        return JSON.stringify(parsed, Object.keys(parsed).sort(), 2) + '\n';
+    }
+}
+exports.ReleasePleaseManifest = ReleasePleaseManifest;
+//# sourceMappingURL=release-please-manifest.js.map
 
 /***/ }),
 
@@ -62297,23 +62722,35 @@ function openFile (file, sonic) {
   sonic._opening = true
   sonic._writing = true
   sonic._asyncDrainScheduled = false
-  sonic.file = file
 
   // NOTE: 'error' and 'ready' events emitted below only relevant when sonic.sync===false
   // for sync mode, there is no way to add a listener that will receive these
 
   function fileOpened (err, fd) {
     if (err) {
-      sonic.emit('error', err)
+      sonic._reopening = false
+      sonic._writing = false
+      sonic._opening = false
+
+      if (sonic.sync) {
+        process.nextTick(() => sonic.emit('error', err))
+      } else {
+        sonic.emit('error', err)
+      }
       return
     }
 
     sonic.fd = fd
+    sonic.file = file
     sonic._reopening = false
     sonic._opening = false
     sonic._writing = false
 
-    sonic.emit('ready')
+    if (sonic.sync) {
+      process.nextTick(() => sonic.emit('ready'))
+    } else {
+      sonic.emit('ready')
+    }
 
     if (sonic._reopening) {
       return
@@ -62327,9 +62764,13 @@ function openFile (file, sonic) {
   }
 
   if (sonic.sync) {
-    const fd = fs.openSync(file, 'a')
-    fileOpened(null, fd)
-    process.nextTick(() => sonic.emit('ready'))
+    try {
+      const fd = fs.openSync(file, 'a')
+      fileOpened(null, fd)
+    } catch (err) {
+      fileOpened(err)
+      throw err
+    }
   } else {
     fs.open(file, 'a', fileOpened)
   }
@@ -62387,6 +62828,11 @@ function SonicBoom (opts) {
           }, BUSY_WRITE_TIMEOUT)
         }
       } else {
+        // The error maybe recoverable later, so just put data back to this._buf
+        this._buf = this._writingBuf + this._buf
+        this._writingBuf = ''
+        this._writing = false
+
         this.emit('error', err)
       }
       return
@@ -62510,9 +62956,14 @@ SonicBoom.prototype.reopen = function (file) {
     return
   }
 
-  fs.close(this.fd, (err) => {
-    if (err) {
-      return this.emit('error', err)
+  const fd = this.fd
+  this.once('ready', () => {
+    if (fd !== this.fd) {
+      fs.close(fd, (err) => {
+        if (err) {
+          return this.emit('error', err)
+        }
+      })
     }
   })
 
@@ -67141,7 +67592,7 @@ module.exports = eval("require")("pino-pretty");
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"_args\":[[\"pino@6.11.1\",\"/home/runner/work/release-please-action/release-please-action\"]],\"_from\":\"pino@6.11.1\",\"_id\":\"pino@6.11.1\",\"_inBundle\":false,\"_integrity\":\"sha512-PoDR/4jCyaP1k2zhuQ4N0NuhaMtei+C9mUHBRRJQujexl/bq3JkeL2OC23ada6Np3zeUMHbO4TGzY2D/rwZX3w==\",\"_location\":\"/pino\",\"_phantomChildren\":{},\"_requested\":{\"type\":\"version\",\"registry\":true,\"raw\":\"pino@6.11.1\",\"name\":\"pino\",\"escapedName\":\"pino\",\"rawSpec\":\"6.11.1\",\"saveSpec\":null,\"fetchSpec\":\"6.11.1\"},\"_requiredBy\":[\"/code-suggester\"],\"_resolved\":\"https://registry.npmjs.org/pino/-/pino-6.11.1.tgz\",\"_spec\":\"6.11.1\",\"_where\":\"/home/runner/work/release-please-action/release-please-action\",\"author\":{\"name\":\"Matteo Collina\",\"email\":\"hello@matteocollina.com\"},\"bin\":{\"pino\":\"bin.js\"},\"browser\":\"./browser.js\",\"bugs\":{\"url\":\"https://github.com/pinojs/pino/issues\"},\"contributors\":[{\"name\":\"David Mark Clements\",\"email\":\"huperekchuno@googlemail.com\"},{\"name\":\"James Sumners\",\"email\":\"james.sumners@gmail.com\"},{\"name\":\"Thomas Watson Steen\",\"email\":\"w@tson.dk\",\"url\":\"https://twitter.com/wa7son\"}],\"dependencies\":{\"fast-redact\":\"^3.0.0\",\"fast-safe-stringify\":\"^2.0.7\",\"flatstr\":\"^1.0.12\",\"pino-std-serializers\":\"^3.1.0\",\"quick-format-unescaped\":\"^4.0.1\",\"sonic-boom\":\"^1.0.2\"},\"description\":\"super fast, all natural json logger\",\"devDependencies\":{\"airtap\":\"3.0.0\",\"benchmark\":\"^2.1.4\",\"bole\":\"^4.0.0\",\"bunyan\":\"^1.8.14\",\"docsify-cli\":\"^4.4.1\",\"eslint\":\"^7.17.0\",\"eslint-config-standard\":\"^16.0.2\",\"eslint-plugin-import\":\"^2.22.1\",\"eslint-plugin-node\":\"^11.1.0\",\"eslint-plugin-promise\":\"^4.2.1\",\"execa\":\"^4.0.0\",\"fastbench\":\"^1.0.1\",\"flush-write-stream\":\"^2.0.0\",\"import-fresh\":\"^3.2.1\",\"log\":\"^6.0.0\",\"loglevel\":\"^1.6.7\",\"pino-pretty\":\"^4.1.0\",\"pre-commit\":\"^1.2.2\",\"proxyquire\":\"^2.1.3\",\"pump\":\"^3.0.0\",\"semver\":\"^7.0.0\",\"split2\":\"^3.1.1\",\"steed\":\"^1.1.3\",\"strip-ansi\":\"^6.0.0\",\"tap\":\"^14.10.8\",\"tape\":\"^5.0.0\",\"through2\":\"^4.0.0\",\"winston\":\"^3.3.3\"},\"files\":[\"pino.js\",\"bin.js\",\"browser.js\",\"pretty.js\",\"usage.txt\",\"test\",\"docs\",\"example.js\",\"lib\"],\"homepage\":\"http://getpino.io\",\"keywords\":[\"fast\",\"logger\",\"stream\",\"json\"],\"license\":\"MIT\",\"main\":\"pino.js\",\"name\":\"pino\",\"precommit\":\"test\",\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/pinojs/pino.git\"},\"scripts\":{\"bench\":\"node benchmarks/utils/runbench all\",\"bench-basic\":\"node benchmarks/utils/runbench basic\",\"bench-child\":\"node benchmarks/utils/runbench child\",\"bench-child-child\":\"node benchmarks/utils/runbench child-child\",\"bench-child-creation\":\"node benchmarks/utils/runbench child-creation\",\"bench-deep-object\":\"node benchmarks/utils/runbench deep-object\",\"bench-formatters\":\"node benchmarks/utils/runbench formatters\",\"bench-longs-tring\":\"node benchmarks/utils/runbench long-string\",\"bench-multi-arg\":\"node benchmarks/utils/runbench multi-arg\",\"bench-object\":\"node benchmarks/utils/runbench object\",\"browser-test\":\"airtap --local 8080 test/browser*test.js\",\"cov-ui\":\"tap --coverage-report=html test/*test.js test/*/*test.js\",\"docs\":\"docsify serve\",\"lint\":\"eslint .\",\"test\":\"npm run lint && tap --100 test/*test.js test/*/*test.js\",\"update-bench-doc\":\"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md\"},\"version\":\"6.11.1\"}");
+module.exports = JSON.parse("{\"_args\":[[\"pino@6.11.2\",\"/home/runner/work/release-please-action/release-please-action\"]],\"_from\":\"pino@6.11.2\",\"_id\":\"pino@6.11.2\",\"_inBundle\":false,\"_integrity\":\"sha512-bmzxwbrIPxQUlAuMkF4PWVErUGERU4z37HazlhflKFg08crsNE3fACGN6gPwg5xtKOK47Ux5cZm8YCuLV4wWJg==\",\"_location\":\"/pino\",\"_phantomChildren\":{},\"_requested\":{\"type\":\"version\",\"registry\":true,\"raw\":\"pino@6.11.2\",\"name\":\"pino\",\"escapedName\":\"pino\",\"rawSpec\":\"6.11.2\",\"saveSpec\":null,\"fetchSpec\":\"6.11.2\"},\"_requiredBy\":[\"/code-suggester\"],\"_resolved\":\"https://registry.npmjs.org/pino/-/pino-6.11.2.tgz\",\"_spec\":\"6.11.2\",\"_where\":\"/home/runner/work/release-please-action/release-please-action\",\"author\":{\"name\":\"Matteo Collina\",\"email\":\"hello@matteocollina.com\"},\"bin\":{\"pino\":\"bin.js\"},\"browser\":\"./browser.js\",\"bugs\":{\"url\":\"https://github.com/pinojs/pino/issues\"},\"contributors\":[{\"name\":\"David Mark Clements\",\"email\":\"huperekchuno@googlemail.com\"},{\"name\":\"James Sumners\",\"email\":\"james.sumners@gmail.com\"},{\"name\":\"Thomas Watson Steen\",\"email\":\"w@tson.dk\",\"url\":\"https://twitter.com/wa7son\"}],\"dependencies\":{\"fast-redact\":\"^3.0.0\",\"fast-safe-stringify\":\"^2.0.7\",\"flatstr\":\"^1.0.12\",\"pino-std-serializers\":\"^3.1.0\",\"quick-format-unescaped\":\"4.0.1\",\"sonic-boom\":\"^1.0.2\"},\"description\":\"super fast, all natural json logger\",\"devDependencies\":{\"airtap\":\"4.0.3\",\"benchmark\":\"^2.1.4\",\"bole\":\"^4.0.0\",\"bunyan\":\"^1.8.14\",\"docsify-cli\":\"^4.4.1\",\"eslint\":\"^7.17.0\",\"eslint-config-standard\":\"^16.0.2\",\"eslint-plugin-import\":\"^2.22.1\",\"eslint-plugin-node\":\"^11.1.0\",\"eslint-plugin-promise\":\"^4.2.1\",\"execa\":\"^5.0.0\",\"fastbench\":\"^1.0.1\",\"flush-write-stream\":\"^2.0.0\",\"import-fresh\":\"^3.2.1\",\"log\":\"^6.0.0\",\"loglevel\":\"^1.6.7\",\"pino-pretty\":\"^4.1.0\",\"pre-commit\":\"^1.2.2\",\"proxyquire\":\"^2.1.3\",\"pump\":\"^3.0.0\",\"semver\":\"^7.0.0\",\"split2\":\"^3.1.1\",\"steed\":\"^1.1.3\",\"strip-ansi\":\"^6.0.0\",\"tap\":\"^14.10.8\",\"tape\":\"^5.0.0\",\"through2\":\"^4.0.0\",\"winston\":\"^3.3.3\"},\"files\":[\"pino.js\",\"bin.js\",\"browser.js\",\"pretty.js\",\"usage.txt\",\"test\",\"docs\",\"example.js\",\"lib\"],\"homepage\":\"http://getpino.io\",\"keywords\":[\"fast\",\"logger\",\"stream\",\"json\"],\"license\":\"MIT\",\"main\":\"pino.js\",\"name\":\"pino\",\"precommit\":\"test\",\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/pinojs/pino.git\"},\"scripts\":{\"bench\":\"node benchmarks/utils/runbench all\",\"bench-basic\":\"node benchmarks/utils/runbench basic\",\"bench-child\":\"node benchmarks/utils/runbench child\",\"bench-child-child\":\"node benchmarks/utils/runbench child-child\",\"bench-child-creation\":\"node benchmarks/utils/runbench child-creation\",\"bench-deep-object\":\"node benchmarks/utils/runbench deep-object\",\"bench-formatters\":\"node benchmarks/utils/runbench formatters\",\"bench-longs-tring\":\"node benchmarks/utils/runbench long-string\",\"bench-multi-arg\":\"node benchmarks/utils/runbench multi-arg\",\"bench-object\":\"node benchmarks/utils/runbench object\",\"browser-test\":\"airtap --local 8080 test/browser*test.js\",\"cov-ui\":\"tap --coverage-report=html test/*test.js test/*/*test.js\",\"docs\":\"docsify serve\",\"lint\":\"eslint .\",\"test\":\"npm run lint && tap --100 test/*test.js test/*/*test.js\",\"test-ci\":\"npm run lint && tap test/*test.js test/*/*test.js --coverage-report=lcovonly\",\"update-bench-doc\":\"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md\"},\"version\":\"6.11.2\"}");
 
 /***/ }),
 
@@ -67149,7 +67600,7 @@ module.exports = JSON.parse("{\"_args\":[[\"pino@6.11.1\",\"/home/runner/work/re
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"11.2.0"};
+module.exports = JSON.parse("{\"i8\":\"11.3.0-candidate.0\"}");
 
 /***/ }),
 
