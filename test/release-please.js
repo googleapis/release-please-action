@@ -4,6 +4,7 @@ const assert = require('assert')
 const core = require('@actions/core')
 const sinon = require('sinon')
 const { factory, GitHubRelease } = require('release-please/build/src')
+const { Manifest } = require('release-please/build/src/manifest')
 const { Node } = require('release-please/build/src/releasers/node')
 // As defined in action.yml
 const defaultInput = {
@@ -321,5 +322,43 @@ describe('release-please-action', () => {
     }
     await action.main()
     assert.ok(maybeGitHubRelease instanceof GitHubRelease)
+  })
+
+  it('creates and runs a Manifest, using factory', async () => {
+    let maybeManifest
+    sandbox.replace(factory, 'call', runnable => {
+      maybeManifest = runnable
+    })
+    input = { command: 'manifest' }
+    await action.main()
+    assert.ok(maybeManifest instanceof Manifest)
+  })
+
+  it('opens PR creates GitHub releases by default for manifest', async () => {
+    input = { command: 'manifest' }
+
+    const runCommandStub = sandbox.stub(factory, 'runCommand')
+
+    const manifestReleaseStub = runCommandStub.withArgs('manifest-release').resolves(
+      {
+        'path/pkgA':
+        {
+          upload_url: 'http://example.com',
+          tag_name: 'v1.0.0'
+        }
+      })
+
+    const manifestReleasePRStub = runCommandStub.withArgs('manifest-pr').returns(25)
+
+    await action.main()
+
+    sinon.assert.calledOnce(manifestReleaseStub)
+    sinon.assert.calledOnce(manifestReleasePRStub)
+    assert.deepStrictEqual(output, {
+      releases_created: true,
+      'path/pkgA--upload_url': 'http://example.com',
+      'path/pkgA--tag_name': 'v1.0.0',
+      pr: 25
+    })
   })
 })

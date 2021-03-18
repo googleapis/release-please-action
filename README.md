@@ -30,6 +30,17 @@ Automate releases with Conventional Commit Messages.
   the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
   convention, [release-please](https://github.com/googleapis/release-please)
   will start creating Release PRs for you.
+4. For an alternative configuration that provides easier bootstrapping options
+  for initial setup, follow [these instructions](https://github.com/googleapis/release-please/blob/master/docs/manifest-releaser.md)
+  (ignore the cli section) and then configure this action as follows:
+
+    ```yaml
+    #...(same as above)
+        steps:
+          - uses: GoogleCloudPlatform/release-please-action@v2
+            with:
+              command: manifest
+    ```
 
 ## Configuration
 
