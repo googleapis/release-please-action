@@ -4182,7 +4182,7 @@ exports.withCustomRequest = withCustomRequest;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-const VERSION = "2.13.2";
+const VERSION = "2.13.3";
 
 /**
  * Some “list” response that can be paginated have a different response structure
@@ -51307,19 +51307,21 @@ class Manifest {
         }
         return releaseAs;
     }
-    async getPackagesToRelease(commits, sha) {
+    async getPackagesToRelease(allCommits, sha) {
         const packages = (await this.getConfigJson()).parsedPackages;
         const [manifestVersions, atSha] = await this.getManifestVersions(sha);
         const cs = new commit_split_1.CommitSplit({
             includeEmpty: true,
             packagePaths: packages.map(p => p.path),
         });
-        const commitsPerPath = cs.split(commits);
+        const commitsPerPath = cs.split(allCommits);
         const packagesToRelease = {};
         const missingVersionPaths = [];
         const defaultBranch = await this.gh.getDefaultBranch();
         for (const pkg of packages) {
-            const commits = commitsPerPath[pkg.path];
+            // The special path of '.' indicates the root module is being released
+            // in this case, use the entire list of commits:
+            const commits = pkg.path === '.' ? allCommits : commitsPerPath[pkg.path];
             if (!commits || commits.length === 0) {
                 continue;
             }
@@ -51648,7 +51650,9 @@ class ReleasePR {
         this.changelogPath = 'CHANGELOG.md';
         this.bumpMinorPreMajor = options.bumpMinorPreMajor || false;
         this.labels = (_a = options.labels) !== null && _a !== void 0 ? _a : constants_1.DEFAULT_LABELS;
-        this.path = options.path;
+        // undefined represents the root path of the library, if the special
+        // '.' path is provided, simply ignore it:
+        this.path = options.path !== '.' ? options.path : undefined;
         this.packageName = options.packageName || '';
         this.monorepoTags = options.monorepoTags || false;
         this.releaseAs = options.releaseAs;
@@ -67600,7 +67604,7 @@ module.exports = JSON.parse("{\"_args\":[[\"pino@6.11.2\",\"/home/runner/work/re
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"i8\":\"11.3.0-candidate.0\"}");
+module.exports = {"i8":"11.4.0"};
 
 /***/ }),
 
