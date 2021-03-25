@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.24.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.24.0...v2.24.1) (2021-03-25)
+
+
+### Bug Fixes
+
+* **release-please:** fixed bug with "." releaser ([#283](https://www.github.com/google-github-actions/release-please-action/issues/283)) ([fe52822](https://www.github.com/google-github-actions/release-please-action/commit/fe5282250cf3f28e6d85435afa452b663d02002b))
+
 ## [2.24.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.23.0...v2.24.0) (2021-03-25)
 
 
