@@ -361,4 +361,18 @@ describe('release-please-action', () => {
       pr: 25
     })
   })
+
+  it('opens PR only for manifest-pr', async () => {
+    input = { command: 'manifest-pr' }
+
+    const runCommandStub = sandbox.stub(factory, 'runCommand')
+    const manifestReleasePRStub = runCommandStub.withArgs('manifest-pr').returns(25)
+
+    await action.main()
+
+    sinon.assert.calledOnce(manifestReleasePRStub)
+    assert.deepStrictEqual(output, {
+      pr: 25
+    })
+  })
 })
