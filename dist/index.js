@@ -8,6 +8,9 @@ module.exports =
 const core = __nccwpck_require__(2186)
 const { factory } = __nccwpck_require__(4363)
 
+const CONFIG_FILE = 'release-please-config.json'
+const MANIFEST_FILE = '.release-please-manifest.json'
+const MANIFEST_COMMAND = 'manifest'
 const RELEASE_LABEL = 'autorelease: pending'
 const GITHUB_RELEASE_COMMAND = 'github-release'
 const GITHUB_RELEASE_PR_COMMAND = 'release-pr'
@@ -21,20 +24,62 @@ function getBooleanInput (input) {
   throw TypeError(`Wrong boolean value of the input '${input}'`)
 }
 
+function getGitHubInput () {
+  return {
+    fork: getBooleanInput('fork'),
+    defaultBranch: core.getInput('default-branch') || undefined,
+    repoUrl: process.env.GITHUB_REPOSITORY,
+    apiUrl: 'https://api.github.com',
+    token: core.getInput('token', { required: true })
+  }
+}
+
+function getManifestInput () {
+  return {
+    configFile: core.getInput('config-file') || CONFIG_FILE,
+    manifestFile: core.getInput('manifest-file') || MANIFEST_FILE
+  }
+}
+
+async function runManifest () {
+  const githubOpts = getGitHubInput()
+  const manifestOpts = { ...githubOpts, ...getManifestInput() }
+  const pr = await factory.runCommand('manifest-pr', manifestOpts)
+  if (pr) {
+    core.setOutput('pr', pr)
+  }
+
+  const releasesCreated = await factory.runCommand('manifest-release', manifestOpts)
+  if (releasesCreated) {
+    core.setOutput('releases_created', true)
+    for (const [path, release] of Object.entries(releasesCreated)) {
+      if (!release) {
+        continue
+      }
+      for (const [key, val] of Object.entries(release)) {
+        core.setOutput(`${path}--${key}`, val)
+      }
+    }
+  }
+}
+
 async function main () {
+  const command = core.getInput('command') || undefined
+  if (command === MANIFEST_COMMAND) {
+    return await runManifest()
+  }
+
+  const { token, fork, defaultBranch, apiUrl, repoUrl } = getGitHubInput()
+
   const bumpMinorPreMajor = getBooleanInput('bump-minor-pre-major')
   const monorepoTags = getBooleanInput('monorepo-tags')
   const packageName = core.getInput('package-name')
   const path = core.getInput('path') || undefined
   const releaseType = core.getInput('release-type', { required: true })
-  const token = core.getInput('token', { required: true })
-  const fork = getBooleanInput('fork')
   const changelogPath = core.getInput('changelog-path') || undefined
   const changelogTypes = core.getInput('changelog-types') || undefined
   const changelogSections = changelogTypes && JSON.parse(changelogTypes)
-  const command = core.getInput('command') || undefined
   const versionFile = core.getInput('version-file') || undefined
-  const defaultBranch = core.getInput('default-branch') || undefined
   const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
 
   // First we check for any merged release PRs (PRs merged with the label
@@ -69,10 +114,10 @@ async function main () {
       monorepoTags,
       packageName,
       path,
-      apiUrl: 'https://api.github.com',
-      repoUrl: process.env.GITHUB_REPOSITORY,
+      apiUrl,
+      repoUrl,
       fork,
-      token: token,
+      token,
       label: RELEASE_LABEL,
       bumpMinorPreMajor,
       changelogSections,
