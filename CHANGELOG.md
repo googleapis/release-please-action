@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.23.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.22.0...v2.23.0) (2021-03-24)
+
+
+### Features
+
+* manifest based releaser https://git.io/JmVD4 ([#273](https://www.github.com/google-github-actions/release-please-action/issues/273)) ([45c32cc](https://www.github.com/google-github-actions/release-please-action/commit/45c32ccd248469ba2567c6dfd45c3c4cd2a241b4))
+* **release-please:** update to release-please with manifest support ([#274](https://www.github.com/google-github-actions/release-please-action/issues/274)) ([82a3c7e](https://www.github.com/google-github-actions/release-please-action/commit/82a3c7ec92032e3d6774e37a95badf4ff1e89eec))
+* **release-please:** upgrade to release-please v11.4.0 ([#277](https://www.github.com/google-github-actions/release-please-action/issues/277)) ([80ebc45](https://www.github.com/google-github-actions/release-please-action/commit/80ebc4526172e282083faba234ebde7b3c3d6276))
+
 ## [2.22.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.21.0...v2.22.0) (2021-03-10)
 
 
