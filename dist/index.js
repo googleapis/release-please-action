@@ -10,7 +10,7 @@ const { factory } = __nccwpck_require__(4363)
 
 const CONFIG_FILE = 'release-please-config.json'
 const MANIFEST_FILE = '.release-please-manifest.json'
-const MANIFEST_COMMAND = 'manifest'
+const MANIFEST_COMMANDS = ['manifest', 'manifest-pr']
 const RELEASE_LABEL = 'autorelease: pending'
 const GITHUB_RELEASE_COMMAND = 'github-release'
 const GITHUB_RELEASE_PR_COMMAND = 'release-pr'
@@ -41,13 +41,14 @@ function getManifestInput () {
   }
 }
 
-async function runManifest () {
+async function runManifest (command) {
   const githubOpts = getGitHubInput()
   const manifestOpts = { ...githubOpts, ...getManifestInput() }
   const pr = await factory.runCommand('manifest-pr', manifestOpts)
   if (pr) {
     core.setOutput('pr', pr)
   }
+  if (command === 'manifest-pr') return
 
   const releasesCreated = await factory.runCommand('manifest-release', manifestOpts)
   if (releasesCreated) {
@@ -65,8 +66,8 @@ async function runManifest () {
 
 async function main () {
   const command = core.getInput('command') || undefined
-  if (command === MANIFEST_COMMAND) {
-    return await runManifest()
+  if (MANIFEST_COMMANDS.includes(command)) {
+    return await runManifest(command)
   }
 
   const { token, fork, defaultBranch, apiUrl, repoUrl } = getGitHubInput()
