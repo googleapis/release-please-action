@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.24.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.23.0...v2.24.0) (2021-03-25)
+
+
+### Features
+
+* **manifest:** add manifest-pr command ([#280](https://www.github.com/google-github-actions/release-please-action/issues/280)) ([f48a175](https://www.github.com/google-github-actions/release-please-action/commit/f48a175f37213946490a27038ecf023326e09fb6))
+
 ## [2.23.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.22.0...v2.23.0) (2021-03-24)
 
 
