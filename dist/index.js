@@ -4875,8 +4875,14 @@ const Endpoints = {
     deletePackageForOrg: ["DELETE /orgs/{org}/packages/{package_type}/{package_name}"],
     deletePackageVersionForAuthenticatedUser: ["DELETE /user/packages/{package_type}/{package_name}/versions/{package_version_id}"],
     deletePackageVersionForOrg: ["DELETE /orgs/{org}/packages/{package_type}/{package_name}/versions/{package_version_id}"],
-    getAllPackageVersionsForAPackageOwnedByAnOrg: ["GET /orgs/{org}/packages/{package_type}/{package_name}/versions"],
-    getAllPackageVersionsForAPackageOwnedByTheAuthenticatedUser: ["GET /user/packages/{package_type}/{package_name}/versions"],
+    getAllPackageVersionsForAPackageOwnedByAnOrg: ["GET /orgs/{org}/packages/{package_type}/{package_name}/versions", {}, {
+      renamed: ["packages", "getAllPackageVersionsForPackageOwnedByOrg"]
+    }],
+    getAllPackageVersionsForAPackageOwnedByTheAuthenticatedUser: ["GET /user/packages/{package_type}/{package_name}/versions", {}, {
+      renamed: ["packages", "getAllPackageVersionsForPackageOwnedByAuthenticatedUser"]
+    }],
+    getAllPackageVersionsForPackageOwnedByAuthenticatedUser: ["GET /user/packages/{package_type}/{package_name}/versions"],
+    getAllPackageVersionsForPackageOwnedByOrg: ["GET /orgs/{org}/packages/{package_type}/{package_name}/versions"],
     getAllPackageVersionsForPackageOwnedByUser: ["GET /users/{username}/packages/{package_type}/{package_name}/versions"],
     getPackageForAuthenticatedUser: ["GET /user/packages/{package_type}/{package_name}"],
     getPackageForOrganization: ["GET /orgs/{org}/packages/{package_type}/{package_name}"],
@@ -4884,8 +4890,8 @@ const Endpoints = {
     getPackageVersionForAuthenticatedUser: ["GET /user/packages/{package_type}/{package_name}/versions/{package_version_id}"],
     getPackageVersionForOrganization: ["GET /orgs/{org}/packages/{package_type}/{package_name}/versions/{package_version_id}"],
     getPackageVersionForUser: ["GET /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}"],
-    restorePackageForAuthenticatedUser: ["POST /user/packages/{package_type}/{package_name}/restore"],
-    restorePackageForOrg: ["POST /orgs/{org}/packages/{package_type}/{package_name}/restore"],
+    restorePackageForAuthenticatedUser: ["POST /user/packages/{package_type}/{package_name}/restore{?token}"],
+    restorePackageForOrg: ["POST /orgs/{org}/packages/{package_type}/{package_name}/restore{?token}"],
     restorePackageVersionForAuthenticatedUser: ["POST /user/packages/{package_type}/{package_name}/versions/{package_version_id}/restore"],
     restorePackageVersionForOrg: ["POST /orgs/{org}/packages/{package_type}/{package_name}/versions/{package_version_id}/restore"]
   },
@@ -5185,7 +5191,7 @@ const Endpoints = {
     createDeploymentStatus: ["POST /repos/{owner}/{repo}/deployments/{deployment_id}/statuses"],
     createDispatchEvent: ["POST /repos/{owner}/{repo}/dispatches"],
     createForAuthenticatedUser: ["POST /user/repos"],
-    createFork: ["POST /repos/{owner}/{repo}/forks"],
+    createFork: ["POST /repos/{owner}/{repo}/forks{?org,organization}"],
     createInOrg: ["POST /orgs/{org}/repos"],
     createOrUpdateEnvironment: ["PUT /repos/{owner}/{repo}/environments/{environment_name}"],
     createOrUpdateFileContents: ["PUT /repos/{owner}/{repo}/contents/{path}"],
@@ -5291,6 +5297,7 @@ const Endpoints = {
     getPullRequestReviewProtection: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"],
     getPunchCardStats: ["GET /repos/{owner}/{repo}/stats/punch_card"],
     getReadme: ["GET /repos/{owner}/{repo}/readme"],
+    getReadmeInDirectory: ["GET /repos/{owner}/{repo}/readme/{dir}"],
     getRelease: ["GET /repos/{owner}/{repo}/releases/{release_id}"],
     getReleaseAsset: ["GET /repos/{owner}/{repo}/releases/assets/{asset_id}"],
     getReleaseByTag: ["GET /repos/{owner}/{repo}/releases/tags/{tag}"],
@@ -5494,7 +5501,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "4.13.5";
+const VERSION = "4.14.0";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -5820,7 +5827,7 @@ var pluginRequestLog = __nccwpck_require__(8883);
 var pluginPaginateRest = __nccwpck_require__(4193);
 var pluginRestEndpointMethods = __nccwpck_require__(3044);
 
-const VERSION = "18.3.5";
+const VERSION = "18.4.0";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.restEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`
@@ -49339,7 +49346,11 @@ class CommitSplit {
                 let pkgName;
                 if (this.packagePaths) {
                     // only track paths under this.packagePaths
-                    pkgName = this.packagePaths.find(p => file.indexOf(p) >= 0);
+                    pkgName = this.packagePaths.find(p => {
+                        // The special "." path, representing the root of the module
+                        // should be ignored by commit-split:
+                        return file.indexOf(p) >= 0 && p !== '.';
+                    });
                 }
                 else {
                     // track paths by top level folder
@@ -52919,7 +52930,7 @@ exports.isStableArtifact = isStableArtifact;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Version = void 0;
 const VERSION_REGEX = /(\d+)\.(\d+)\.(\d+)(-.+)?/;
-const LTS_REGEX = /(-.+)?-lts.(\d+)/;
+const LTS_REGEX = /(-.+)?-sp.(\d+)/;
 class Version {
     constructor(major, minor, patch, extra, snapshot, lts) {
         this.major = major;
@@ -53001,7 +53012,7 @@ class Version {
         return this;
     }
     toString() {
-        return `${this.major}.${this.minor}.${this.patch}${this.extra}${this.lts ? `-lts.${this.lts}` : ''}${this.snapshot ? '-SNAPSHOT' : ''}`;
+        return `${this.major}.${this.minor}.${this.patch}${this.extra}${this.lts ? `-sp.${this.lts}` : ''}${this.snapshot ? '-SNAPSHOT' : ''}`;
     }
 }
 exports.Version = Version;
@@ -67650,7 +67661,7 @@ module.exports = JSON.parse("{\"_args\":[[\"pino@6.11.2\",\"/home/runner/work/re
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"11.4.0"};
+module.exports = {"i8":"11.4.1"};
 
 /***/ }),
 
