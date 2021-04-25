@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.25.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.25.0...v2.25.1) (2021-04-25)
+
+
+### Bug Fixes
+
+* **release-please:** update to release-please@11.8.1 ([#293](https://www.github.com/google-github-actions/release-please-action/issues/293)) ([4d8569b](https://www.github.com/google-github-actions/release-please-action/commit/4d8569bf77ccda4bebb9dd136251a08079b409c4))
+
 ## [2.25.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.24.1...v2.25.0) (2021-04-20)
 
 
