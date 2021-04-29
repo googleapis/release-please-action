@@ -14781,10 +14781,10 @@ module.exports = function (config) {
   })
 
   return Q.all([
-    readFile(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
+    readFile(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
   ])
     .spread((template, header, commit, footer) => {
       const writerOpts = getWriterOpts(config)
@@ -14996,10 +14996,10 @@ function conventionalChangelogWriterInit (context, options) {
     includeDetails: false,
     ignoreReverted: true,
     doFlush: true,
-    mainTemplate: readFileSync(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
-    headerPartial: readFileSync(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
-    commitPartial: readFileSync(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
-    footerPartial: readFileSync(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
+    mainTemplate: readFileSync(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
+    headerPartial: readFileSync(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
+    commitPartial: readFileSync(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
+    footerPartial: readFileSync(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
   }, options)
 
   if ((!_.isFunction(options.transform) && _.isObject(options.transform)) || _.isUndefined(options.transform)) {
@@ -66250,16 +66250,20 @@ const release_pr_1 = __nccwpck_require__(86786);
 const changelog_1 = __nccwpck_require__(3325);
 // JavaScript
 const package_json_1 = __nccwpck_require__(51805);
+const package_lock_json_1 = __nccwpck_require__(62159);
 const samples_package_json_1 = __nccwpck_require__(18562);
 class Node extends release_pr_1.ReleasePR {
     async buildUpdates(changelogEntry, candidate, packageName) {
         const updates = [];
-        updates.push(new package_json_1.PackageJson({
-            path: this.addPath('package-lock.json'),
-            changelogEntry,
-            version: candidate.version,
-            packageName: packageName.name,
-        }));
+        const lockFiles = ['package-lock.json', 'npm-shrinkwrap.json'];
+        lockFiles.forEach(lockFile => {
+            updates.push(new package_lock_json_1.PackageLockJson({
+                path: this.addPath(lockFile),
+                changelogEntry,
+                version: candidate.version,
+                packageName: packageName.name,
+            }));
+        });
         updates.push(new samples_package_json_1.SamplesPackageJson({
             path: this.addPath('samples/package.json'),
             changelogEntry,
@@ -67671,15 +67675,53 @@ class PackageJson {
         this.packageName = options.packageName;
         this.contents = options.contents;
     }
+    updateVersion(parsed) {
+        parsed.version = this.version;
+    }
     updateContent(content) {
         const parsed = JSON.parse(content);
         checkpoint_1.checkpoint(`updating ${this.path} from ${parsed.version} to ${this.version}`, checkpoint_1.CheckpointType.Success);
-        parsed.version = this.version;
+        this.updateVersion(parsed);
         return package_json_stringify_1.packageJsonStringify(parsed);
     }
 }
 exports.PackageJson = PackageJson;
 //# sourceMappingURL=package-json.js.map
+
+/***/ }),
+
+/***/ 62159:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PackageLockJson = void 0;
+const package_json_1 = __nccwpck_require__(51805);
+class PackageLockJson extends package_json_1.PackageJson {
+    updateVersion(parsed) {
+        super.updateVersion(parsed);
+        if (parsed.lockfileVersion === 2) {
+            const lockFileV2 = parsed;
+            lockFileV2.packages[''].version = this.version;
+        }
+    }
+}
+exports.PackageLockJson = PackageLockJson;
+//# sourceMappingURL=package-lock-json.js.map
 
 /***/ }),
 
@@ -87354,7 +87396,7 @@ module.exports = JSON.parse("{\"_args\":[[\"pino@6.11.3\",\"/home/runner/work/re
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"11.8.1"};
+module.exports = {"i8":"11.9.0"};
 
 /***/ }),
 
