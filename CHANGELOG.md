@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.27.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.26.0...v2.27.0) (2021-05-04)
+
+
+### Features
+
+* **release-please:** improved go release strategy ([#301](https://www.github.com/google-github-actions/release-please-action/issues/301)) ([0267b45](https://www.github.com/google-github-actions/release-please-action/commit/0267b45516a836f3d70c32fc0b70036b1ef84eed))
+
 ## [2.26.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.25.1...v2.26.0) (2021-04-29)
 
 
