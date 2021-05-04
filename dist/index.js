@@ -14752,6 +14752,7 @@ const compareFunc = __nccwpck_require__(24623)
 const Q = __nccwpck_require__(56172)
 const readFile = Q.denodeify(__nccwpck_require__(35747).readFile)
 const resolve = __nccwpck_require__(85622).resolve
+const releaseAsRe = /release-as:\s*\w*@?([0-9]+\.[0-9]+\.[0-9a-z]+(-[0-9a-z.]+)?)\s*/i
 
 /**
  * Handlebar partials for various property substitutions based on commit context.
@@ -14781,10 +14782,10 @@ module.exports = function (config) {
   })
 
   return Q.all([
-    readFile(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
+    readFile(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
   ])
     .spread((template, header, commit, footer) => {
       const writerOpts = getWriterOpts(config)
@@ -14827,6 +14828,13 @@ function getWriterOpts (config) {
       // for the special case, test(system)!: hello world, where there is
       // a '!' but no 'BREAKING CHANGE' in body:
       addBangNotes(commit)
+
+      // Add an entry in the CHANGELOG if special Release-As footer
+      // is used:
+      if ((commit.footer && releaseAsRe.test(commit.footer)) ||
+          (commit.body && releaseAsRe.test(commit.body))) {
+        discard = false
+      }
 
       commit.notes.forEach(note => {
         note.title = 'BREAKING CHANGES'
@@ -14996,10 +15004,10 @@ function conventionalChangelogWriterInit (context, options) {
     includeDetails: false,
     ignoreReverted: true,
     doFlush: true,
-    mainTemplate: readFileSync(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
-    headerPartial: readFileSync(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
-    commitPartial: readFileSync(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
-    footerPartial: readFileSync(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
+    mainTemplate: readFileSync(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
+    headerPartial: readFileSync(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
+    commitPartial: readFileSync(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
+    footerPartial: readFileSync(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
   }, options)
 
   if ((!_.isFunction(options.transform) && _.isObject(options.transform)) || _.isUndefined(options.transform)) {
@@ -22607,11 +22615,26 @@ function resetTmpl (secret, paths) {
   }).join('')
 }
 
+/**
+ * Creates the body of the restore function
+ *
+ * Restoration of the redacted object happens
+ * backwards, in reverse order of redactions,
+ * so that repeated redactions on the same object
+ * property can be eventually rolled back to the
+ * original value.
+ *
+ * This way dynamic redactions are restored first,
+ * starting from the last one working backwards and
+ * followed by the static ones.
+ *
+ * @returns {string} the body of the restore function
+ */
 function restoreTmpl (resetters, paths, hasWildcards) {
   const dynamicReset = hasWildcards === true ? `
     const keys = Object.keys(secret)
     const len = keys.length
-    for (var i = ${paths.length}; i < len; i++) {
+    for (var i = len - 1; i >= ${paths.length}; i--) {
       const k = keys[i]
       const o = secret[k]
       if (o.flat === true) this.groupRestore(o)
@@ -22622,8 +22645,8 @@ function restoreTmpl (resetters, paths, hasWildcards) {
 
   return `
     const secret = this.secret
-    ${resetters}
     ${dynamicReset}
+    ${resetters}
     return o
   `
 }
@@ -65445,6 +65468,52 @@ exports.GoYoshi = GoYoshi;
 
 /***/ }),
 
+/***/ 72314:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Go = void 0;
+const release_pr_1 = __nccwpck_require__(86786);
+// Generic
+const changelog_1 = __nccwpck_require__(3325);
+const DEFAULT_CHANGELOG_PATH = 'CHANGES.md';
+class Go extends release_pr_1.ReleasePR {
+    constructor(options) {
+        var _a;
+        super(options);
+        this.changelogPath = (_a = options.changelogPath) !== null && _a !== void 0 ? _a : DEFAULT_CHANGELOG_PATH;
+    }
+    async buildUpdates(changelogEntry, candidate, packageName) {
+        const updates = [];
+        updates.push(new changelog_1.Changelog({
+            path: this.addPath(this.changelogPath),
+            changelogEntry,
+            version: candidate.version,
+            packageName: packageName.name,
+        }));
+        return updates;
+    }
+}
+exports.Go = Go;
+//# sourceMappingURL=go.js.map
+
+/***/ }),
+
 /***/ 42474:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -65538,6 +65607,7 @@ exports.Helm = Helm;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getReleaserTypes = exports.getReleaserNames = exports.getReleasers = void 0;
+const go_1 = __nccwpck_require__(72314);
 const go_yoshi_1 = __nccwpck_require__(2831);
 const java_bom_1 = __nccwpck_require__(54965);
 const java_lts_1 = __nccwpck_require__(79096);
@@ -65553,7 +65623,7 @@ const rust_1 = __nccwpck_require__(18109);
 const ocaml_1 = __nccwpck_require__(26571);
 const helm_1 = __nccwpck_require__(42474);
 const releasers = {
-    go: go_yoshi_1.GoYoshi,
+    go: go_1.Go,
     'go-yoshi': go_yoshi_1.GoYoshi,
     'java-bom': java_bom_1.JavaBom,
     'java-lts': java_lts_1.JavaLTS,
@@ -69174,6 +69244,7 @@ function toConventionalChangelogFormat(ast) {
         if (parent.type === 'token') {
             parent = ancestors.pop();
             let footerText = '';
+            const semanticFooter = node.value.toLowerCase() === 'release-as';
             visit(parent, ['type', 'scope', 'breaking-change', 'separator', 'text', 'newline'], (node) => {
                 switch (node.type) {
                     case 'scope':
@@ -69190,6 +69261,13 @@ function toConventionalChangelogFormat(ast) {
                         break;
                 }
             });
+            // Any footers that carry semantic meaning, e.g., Release-As, should
+            // be added to the footer field, for the benefits of post-processing:
+            if (semanticFooter) {
+                if (!headerCommit.footer)
+                    headerCommit.footer = '';
+                headerCommit.footer += `\n${footerText.toLowerCase()}`.trimStart();
+            }
             try {
                 for (const commit of toConventionalChangelogFormat(parser.parser(footerText))) {
                     commits.push(commit);
@@ -87396,7 +87474,7 @@ module.exports = JSON.parse("{\"_args\":[[\"pino@6.11.3\",\"/home/runner/work/re
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"11.9.0"};
+module.exports = {"i8":"11.10.0"};
 
 /***/ }),
 
