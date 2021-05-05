@@ -10748,52 +10748,6 @@ module.exports = retry;
 
 /***/ }),
 
-/***/ 86950:
-/***/ ((module) => {
-
-"use strict";
-
-
-/* global SharedArrayBuffer, Atomics */
-
-if (typeof SharedArrayBuffer !== 'undefined' && typeof Atomics !== 'undefined') {
-  const nil = new Int32Array(new SharedArrayBuffer(4))
-
-  function sleep (ms) {
-    // also filters out NaN, non-number types, including empty strings, but allows bigints
-    const valid = ms > 0 && ms < Infinity 
-    if (valid === false) {
-      if (typeof ms !== 'number' && typeof ms !== 'bigint') {
-        throw TypeError('sleep: ms must be a number')
-      }
-      throw RangeError('sleep: ms must be a number that is greater than 0 but less than Infinity')
-    }
-
-    Atomics.wait(nil, 0, 0, Number(ms))
-  }
-  module.exports = sleep
-} else {
-
-  function sleep (ms) {
-    // also filters out NaN, non-number types, including empty strings, but allows bigints
-    const valid = ms > 0 && ms < Infinity 
-    if (valid === false) {
-      if (typeof ms !== 'number' && typeof ms !== 'bigint') {
-        throw TypeError('sleep: ms must be a number')
-      }
-      throw RangeError('sleep: ms must be a number that is greater than 0 but less than Infinity')
-    }
-    const target = Date.now() + Number(ms)
-    while (target > Date.now()){}
-  }
-
-  module.exports = sleep
-
-}
-
-
-/***/ }),
-
 /***/ 9417:
 /***/ ((module) => {
 
@@ -11782,7 +11736,7 @@ exports.addReviewCommentsDefaults = addReviewCommentsDefaults;
 
 /***/ }),
 
-/***/ 64800:
+/***/ 58021:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -11903,494 +11857,11 @@ async function branch(octokit, origin, upstream, name, baseBranch = DEFAULT_PRIM
     }
 }
 exports.branch = branch;
-//# sourceMappingURL=branch-handler.js.map
+//# sourceMappingURL=branch.js.map
 
 /***/ }),
 
-/***/ 5721:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getPullRequestHunks = exports.getCurrentPullRequestPatches = void 0;
-const logger_1 = __nccwpck_require__(58192);
-const diff_utils_1 = __nccwpck_require__(75603);
-/**
- * For a pull request, get each remote file's patch text asynchronously
- * Also get the list of files whose patch data could not be returned
- * @param {Octokit} octokit the authenticated octokit instance
- * @param {RepoDomain} remote the remote repository domain information
- * @param {number} pullNumber the pull request number
- * @param {number} pageSize the number of results to return per page
- * @returns {Promise<Object<PatchText, string[]>>} the stringified patch data for each file and the list of files whose patch data could not be resolved
- */
-async function getCurrentPullRequestPatches(octokit, remote, pullNumber, pageSize) {
-    // TODO: support pagination
-    const filesMissingPatch = [];
-    const files = (await octokit.pulls.listFiles({
-        owner: remote.owner,
-        repo: remote.repo,
-        pull_number: pullNumber,
-        per_page: pageSize,
-    })).data;
-    const patches = new Map();
-    if (files.length === 0) {
-        logger_1.logger.error(`0 file results have returned from list files query for Pull Request #${pullNumber}. Cannot make suggestions on an empty Pull Request`);
-        throw Error('Empty Pull Request');
-    }
-    files.forEach(file => {
-        if (file.patch === undefined) {
-            // files whose patch is too large do not return the patch text by default
-            // TODO handle file patches that are too large
-            logger_1.logger.warn(`File ${file.filename} may have a patch that is too large to display patch object.`);
-            filesMissingPatch.push(file.filename);
-        }
-        else {
-            patches.set(file.filename, file.patch);
-        }
-    });
-    if (patches.size === 0) {
-        logger_1.logger.warn('0 patches have been returned. This could be because the patch results were too large to return.');
-    }
-    return { patches, filesMissingPatch };
-}
-exports.getCurrentPullRequestPatches = getCurrentPullRequestPatches;
-/**
- * For a pull request, get each remote file's current patch range to identify the scope of each patch as a Map.
- * @param {Octokit} octokit the authenticated octokit instance
- * @param {RepoDomain} remote the remote repository domain information
- * @param {number} pullNumber the pull request number
- * @param {number} pageSize the number of files to return per pull request list files query
- * @returns {Promise<Map<string, Hunk[]>>} the scope of each file in the pull request
- */
-async function getPullRequestHunks(octokit, remote, pullNumber, pageSize) {
-    const files = (await octokit.pulls.listFiles({
-        owner: remote.owner,
-        repo: remote.repo,
-        pull_number: pullNumber,
-        per_page: pageSize,
-    })).data;
-    const pullRequestHunks = new Map();
-    if (files.length === 0) {
-        logger_1.logger.error(`0 file results have returned from list files query for Pull Request #${pullNumber}. Cannot make suggestions on an empty Pull Request`);
-        throw Error('Empty Pull Request');
-    }
-    files.forEach(file => {
-        if (file.patch === undefined) {
-            // files whose patch is too large do not return the patch text by default
-            // TODO handle file patches that are too large
-            logger_1.logger.warn(`File ${file.filename} may have a patch that is too large to display patch object.`);
-        }
-        else {
-            const hunks = diff_utils_1.parsePatch(file.patch);
-            pullRequestHunks.set(file.filename, hunks);
-        }
-    });
-    if (pullRequestHunks.size === 0) {
-        logger_1.logger.warn('0 patches have been returned. This could be because the patch results were too large to return.');
-    }
-    return pullRequestHunks;
-}
-exports.getPullRequestHunks = getPullRequestHunks;
-//# sourceMappingURL=remote-patch-ranges-handler.js.map
-
-/***/ }),
-
-/***/ 27830:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//   https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.partitionSuggestedHunksByScope = void 0;
-const hunk_utils_1 = __nccwpck_require__(96507);
-function hunkOverlaps(validHunk, suggestedHunk) {
-    return (suggestedHunk.oldStart >= validHunk.newStart &&
-        suggestedHunk.oldEnd <= validHunk.newEnd);
-}
-function partitionFileHunks(pullRequestHunks, suggestedHunks) {
-    // check ranges: the entirety of the old range of the suggested
-    // hunk must fit inside the new range of the valid Hunks
-    let i = 0;
-    let candidateHunk = pullRequestHunks[i];
-    const validFileHunks = [];
-    const invalidFileHunks = [];
-    suggestedHunks.forEach(suggestedHunk => {
-        while (candidateHunk && suggestedHunk.oldStart > candidateHunk.newEnd) {
-            i++;
-            candidateHunk = pullRequestHunks[i];
-        }
-        if (!candidateHunk) {
-            invalidFileHunks.push(suggestedHunk);
-            return;
-        }
-        // if deletion only or addition only
-        if (suggestedHunk.newEnd < suggestedHunk.newStart ||
-            suggestedHunk.oldEnd < suggestedHunk.oldStart) {
-            // try using previous line
-            let adjustedHunk = hunk_utils_1.adjustHunkUp(suggestedHunk);
-            if (adjustedHunk && hunkOverlaps(candidateHunk, adjustedHunk)) {
-                validFileHunks.push(adjustedHunk);
-                return;
-            }
-            // try using next line
-            adjustedHunk = hunk_utils_1.adjustHunkDown(suggestedHunk);
-            if (adjustedHunk && hunkOverlaps(candidateHunk, adjustedHunk)) {
-                validFileHunks.push(adjustedHunk);
-                return;
-            }
-        }
-        else if (hunkOverlaps(candidateHunk, suggestedHunk)) {
-            validFileHunks.push(suggestedHunk);
-            return;
-        }
-        invalidFileHunks.push(suggestedHunk);
-    });
-    return { validFileHunks, invalidFileHunks };
-}
-/**
- * Split suggested hunks into commentable and non-commentable hunks. Compares the new line ranges
- * from pullRequestHunks against the old line ranges from allSuggestedHunks.
- * @param pullRequestHunks {Map<string, Hunk[]>} The parsed hunks from that represents the valid lines to comment.
- * @param allSuggestedHunks {Map<string, Hunk[]>} The hunks that represent suggested changes.
- * @returns {PartitionedHunks} split hunks
- */
-function partitionSuggestedHunksByScope(pullRequestHunks, allSuggestedHunks) {
-    const validHunks = new Map();
-    const invalidHunks = new Map();
-    allSuggestedHunks.forEach((suggestedHunks, filename) => {
-        const pullRequestFileHunks = pullRequestHunks.get(filename);
-        if (!pullRequestFileHunks) {
-            // file is not the original PR
-            invalidHunks.set(filename, suggestedHunks);
-            return;
-        }
-        const { validFileHunks, invalidFileHunks } = partitionFileHunks(pullRequestFileHunks, suggestedHunks);
-        if (validFileHunks.length > 0) {
-            validHunks.set(filename, validFileHunks);
-        }
-        if (invalidFileHunks.length > 0) {
-            invalidHunks.set(filename, invalidFileHunks);
-        }
-    });
-    return { validHunks, invalidHunks };
-}
-exports.partitionSuggestedHunksByScope = partitionSuggestedHunksByScope;
-//# sourceMappingURL=scope-handler.js.map
-
-/***/ }),
-
-/***/ 47693:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.reviewPullRequest = void 0;
-const make_review_handler_1 = __nccwpck_require__(68282);
-const logger_1 = __nccwpck_require__(58192);
-const raw_hunk_handler_1 = __nccwpck_require__(88950);
-const remote_patch_ranges_handler_1 = __nccwpck_require__(5721);
-const scope_handler_1 = __nccwpck_require__(27830);
-const diff_utils_1 = __nccwpck_require__(75603);
-/**
- * Comment on a Pull Request
- * @param {Octokit} octokit authenticated octokit isntance
- * @param {RepoDomain} remote the Pull Request repository
- * @param {number} pullNumber the Pull Request number
- * @param {number} pageSize the number of files to comment on // TODO pagination
- * @param {Map<string, FileDiffContent>} diffContents the old and new contents of the files to suggest
- * @returns the created review's id, or null if no review was made
- */
-async function reviewPullRequest(octokit, remote, pullNumber, pageSize, diffContents) {
-    try {
-        // get the hunks from the pull request
-        const pullRequestHunks = await remote_patch_ranges_handler_1.getPullRequestHunks(octokit, remote, pullNumber, pageSize);
-        // get the hunks from the suggested change
-        const allSuggestedHunks = typeof diffContents === 'string'
-            ? diff_utils_1.parseAllHunks(diffContents)
-            : raw_hunk_handler_1.getRawSuggestionHunks(diffContents);
-        // split hunks by commentable and uncommentable
-        const { validHunks, invalidHunks } = scope_handler_1.partitionSuggestedHunksByScope(pullRequestHunks, allSuggestedHunks);
-        // create pull request review
-        const reviewNumber = await make_review_handler_1.makeInlineSuggestions(octokit, validHunks, invalidHunks, remote, pullNumber);
-        return reviewNumber;
-    }
-    catch (err) {
-        logger_1.logger.error('Failed to suggest');
-        throw err;
-    }
-}
-exports.reviewPullRequest = reviewPullRequest;
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-
-/***/ 68282:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-var upload_comments_handler_1 = __nccwpck_require__(47533);
-Object.defineProperty(exports, "makeInlineSuggestions", ({ enumerable: true, get: function () { return upload_comments_handler_1.makeInlineSuggestions; } }));
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-
-/***/ 85815:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.buildSummaryComment = void 0;
-function hunkErrorMessage(hunk) {
-    return `  * lines ${hunk.oldStart}-${hunk.oldEnd}`;
-}
-function fileErrorMessage(filename, hunks) {
-    return `* ${filename}\n` + hunks.map(hunkErrorMessage).join('\n');
-}
-/**
- * Build an error message based on invalid hunks.
- * Returns an empty string if the provided hunks are empty.
- * @param invalidHunks a map of filename to hunks that are not suggestable
- */
-function buildSummaryComment(invalidHunks) {
-    if (invalidHunks.size === 0) {
-        return '';
-    }
-    return ('Some suggestions could not be made:\n' +
-        Array.from(invalidHunks, ([filename, hunks]) => fileErrorMessage(filename, hunks)).join('\n'));
-}
-exports.buildSummaryComment = buildSummaryComment;
-//# sourceMappingURL=message-handler.js.map
-
-/***/ }),
-
-/***/ 47533:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.makeInlineSuggestions = exports.buildReviewComments = void 0;
-const logger_1 = __nccwpck_require__(58192);
-const message_handler_1 = __nccwpck_require__(85815);
-const COMFORT_PREVIEW_HEADER = 'application/vnd.github.comfort-fade-preview+json';
-/**
- * Convert the patch suggestions into GitHub parameter objects.
- * Use this to generate review comments
- * For information see:
- * https://developer.github.com/v3/pulls/comments/#create-a-review-comment-for-a-pull-request
- * @param suggestions
- */
-function buildReviewComments(suggestions) {
-    const fileComments = [];
-    suggestions.forEach((hunks, fileName) => {
-        hunks.forEach(hunk => {
-            const newContent = hunk.newContent.join('\n');
-            if (hunk.oldStart === hunk.oldEnd) {
-                const singleComment = {
-                    path: fileName,
-                    body: `\`\`\`suggestion\n${newContent}\n\`\`\``,
-                    line: hunk.oldEnd,
-                    side: 'RIGHT',
-                };
-                fileComments.push(singleComment);
-            }
-            else {
-                const comment = {
-                    path: fileName,
-                    body: `\`\`\`suggestion\n${newContent}\n\`\`\``,
-                    start_line: hunk.oldStart,
-                    line: hunk.oldEnd,
-                    side: 'RIGHT',
-                    start_side: 'RIGHT',
-                };
-                fileComments.push(comment);
-            }
-        });
-    });
-    return fileComments;
-}
-exports.buildReviewComments = buildReviewComments;
-/**
- * Make a request to GitHub to make review comments
- * @param octokit an authenticated octokit instance
- * @param suggestions code suggestions patches
- * @param remote the repository domain
- * @param pullNumber the pull request number to make a review on
- */
-async function makeInlineSuggestions(octokit, suggestions, outOfScopeSuggestions, remote, pullNumber) {
-    const comments = buildReviewComments(suggestions);
-    if (!comments.length) {
-        logger_1.logger.info('No valid suggestions to make');
-    }
-    if (!comments.length && !outOfScopeSuggestions.size) {
-        logger_1.logger.info('No suggestions were generated. Exiting...');
-        return null;
-    }
-    const summaryComment = message_handler_1.buildSummaryComment(outOfScopeSuggestions);
-    if (summaryComment) {
-        logger_1.logger.warn('Some suggestions could not be made');
-    }
-    // apply the suggestions to the latest sha
-    // the latest Pull Request hunk range includes
-    // all previous commit valid hunk ranges
-    const headSha = (await octokit.pulls.get({
-        owner: remote.owner,
-        repo: remote.repo,
-        pull_number: pullNumber,
-    })).data.head.sha;
-    const reviewNumber = (await octokit.pulls.createReview({
-        owner: remote.owner,
-        repo: remote.repo,
-        pull_number: pullNumber,
-        commit_id: headSha,
-        event: 'COMMENT',
-        body: summaryComment,
-        headers: { accept: COMFORT_PREVIEW_HEADER },
-        // Octokit type definitions doesn't support mulitiline comments, but the GitHub API does
-        comments: comments,
-    })).data.id;
-    logger_1.logger.info(`Successfully created a review on pull request: ${pullNumber}.`);
-    return reviewNumber;
-}
-exports.makeInlineSuggestions = makeInlineSuggestions;
-//# sourceMappingURL=upload-comments-handler.js.map
-
-/***/ }),
-
-/***/ 88950:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getRawSuggestionHunks = void 0;
-const logger_1 = __nccwpck_require__(58192);
-const diff_utils_1 = __nccwpck_require__(75603);
-/**
- * Given a map where the key is the file name and the value is the
- * old content and new content of the file
- * compute the hunk for each file whose old and new contents differ.
- * Do not compute the hunk if the old content is the same as the new content.
- * The hunk list is sorted and each interval is disjoint.
- * @param {Map<string, FileDiffContent>} diffContents a map of the original file contents and the new file contents
- * @returns the hunks for each file whose old and new contents differ
- */
-function getRawSuggestionHunks(diffContents) {
-    const fileHunks = new Map();
-    diffContents.forEach((fileDiffContent, fileName) => {
-        // if identical don't calculate the hunk and continue in the loop
-        if (fileDiffContent.oldContent === fileDiffContent.newContent) {
-            return;
-        }
-        const hunks = diff_utils_1.getSuggestedHunks(fileDiffContent.oldContent, fileDiffContent.newContent);
-        fileHunks.set(fileName, hunks);
-    });
-    logger_1.logger.info('Parsed ranges of old and new patch');
-    return fileHunks;
-}
-exports.getRawSuggestionHunks = getRawSuggestionHunks;
-//# sourceMappingURL=raw-hunk-handler.js.map
-
-/***/ }),
-
-/***/ 91663:
+/***/ 4424:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -12539,11 +12010,663 @@ async function commitAndPush(octokit, refHead, changes, originBranch, commitMess
     }
 }
 exports.commitAndPush = commitAndPush;
-//# sourceMappingURL=commit-and-push-handler.js.map
+//# sourceMappingURL=commit-and-push.js.map
 
 /***/ }),
 
-/***/ 75603:
+/***/ 67386:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.fork = void 0;
+const logger_1 = __nccwpck_require__(58192);
+/**
+ * Fork the GitHub owner's repository.
+ * Returns the fork owner and fork repo when the fork creation request to GitHub succeeds.
+ * Otherwise throws error.
+ *
+ * If fork already exists no new fork is created, no error occurs, and the existing Fork data is returned
+ * with the `updated_at` + any historical repo changes.
+ * @param {Octokit} octokit The authenticated octokit instance
+ * @param {RepoDomain} upstream upstream repository information
+ * @returns {Promise<RepoDomain>} the forked repository name, as well as the owner of that fork
+ */
+async function fork(octokit, upstream) {
+    try {
+        const forkedRepo = (await octokit.repos.createFork({
+            owner: upstream.owner,
+            repo: upstream.repo,
+        })).data;
+        const origin = {
+            repo: forkedRepo.name,
+            owner: forkedRepo.owner.login,
+        };
+        logger_1.logger.info(`Create fork request was successful for ${origin.owner}/${origin.repo}`);
+        return origin;
+    }
+    catch (err) {
+        logger_1.logger.error('Error when forking');
+        throw Error(err.toString());
+    }
+}
+exports.fork = fork;
+//# sourceMappingURL=fork.js.map
+
+/***/ }),
+
+/***/ 8831:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.addLabels = void 0;
+const logger_1 = __nccwpck_require__(58192);
+/**
+ * Create a GitHub PR on the upstream organization's repo
+ * Throws an error if the GitHub API fails
+ * @param {Octokit} octokit The authenticated octokit instance
+ * @param {RepoDomain} upstream The upstream repository
+ * @param {BranchDomain} origin The remote origin information that contains the origin branch
+ * @param {number} issue_number The issue number to add labels to. Can also be a PR number
+ * @param {string[]} labels The list of labels to apply to the issue/pull request. Default is []. the funciton will no-op.
+ * @returns {Promise<string[]>} The list of resulting labels after the addition of the given labels
+ */
+async function addLabels(octokit, upstream, origin, issue_number, labels) {
+    if (!labels || labels.length === 0) {
+        return [];
+    }
+    const labelsResponseData = (await octokit.issues.addLabels({
+        owner: upstream.owner,
+        repo: origin.repo,
+        issue_number: issue_number,
+        labels: labels,
+    })).data;
+    logger_1.logger.info(`Successfully added labels ${labels} to issue: ${issue_number}`);
+    return labelsResponseData.map(l => l.name);
+}
+exports.addLabels = addLabels;
+//# sourceMappingURL=labels.js.map
+
+/***/ }),
+
+/***/ 24461:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.openPullRequest = void 0;
+const logger_1 = __nccwpck_require__(58192);
+const DEFAULT_PRIMARY = 'master';
+/**
+ * Create a GitHub PR on the upstream organization's repo
+ * Throws an error if the GitHub API fails
+ * @param {Octokit} octokit The authenticated octokit instance
+ * @param {RepoDomain} upstream The upstream repository
+ * @param {BranchDomain} origin The remote origin information that contains the origin branch
+ * @param {Description} description The pull request title and detailed description
+ * @param {boolean} maintainersCanModify Whether or not maintainers can modify the pull request. Default is true
+ * @param {string} upstreamPrimary The upstream repository's primary branch. Default is master.
+ * @param draft Open a DRAFT pull request.  Defaults to false.
+ * @returns {Promise<void>}
+ */
+async function openPullRequest(octokit, upstream, origin, description, maintainersCanModify = true, upstreamPrimary = DEFAULT_PRIMARY, draft = false) {
+    const head = `${origin.owner}:${origin.branch}`;
+    const existingPullRequest = (await octokit.pulls.list({
+        owner: upstream.owner,
+        repo: origin.repo,
+        head,
+    })).data.find(pr => pr.head.label === head);
+    if (existingPullRequest) {
+        logger_1.logger.info(`Found existing pull request for reference ${origin.owner}:${origin.branch}. Skipping creating a new pull request.`);
+        return existingPullRequest.number;
+    }
+    const pullResponseData = (await octokit.pulls.create({
+        owner: upstream.owner,
+        repo: origin.repo,
+        title: description.title,
+        head: `${origin.owner}:${origin.branch}`,
+        base: upstreamPrimary,
+        body: description.body,
+        maintainer_can_modify: maintainersCanModify,
+        draft: draft,
+    })).data;
+    logger_1.logger.info(`Successfully opened pull request available at url: ${pullResponseData.url}.`);
+    return pullResponseData.number;
+}
+exports.openPullRequest = openPullRequest;
+//# sourceMappingURL=open-pull-request.js.map
+
+/***/ }),
+
+/***/ 43102:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getPullRequestHunks = exports.getCurrentPullRequestPatches = exports.createPullRequestReview = exports.makeInlineSuggestions = exports.buildReviewComments = exports.buildSummaryComment = void 0;
+const logger_1 = __nccwpck_require__(58192);
+const diff_utils_1 = __nccwpck_require__(15276);
+const hunk_utils_1 = __nccwpck_require__(26381);
+function hunkErrorMessage(hunk) {
+    return `  * lines ${hunk.oldStart}-${hunk.oldEnd}`;
+}
+function fileErrorMessage(filename, hunks) {
+    return `* ${filename}\n` + hunks.map(hunkErrorMessage).join('\n');
+}
+/**
+ * Build an error message based on invalid hunks.
+ * Returns an empty string if the provided hunks are empty.
+ * @param invalidHunks a map of filename to hunks that are not suggestable
+ */
+function buildSummaryComment(invalidHunks) {
+    if (invalidHunks.size === 0) {
+        return '';
+    }
+    return ('Some suggestions could not be made:\n' +
+        Array.from(invalidHunks, ([filename, hunks]) => fileErrorMessage(filename, hunks)).join('\n'));
+}
+exports.buildSummaryComment = buildSummaryComment;
+const COMFORT_PREVIEW_HEADER = 'application/vnd.github.comfort-fade-preview+json';
+/**
+ * Convert the patch suggestions into GitHub parameter objects.
+ * Use this to generate review comments
+ * For information see:
+ * https://developer.github.com/v3/pulls/comments/#create-a-review-comment-for-a-pull-request
+ * @param suggestions
+ */
+function buildReviewComments(suggestions) {
+    const fileComments = [];
+    suggestions.forEach((hunks, fileName) => {
+        hunks.forEach(hunk => {
+            const newContent = hunk.newContent.join('\n');
+            if (hunk.oldStart === hunk.oldEnd) {
+                const singleComment = {
+                    path: fileName,
+                    body: `\`\`\`suggestion\n${newContent}\n\`\`\``,
+                    line: hunk.oldEnd,
+                    side: 'RIGHT',
+                };
+                fileComments.push(singleComment);
+            }
+            else {
+                const comment = {
+                    path: fileName,
+                    body: `\`\`\`suggestion\n${newContent}\n\`\`\``,
+                    start_line: hunk.oldStart,
+                    line: hunk.oldEnd,
+                    side: 'RIGHT',
+                    start_side: 'RIGHT',
+                };
+                fileComments.push(comment);
+            }
+        });
+    });
+    return fileComments;
+}
+exports.buildReviewComments = buildReviewComments;
+/**
+ * Make a request to GitHub to make review comments
+ * @param octokit an authenticated octokit instance
+ * @param suggestions code suggestions patches
+ * @param remote the repository domain
+ * @param pullNumber the pull request number to make a review on
+ */
+async function makeInlineSuggestions(octokit, suggestions, outOfScopeSuggestions, remote, pullNumber) {
+    const comments = buildReviewComments(suggestions);
+    if (!comments.length) {
+        logger_1.logger.info('No valid suggestions to make');
+    }
+    if (!comments.length && !outOfScopeSuggestions.size) {
+        logger_1.logger.info('No suggestions were generated. Exiting...');
+        return null;
+    }
+    const summaryComment = buildSummaryComment(outOfScopeSuggestions);
+    if (summaryComment) {
+        logger_1.logger.warn('Some suggestions could not be made');
+    }
+    // apply the suggestions to the latest sha
+    // the latest Pull Request hunk range includes
+    // all previous commit valid hunk ranges
+    const headSha = (await octokit.pulls.get({
+        owner: remote.owner,
+        repo: remote.repo,
+        pull_number: pullNumber,
+    })).data.head.sha;
+    const reviewNumber = (await octokit.pulls.createReview({
+        owner: remote.owner,
+        repo: remote.repo,
+        pull_number: pullNumber,
+        commit_id: headSha,
+        event: 'COMMENT',
+        body: summaryComment,
+        headers: { accept: COMFORT_PREVIEW_HEADER },
+        // Octokit type definitions doesn't support mulitiline comments, but the GitHub API does
+        comments: comments,
+    })).data.id;
+    logger_1.logger.info(`Successfully created a review on pull request: ${pullNumber}.`);
+    return reviewNumber;
+}
+exports.makeInlineSuggestions = makeInlineSuggestions;
+/**
+ * Comment on a Pull Request
+ * @param {Octokit} octokit authenticated octokit isntance
+ * @param {RepoDomain} remote the Pull Request repository
+ * @param {number} pullNumber the Pull Request number
+ * @param {number} pageSize the number of files to comment on // TODO pagination
+ * @param {Map<string, FileDiffContent>} diffContents the old and new contents of the files to suggest
+ * @returns the created review's id, or null if no review was made
+ */
+async function createPullRequestReview(octokit, remote, pullNumber, pageSize, diffContents) {
+    try {
+        // get the hunks from the pull request
+        const pullRequestHunks = await exports.getPullRequestHunks(octokit, remote, pullNumber, pageSize);
+        // get the hunks from the suggested change
+        const allSuggestedHunks = typeof diffContents === 'string'
+            ? diff_utils_1.parseAllHunks(diffContents)
+            : hunk_utils_1.getRawSuggestionHunks(diffContents);
+        // split hunks by commentable and uncommentable
+        const { validHunks, invalidHunks } = hunk_utils_1.partitionSuggestedHunksByScope(pullRequestHunks, allSuggestedHunks);
+        // create pull request review
+        const reviewNumber = await exports.makeInlineSuggestions(octokit, validHunks, invalidHunks, remote, pullNumber);
+        return reviewNumber;
+    }
+    catch (err) {
+        logger_1.logger.error('Failed to suggest');
+        throw err;
+    }
+}
+exports.createPullRequestReview = createPullRequestReview;
+/**
+ * For a pull request, get each remote file's patch text asynchronously
+ * Also get the list of files whose patch data could not be returned
+ * @param {Octokit} octokit the authenticated octokit instance
+ * @param {RepoDomain} remote the remote repository domain information
+ * @param {number} pullNumber the pull request number
+ * @param {number} pageSize the number of results to return per page
+ * @returns {Promise<Object<PatchText, string[]>>} the stringified patch data for each file and the list of files whose patch data could not be resolved
+ */
+async function getCurrentPullRequestPatches(octokit, remote, pullNumber, pageSize) {
+    // TODO: support pagination
+    const filesMissingPatch = [];
+    const files = (await octokit.pulls.listFiles({
+        owner: remote.owner,
+        repo: remote.repo,
+        pull_number: pullNumber,
+        per_page: pageSize,
+    })).data;
+    const patches = new Map();
+    if (files.length === 0) {
+        logger_1.logger.error(`0 file results have returned from list files query for Pull Request #${pullNumber}. Cannot make suggestions on an empty Pull Request`);
+        throw Error('Empty Pull Request');
+    }
+    files.forEach(file => {
+        if (file.patch === undefined) {
+            // files whose patch is too large do not return the patch text by default
+            // TODO handle file patches that are too large
+            logger_1.logger.warn(`File ${file.filename} may have a patch that is too large to display patch object.`);
+            filesMissingPatch.push(file.filename);
+        }
+        else {
+            patches.set(file.filename, file.patch);
+        }
+    });
+    if (patches.size === 0) {
+        logger_1.logger.warn('0 patches have been returned. This could be because the patch results were too large to return.');
+    }
+    return { patches, filesMissingPatch };
+}
+exports.getCurrentPullRequestPatches = getCurrentPullRequestPatches;
+/**
+ * For a pull request, get each remote file's current patch range to identify the scope of each patch as a Map.
+ * @param {Octokit} octokit the authenticated octokit instance
+ * @param {RepoDomain} remote the remote repository domain information
+ * @param {number} pullNumber the pull request number
+ * @param {number} pageSize the number of files to return per pull request list files query
+ * @returns {Promise<Map<string, Hunk[]>>} the scope of each file in the pull request
+ */
+async function getPullRequestHunks(octokit, remote, pullNumber, pageSize) {
+    const files = (await octokit.pulls.listFiles({
+        owner: remote.owner,
+        repo: remote.repo,
+        pull_number: pullNumber,
+        per_page: pageSize,
+    })).data;
+    const pullRequestHunks = new Map();
+    if (files.length === 0) {
+        logger_1.logger.error(`0 file results have returned from list files query for Pull Request #${pullNumber}. Cannot make suggestions on an empty Pull Request`);
+        throw Error('Empty Pull Request');
+    }
+    files.forEach(file => {
+        if (file.patch === undefined) {
+            // files whose patch is too large do not return the patch text by default
+            // TODO handle file patches that are too large
+            logger_1.logger.warn(`File ${file.filename} may have a patch that is too large to display patch object.`);
+        }
+        else {
+            const hunks = diff_utils_1.parsePatch(file.patch);
+            pullRequestHunks.set(file.filename, hunks);
+        }
+    });
+    if (pullRequestHunks.size === 0) {
+        logger_1.logger.warn('0 patches have been returned. This could be because the patch results were too large to return.');
+    }
+    return pullRequestHunks;
+}
+exports.getPullRequestHunks = getPullRequestHunks;
+//# sourceMappingURL=review-pull-request.js.map
+
+/***/ }),
+
+/***/ 77103:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.parseTextFiles = exports.createPullRequest = exports.reviewPullRequest = void 0;
+const types_1 = __nccwpck_require__(13984);
+const logger_1 = __nccwpck_require__(58192);
+const default_options_handler_1 = __nccwpck_require__(9558);
+const retry = __nccwpck_require__(33415);
+const review_pull_request_1 = __nccwpck_require__(43102);
+const branch_1 = __nccwpck_require__(58021);
+const fork_1 = __nccwpck_require__(67386);
+const commit_and_push_1 = __nccwpck_require__(4424);
+const open_pull_request_1 = __nccwpck_require__(24461);
+const labels_1 = __nccwpck_require__(8831);
+/**
+ * Given a set of suggestions, make all the multiline inline review comments on a given pull request given
+ * that they are in scope of the pull request. Outof scope suggestions are not made.
+ *
+ * In-scope suggestions are specifically: the suggestion for a file must correspond to a file in the remote pull request
+ * and the diff hunk computed for a file's contents must produce a range that is a subset of the pull request's files hunks.
+ *
+ * If a file is too large to load in the review, it is skipped in the suggestion phase.
+ *
+ * If changes are empty then the workflow will not run.
+ * Rethrows an HttpError if Octokit GitHub API returns an error. HttpError Octokit access_token and client_secret headers redact all sensitive information.
+ * @param octokit The authenticated octokit instance, instantiated with an access token having permissiong to create a fork on the target repository.
+ * @param diffContents A set of changes. The changes may be empty.
+ * @param options The configuration for interacting with GitHub provided by the user.
+ * @returns the created review's id number, or null if there are no changes to be made.
+ */
+async function reviewPullRequest(octokit, diffContents, options) {
+    logger_1.setupLogger(options.logger);
+    // if null undefined, or the empty map then no changes have been provided.
+    // Do not execute GitHub workflow
+    if (diffContents === null ||
+        diffContents === undefined ||
+        (typeof diffContents !== 'string' && diffContents.size === 0)) {
+        logger_1.logger.info('Empty changes provided. No suggestions to be made. Cancelling workflow.');
+        return null;
+    }
+    const gitHubConfigs = default_options_handler_1.addReviewCommentsDefaults(options);
+    const remote = {
+        owner: gitHubConfigs.owner,
+        repo: gitHubConfigs.repo,
+    };
+    const reviewNumber = await review_pull_request_1.createPullRequestReview(octokit, remote, gitHubConfigs.pullNumber, gitHubConfigs.pageSize, diffContents);
+    return reviewNumber;
+}
+exports.reviewPullRequest = reviewPullRequest;
+/**
+ * Make a new GitHub Pull Request with a set of changes applied on top of primary branch HEAD.
+ * The changes are committed into a new branch based on the upstream repository options using the authenticated Octokit account.
+ * Then a Pull Request is made from that branch.
+ *
+ * Also throws error if git data from the fork is not ready in 5 minutes.
+ *
+ * From the docs
+ * https://developer.github.com/v3/repos/forks/#create-a-fork
+ * """
+ * Forking a Repository happens asynchronously.
+ * You may have to wait a short period of time before you can access the git objects.
+ * If this takes longer than 5 minutes, be sure to contact GitHub Support or GitHub Premium Support.
+ * """
+ *
+ * If changes are empty then the workflow will not run.
+ * Rethrows an HttpError if Octokit GitHub API returns an error. HttpError Octokit access_token and client_secret headers redact all sensitive information.
+ * @param {Octokit} octokit The authenticated octokit instance, instantiated with an access token having permissiong to create a fork on the target repository
+ * @param {Changes | null | undefined} changes A set of changes. The changes may be empty
+ * @param {CreatePullRequestUserOptions} options The configuration for interacting with GitHub provided by the user.
+ * @returns {Promise<number>} the pull request number. Returns 0 if unsuccessful.
+ */
+async function createPullRequest(octokit, changes, options) {
+    logger_1.setupLogger(options.logger);
+    // if null undefined, or the empty map then no changes have been provided.
+    // Do not execute GitHub workflow
+    if (changes === null || changes === undefined || changes.size === 0) {
+        logger_1.logger.info('Empty change set provided. No changes need to be made. Cancelling workflow.');
+        return 0;
+    }
+    const gitHubConfigs = default_options_handler_1.addPullRequestDefaults(options);
+    logger_1.logger.info('Starting GitHub PR workflow...');
+    const upstream = {
+        owner: gitHubConfigs.upstreamOwner,
+        repo: gitHubConfigs.upstreamRepo,
+    };
+    const origin = options.fork === false ? upstream : await fork_1.fork(octokit, upstream);
+    const originBranch = {
+        ...origin,
+        branch: gitHubConfigs.branch,
+    };
+    // The `retry` flag defaults to `5` to maintain compatibility
+    options.retry = options.retry === undefined ? 5 : options.retry;
+    const refHeadSha = await retry(async () => await branch_1.branch(octokit, origin, upstream, originBranch.branch, gitHubConfigs.primary), {
+        retries: options.retry,
+        factor: 2.8411,
+        minTimeout: 3000,
+        randomize: false,
+        onRetry: (e, attempt) => {
+            e.message = `Error creating Pull Request: ${e.message}`;
+            logger_1.logger.error(e);
+            logger_1.logger.info(`Retry attempt #${attempt}...`);
+        },
+    });
+    await commit_and_push_1.commitAndPush(octokit, refHeadSha, changes, originBranch, gitHubConfigs.message, gitHubConfigs.force);
+    const description = {
+        body: gitHubConfigs.description,
+        title: gitHubConfigs.title,
+    };
+    const prNumber = await open_pull_request_1.openPullRequest(octokit, upstream, originBranch, description, gitHubConfigs.maintainersCanModify, gitHubConfigs.primary, options.draft);
+    logger_1.logger.info(`Successfully opened pull request: ${prNumber}.`);
+    // addLabels will no-op if options.labels is undefined or empty.
+    await labels_1.addLabels(octokit, upstream, originBranch, prNumber, options.labels);
+    return prNumber;
+}
+exports.createPullRequest = createPullRequest;
+/**
+ * Convert a Map<string,string> or {[path: string]: string}, where the key is the relative file path in the repository,
+ * and the value is the text content. The files will be converted to a Map also containing the file mode information '100644'
+ * @param {Object<string, string | null> | Map<string, string | null>} textFiles a map/object where the key is the relative file path and the value is the text file content
+ * @returns {Changes} Map of the file path to the string file content and the file mode '100644'
+ */
+function parseTextFiles(textFiles) {
+    const changes = new Map();
+    if (textFiles instanceof Map) {
+        textFiles.forEach((content, path) => {
+            if (typeof path !== 'string' ||
+                (content !== null && typeof content !== 'string')) {
+                throw TypeError('The file changeset provided must have a string key and a string/null value');
+            }
+            changes.set(path, new types_1.FileData(content));
+        });
+    }
+    else {
+        for (const [path, content] of Object.entries(textFiles)) {
+            if (typeof path !== 'string' ||
+                (content !== null && typeof content !== 'string')) {
+                throw TypeError('The file changeset provided must have a string key and a string/null value');
+            }
+            changes.set(path, new types_1.FileData(content));
+        }
+    }
+    return changes;
+}
+exports.parseTextFiles = parseTextFiles;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 58192:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.setupLogger = exports.logger = void 0;
+let logger;
+exports.logger = logger;
+class NullLogger {
+    constructor() {
+        this.error = () => { };
+        this.warn = () => { };
+        this.info = () => { };
+        this.debug = () => { };
+        this.trace = () => { };
+    }
+}
+function setupLogger(userLogger) {
+    if (userLogger) {
+        exports.logger = logger = userLogger;
+    }
+    else {
+        exports.logger = logger = new NullLogger();
+    }
+}
+exports.setupLogger = setupLogger;
+//# sourceMappingURL=logger.js.map
+
+/***/ }),
+
+/***/ 13984:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PatchSyntaxError = exports.FileData = void 0;
+/**
+ * The content and the mode of a file.
+ * Default file mode is a text file which has code '100644'.
+ * If `content` is not null, then `content` must be the entire file content.
+ * See https://developer.github.com/v3/git/trees/#tree-object for details on mode.
+ */
+class FileData {
+    constructor(content, mode = '100644') {
+        this.mode = mode;
+        this.content = content;
+    }
+}
+exports.FileData = FileData;
+class PatchSyntaxError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'PatchSyntaxError';
+    }
+}
+exports.PatchSyntaxError = PatchSyntaxError;
+//# sourceMappingURL=types.js.map
+
+/***/ }),
+
+/***/ 15276:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -12663,63 +12786,8 @@ exports.getSuggestedHunks = getSuggestedHunks;
 
 /***/ }),
 
-/***/ 68504:
+/***/ 26381:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.fork = void 0;
-const logger_1 = __nccwpck_require__(58192);
-/**
- * Fork the GitHub owner's repository.
- * Returns the fork owner and fork repo when the fork creation request to GitHub succeeds.
- * Otherwise throws error.
- *
- * If fork already exists no new fork is created, no error occurs, and the existing Fork data is returned
- * with the `updated_at` + any historical repo changes.
- * @param {Octokit} octokit The authenticated octokit instance
- * @param {RepoDomain} upstream upstream repository information
- * @returns {Promise<RepoDomain>} the forked repository name, as well as the owner of that fork
- */
-async function fork(octokit, upstream) {
-    try {
-        const forkedRepo = (await octokit.repos.createFork({
-            owner: upstream.owner,
-            repo: upstream.repo,
-        })).data;
-        const origin = {
-            repo: forkedRepo.name,
-            owner: forkedRepo.owner.login,
-        };
-        logger_1.logger.info(`Create fork request was successful for ${origin.owner}/${origin.repo}`);
-        return origin;
-    }
-    catch (err) {
-        logger_1.logger.error('Error when forking');
-        throw Error(err.toString());
-    }
-}
-exports.fork = fork;
-//# sourceMappingURL=fork-handler.js.map
-
-/***/ }),
-
-/***/ 96507:
-/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
@@ -12737,7 +12805,9 @@ exports.fork = fork;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.adjustHunkDown = exports.adjustHunkUp = void 0;
+exports.partitionSuggestedHunksByScope = exports.getRawSuggestionHunks = exports.adjustHunkDown = exports.adjustHunkUp = void 0;
+const diff_utils_1 = __nccwpck_require__(15276);
+const logger_1 = __nccwpck_require__(58192);
 /**
  * Shift a Hunk up one line so it starts one line earlier.
  * @param {Hunk} hunk
@@ -12774,401 +12844,102 @@ function adjustHunkDown(hunk) {
     };
 }
 exports.adjustHunkDown = adjustHunkDown;
-//# sourceMappingURL=hunk-utils.js.map
-
-/***/ }),
-
-/***/ 8433:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-__exportStar(__nccwpck_require__(68504), exports);
-var branch_handler_1 = __nccwpck_require__(64800);
-Object.defineProperty(exports, "branch", ({ enumerable: true, get: function () { return branch_handler_1.branch; } }));
-var commit_and_push_handler_1 = __nccwpck_require__(91663);
-Object.defineProperty(exports, "commitAndPush", ({ enumerable: true, get: function () { return commit_and_push_handler_1.commitAndPush; } }));
-__exportStar(__nccwpck_require__(87268), exports);
-__exportStar(__nccwpck_require__(47693), exports);
-__exportStar(__nccwpck_require__(81630), exports);
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-
-/***/ 81630:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright 2021 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.addLabels = void 0;
-const logger_1 = __nccwpck_require__(58192);
 /**
- * Create a GitHub PR on the upstream organization's repo
- * Throws an error if the GitHub API fails
- * @param {Octokit} octokit The authenticated octokit instance
- * @param {RepoDomain} upstream The upstream repository
- * @param {BranchDomain} origin The remote origin information that contains the origin branch
- * @param {number} issue_number The issue number to add labels to. Can also be a PR number
- * @param {string[]} labels The list of labels to apply to the issue/pull request. Default is []. the funciton will no-op.
- * @returns {Promise<string[]>} The list of resulting labels after the addition of the given labels
+ * Given a map where the key is the file name and the value is the
+ * old content and new content of the file
+ * compute the hunk for each file whose old and new contents differ.
+ * Do not compute the hunk if the old content is the same as the new content.
+ * The hunk list is sorted and each interval is disjoint.
+ * @param {Map<string, FileDiffContent>} diffContents a map of the original file contents and the new file contents
+ * @returns the hunks for each file whose old and new contents differ
  */
-async function addLabels(octokit, upstream, origin, issue_number, labels) {
-    if (!labels || labels.length === 0) {
-        return [];
-    }
-    const labelsResponseData = (await octokit.issues.addLabels({
-        owner: upstream.owner,
-        repo: origin.repo,
-        issue_number: issue_number,
-        labels: labels,
-    })).data;
-    logger_1.logger.info(`Successfully added labels ${labels} to issue: ${issue_number}`);
-    return labelsResponseData.map(l => l.name);
-}
-exports.addLabels = addLabels;
-//# sourceMappingURL=issue-handler.js.map
-
-/***/ }),
-
-/***/ 87268:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.openPullRequest = void 0;
-const logger_1 = __nccwpck_require__(58192);
-const DEFAULT_PRIMARY = 'master';
-/**
- * Create a GitHub PR on the upstream organization's repo
- * Throws an error if the GitHub API fails
- * @param {Octokit} octokit The authenticated octokit instance
- * @param {RepoDomain} upstream The upstream repository
- * @param {BranchDomain} origin The remote origin information that contains the origin branch
- * @param {Description} description The pull request title and detailed description
- * @param {boolean} maintainersCanModify Whether or not maintainers can modify the pull request. Default is true
- * @param {string} upstreamPrimary The upstream repository's primary branch. Default is master.
- * @param draft Open a DRAFT pull request.  Defaults to false.
- * @returns {Promise<void>}
- */
-async function openPullRequest(octokit, upstream, origin, description, maintainersCanModify = true, upstreamPrimary = DEFAULT_PRIMARY, draft = false) {
-    const head = `${origin.owner}:${origin.branch}`;
-    const existingPullRequest = (await octokit.pulls.list({
-        owner: upstream.owner,
-        repo: origin.repo,
-        head,
-    })).data.find(pr => pr.head.label === head);
-    if (existingPullRequest) {
-        logger_1.logger.info(`Found existing pull request for reference ${origin.owner}:${origin.branch}. Skipping creating a new pull request.`);
-        return existingPullRequest.number;
-    }
-    const pullResponseData = (await octokit.pulls.create({
-        owner: upstream.owner,
-        repo: origin.repo,
-        title: description.title,
-        head: `${origin.owner}:${origin.branch}`,
-        base: upstreamPrimary,
-        body: description.body,
-        maintainer_can_modify: maintainersCanModify,
-        draft: draft,
-    })).data;
-    logger_1.logger.info(`Successfully opened pull request available at url: ${pullResponseData.url}.`);
-    return pullResponseData.number;
-}
-exports.openPullRequest = openPullRequest;
-//# sourceMappingURL=pull-request-handler.js.map
-
-/***/ }),
-
-/***/ 77103:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.parseTextFiles = exports.createPullRequest = exports.reviewPullRequest = void 0;
-const handler = __nccwpck_require__(8433);
-const types_1 = __nccwpck_require__(13984);
-const logger_1 = __nccwpck_require__(58192);
-const default_options_handler_1 = __nccwpck_require__(9558);
-const retry = __nccwpck_require__(33415);
-/**
- * Given a set of suggestions, make all the multiline inline review comments on a given pull request given
- * that they are in scope of the pull request. Outof scope suggestions are not made.
- *
- * In-scope suggestions are specifically: the suggestion for a file must correspond to a file in the remote pull request
- * and the diff hunk computed for a file's contents must produce a range that is a subset of the pull request's files hunks.
- *
- * If a file is too large to load in the review, it is skipped in the suggestion phase.
- *
- * If changes are empty then the workflow will not run.
- * Rethrows an HttpError if Octokit GitHub API returns an error. HttpError Octokit access_token and client_secret headers redact all sensitive information.
- * @param octokit The authenticated octokit instance, instantiated with an access token having permissiong to create a fork on the target repository.
- * @param diffContents A set of changes. The changes may be empty.
- * @param options The configuration for interacting with GitHub provided by the user.
- * @param loggerOption The logger instance (optional).
- * @returns the created review's id number, or null if there are no changes to be made.
- */
-async function reviewPullRequest(octokit, diffContents, options, loggerOption) {
-    logger_1.setupLogger(loggerOption);
-    // if null undefined, or the empty map then no changes have been provided.
-    // Do not execute GitHub workflow
-    if (diffContents === null ||
-        diffContents === undefined ||
-        (typeof diffContents !== 'string' && diffContents.size === 0)) {
-        logger_1.logger.info('Empty changes provided. No suggestions to be made. Cancelling workflow.');
-        return null;
-    }
-    const gitHubConfigs = default_options_handler_1.addReviewCommentsDefaults(options);
-    const remote = {
-        owner: gitHubConfigs.owner,
-        repo: gitHubConfigs.repo,
-    };
-    const reviewNumber = await handler.reviewPullRequest(octokit, remote, gitHubConfigs.pullNumber, gitHubConfigs.pageSize, diffContents);
-    return reviewNumber;
-}
-exports.reviewPullRequest = reviewPullRequest;
-/**
- * Make a new GitHub Pull Request with a set of changes applied on top of primary branch HEAD.
- * The changes are committed into a new branch based on the upstream repository options using the authenticated Octokit account.
- * Then a Pull Request is made from that branch.
- *
- * Also throws error if git data from the fork is not ready in 5 minutes.
- *
- * From the docs
- * https://developer.github.com/v3/repos/forks/#create-a-fork
- * """
- * Forking a Repository happens asynchronously.
- * You may have to wait a short period of time before you can access the git objects.
- * If this takes longer than 5 minutes, be sure to contact GitHub Support or GitHub Premium Support.
- * """
- *
- * If changes are empty then the workflow will not run.
- * Rethrows an HttpError if Octokit GitHub API returns an error. HttpError Octokit access_token and client_secret headers redact all sensitive information.
- * @param {Octokit} octokit The authenticated octokit instance, instantiated with an access token having permissiong to create a fork on the target repository
- * @param {Changes | null | undefined} changes A set of changes. The changes may be empty
- * @param {CreatePullRequestUserOptions} options The configuration for interacting with GitHub provided by the user.
- * @param {Logger} logger The logger instance (optional).
- * @returns {Promise<number>} the pull request number. Returns 0 if unsuccessful.
- */
-async function createPullRequest(octokit, changes, options, loggerOption) {
-    logger_1.setupLogger(loggerOption);
-    // if null undefined, or the empty map then no changes have been provided.
-    // Do not execute GitHub workflow
-    if (changes === null || changes === undefined || changes.size === 0) {
-        logger_1.logger.info('Empty change set provided. No changes need to be made. Cancelling workflow.');
-        return 0;
-    }
-    const gitHubConfigs = default_options_handler_1.addPullRequestDefaults(options);
-    logger_1.logger.info('Starting GitHub PR workflow...');
-    const upstream = {
-        owner: gitHubConfigs.upstreamOwner,
-        repo: gitHubConfigs.upstreamRepo,
-    };
-    const origin = options.fork === false ? upstream : await handler.fork(octokit, upstream);
-    const originBranch = {
-        ...origin,
-        branch: gitHubConfigs.branch,
-    };
-    // The `retry` flag defaults to `5` to maintain compatibility
-    options.retry = options.retry === undefined ? 5 : options.retry;
-    const refHeadSha = await retry(async () => await handler.branch(octokit, origin, upstream, originBranch.branch, gitHubConfigs.primary), {
-        retries: options.retry,
-        factor: 2.8411,
-        minTimeout: 3000,
-        randomize: false,
-        onRetry: (e, attempt) => {
-            e.message = `Error creating Pull Request: ${e.message}`;
-            logger_1.logger.error(e);
-            logger_1.logger.info(`Retry attempt #${attempt}...`);
-        },
-    });
-    await handler.commitAndPush(octokit, refHeadSha, changes, originBranch, gitHubConfigs.message, gitHubConfigs.force);
-    const description = {
-        body: gitHubConfigs.description,
-        title: gitHubConfigs.title,
-    };
-    const prNumber = await handler.openPullRequest(octokit, upstream, originBranch, description, gitHubConfigs.maintainersCanModify, gitHubConfigs.primary, options.draft);
-    logger_1.logger.info(`Successfully opened pull request: ${prNumber}.`);
-    // addLabels will no-op if options.labels is undefined or empty.
-    await handler.addLabels(octokit, upstream, originBranch, prNumber, options.labels);
-    return prNumber;
-}
-exports.createPullRequest = createPullRequest;
-/**
- * Convert a Map<string,string> or {[path: string]: string}, where the key is the relative file path in the repository,
- * and the value is the text content. The files will be converted to a Map also containing the file mode information '100644'
- * @param {Object<string, string | null> | Map<string, string | null>} textFiles a map/object where the key is the relative file path and the value is the text file content
- * @returns {Changes} Map of the file path to the string file content and the file mode '100644'
- */
-function parseTextFiles(textFiles) {
-    const changes = new Map();
-    if (textFiles instanceof Map) {
-        textFiles.forEach((content, path) => {
-            if (typeof path !== 'string' ||
-                (content !== null && typeof content !== 'string')) {
-                throw TypeError('The file changeset provided must have a string key and a string/null value');
-            }
-            changes.set(path, new types_1.FileData(content));
-        });
-    }
-    else {
-        for (const [path, content] of Object.entries(textFiles)) {
-            if (typeof path !== 'string' ||
-                (content !== null && typeof content !== 'string')) {
-                throw TypeError('The file changeset provided must have a string key and a string/null value');
-            }
-            changes.set(path, new types_1.FileData(content));
+function getRawSuggestionHunks(diffContents) {
+    const fileHunks = new Map();
+    diffContents.forEach((fileDiffContent, fileName) => {
+        // if identical don't calculate the hunk and continue in the loop
+        if (fileDiffContent.oldContent === fileDiffContent.newContent) {
+            return;
         }
-    }
-    return changes;
+        const hunks = diff_utils_1.getSuggestedHunks(fileDiffContent.oldContent, fileDiffContent.newContent);
+        fileHunks.set(fileName, hunks);
+    });
+    logger_1.logger.info('Parsed ranges of old and new patch');
+    return fileHunks;
 }
-exports.parseTextFiles = parseTextFiles;
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-
-/***/ 58192:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.setupLogger = exports.logger = void 0;
-const Pino = __nccwpck_require__(79608);
-let logger;
-exports.logger = logger;
-function setupLogger(userLogger) {
-    if (typeof userLogger === 'undefined' || typeof userLogger === 'object') {
-        exports.logger = logger = Pino(userLogger);
-    }
-    else {
-        exports.logger = logger = userLogger;
-    }
+exports.getRawSuggestionHunks = getRawSuggestionHunks;
+function hunkOverlaps(validHunk, suggestedHunk) {
+    return (suggestedHunk.oldStart >= validHunk.newStart &&
+        suggestedHunk.oldEnd <= validHunk.newEnd);
 }
-exports.setupLogger = setupLogger;
-//# sourceMappingURL=logger.js.map
-
-/***/ }),
-
-/***/ 13984:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PatchSyntaxError = exports.FileData = void 0;
+function partitionFileHunks(pullRequestHunks, suggestedHunks) {
+    // check ranges: the entirety of the old range of the suggested
+    // hunk must fit inside the new range of the valid Hunks
+    let i = 0;
+    let candidateHunk = pullRequestHunks[i];
+    const validFileHunks = [];
+    const invalidFileHunks = [];
+    suggestedHunks.forEach(suggestedHunk => {
+        while (candidateHunk && suggestedHunk.oldStart > candidateHunk.newEnd) {
+            i++;
+            candidateHunk = pullRequestHunks[i];
+        }
+        if (!candidateHunk) {
+            invalidFileHunks.push(suggestedHunk);
+            return;
+        }
+        // if deletion only or addition only
+        if (suggestedHunk.newEnd < suggestedHunk.newStart ||
+            suggestedHunk.oldEnd < suggestedHunk.oldStart) {
+            // try using previous line
+            let adjustedHunk = adjustHunkUp(suggestedHunk);
+            if (adjustedHunk && hunkOverlaps(candidateHunk, adjustedHunk)) {
+                validFileHunks.push(adjustedHunk);
+                return;
+            }
+            // try using next line
+            adjustedHunk = adjustHunkDown(suggestedHunk);
+            if (adjustedHunk && hunkOverlaps(candidateHunk, adjustedHunk)) {
+                validFileHunks.push(adjustedHunk);
+                return;
+            }
+        }
+        else if (hunkOverlaps(candidateHunk, suggestedHunk)) {
+            validFileHunks.push(suggestedHunk);
+            return;
+        }
+        invalidFileHunks.push(suggestedHunk);
+    });
+    return { validFileHunks, invalidFileHunks };
+}
 /**
- * The content and the mode of a file.
- * Default file mode is a text file which has code '100644'.
- * If `content` is not null, then `content` must be the entire file content.
- * See https://developer.github.com/v3/git/trees/#tree-object for details on mode.
+ * Split suggested hunks into commentable and non-commentable hunks. Compares the new line ranges
+ * from pullRequestHunks against the old line ranges from allSuggestedHunks.
+ * @param pullRequestHunks {Map<string, Hunk[]>} The parsed hunks from that represents the valid lines to comment.
+ * @param allSuggestedHunks {Map<string, Hunk[]>} The hunks that represent suggested changes.
+ * @returns {PartitionedHunks} split hunks
  */
-class FileData {
-    constructor(content, mode = '100644') {
-        this.mode = mode;
-        this.content = content;
-    }
+function partitionSuggestedHunksByScope(pullRequestHunks, allSuggestedHunks) {
+    const validHunks = new Map();
+    const invalidHunks = new Map();
+    allSuggestedHunks.forEach((suggestedHunks, filename) => {
+        const pullRequestFileHunks = pullRequestHunks.get(filename);
+        if (!pullRequestFileHunks) {
+            // file is not the original PR
+            invalidHunks.set(filename, suggestedHunks);
+            return;
+        }
+        const { validFileHunks, invalidFileHunks } = partitionFileHunks(pullRequestFileHunks, suggestedHunks);
+        if (validFileHunks.length > 0) {
+            validHunks.set(filename, validFileHunks);
+        }
+        if (invalidFileHunks.length > 0) {
+            invalidHunks.set(filename, invalidFileHunks);
+        }
+    });
+    return { validHunks, invalidHunks };
 }
-exports.FileData = FileData;
-class PatchSyntaxError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = 'PatchSyntaxError';
-    }
-}
-exports.PatchSyntaxError = PatchSyntaxError;
-//# sourceMappingURL=types.js.map
+exports.partitionSuggestedHunksByScope = partitionSuggestedHunksByScope;
+//# sourceMappingURL=hunk-utils.js.map
 
 /***/ }),
 
@@ -22215,711 +21986,6 @@ module.exports = {
 
 /***/ }),
 
-/***/ 24826:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const validator = __nccwpck_require__(74174)
-const parse = __nccwpck_require__(96214)
-const redactor = __nccwpck_require__(17333)
-const restorer = __nccwpck_require__(98806)
-const { groupRedact, nestedRedact } = __nccwpck_require__(54865)
-const state = __nccwpck_require__(41012)
-const rx = __nccwpck_require__(9158)
-const validate = validator()
-const noop = (o) => o
-noop.restore = noop
-
-const DEFAULT_CENSOR = '[REDACTED]'
-fastRedact.rx = rx
-fastRedact.validator = validator
-
-module.exports = fastRedact
-
-function fastRedact (opts = {}) {
-  const paths = Array.from(new Set(opts.paths || []))
-  const serialize = 'serialize' in opts ? (
-    opts.serialize === false ? opts.serialize
-      : (typeof opts.serialize === 'function' ? opts.serialize : JSON.stringify)
-  ) : JSON.stringify
-  const remove = opts.remove
-  if (remove === true && serialize !== JSON.stringify) {
-    throw Error('fast-redact – remove option may only be set when serializer is JSON.stringify')
-  }
-  const censor = remove === true
-    ? undefined
-    : 'censor' in opts ? opts.censor : DEFAULT_CENSOR
-
-  const isCensorFct = typeof censor === 'function'
-  const censorFctTakesPath = isCensorFct && censor.length > 1
-
-  if (paths.length === 0) return serialize || noop
-
-  validate({ paths, serialize, censor })
-
-  const { wildcards, wcLen, secret } = parse({ paths, censor })
-
-  const compileRestore = restorer({ secret, wcLen })
-  const strict = 'strict' in opts ? opts.strict : true
-
-  return redactor({ secret, wcLen, serialize, strict, isCensorFct, censorFctTakesPath }, state({
-    secret,
-    censor,
-    compileRestore,
-    serialize,
-    groupRedact,
-    nestedRedact,
-    wildcards,
-    wcLen
-  }))
-}
-
-
-/***/ }),
-
-/***/ 54865:
-/***/ ((module) => {
-
-"use strict";
-
-
-module.exports = {
-  groupRedact,
-  groupRestore,
-  nestedRedact,
-  nestedRestore
-}
-
-function groupRestore ({ keys, values, target }) {
-  if (target == null) return
-  const length = keys.length
-  for (var i = 0; i < length; i++) {
-    const k = keys[i]
-    target[k] = values[i]
-  }
-}
-
-function groupRedact (o, path, censor, isCensorFct, censorFctTakesPath) {
-  const target = get(o, path)
-  if (target == null) return { keys: null, values: null, target: null, flat: true }
-  const keys = Object.keys(target)
-  const keysLength = keys.length
-  const pathLength = path.length
-  const pathWithKey = censorFctTakesPath ? [...path] : undefined
-  const values = new Array(keysLength)
-
-  for (var i = 0; i < keysLength; i++) {
-    const key = keys[i]
-    values[i] = target[key]
-
-    if (censorFctTakesPath) {
-      pathWithKey[pathLength] = key
-      target[key] = censor(target[key], pathWithKey)
-    } else if (isCensorFct) {
-      target[key] = censor(target[key])
-    } else {
-      target[key] = censor
-    }
-  }
-  return { keys, values, target, flat: true }
-}
-
-function nestedRestore (arr) {
-  const length = arr.length
-  for (var i = 0; i < length; i++) {
-    const { key, target, value } = arr[i]
-    target[key] = value
-  }
-}
-
-function nestedRedact (store, o, path, ns, censor, isCensorFct, censorFctTakesPath) {
-  const target = get(o, path)
-  if (target == null) return
-  const keys = Object.keys(target)
-  const keysLength = keys.length
-  for (var i = 0; i < keysLength; i++) {
-    const key = keys[i]
-    const { value, parent, exists } =
-      specialSet(target, key, path, ns, censor, isCensorFct, censorFctTakesPath)
-
-    if (exists === true && parent !== null) {
-      store.push({ key: ns[ns.length - 1], target: parent, value })
-    }
-  }
-  return store
-}
-
-function has (obj, prop) {
-  return Object.prototype.hasOwnProperty.call(obj, prop)
-}
-
-function specialSet (o, k, path, afterPath, censor, isCensorFct, censorFctTakesPath) {
-  const afterPathLen = afterPath.length
-  const lastPathIndex = afterPathLen - 1
-  const originalKey = k
-  var i = -1
-  var n
-  var nv
-  var ov
-  var oov = null
-  var exists = true
-  ov = n = o[k]
-  if (typeof n !== 'object') return { value: null, parent: null, exists }
-  while (n != null && ++i < afterPathLen) {
-    k = afterPath[i]
-    oov = ov
-    if (!(k in n)) {
-      exists = false
-      break
-    }
-    ov = n[k]
-    nv = (i !== lastPathIndex)
-      ? ov
-      : (isCensorFct
-        ? (censorFctTakesPath ? censor(ov, [...path, originalKey, ...afterPath]) : censor(ov))
-        : censor)
-    n[k] = (has(n, k) && nv === ov) || (nv === undefined && censor !== undefined) ? n[k] : nv
-    n = n[k]
-    if (typeof n !== 'object') break
-  }
-  return { value: ov, parent: oov, exists }
-}
-
-function get (o, p) {
-  var i = -1
-  var l = p.length
-  var n = o
-  while (n != null && ++i < l) {
-    n = n[p[i]]
-  }
-  return n
-}
-
-
-/***/ }),
-
-/***/ 96214:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const rx = __nccwpck_require__(9158)
-
-module.exports = parse
-
-function parse ({ paths }) {
-  const wildcards = []
-  var wcLen = 0
-  const secret = paths.reduce(function (o, strPath, ix) {
-    var path = strPath.match(rx).map((p) => p.replace(/'|"|`/g, ''))
-    const leadingBracket = strPath[0] === '['
-    path = path.map((p) => {
-      if (p[0] === '[') return p.substr(1, p.length - 2)
-      else return p
-    })
-    const star = path.indexOf('*')
-    if (star > -1) {
-      const before = path.slice(0, star)
-      const beforeStr = before.join('.')
-      const after = path.slice(star + 1, path.length)
-      if (after.indexOf('*') > -1) throw Error('fast-redact – Only one wildcard per path is supported')
-      const nested = after.length > 0
-      wcLen++
-      wildcards.push({
-        before,
-        beforeStr,
-        after,
-        nested
-      })
-    } else {
-      o[strPath] = {
-        path: path,
-        val: undefined,
-        precensored: false,
-        circle: '',
-        escPath: JSON.stringify(strPath),
-        leadingBracket: leadingBracket
-      }
-    }
-    return o
-  }, {})
-
-  return { wildcards, wcLen, secret }
-}
-
-
-/***/ }),
-
-/***/ 17333:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const rx = __nccwpck_require__(9158)
-
-module.exports = redactor
-
-function redactor ({ secret, serialize, wcLen, strict, isCensorFct, censorFctTakesPath }, state) {
-  /* eslint-disable-next-line */
-  const redact = Function('o', `
-    if (typeof o !== 'object' || o == null) {
-      ${strictImpl(strict, serialize)}
-    }
-    const { censor, secret } = this
-    ${redactTmpl(secret, isCensorFct, censorFctTakesPath)}
-    this.compileRestore()
-    ${dynamicRedactTmpl(wcLen > 0, isCensorFct, censorFctTakesPath)}
-    ${resultTmpl(serialize)}
-  `).bind(state)
-
-  if (serialize === false) {
-    redact.restore = (o) => state.restore(o)
-  }
-
-  return redact
-}
-
-function redactTmpl (secret, isCensorFct, censorFctTakesPath) {
-  return Object.keys(secret).map((path) => {
-    const { escPath, leadingBracket, path: arrPath } = secret[path]
-    const skip = leadingBracket ? 1 : 0
-    const delim = leadingBracket ? '' : '.'
-    const hops = []
-    var match
-    while ((match = rx.exec(path)) !== null) {
-      const [ , ix ] = match
-      const { index, input } = match
-      if (index > skip) hops.push(input.substring(0, index - (ix ? 0 : 1)))
-    }
-    var existence = hops.map((p) => `o${delim}${p}`).join(' && ')
-    if (existence.length === 0) existence += `o${delim}${path} != null`
-    else existence += ` && o${delim}${path} != null`
-
-    const circularDetection = `
-      switch (true) {
-        ${hops.reverse().map((p) => `
-          case o${delim}${p} === censor:
-            secret[${escPath}].circle = ${JSON.stringify(p)}
-            break
-        `).join('\n')}
-      }
-    `
-
-    const censorArgs = censorFctTakesPath
-      ? `val, ${JSON.stringify(arrPath)}`
-      : `val`
-
-    return `
-      if (${existence}) {
-        const val = o${delim}${path}
-        if (val === censor) {
-          secret[${escPath}].precensored = true
-        } else {
-          secret[${escPath}].val = val
-          o${delim}${path} = ${isCensorFct ? `censor(${censorArgs})` : 'censor'}
-          ${circularDetection}
-        }
-      }
-    `
-  }).join('\n')
-}
-
-function dynamicRedactTmpl (hasWildcards, isCensorFct, censorFctTakesPath) {
-  return hasWildcards === true ? `
-    {
-      const { wildcards, wcLen, groupRedact, nestedRedact } = this
-      for (var i = 0; i < wcLen; i++) {
-        const { before, beforeStr, after, nested } = wildcards[i]
-        if (nested === true) {
-          secret[beforeStr] = secret[beforeStr] || []
-          nestedRedact(secret[beforeStr], o, before, after, censor, ${isCensorFct}, ${censorFctTakesPath})
-        } else secret[beforeStr] = groupRedact(o, before, censor, ${isCensorFct}, ${censorFctTakesPath})
-      }
-    }
-  ` : ''
-}
-
-function resultTmpl (serialize) {
-  return serialize === false ? `return o` : `
-    var s = this.serialize(o)
-    this.restore(o)
-    return s
-  `
-}
-
-function strictImpl (strict, serialize) {
-  return strict === true
-    ? `throw Error('fast-redact: primitives cannot be redacted')`
-    : serialize === false ? `return o` : `return this.serialize(o)`
-}
-
-
-/***/ }),
-
-/***/ 98806:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const { groupRestore, nestedRestore } = __nccwpck_require__(54865)
-
-module.exports = restorer
-
-function restorer ({ secret, wcLen }) {
-  return function compileRestore () {
-    if (this.restore) return
-    const paths = Object.keys(secret)
-      .filter((path) => secret[path].precensored === false)
-    const resetters = resetTmpl(secret, paths)
-    const hasWildcards = wcLen > 0
-    const state = hasWildcards ? { secret, groupRestore, nestedRestore } : { secret }
-    /* eslint-disable-next-line */
-    this.restore = Function(
-      'o',
-      restoreTmpl(resetters, paths, hasWildcards)
-    ).bind(state)
-  }
-}
-
-/**
- * Mutates the original object to be censored by restoring its original values
- * prior to censoring.
- *
- * @param {object} secret Compiled object describing which target fields should
- * be censored and the field states.
- * @param {string[]} paths The list of paths to censor as provided at
- * initialization time.
- *
- * @returns {string} String of JavaScript to be used by `Function()`. The
- * string compiles to the function that does the work in the description.
- */
-function resetTmpl (secret, paths) {
-  return paths.map((path) => {
-    const { circle, escPath, leadingBracket } = secret[path]
-    const delim = leadingBracket ? '' : '.'
-    const reset = circle
-      ? `o.${circle} = secret[${escPath}].val`
-      : `o${delim}${path} = secret[${escPath}].val`
-    const clear = `secret[${escPath}].val = undefined`
-    return `
-      if (secret[${escPath}].val !== undefined) {
-        try { ${reset} } catch (e) {}
-        ${clear}
-      }
-    `
-  }).join('')
-}
-
-/**
- * Creates the body of the restore function
- *
- * Restoration of the redacted object happens
- * backwards, in reverse order of redactions,
- * so that repeated redactions on the same object
- * property can be eventually rolled back to the
- * original value.
- *
- * This way dynamic redactions are restored first,
- * starting from the last one working backwards and
- * followed by the static ones.
- *
- * @returns {string} the body of the restore function
- */
-function restoreTmpl (resetters, paths, hasWildcards) {
-  const dynamicReset = hasWildcards === true ? `
-    const keys = Object.keys(secret)
-    const len = keys.length
-    for (var i = len - 1; i >= ${paths.length}; i--) {
-      const k = keys[i]
-      const o = secret[k]
-      if (o.flat === true) this.groupRestore(o)
-      else this.nestedRestore(o)
-      secret[k] = null
-    }
-  ` : ''
-
-  return `
-    const secret = this.secret
-    ${dynamicReset}
-    ${resetters}
-    return o
-  `
-}
-
-
-/***/ }),
-
-/***/ 9158:
-/***/ ((module) => {
-
-"use strict";
-
-
-module.exports = /[^.[\]]+|\[((?:.)*?)\]/g
-
-/*
-Regular expression explanation:
-
-Alt 1: /[^.[\]]+/ - Match one or more characters that are *not* a dot (.)
-                    opening square bracket ([) or closing square bracket (])
-
-Alt 2: /\[((?:.)*?)\]/ - If the char IS dot or square bracket, then create a capture
-                         group (which will be capture group $1) that matches anything
-                         within square brackets. Expansion is lazy so it will
-                         stop matching as soon as the first closing bracket is met `]`
-                         (rather than continuing to match until the final closing bracket).
-*/
-
-
-/***/ }),
-
-/***/ 41012:
-/***/ ((module) => {
-
-"use strict";
-
-
-module.exports = state
-
-function state (o) {
-  const {
-    secret,
-    censor,
-    compileRestore,
-    serialize,
-    groupRedact,
-    nestedRedact,
-    wildcards,
-    wcLen
-  } = o
-  const builder = [{ secret, censor, compileRestore }]
-  if (serialize !== false) builder.push({ serialize })
-  if (wcLen > 0) builder.push({ groupRedact, nestedRedact, wildcards, wcLen })
-  return Object.assign(...builder)
-}
-
-
-/***/ }),
-
-/***/ 74174:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const { createContext, runInContext } = __nccwpck_require__(92184)
-
-module.exports = validator
-
-function validator (opts = {}) {
-  const {
-    ERR_PATHS_MUST_BE_STRINGS = () => 'fast-redact - Paths must be (non-empty) strings',
-    ERR_INVALID_PATH = (s) => `fast-redact – Invalid path (${s})`
-  } = opts
-
-  return function validate ({ paths }) {
-    paths.forEach((s) => {
-      if (typeof s !== 'string') {
-        throw Error(ERR_PATHS_MUST_BE_STRINGS())
-      }
-      try {
-        if (/〇/.test(s)) throw Error()
-        const proxy = new Proxy({}, { get: () => proxy, set: () => { throw Error() } })
-        const expr = (s[0] === '[' ? '' : '.') + s.replace(/^\*/, '〇').replace(/\.\*/g, '.〇').replace(/\[\*\]/g, '[〇]')
-        if (/\n|\r|;/.test(expr)) throw Error()
-        if (/\/\*/.test(expr)) throw Error()
-        runInContext(`
-          (function () {
-            'use strict'
-            o${expr}
-            if ([o${expr}].length !== 1) throw Error()
-          })()
-        `, createContext({ o: proxy, 〇: null }), {
-          codeGeneration: { strings: false, wasm: false }
-        })
-      } catch (e) {
-        throw Error(ERR_INVALID_PATH(s))
-      }
-    })
-  }
-}
-
-
-/***/ }),
-
-/***/ 17676:
-/***/ ((module) => {
-
-module.exports = stringify
-stringify.default = stringify
-stringify.stable = deterministicStringify
-stringify.stableStringify = deterministicStringify
-
-var arr = []
-var replacerStack = []
-
-// Regular stringify
-function stringify (obj, replacer, spacer) {
-  decirc(obj, '', [], undefined)
-  var res
-  if (replacerStack.length === 0) {
-    res = JSON.stringify(obj, replacer, spacer)
-  } else {
-    res = JSON.stringify(obj, replaceGetterValues(replacer), spacer)
-  }
-  while (arr.length !== 0) {
-    var part = arr.pop()
-    if (part.length === 4) {
-      Object.defineProperty(part[0], part[1], part[3])
-    } else {
-      part[0][part[1]] = part[2]
-    }
-  }
-  return res
-}
-function decirc (val, k, stack, parent) {
-  var i
-  if (typeof val === 'object' && val !== null) {
-    for (i = 0; i < stack.length; i++) {
-      if (stack[i] === val) {
-        var propertyDescriptor = Object.getOwnPropertyDescriptor(parent, k)
-        if (propertyDescriptor.get !== undefined) {
-          if (propertyDescriptor.configurable) {
-            Object.defineProperty(parent, k, { value: '[Circular]' })
-            arr.push([parent, k, val, propertyDescriptor])
-          } else {
-            replacerStack.push([val, k])
-          }
-        } else {
-          parent[k] = '[Circular]'
-          arr.push([parent, k, val])
-        }
-        return
-      }
-    }
-    stack.push(val)
-    // Optimize for Arrays. Big arrays could kill the performance otherwise!
-    if (Array.isArray(val)) {
-      for (i = 0; i < val.length; i++) {
-        decirc(val[i], i, stack, val)
-      }
-    } else {
-      var keys = Object.keys(val)
-      for (i = 0; i < keys.length; i++) {
-        var key = keys[i]
-        decirc(val[key], key, stack, val)
-      }
-    }
-    stack.pop()
-  }
-}
-
-// Stable-stringify
-function compareFunction (a, b) {
-  if (a < b) {
-    return -1
-  }
-  if (a > b) {
-    return 1
-  }
-  return 0
-}
-
-function deterministicStringify (obj, replacer, spacer) {
-  var tmp = deterministicDecirc(obj, '', [], undefined) || obj
-  var res
-  if (replacerStack.length === 0) {
-    res = JSON.stringify(tmp, replacer, spacer)
-  } else {
-    res = JSON.stringify(tmp, replaceGetterValues(replacer), spacer)
-  }
-  while (arr.length !== 0) {
-    var part = arr.pop()
-    if (part.length === 4) {
-      Object.defineProperty(part[0], part[1], part[3])
-    } else {
-      part[0][part[1]] = part[2]
-    }
-  }
-  return res
-}
-
-function deterministicDecirc (val, k, stack, parent) {
-  var i
-  if (typeof val === 'object' && val !== null) {
-    for (i = 0; i < stack.length; i++) {
-      if (stack[i] === val) {
-        var propertyDescriptor = Object.getOwnPropertyDescriptor(parent, k)
-        if (propertyDescriptor.get !== undefined) {
-          if (propertyDescriptor.configurable) {
-            Object.defineProperty(parent, k, { value: '[Circular]' })
-            arr.push([parent, k, val, propertyDescriptor])
-          } else {
-            replacerStack.push([val, k])
-          }
-        } else {
-          parent[k] = '[Circular]'
-          arr.push([parent, k, val])
-        }
-        return
-      }
-    }
-    if (typeof val.toJSON === 'function') {
-      return
-    }
-    stack.push(val)
-    // Optimize for Arrays. Big arrays could kill the performance otherwise!
-    if (Array.isArray(val)) {
-      for (i = 0; i < val.length; i++) {
-        deterministicDecirc(val[i], i, stack, val)
-      }
-    } else {
-      // Create a temporary object in the required way
-      var tmp = {}
-      var keys = Object.keys(val).sort(compareFunction)
-      for (i = 0; i < keys.length; i++) {
-        var key = keys[i]
-        deterministicDecirc(val[key], key, stack, val)
-        tmp[key] = val[key]
-      }
-      if (parent !== undefined) {
-        arr.push([parent, k, val])
-        parent[k] = tmp
-      } else {
-        return tmp
-      }
-    }
-    stack.pop()
-  }
-}
-
-// wraps replacer function to handle values we couldn't replace
-// and mark them as [Circular]
-function replaceGetterValues (replacer) {
-  replacer = replacer !== undefined ? replacer : function (k, v) { return v }
-  return function (key, val) {
-    if (replacerStack.length > 0) {
-      for (var i = 0; i < replacerStack.length; i++) {
-        var part = replacerStack[i]
-        if (part[1] === key && part[0] === val) {
-          val = '[Circular]'
-          replacerStack.splice(i, 1)
-          break
-        }
-      }
-    }
-    return replacer.call(this, key, val)
-  }
-}
-
-
-/***/ }),
-
 /***/ 57099:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -23076,28 +22142,6 @@ module.exports = Object.assign(fn, figures);
 module.exports.main = main;
 module.exports.windows = windows;
 
-
-/***/ }),
-
-/***/ 35298:
-/***/ ((module) => {
-
-"use strict";
-
-
-// You may be tempted to copy and paste this, 
-// but take a look at the commit history first,
-// this is a moving target so relying on the module
-// is the best way to make sure the optimization
-// method is kept up to date and compatible with
-// every Node version.
-
-function flatstr (s) {
-  s | 0
-  return s
-}
-
-module.exports = flatstr
 
 /***/ }),
 
@@ -55801,1589 +54845,6 @@ module.exports.default = pathKey;
 
 /***/ }),
 
-/***/ 72571:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const errSerializer = __nccwpck_require__(96522)
-const reqSerializers = __nccwpck_require__(75492)
-const resSerializers = __nccwpck_require__(9048)
-
-module.exports = {
-  err: errSerializer,
-  mapHttpRequest: reqSerializers.mapHttpRequest,
-  mapHttpResponse: resSerializers.mapHttpResponse,
-  req: reqSerializers.reqSerializer,
-  res: resSerializers.resSerializer,
-
-  wrapErrorSerializer: function wrapErrorSerializer (customSerializer) {
-    if (customSerializer === errSerializer) return customSerializer
-    return function wrapErrSerializer (err) {
-      return customSerializer(errSerializer(err))
-    }
-  },
-
-  wrapRequestSerializer: function wrapRequestSerializer (customSerializer) {
-    if (customSerializer === reqSerializers.reqSerializer) return customSerializer
-    return function wrappedReqSerializer (req) {
-      return customSerializer(reqSerializers.reqSerializer(req))
-    }
-  },
-
-  wrapResponseSerializer: function wrapResponseSerializer (customSerializer) {
-    if (customSerializer === resSerializers.resSerializer) return customSerializer
-    return function wrappedResSerializer (res) {
-      return customSerializer(resSerializers.resSerializer(res))
-    }
-  }
-}
-
-
-/***/ }),
-
-/***/ 96522:
-/***/ ((module) => {
-
-"use strict";
-
-
-module.exports = errSerializer
-
-const { toString } = Object.prototype
-const seen = Symbol('circular-ref-tag')
-const rawSymbol = Symbol('pino-raw-err-ref')
-const pinoErrProto = Object.create({}, {
-  type: {
-    enumerable: true,
-    writable: true,
-    value: undefined
-  },
-  message: {
-    enumerable: true,
-    writable: true,
-    value: undefined
-  },
-  stack: {
-    enumerable: true,
-    writable: true,
-    value: undefined
-  },
-  raw: {
-    enumerable: false,
-    get: function () {
-      return this[rawSymbol]
-    },
-    set: function (val) {
-      this[rawSymbol] = val
-    }
-  }
-})
-Object.defineProperty(pinoErrProto, rawSymbol, {
-  writable: true,
-  value: {}
-})
-
-function errSerializer (err) {
-  if (!(err instanceof Error)) {
-    return err
-  }
-
-  err[seen] = undefined // tag to prevent re-looking at this
-  const _err = Object.create(pinoErrProto)
-  _err.type = toString.call(err.constructor) === '[object Function]'
-    ? err.constructor.name
-    : err.name
-  _err.message = err.message
-  _err.stack = err.stack
-  for (const key in err) {
-    if (_err[key] === undefined) {
-      const val = err[key]
-      if (val instanceof Error) {
-        /* eslint-disable no-prototype-builtins */
-        if (!val.hasOwnProperty(seen)) {
-          _err[key] = errSerializer(val)
-        }
-      } else {
-        _err[key] = val
-      }
-    }
-  }
-
-  delete err[seen] // clean up tag in case err is serialized again later
-  _err.raw = err
-  return _err
-}
-
-
-/***/ }),
-
-/***/ 75492:
-/***/ ((module) => {
-
-"use strict";
-
-
-module.exports = {
-  mapHttpRequest,
-  reqSerializer
-}
-
-const rawSymbol = Symbol('pino-raw-req-ref')
-const pinoReqProto = Object.create({}, {
-  id: {
-    enumerable: true,
-    writable: true,
-    value: ''
-  },
-  method: {
-    enumerable: true,
-    writable: true,
-    value: ''
-  },
-  url: {
-    enumerable: true,
-    writable: true,
-    value: ''
-  },
-  query: {
-    enumerable: true,
-    writable: true,
-    value: ''
-  },
-  params: {
-    enumerable: true,
-    writable: true,
-    value: ''
-  },
-  headers: {
-    enumerable: true,
-    writable: true,
-    value: {}
-  },
-  remoteAddress: {
-    enumerable: true,
-    writable: true,
-    value: ''
-  },
-  remotePort: {
-    enumerable: true,
-    writable: true,
-    value: ''
-  },
-  raw: {
-    enumerable: false,
-    get: function () {
-      return this[rawSymbol]
-    },
-    set: function (val) {
-      this[rawSymbol] = val
-    }
-  }
-})
-Object.defineProperty(pinoReqProto, rawSymbol, {
-  writable: true,
-  value: {}
-})
-
-function reqSerializer (req) {
-  // req.info is for hapi compat.
-  const connection = req.info || req.socket
-  const _req = Object.create(pinoReqProto)
-  _req.id = (typeof req.id === 'function' ? req.id() : (req.id || (req.info ? req.info.id : undefined)))
-  _req.method = req.method
-  // req.originalUrl is for expressjs compat.
-  if (req.originalUrl) {
-    _req.url = req.originalUrl
-    _req.query = req.query
-    _req.params = req.params
-  } else {
-    // req.url.path is  for hapi compat.
-    _req.url = req.path || (req.url ? (req.url.path || req.url) : undefined)
-  }
-  _req.headers = req.headers
-  _req.remoteAddress = connection && connection.remoteAddress
-  _req.remotePort = connection && connection.remotePort
-  // req.raw is  for hapi compat/equivalence
-  _req.raw = req.raw || req
-  return _req
-}
-
-function mapHttpRequest (req) {
-  return {
-    req: reqSerializer(req)
-  }
-}
-
-
-/***/ }),
-
-/***/ 9048:
-/***/ ((module) => {
-
-"use strict";
-
-
-module.exports = {
-  mapHttpResponse,
-  resSerializer
-}
-
-const rawSymbol = Symbol('pino-raw-res-ref')
-const pinoResProto = Object.create({}, {
-  statusCode: {
-    enumerable: true,
-    writable: true,
-    value: 0
-  },
-  headers: {
-    enumerable: true,
-    writable: true,
-    value: ''
-  },
-  raw: {
-    enumerable: false,
-    get: function () {
-      return this[rawSymbol]
-    },
-    set: function (val) {
-      this[rawSymbol] = val
-    }
-  }
-})
-Object.defineProperty(pinoResProto, rawSymbol, {
-  writable: true,
-  value: {}
-})
-
-function resSerializer (res) {
-  const _res = Object.create(pinoResProto)
-  _res.statusCode = res.statusCode
-  _res.headers = res.getHeaders ? res.getHeaders() : res._headers
-  _res.raw = res
-  return _res
-}
-
-function mapHttpResponse (res) {
-  return {
-    res: resSerializer(res)
-  }
-}
-
-
-/***/ }),
-
-/***/ 90591:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-/* eslint no-prototype-builtins: 0 */
-const flatstr = __nccwpck_require__(35298)
-const {
-  lsCacheSym,
-  levelValSym,
-  useOnlyCustomLevelsSym,
-  streamSym,
-  formattersSym,
-  hooksSym
-} = __nccwpck_require__(23957)
-const { noop, genLog } = __nccwpck_require__(51521)
-
-const levels = {
-  trace: 10,
-  debug: 20,
-  info: 30,
-  warn: 40,
-  error: 50,
-  fatal: 60
-}
-const levelMethods = {
-  fatal: (hook) => {
-    const logFatal = genLog(levels.fatal, hook)
-    return function (...args) {
-      const stream = this[streamSym]
-      logFatal.call(this, ...args)
-      if (typeof stream.flushSync === 'function') {
-        try {
-          stream.flushSync()
-        } catch (e) {
-          // https://github.com/pinojs/pino/pull/740#discussion_r346788313
-        }
-      }
-    }
-  },
-  error: (hook) => genLog(levels.error, hook),
-  warn: (hook) => genLog(levels.warn, hook),
-  info: (hook) => genLog(levels.info, hook),
-  debug: (hook) => genLog(levels.debug, hook),
-  trace: (hook) => genLog(levels.trace, hook)
-}
-
-const nums = Object.keys(levels).reduce((o, k) => {
-  o[levels[k]] = k
-  return o
-}, {})
-
-const initialLsCache = Object.keys(nums).reduce((o, k) => {
-  o[k] = flatstr('{"level":' + Number(k))
-  return o
-}, {})
-
-function genLsCache (instance) {
-  const formatter = instance[formattersSym].level
-  const { labels } = instance.levels
-  const cache = {}
-  for (const label in labels) {
-    const level = formatter(labels[label], Number(label))
-    cache[label] = JSON.stringify(level).slice(0, -1)
-  }
-  instance[lsCacheSym] = cache
-  return instance
-}
-
-function isStandardLevel (level, useOnlyCustomLevels) {
-  if (useOnlyCustomLevels) {
-    return false
-  }
-
-  switch (level) {
-    case 'fatal':
-    case 'error':
-    case 'warn':
-    case 'info':
-    case 'debug':
-    case 'trace':
-      return true
-    default:
-      return false
-  }
-}
-
-function setLevel (level) {
-  const { labels, values } = this.levels
-  if (typeof level === 'number') {
-    if (labels[level] === undefined) throw Error('unknown level value' + level)
-    level = labels[level]
-  }
-  if (values[level] === undefined) throw Error('unknown level ' + level)
-  const preLevelVal = this[levelValSym]
-  const levelVal = this[levelValSym] = values[level]
-  const useOnlyCustomLevelsVal = this[useOnlyCustomLevelsSym]
-  const hook = this[hooksSym].logMethod
-
-  for (const key in values) {
-    if (levelVal > values[key]) {
-      this[key] = noop
-      continue
-    }
-    this[key] = isStandardLevel(key, useOnlyCustomLevelsVal) ? levelMethods[key](hook) : genLog(values[key], hook)
-  }
-
-  this.emit(
-    'level-change',
-    level,
-    levelVal,
-    labels[preLevelVal],
-    preLevelVal
-  )
-}
-
-function getLevel (level) {
-  const { levels, levelVal } = this
-  // protection against potential loss of Pino scope from serializers (edge case with circular refs - https://github.com/pinojs/pino/issues/833)
-  return (levels && levels.labels) ? levels.labels[levelVal] : ''
-}
-
-function isLevelEnabled (logLevel) {
-  const { values } = this.levels
-  const logLevelVal = values[logLevel]
-  return logLevelVal !== undefined && (logLevelVal >= this[levelValSym])
-}
-
-function mappings (customLevels = null, useOnlyCustomLevels = false) {
-  const customNums = customLevels
-    /* eslint-disable */
-    ? Object.keys(customLevels).reduce((o, k) => {
-        o[customLevels[k]] = k
-        return o
-      }, {})
-    : null
-    /* eslint-enable */
-
-  const labels = Object.assign(
-    Object.create(Object.prototype, { Infinity: { value: 'silent' } }),
-    useOnlyCustomLevels ? null : nums,
-    customNums
-  )
-  const values = Object.assign(
-    Object.create(Object.prototype, { silent: { value: Infinity } }),
-    useOnlyCustomLevels ? null : levels,
-    customLevels
-  )
-  return { labels, values }
-}
-
-function assertDefaultLevelFound (defaultLevel, customLevels, useOnlyCustomLevels) {
-  if (typeof defaultLevel === 'number') {
-    const values = [].concat(
-      Object.keys(customLevels || {}).map(key => customLevels[key]),
-      useOnlyCustomLevels ? [] : Object.keys(nums).map(level => +level),
-      Infinity
-    )
-    if (!values.includes(defaultLevel)) {
-      throw Error(`default level:${defaultLevel} must be included in custom levels`)
-    }
-    return
-  }
-
-  const labels = Object.assign(
-    Object.create(Object.prototype, { silent: { value: Infinity } }),
-    useOnlyCustomLevels ? null : levels,
-    customLevels
-  )
-  if (!(defaultLevel in labels)) {
-    throw Error(`default level:${defaultLevel} must be included in custom levels`)
-  }
-}
-
-function assertNoLevelCollisions (levels, customLevels) {
-  const { labels, values } = levels
-  for (const k in customLevels) {
-    if (k in values) {
-      throw Error('levels cannot be overridden')
-    }
-    if (customLevels[k] in labels) {
-      throw Error('pre-existing level values cannot be used for new levels')
-    }
-  }
-}
-
-module.exports = {
-  initialLsCache,
-  genLsCache,
-  levelMethods,
-  getLevel,
-  setLevel,
-  isLevelEnabled,
-  mappings,
-  assertNoLevelCollisions,
-  assertDefaultLevelFound
-}
-
-
-/***/ }),
-
-/***/ 68578:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const { version } = __nccwpck_require__(98686)
-
-module.exports = { version }
-
-
-/***/ }),
-
-/***/ 26899:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-/* eslint no-prototype-builtins: 0 */
-
-const { EventEmitter } = __nccwpck_require__(28614)
-const SonicBoom = __nccwpck_require__(73460)
-const flatstr = __nccwpck_require__(35298)
-const {
-  lsCacheSym,
-  levelValSym,
-  setLevelSym,
-  getLevelSym,
-  chindingsSym,
-  parsedChindingsSym,
-  mixinSym,
-  asJsonSym,
-  writeSym,
-  timeSym,
-  timeSliceIndexSym,
-  streamSym,
-  serializersSym,
-  formattersSym,
-  useOnlyCustomLevelsSym,
-  needsMetadataGsym
-} = __nccwpck_require__(23957)
-const {
-  getLevel,
-  setLevel,
-  isLevelEnabled,
-  mappings,
-  initialLsCache,
-  genLsCache,
-  assertNoLevelCollisions
-} = __nccwpck_require__(90591)
-const {
-  asChindings,
-  asJson,
-  buildFormatters
-} = __nccwpck_require__(51521)
-const {
-  version
-} = __nccwpck_require__(68578)
-
-// note: use of class is satirical
-// https://github.com/pinojs/pino/pull/433#pullrequestreview-127703127
-const constructor = class Pino {}
-const prototype = {
-  constructor,
-  child,
-  bindings,
-  setBindings,
-  flush,
-  isLevelEnabled,
-  version,
-  get level () { return this[getLevelSym]() },
-  set level (lvl) { this[setLevelSym](lvl) },
-  get levelVal () { return this[levelValSym] },
-  set levelVal (n) { throw Error('levelVal is read-only') },
-  [lsCacheSym]: initialLsCache,
-  [writeSym]: write,
-  [asJsonSym]: asJson,
-  [getLevelSym]: getLevel,
-  [setLevelSym]: setLevel
-}
-
-Object.setPrototypeOf(prototype, EventEmitter.prototype)
-
-// exporting and consuming the prototype object using factory pattern fixes scoping issues with getters when serializing
-module.exports = function () {
-  return Object.create(prototype)
-}
-
-const resetChildingsFormatter = bindings => bindings
-function child (bindings) {
-  if (!bindings) {
-    throw Error('missing bindings for child Pino')
-  }
-  const serializers = this[serializersSym]
-  const formatters = this[formattersSym]
-  const instance = Object.create(this)
-  if (bindings.hasOwnProperty('serializers') === true) {
-    instance[serializersSym] = Object.create(null)
-
-    for (const k in serializers) {
-      instance[serializersSym][k] = serializers[k]
-    }
-    const parentSymbols = Object.getOwnPropertySymbols(serializers)
-    /* eslint no-var: off */
-    for (var i = 0; i < parentSymbols.length; i++) {
-      const ks = parentSymbols[i]
-      instance[serializersSym][ks] = serializers[ks]
-    }
-
-    for (const bk in bindings.serializers) {
-      instance[serializersSym][bk] = bindings.serializers[bk]
-    }
-    const bindingsSymbols = Object.getOwnPropertySymbols(bindings.serializers)
-    for (var bi = 0; bi < bindingsSymbols.length; bi++) {
-      const bks = bindingsSymbols[bi]
-      instance[serializersSym][bks] = bindings.serializers[bks]
-    }
-  } else instance[serializersSym] = serializers
-  if (bindings.hasOwnProperty('formatters')) {
-    const { level, bindings: chindings, log } = bindings.formatters
-    instance[formattersSym] = buildFormatters(
-      level || formatters.level,
-      chindings || resetChildingsFormatter,
-      log || formatters.log
-    )
-  } else {
-    instance[formattersSym] = buildFormatters(
-      formatters.level,
-      resetChildingsFormatter,
-      formatters.log
-    )
-  }
-  if (bindings.hasOwnProperty('customLevels') === true) {
-    assertNoLevelCollisions(this.levels, bindings.customLevels)
-    instance.levels = mappings(bindings.customLevels, instance[useOnlyCustomLevelsSym])
-    genLsCache(instance)
-  }
-  instance[chindingsSym] = asChindings(instance, bindings)
-  const childLevel = bindings.level || this.level
-  instance[setLevelSym](childLevel)
-
-  return instance
-}
-
-function bindings () {
-  const chindings = this[chindingsSym]
-  const chindingsJson = `{${chindings.substr(1)}}` // at least contains ,"pid":7068,"hostname":"myMac"
-  const bindingsFromJson = JSON.parse(chindingsJson)
-  delete bindingsFromJson.pid
-  delete bindingsFromJson.hostname
-  return bindingsFromJson
-}
-
-function setBindings (newBindings) {
-  const chindings = asChindings(this, newBindings)
-  this[chindingsSym] = chindings
-  delete this[parsedChindingsSym]
-}
-
-function write (_obj, msg, num) {
-  const t = this[timeSym]()
-  const mixin = this[mixinSym]
-  const objError = _obj instanceof Error
-  let obj
-
-  if (_obj === undefined || _obj === null) {
-    obj = mixin ? mixin({}) : {}
-  } else {
-    obj = Object.assign(mixin ? mixin(_obj) : {}, _obj)
-    if (!msg && objError) {
-      msg = _obj.message
-    }
-
-    if (objError) {
-      obj.stack = _obj.stack
-      if (!obj.type) {
-        obj.type = 'Error'
-      }
-    }
-  }
-
-  const s = this[asJsonSym](obj, msg, num, t)
-
-  const stream = this[streamSym]
-  if (stream[needsMetadataGsym] === true) {
-    stream.lastLevel = num
-    stream.lastObj = obj
-    stream.lastMsg = msg
-    stream.lastTime = t.slice(this[timeSliceIndexSym])
-    stream.lastLogger = this // for child loggers
-  }
-  if (stream instanceof SonicBoom) stream.write(s)
-  else stream.write(flatstr(s))
-}
-
-function flush () {
-  const stream = this[streamSym]
-  if ('flush' in stream) stream.flush()
-}
-
-
-/***/ }),
-
-/***/ 34219:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const fastRedact = __nccwpck_require__(24826)
-const { redactFmtSym, wildcardFirstSym } = __nccwpck_require__(23957)
-const { rx, validator } = fastRedact
-
-const validate = validator({
-  ERR_PATHS_MUST_BE_STRINGS: () => 'pino – redacted paths must be strings',
-  ERR_INVALID_PATH: (s) => `pino – redact paths array contains an invalid path (${s})`
-})
-
-const CENSOR = '[Redacted]'
-const strict = false // TODO should this be configurable?
-
-function redaction (opts, serialize) {
-  const { paths, censor } = handle(opts)
-
-  const shape = paths.reduce((o, str) => {
-    rx.lastIndex = 0
-    const first = rx.exec(str)
-    const next = rx.exec(str)
-
-    // ns is the top-level path segment, brackets + quoting removed.
-    let ns = first[1] !== undefined
-      ? first[1].replace(/^(?:"|'|`)(.*)(?:"|'|`)$/, '$1')
-      : first[0]
-
-    if (ns === '*') {
-      ns = wildcardFirstSym
-    }
-
-    // top level key:
-    if (next === null) {
-      o[ns] = null
-      return o
-    }
-
-    // path with at least two segments:
-    // if ns is already redacted at the top level, ignore lower level redactions
-    if (o[ns] === null) {
-      return o
-    }
-
-    const { index } = next
-    const nextPath = `${str.substr(index, str.length - 1)}`
-
-    o[ns] = o[ns] || []
-
-    // shape is a mix of paths beginning with literal values and wildcard
-    // paths [ "a.b.c", "*.b.z" ] should reduce to a shape of
-    // { "a": [ "b.c", "b.z" ], *: [ "b.z" ] }
-    // note: "b.z" is in both "a" and * arrays because "a" matches the wildcard.
-    // (* entry has wildcardFirstSym as key)
-    if (ns !== wildcardFirstSym && o[ns].length === 0) {
-      // first time ns's get all '*' redactions so far
-      o[ns].push(...(o[wildcardFirstSym] || []))
-    }
-
-    if (ns === wildcardFirstSym) {
-      // new * path gets added to all previously registered literal ns's.
-      Object.keys(o).forEach(function (k) {
-        if (o[k]) {
-          o[k].push(nextPath)
-        }
-      })
-    }
-
-    o[ns].push(nextPath)
-    return o
-  }, {})
-
-  // the redactor assigned to the format symbol key
-  // provides top level redaction for instances where
-  // an object is interpolated into the msg string
-  const result = {
-    [redactFmtSym]: fastRedact({ paths, censor, serialize, strict })
-  }
-
-  const topCensor = (...args) => {
-    return typeof censor === 'function' ? serialize(censor(...args)) : serialize(censor)
-  }
-
-  return [...Object.keys(shape), ...Object.getOwnPropertySymbols(shape)].reduce((o, k) => {
-    // top level key:
-    if (shape[k] === null) {
-      o[k] = (value) => topCensor(value, [k])
-    } else {
-      const wrappedCensor = typeof censor === 'function'
-        ? (value, path) => {
-            return censor(value, [k, ...path])
-          }
-        : censor
-      o[k] = fastRedact({
-        paths: shape[k],
-        censor: wrappedCensor,
-        serialize,
-        strict
-      })
-    }
-    return o
-  }, result)
-}
-
-function handle (opts) {
-  if (Array.isArray(opts)) {
-    opts = { paths: opts, censor: CENSOR }
-    validate(opts)
-    return opts
-  }
-  let { paths, censor = CENSOR, remove } = opts
-  if (Array.isArray(paths) === false) { throw Error('pino – redact must contain an array of strings') }
-  if (remove === true) censor = undefined
-  validate({ paths, censor })
-
-  return { paths, censor }
-}
-
-module.exports = redaction
-
-
-/***/ }),
-
-/***/ 23957:
-/***/ ((module) => {
-
-"use strict";
-
-
-const setLevelSym = Symbol('pino.setLevel')
-const getLevelSym = Symbol('pino.getLevel')
-const levelValSym = Symbol('pino.levelVal')
-const useLevelLabelsSym = Symbol('pino.useLevelLabels')
-const useOnlyCustomLevelsSym = Symbol('pino.useOnlyCustomLevels')
-const mixinSym = Symbol('pino.mixin')
-
-const lsCacheSym = Symbol('pino.lsCache')
-const chindingsSym = Symbol('pino.chindings')
-const parsedChindingsSym = Symbol('pino.parsedChindings')
-
-const asJsonSym = Symbol('pino.asJson')
-const writeSym = Symbol('pino.write')
-const redactFmtSym = Symbol('pino.redactFmt')
-
-const timeSym = Symbol('pino.time')
-const timeSliceIndexSym = Symbol('pino.timeSliceIndex')
-const streamSym = Symbol('pino.stream')
-const stringifySym = Symbol('pino.stringify')
-const stringifiersSym = Symbol('pino.stringifiers')
-const endSym = Symbol('pino.end')
-const formatOptsSym = Symbol('pino.formatOpts')
-const messageKeySym = Symbol('pino.messageKey')
-const nestedKeySym = Symbol('pino.nestedKey')
-
-const wildcardFirstSym = Symbol('pino.wildcardFirst')
-
-// public symbols, no need to use the same pino
-// version for these
-const serializersSym = Symbol.for('pino.serializers')
-const formattersSym = Symbol.for('pino.formatters')
-const hooksSym = Symbol.for('pino.hooks')
-const needsMetadataGsym = Symbol.for('pino.metadata')
-
-module.exports = {
-  setLevelSym,
-  getLevelSym,
-  levelValSym,
-  useLevelLabelsSym,
-  mixinSym,
-  lsCacheSym,
-  chindingsSym,
-  parsedChindingsSym,
-  asJsonSym,
-  writeSym,
-  serializersSym,
-  redactFmtSym,
-  timeSym,
-  timeSliceIndexSym,
-  streamSym,
-  stringifySym,
-  stringifiersSym,
-  endSym,
-  formatOptsSym,
-  messageKeySym,
-  nestedKeySym,
-  wildcardFirstSym,
-  needsMetadataGsym,
-  useOnlyCustomLevelsSym,
-  formattersSym,
-  hooksSym
-}
-
-
-/***/ }),
-
-/***/ 61866:
-/***/ ((module) => {
-
-"use strict";
-
-
-const nullTime = () => ''
-
-const epochTime = () => `,"time":${Date.now()}`
-
-const unixTime = () => `,"time":${Math.round(Date.now() / 1000.0)}`
-
-const isoTime = () => `,"time":"${new Date(Date.now()).toISOString()}"` // using Date.now() for testability
-
-module.exports = { nullTime, epochTime, unixTime, isoTime }
-
-
-/***/ }),
-
-/***/ 51521:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-/* eslint no-prototype-builtins: 0 */
-
-const format = __nccwpck_require__(5933)
-const { mapHttpRequest, mapHttpResponse } = __nccwpck_require__(72571)
-const SonicBoom = __nccwpck_require__(73460)
-const stringifySafe = __nccwpck_require__(17676)
-const {
-  lsCacheSym,
-  chindingsSym,
-  parsedChindingsSym,
-  writeSym,
-  serializersSym,
-  formatOptsSym,
-  endSym,
-  stringifiersSym,
-  stringifySym,
-  wildcardFirstSym,
-  needsMetadataGsym,
-  redactFmtSym,
-  streamSym,
-  nestedKeySym,
-  formattersSym,
-  messageKeySym
-} = __nccwpck_require__(23957)
-
-function noop () {}
-
-function genLog (level, hook) {
-  if (!hook) return LOG
-
-  return function hookWrappedLog (...args) {
-    hook.call(this, args, LOG, level)
-  }
-
-  function LOG (o, ...n) {
-    if (typeof o === 'object') {
-      let msg = o
-      if (o !== null) {
-        if (o.method && o.headers && o.socket) {
-          o = mapHttpRequest(o)
-        } else if (typeof o.setHeader === 'function') {
-          o = mapHttpResponse(o)
-        }
-      }
-      if (this[nestedKeySym]) o = { [this[nestedKeySym]]: o }
-      let formatParams
-      if (msg === null && n.length === 0) {
-        formatParams = [null]
-      } else {
-        msg = n.shift()
-        formatParams = n
-      }
-      this[writeSym](o, format(msg, formatParams, this[formatOptsSym]), level)
-    } else {
-      this[writeSym](null, format(o, n, this[formatOptsSym]), level)
-    }
-  }
-}
-
-// magically escape strings for json
-// relying on their charCodeAt
-// everything below 32 needs JSON.stringify()
-// 34 and 92 happens all the time, so we
-// have a fast case for them
-function asString (str) {
-  let result = ''
-  let last = 0
-  let found = false
-  let point = 255
-  const l = str.length
-  if (l > 100) {
-    return JSON.stringify(str)
-  }
-  for (var i = 0; i < l && point >= 32; i++) {
-    point = str.charCodeAt(i)
-    if (point === 34 || point === 92) {
-      result += str.slice(last, i) + '\\'
-      last = i
-      found = true
-    }
-  }
-  if (!found) {
-    result = str
-  } else {
-    result += str.slice(last)
-  }
-  return point < 32 ? JSON.stringify(str) : '"' + result + '"'
-}
-
-function asJson (obj, msg, num, time) {
-  const stringify = this[stringifySym]
-  const stringifiers = this[stringifiersSym]
-  const end = this[endSym]
-  const chindings = this[chindingsSym]
-  const serializers = this[serializersSym]
-  const formatters = this[formattersSym]
-  const messageKey = this[messageKeySym]
-  let data = this[lsCacheSym][num] + time
-
-  // we need the child bindings added to the output first so instance logged
-  // objects can take precedence when JSON.parse-ing the resulting log line
-  data = data + chindings
-
-  let value
-  const notHasOwnProperty = obj.hasOwnProperty === undefined
-  if (formatters.log) {
-    obj = formatters.log(obj)
-  }
-  if (msg !== undefined) {
-    obj[messageKey] = msg
-  }
-  const wildcardStringifier = stringifiers[wildcardFirstSym]
-  for (const key in obj) {
-    value = obj[key]
-    if ((notHasOwnProperty || obj.hasOwnProperty(key)) && value !== undefined) {
-      value = serializers[key] ? serializers[key](value) : value
-
-      const stringifier = stringifiers[key] || wildcardStringifier
-
-      switch (typeof value) {
-        case 'undefined':
-        case 'function':
-          continue
-        case 'number':
-          /* eslint no-fallthrough: "off" */
-          if (Number.isFinite(value) === false) {
-            value = null
-          }
-        // this case explicitly falls through to the next one
-        case 'boolean':
-          if (stringifier) value = stringifier(value)
-          break
-        case 'string':
-          value = (stringifier || asString)(value)
-          break
-        default:
-          value = (stringifier || stringify)(value)
-      }
-      if (value === undefined) continue
-      data += ',"' + key + '":' + value
-    }
-  }
-
-  return data + end
-}
-
-function asChindings (instance, bindings) {
-  let value
-  let data = instance[chindingsSym]
-  const stringify = instance[stringifySym]
-  const stringifiers = instance[stringifiersSym]
-  const wildcardStringifier = stringifiers[wildcardFirstSym]
-  const serializers = instance[serializersSym]
-  const formatter = instance[formattersSym].bindings
-  bindings = formatter(bindings)
-
-  for (const key in bindings) {
-    value = bindings[key]
-    const valid = key !== 'level' &&
-      key !== 'serializers' &&
-      key !== 'formatters' &&
-      key !== 'customLevels' &&
-      bindings.hasOwnProperty(key) &&
-      value !== undefined
-    if (valid === true) {
-      value = serializers[key] ? serializers[key](value) : value
-      value = (stringifiers[key] || wildcardStringifier || stringify)(value)
-      if (value === undefined) continue
-      data += ',"' + key + '":' + value
-    }
-  }
-  return data
-}
-
-function getPrettyStream (opts, prettifier, dest, instance) {
-  if (prettifier && typeof prettifier === 'function') {
-    prettifier = prettifier.bind(instance)
-    return prettifierMetaWrapper(prettifier(opts), dest, opts)
-  }
-  try {
-    const prettyFactory = __nccwpck_require__(21462)
-    prettyFactory.asMetaWrapper = prettifierMetaWrapper
-    return prettifierMetaWrapper(prettyFactory(opts), dest, opts)
-  } catch (e) {
-    if (e.message.startsWith("Cannot find module 'pino-pretty'")) {
-      throw Error('Missing `pino-pretty` module: `pino-pretty` must be installed separately')
-    };
-    throw e
-  }
-}
-
-function prettifierMetaWrapper (pretty, dest, opts) {
-  opts = Object.assign({ suppressFlushSyncWarning: false }, opts)
-  let warned = false
-  return {
-    [needsMetadataGsym]: true,
-    lastLevel: 0,
-    lastMsg: null,
-    lastObj: null,
-    lastLogger: null,
-    flushSync () {
-      if (opts.suppressFlushSyncWarning || warned) {
-        return
-      }
-      warned = true
-      setMetadataProps(dest, this)
-      dest.write(pretty(Object.assign({
-        level: 40, // warn
-        msg: 'pino.final with prettyPrint does not support flushing',
-        time: Date.now()
-      }, this.chindings())))
-    },
-    chindings () {
-      const lastLogger = this.lastLogger
-      let chindings = null
-
-      // protection against flushSync being called before logging
-      // anything
-      if (!lastLogger) {
-        return null
-      }
-
-      if (lastLogger.hasOwnProperty(parsedChindingsSym)) {
-        chindings = lastLogger[parsedChindingsSym]
-      } else {
-        chindings = JSON.parse('{' + lastLogger[chindingsSym].substr(1) + '}')
-        lastLogger[parsedChindingsSym] = chindings
-      }
-
-      return chindings
-    },
-    write (chunk) {
-      const lastLogger = this.lastLogger
-      const chindings = this.chindings()
-
-      let time = this.lastTime
-
-      if (time.match(/^\d+/)) {
-        time = parseInt(time)
-      } else {
-        time = time.slice(1, -1)
-      }
-
-      const lastObj = this.lastObj
-      const lastMsg = this.lastMsg
-      const errorProps = null
-
-      const formatters = lastLogger[formattersSym]
-      const formattedObj = formatters.log ? formatters.log(lastObj) : lastObj
-
-      const messageKey = lastLogger[messageKeySym]
-      if (lastMsg && formattedObj && !formattedObj.hasOwnProperty(messageKey)) {
-        formattedObj[messageKey] = lastMsg
-      }
-
-      const obj = Object.assign({
-        level: this.lastLevel,
-        time
-      }, formattedObj, errorProps)
-
-      const serializers = lastLogger[serializersSym]
-      const keys = Object.keys(serializers)
-
-      for (var i = 0; i < keys.length; i++) {
-        const key = keys[i]
-        if (obj[key] !== undefined) {
-          obj[key] = serializers[key](obj[key])
-        }
-      }
-
-      for (const key in chindings) {
-        if (!obj.hasOwnProperty(key)) {
-          obj[key] = chindings[key]
-        }
-      }
-
-      const stringifiers = lastLogger[stringifiersSym]
-      const redact = stringifiers[redactFmtSym]
-
-      const formatted = pretty(typeof redact === 'function' ? redact(obj) : obj)
-      if (formatted === undefined) return
-
-      setMetadataProps(dest, this)
-      dest.write(formatted)
-    }
-  }
-}
-
-function hasBeenTampered (stream) {
-  return stream.write !== stream.constructor.prototype.write
-}
-
-function buildSafeSonicBoom (opts) {
-  const stream = new SonicBoom(opts)
-  stream.on('error', filterBrokenPipe)
-  return stream
-
-  function filterBrokenPipe (err) {
-    // TODO verify on Windows
-    if (err.code === 'EPIPE') {
-      // If we get EPIPE, we should stop logging here
-      // however we have no control to the consumer of
-      // SonicBoom, so we just overwrite the write method
-      stream.write = noop
-      stream.end = noop
-      stream.flushSync = noop
-      stream.destroy = noop
-      return
-    }
-    stream.removeListener('error', filterBrokenPipe)
-    stream.emit('error', err)
-  }
-}
-
-function createArgsNormalizer (defaultOptions) {
-  return function normalizeArgs (instance, opts = {}, stream) {
-    // support stream as a string
-    if (typeof opts === 'string') {
-      stream = buildSafeSonicBoom({ dest: opts, sync: true })
-      opts = {}
-    } else if (typeof stream === 'string') {
-      stream = buildSafeSonicBoom({ dest: stream, sync: true })
-    } else if (opts instanceof SonicBoom || opts.writable || opts._writableState) {
-      stream = opts
-      opts = null
-    }
-    opts = Object.assign({}, defaultOptions, opts)
-    if ('extreme' in opts) {
-      throw Error('The extreme option has been removed, use pino.destination({ sync: false }) instead')
-    }
-    if ('onTerminated' in opts) {
-      throw Error('The onTerminated option has been removed, use pino.final instead')
-    }
-    if ('changeLevelName' in opts) {
-      process.emitWarning(
-        'The changeLevelName option is deprecated and will be removed in v7. Use levelKey instead.',
-        { code: 'changeLevelName_deprecation' }
-      )
-      opts.levelKey = opts.changeLevelName
-      delete opts.changeLevelName
-    }
-    const { enabled, prettyPrint, prettifier, messageKey } = opts
-    if (enabled === false) opts.level = 'silent'
-    stream = stream || process.stdout
-    if (stream === process.stdout && stream.fd >= 0 && !hasBeenTampered(stream)) {
-      stream = buildSafeSonicBoom({ fd: stream.fd, sync: true })
-    }
-    if (prettyPrint) {
-      const prettyOpts = Object.assign({ messageKey }, prettyPrint)
-      stream = getPrettyStream(prettyOpts, prettifier, stream, instance)
-    }
-    return { opts, stream }
-  }
-}
-
-function final (logger, handler) {
-  if (typeof logger === 'undefined' || typeof logger.child !== 'function') {
-    throw Error('expected a pino logger instance')
-  }
-  const hasHandler = (typeof handler !== 'undefined')
-  if (hasHandler && typeof handler !== 'function') {
-    throw Error('if supplied, the handler parameter should be a function')
-  }
-  const stream = logger[streamSym]
-  if (typeof stream.flushSync !== 'function') {
-    throw Error('final requires a stream that has a flushSync method, such as pino.destination')
-  }
-
-  const finalLogger = new Proxy(logger, {
-    get: (logger, key) => {
-      if (key in logger.levels.values) {
-        return (...args) => {
-          logger[key](...args)
-          stream.flushSync()
-        }
-      }
-      return logger[key]
-    }
-  })
-
-  if (!hasHandler) {
-    return finalLogger
-  }
-
-  return (err = null, ...args) => {
-    try {
-      stream.flushSync()
-    } catch (e) {
-      // it's too late to wait for the stream to be ready
-      // because this is a final tick scenario.
-      // in practice there shouldn't be a situation where it isn't
-      // however, swallow the error just in case (and for easier testing)
-    }
-    return handler(err, finalLogger, ...args)
-  }
-}
-
-function stringify (obj) {
-  try {
-    return JSON.stringify(obj)
-  } catch (_) {
-    return stringifySafe(obj)
-  }
-}
-
-function buildFormatters (level, bindings, log) {
-  return {
-    level,
-    bindings,
-    log
-  }
-}
-
-function setMetadataProps (dest, that) {
-  if (dest[needsMetadataGsym] === true) {
-    dest.lastLevel = that.lastLevel
-    dest.lastMsg = that.lastMsg
-    dest.lastObj = that.lastObj
-    dest.lastTime = that.lastTime
-    dest.lastLogger = that.lastLogger
-  }
-}
-
-module.exports = {
-  noop,
-  buildSafeSonicBoom,
-  getPrettyStream,
-  asChindings,
-  asJson,
-  genLog,
-  createArgsNormalizer,
-  final,
-  stringify,
-  buildFormatters
-}
-
-
-/***/ }),
-
-/***/ 79608:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-/* eslint no-prototype-builtins: 0 */
-const os = __nccwpck_require__(12087)
-const stdSerializers = __nccwpck_require__(72571)
-const redaction = __nccwpck_require__(34219)
-const time = __nccwpck_require__(61866)
-const proto = __nccwpck_require__(26899)
-const symbols = __nccwpck_require__(23957)
-const { assertDefaultLevelFound, mappings, genLsCache } = __nccwpck_require__(90591)
-const {
-  createArgsNormalizer,
-  asChindings,
-  final,
-  stringify,
-  buildSafeSonicBoom,
-  buildFormatters,
-  noop
-} = __nccwpck_require__(51521)
-const { version } = __nccwpck_require__(68578)
-const {
-  chindingsSym,
-  redactFmtSym,
-  serializersSym,
-  timeSym,
-  timeSliceIndexSym,
-  streamSym,
-  stringifySym,
-  stringifiersSym,
-  setLevelSym,
-  endSym,
-  formatOptsSym,
-  messageKeySym,
-  nestedKeySym,
-  mixinSym,
-  useOnlyCustomLevelsSym,
-  formattersSym,
-  hooksSym
-} = symbols
-const { epochTime, nullTime } = time
-const { pid } = process
-const hostname = os.hostname()
-const defaultErrorSerializer = stdSerializers.err
-const defaultOptions = {
-  level: 'info',
-  messageKey: 'msg',
-  nestedKey: null,
-  enabled: true,
-  prettyPrint: false,
-  base: { pid, hostname },
-  serializers: Object.assign(Object.create(null), {
-    err: defaultErrorSerializer
-  }),
-  formatters: Object.assign(Object.create(null), {
-    bindings (bindings) {
-      return bindings
-    },
-    level (label, number) {
-      return { level: number }
-    }
-  }),
-  hooks: {
-    logMethod: undefined
-  },
-  timestamp: epochTime,
-  name: undefined,
-  redact: null,
-  customLevels: null,
-  levelKey: undefined,
-  useOnlyCustomLevels: false
-}
-
-const normalize = createArgsNormalizer(defaultOptions)
-
-const serializers = Object.assign(Object.create(null), stdSerializers)
-
-function pino (...args) {
-  const instance = {}
-  const { opts, stream } = normalize(instance, ...args)
-  const {
-    redact,
-    crlf,
-    serializers,
-    timestamp,
-    messageKey,
-    nestedKey,
-    base,
-    name,
-    level,
-    customLevels,
-    useLevelLabels,
-    changeLevelName,
-    levelKey,
-    mixin,
-    useOnlyCustomLevels,
-    formatters,
-    hooks
-  } = opts
-
-  const allFormatters = buildFormatters(
-    formatters.level,
-    formatters.bindings,
-    formatters.log
-  )
-
-  if (useLevelLabels && !(changeLevelName || levelKey)) {
-    process.emitWarning('useLevelLabels is deprecated, use the formatters.level option instead', 'Warning', 'PINODEP001')
-    allFormatters.level = labelsFormatter
-  } else if ((changeLevelName || levelKey) && !useLevelLabels) {
-    process.emitWarning('changeLevelName and levelKey are deprecated, use the formatters.level option instead', 'Warning', 'PINODEP002')
-    allFormatters.level = levelNameFormatter(changeLevelName || levelKey)
-  } else if ((changeLevelName || levelKey) && useLevelLabels) {
-    process.emitWarning('useLevelLabels is deprecated, use the formatters.level option instead', 'Warning', 'PINODEP001')
-    process.emitWarning('changeLevelName and levelKey are deprecated, use the formatters.level option instead', 'Warning', 'PINODEP002')
-    allFormatters.level = levelNameLabelFormatter(changeLevelName || levelKey)
-  }
-
-  if (serializers[Symbol.for('pino.*')]) {
-    process.emitWarning('The pino.* serializer is deprecated, use the formatters.log options instead', 'Warning', 'PINODEP003')
-    allFormatters.log = serializers[Symbol.for('pino.*')]
-  }
-
-  if (!allFormatters.bindings) {
-    allFormatters.bindings = defaultOptions.formatters.bindings
-  }
-  if (!allFormatters.level) {
-    allFormatters.level = defaultOptions.formatters.level
-  }
-
-  const stringifiers = redact ? redaction(redact, stringify) : {}
-  const formatOpts = redact
-    ? { stringify: stringifiers[redactFmtSym] }
-    : { stringify }
-  const end = '}' + (crlf ? '\r\n' : '\n')
-  const coreChindings = asChindings.bind(null, {
-    [chindingsSym]: '',
-    [serializersSym]: serializers,
-    [stringifiersSym]: stringifiers,
-    [stringifySym]: stringify,
-    [formattersSym]: allFormatters
-  })
-
-  let chindings = ''
-  if (base !== null) {
-    if (name === undefined) {
-      chindings = coreChindings(base)
-    } else {
-      chindings = coreChindings(Object.assign({}, base, { name }))
-    }
-  }
-
-  const time = (timestamp instanceof Function)
-    ? timestamp
-    : (timestamp ? epochTime : nullTime)
-  const timeSliceIndex = time().indexOf(':') + 1
-
-  if (useOnlyCustomLevels && !customLevels) throw Error('customLevels is required if useOnlyCustomLevels is set true')
-  if (mixin && typeof mixin !== 'function') throw Error(`Unknown mixin type "${typeof mixin}" - expected "function"`)
-
-  assertDefaultLevelFound(level, customLevels, useOnlyCustomLevels)
-  const levels = mappings(customLevels, useOnlyCustomLevels)
-
-  Object.assign(instance, {
-    levels,
-    [useOnlyCustomLevelsSym]: useOnlyCustomLevels,
-    [streamSym]: stream,
-    [timeSym]: time,
-    [timeSliceIndexSym]: timeSliceIndex,
-    [stringifySym]: stringify,
-    [stringifiersSym]: stringifiers,
-    [endSym]: end,
-    [formatOptsSym]: formatOpts,
-    [messageKeySym]: messageKey,
-    [nestedKeySym]: nestedKey,
-    [serializersSym]: serializers,
-    [mixinSym]: mixin,
-    [chindingsSym]: chindings,
-    [formattersSym]: allFormatters,
-    [hooksSym]: hooks,
-    silent: noop
-  })
-
-  Object.setPrototypeOf(instance, proto())
-
-  genLsCache(instance)
-
-  instance[setLevelSym](level)
-
-  return instance
-}
-
-function labelsFormatter (label, number) {
-  return { level: label }
-}
-
-function levelNameFormatter (name) {
-  return function (label, number) {
-    return { [name]: number }
-  }
-}
-
-function levelNameLabelFormatter (name) {
-  return function (label, number) {
-    return { [name]: label }
-  }
-}
-
-module.exports = pino
-
-module.exports.extreme = (dest = process.stdout.fd) => {
-  process.emitWarning(
-    'The pino.extreme() option is deprecated and will be removed in v7. Use pino.destination({ sync: false }) instead.',
-    { code: 'extreme_deprecation' }
-  )
-  return buildSafeSonicBoom({ dest, minLength: 4096, sync: false })
-}
-
-module.exports.destination = (dest = process.stdout.fd) => {
-  if (typeof dest === 'object') {
-    dest.dest = dest.dest || process.stdout.fd
-    return buildSafeSonicBoom(dest)
-  } else {
-    return buildSafeSonicBoom({ dest, minLength: 0, sync: true })
-  }
-}
-
-module.exports.final = final
-module.exports.levels = mappings()
-module.exports.stdSerializers = serializers
-module.exports.stdTimeFunctions = Object.assign({}, time)
-module.exports.symbols = symbols
-module.exports.version = version
-
-// Enables default and name export with TypeScript and Babel
-module.exports.default = pino
-module.exports.pino = pino
-
-
-/***/ }),
-
 /***/ 47810:
 /***/ ((module) => {
 
@@ -59485,121 +56946,6 @@ var qEndingLine = captureLine();
 return Q;
 
 });
-
-
-/***/ }),
-
-/***/ 5933:
-/***/ ((module) => {
-
-"use strict";
-
-function tryStringify (o) {
-  try { return JSON.stringify(o) } catch(e) { return '"[Circular]"' }
-}
-
-module.exports = format
-
-function format(f, args, opts) {
-  var ss = (opts && opts.stringify) || tryStringify
-  var offset = 1
-  if (typeof f === 'object' && f !== null) {
-    var len = args.length + offset
-    if (len === 1) return f
-    var objects = new Array(len)
-    objects[0] = ss(f)
-    for (var index = 1; index < len; index++) {
-      objects[index] = ss(args[index])
-    }
-    return objects.join(' ')
-  }
-  if (typeof f !== 'string') {
-    return f
-  }
-  var argLen = args.length
-  if (argLen === 0) return f
-  var str = ''
-  var a = 1 - offset
-  var lastPos = -1
-  var flen = (f && f.length) || 0
-  for (var i = 0; i < flen;) {
-    if (f.charCodeAt(i) === 37 && i + 1 < flen) {
-      lastPos = lastPos > -1 ? lastPos : 0
-      switch (f.charCodeAt(i + 1)) {
-        case 100: // 'd'
-        case 102: // 'f'
-          if (a >= argLen)
-            break
-          if (lastPos < i)
-            str += f.slice(lastPos, i)
-          if (args[a] == null)  break
-          str += Number(args[a])
-          lastPos = i = i + 2
-          break
-        case 105: // 'i'
-          if (a >= argLen)
-            break
-          if (lastPos < i)
-            str += f.slice(lastPos, i)
-          if (args[a] == null)  break
-          str += Math.floor(Number(args[a]))
-          lastPos = i = i + 2
-          break
-        case 79: // 'O'
-        case 111: // 'o'
-        case 106: // 'j'
-          if (a >= argLen)
-            break
-          if (lastPos < i)
-            str += f.slice(lastPos, i)
-          if (args[a] === undefined) break
-          var type = typeof args[a]
-          if (type === 'string') {
-            str += '\'' + args[a] + '\''
-            lastPos = i + 2
-            i++
-            break
-          }
-          if (type === 'function') {
-            str += args[a].name || '<anonymous>'
-            lastPos = i + 2
-            i++
-            break
-          }
-          str += ss(args[a])
-          lastPos = i + 2
-          i++
-          break
-        case 115: // 's'
-          if (a >= argLen)
-            break
-          if (lastPos < i)
-            str += f.slice(lastPos, i)
-          str += String(args[a])
-          lastPos = i + 2
-          i++
-          break
-        case 37: // '%'
-          if (lastPos < i)
-            str += f.slice(lastPos, i)
-          str += '%'
-          lastPos = i + 2
-          i++
-          a--
-          break
-      }
-      ++a
-    }
-    ++i
-  }
-  if (lastPos === -1)
-    return f
-  else if (lastPos < flen) {
-    str += f.slice(lastPos)
-  }
-
-  return str
-}
 
 
 /***/ }),
@@ -62169,7 +59515,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ConventionalCommits = void 0;
 const chalk = __nccwpck_require__(78818);
 const semver = __nccwpck_require__(11383);
-const checkpoint_1 = __nccwpck_require__(25279);
+const logger_1 = __nccwpck_require__(68809);
 const parser_1 = __nccwpck_require__(74523);
 const to_conventional_changelog_format_1 = __nccwpck_require__(89948);
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -62262,7 +59608,7 @@ class ConventionalCommits {
             ? semver.lt(version, 'v1.0.0')
             : false;
         const bump = await this.guessReleaseType(preMajor);
-        checkpoint_1.checkpoint(`release as ${chalk.green(bump.releaseType)}: ${chalk.yellow(bump.reason)}`, checkpoint_1.CheckpointType.Success);
+        logger_1.logger.info(`release as ${chalk.green(bump.releaseType)}: ${chalk.yellow(bump.reason)}`);
         return bump;
     }
     async generateChangelogEntry(options) {
@@ -62520,8 +59866,8 @@ exports.factory = {
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GitHubRelease = exports.GITHUB_RELEASE_LABEL = void 0;
-const checkpoint_1 = __nccwpck_require__(25279);
 const semver_1 = __nccwpck_require__(11383);
+const logger_1 = __nccwpck_require__(68809);
 exports.GITHUB_RELEASE_LABEL = 'autorelease: tagged';
 class GitHubRelease {
     constructor(options) {
@@ -62543,7 +59889,7 @@ class GitHubRelease {
             return [candidate, release];
         }
         else {
-            checkpoint_1.checkpoint('Unable to build candidate', checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error('Unable to build candidate');
             return [undefined, undefined];
         }
     }
@@ -62568,7 +59914,7 @@ class GitHubRelease {
         });
     }
     releaseResponse(params) {
-        checkpoint_1.checkpoint(`Created release: ${params.release.html_url}.`, checkpoint_1.CheckpointType.Success);
+        logger_1.logger.info(`Created release: ${params.release.html_url}.`);
         const parsedVersion = semver_1.parse(params.version, { loose: true });
         if (parsedVersion) {
             return {
@@ -62618,6 +59964,7 @@ exports.GitHubRelease = GitHubRelease;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GitHub = void 0;
 const code_suggester_1 = __nccwpck_require__(77103);
+const logger_1 = __nccwpck_require__(68809);
 const rest_1 = __nccwpck_require__(55375);
 const request_1 = __nccwpck_require__(36234);
 const graphql_1 = __nccwpck_require__(88467);
@@ -62626,7 +59973,6 @@ function isReposListResponse(arg) {
 }
 const chalk = __nccwpck_require__(78818);
 const semver = __nccwpck_require__(11383);
-const checkpoint_1 = __nccwpck_require__(25279);
 const graphql_to_commits_1 = __nccwpck_require__(92802);
 const branch_name_1 = __nccwpck_require__(16344);
 const constants_1 = __nccwpck_require__(52661);
@@ -63400,10 +60746,10 @@ class GitHub {
         // If the PR is being created from a fork, it will not have permission
         // to add and remove labels from the PR:
         if (this.fork) {
-            checkpoint_1.checkpoint('release labels were not added, due to PR being created from fork', checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error('release labels were not added, due to PR being created from fork');
             return false;
         }
-        checkpoint_1.checkpoint(`adding label ${chalk.green(labels.join(','))} to https://github.com/${this.owner}/${this.repo}/pull/${pr}`, checkpoint_1.CheckpointType.Success);
+        logger_1.logger.info(`adding label ${chalk.green(labels.join(','))} to https://github.com/${this.owner}/${this.repo}/pull/${pr}`);
         await this.request('POST /repos/:owner/:repo/issues/:issue_number/labels', {
             owner: this.owner,
             repo: this.repo,
@@ -63455,7 +60801,7 @@ class GitHub {
         }
         // Short-circuit if there have been no changes to the pull-request body.
         if (openReleasePR && openReleasePR.body === options.body) {
-            checkpoint_1.checkpoint(`PR https://github.com/${this.owner}/${this.repo}/pull/${openReleasePR.number} remained the same`, checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error(`PR https://github.com/${this.owner}/${this.repo}/pull/${openReleasePR.number} remained the same`);
             return undefined;
         }
         //  Update the files for the release if not already supplied
@@ -63470,10 +60816,11 @@ class GitHub {
             force: true,
             fork: this.fork,
             message: options.title,
-        }, { level: 'error' });
+            logger: logger_1.logger,
+        });
         // If a release PR was already open, update the title and body:
         if (openReleasePR) {
-            checkpoint_1.checkpoint(`update pull-request #${openReleasePR.number}: ${chalk.yellow(options.title)}`, checkpoint_1.CheckpointType.Success);
+            logger_1.logger.info(`update pull-request #${openReleasePR.number}: ${chalk.yellow(options.title)}`);
             await this.request('PATCH /repos/:owner/:repo/pulls/:pull_number', {
                 pull_number: openReleasePR.number,
                 owner: this.owner,
@@ -63509,7 +60856,7 @@ class GitHub {
                 // if the file is missing and create = false, just continue
                 // to the next update, otherwise create the file.
                 if (!update.create) {
-                    checkpoint_1.checkpoint(`file ${chalk.green(update.path)} did not exist`, checkpoint_1.CheckpointType.Failure);
+                    logger_1.logger.error(`file ${chalk.green(update.path)} did not exist`);
                     continue;
                 }
             }
@@ -63636,7 +60983,7 @@ class GitHub {
         }
     }
     async createRelease(packageName, tagName, sha, releaseNotes, draft) {
-        checkpoint_1.checkpoint(`creating release ${tagName}`, checkpoint_1.CheckpointType.Success);
+        logger_1.logger.info(`creating release ${tagName}`);
         const name = packageName ? `${packageName} ${tagName}` : tagName;
         return (await this.request('POST /repos/:owner/:repo/releases', {
             owner: this.owner,
@@ -63653,7 +61000,7 @@ class GitHub {
             return false;
         for (let i = 0, label; i < labels.length; i++) {
             label = labels[i];
-            checkpoint_1.checkpoint(`removing label ${chalk.green(label)} from ${chalk.green('' + prNumber)}`, checkpoint_1.CheckpointType.Success);
+            logger_1.logger.info(`removing label ${chalk.green(label)} from ${chalk.green('' + prNumber)}`);
             await this.request('DELETE /repos/:owner/:repo/issues/:issue_number/labels/:name', {
                 owner: this.owner,
                 repo: this.repo,
@@ -63779,7 +61126,7 @@ class GitHub {
      * @param {number} number - The issue or pull request number.
      */
     async commentOnIssue(comment, number) {
-        checkpoint_1.checkpoint(`adding comment to https://github.com/${this.owner}/${this.repo}/issue/${number}`, checkpoint_1.CheckpointType.Success);
+        logger_1.logger.info(`adding comment to https://github.com/${this.owner}/${this.repo}/issue/${number}`);
         return (await this.request('POST /repos/:owner/:repo/issues/:issue_number/comments', {
             owner: this.owner,
             repo: this.repo,
@@ -63949,6 +61296,8 @@ var java_yoshi_1 = __nccwpck_require__(42334);
 Object.defineProperty(exports, "JavaYoshi", ({ enumerable: true, get: function () { return java_yoshi_1.JavaYoshi; } }));
 var ruby_1 = __nccwpck_require__(79923);
 Object.defineProperty(exports, "Ruby", ({ enumerable: true, get: function () { return ruby_1.Ruby; } }));
+var logger_1 = __nccwpck_require__(68809);
+Object.defineProperty(exports, "setLogger", ({ enumerable: true, get: function () { return logger_1.setLogger; } }));
 //# sourceMappingURL=index.js.map
 
 /***/ }),
@@ -64887,12 +62236,12 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ReleasePR = void 0;
 const constants_1 = __nccwpck_require__(52661);
 const semver = __nccwpck_require__(11383);
-const checkpoint_1 = __nccwpck_require__(25279);
 const conventional_commits_1 = __nccwpck_require__(34771);
 const branch_name_1 = __nccwpck_require__(16344);
 const release_notes_1 = __nccwpck_require__(80746);
 const pull_request_title_1 = __nccwpck_require__(1158);
 const changelog_1 = __nccwpck_require__(3325);
+const logger_1 = __nccwpck_require__(68809);
 class ReleasePR {
     constructor(options) {
         var _a, _b, _c;
@@ -64950,7 +62299,7 @@ class ReleasePR {
         // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
         // one line is a good indicator that there were no interesting commits.
         if (this.changelogEmpty(changelogEntry)) {
-            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`);
             return undefined;
         }
         const packageName = await this.getPackageName();
@@ -64966,13 +62315,13 @@ class ReleasePR {
     async run() {
         await this.validateConfiguration();
         if (this.snapshot && !this.supportsSnapshots()) {
-            checkpoint_1.checkpoint('snapshot releases not supported for this releaser', checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error('snapshot releases not supported for this releaser');
             return;
         }
         const mergedPR = await this.gh.findMergedReleasePR(this.labels, undefined, true, 100);
         if (mergedPR) {
             // a PR already exists in the autorelease: pending state.
-            checkpoint_1.checkpoint(`pull #${mergedPR.number} ${mergedPR.sha} has not yet been released`, checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error(`pull #${mergedPR.number} ${mergedPR.sha} has not yet been released`);
             return undefined;
         }
         else {
@@ -65014,7 +62363,7 @@ class ReleasePR {
                 if (includePackageName && !pr.title.includes(` ${packageName.name} `)) {
                     continue;
                 }
-                checkpoint_1.checkpoint(`closing pull #${pr.number}`, checkpoint_1.CheckpointType.Failure);
+                logger_1.logger.error(`closing pull #${pr.number}`);
                 await this.gh.closePR(pr.number);
             }
         }
@@ -65079,10 +62428,10 @@ class ReleasePR {
         const path = opts.path || undefined;
         const commits = await this.gh.commitsSinceSha(sha, perPage, labels, path);
         if (commits.length) {
-            checkpoint_1.checkpoint(`found ${commits.length} commits since ${sha ? sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Success);
+            logger_1.logger.info(`found ${commits.length} commits since ${sha ? sha : 'beginning of time'}`);
         }
         else {
-            checkpoint_1.checkpoint(`no commits found since ${sha}`, checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.warn(`no commits found since ${sha}`);
         }
         return commits;
     }
@@ -65135,7 +62484,7 @@ class ReleasePR {
         // a return of undefined indicates that PR was not updated.
         if (pr) {
             await this.gh.addLabels(this.labels, pr);
-            checkpoint_1.checkpoint(`find stale PRs with label "${this.labels.join(',')}"`, checkpoint_1.CheckpointType.Success);
+            logger_1.logger.info(`find stale PRs with label "${this.labels.join(',')}"`);
             await this.closeStaleReleasePRs(pr, includePackageName);
         }
         return pr;
@@ -65192,13 +62541,13 @@ class ReleasePR {
         await this.validateConfiguration();
         const mergedPR = await this.findMergedRelease();
         if (!mergedPR) {
-            checkpoint_1.checkpoint('No merged release PR found', checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error('No merged release PR found');
             return undefined;
         }
         const branchName = branch_name_1.BranchName.parse(mergedPR.headRefName);
         const version = await this.detectReleaseVersion(mergedPR, branchName);
         if (!version) {
-            checkpoint_1.checkpoint('Unable to detect release version', checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error('Unable to detect release version');
             return undefined;
         }
         return this.buildReleaseForVersion(version, mergedPR);
@@ -65321,9 +62670,9 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GoYoshi = void 0;
 const release_pr_1 = __nccwpck_require__(86786);
 const conventional_commits_1 = __nccwpck_require__(34771);
-const checkpoint_1 = __nccwpck_require__(25279);
 // Generic
 const changelog_1 = __nccwpck_require__(3325);
+const logger_1 = __nccwpck_require__(68809);
 // Commits containing a scope prefixed with an item in this array will be
 // ignored when generating a release PR for the parent module.
 const SUB_MODULES = [
@@ -65403,7 +62752,7 @@ class GoYoshi extends release_pr_1.ReleasePR {
         // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
         // one line is a good indicator that there were no interesting commits.
         if (this.changelogEmpty(changelogEntry)) {
-            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`);
             return undefined;
         }
         const updates = [];
@@ -65827,7 +63176,6 @@ exports.JavaYoshi = void 0;
 const branch_name_1 = __nccwpck_require__(16344);
 const pull_request_title_1 = __nccwpck_require__(1158);
 const versions_manifest_1 = __nccwpck_require__(78345);
-const checkpoint_1 = __nccwpck_require__(25279);
 const conventional_commits_1 = __nccwpck_require__(34771);
 const version_1 = __nccwpck_require__(48074);
 const release_pr_1 = __nccwpck_require__(86786);
@@ -65838,6 +63186,7 @@ const pom_xml_1 = __nccwpck_require__(60255);
 const java_update_1 = __nccwpck_require__(70301);
 const stability_1 = __nccwpck_require__(28824);
 const bump_type_1 = __nccwpck_require__(93826);
+const logger_1 = __nccwpck_require__(68809);
 const CHANGELOG_SECTIONS = [
     { type: 'feat', section: 'Features' },
     { type: 'fix', section: 'Bug Fixes' },
@@ -65869,7 +63218,7 @@ class JavaYoshi extends release_pr_1.ReleasePR {
             this.snapshot = snapshotNeeded;
         }
         else if (!snapshotNeeded) {
-            checkpoint_1.checkpoint('release asked for a snapshot, but no snapshot is needed', checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error('release asked for a snapshot, but no snapshot is needed');
             return undefined;
         }
         if (this.snapshot) {
@@ -65889,7 +63238,7 @@ class JavaYoshi extends release_pr_1.ReleasePR {
                 labels: true,
             });
         if (commits.length === 0) {
-            checkpoint_1.checkpoint(`no commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error(`no commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`);
             return undefined;
         }
         let prSHA = commits[0].sha;
@@ -65918,7 +63267,7 @@ class JavaYoshi extends release_pr_1.ReleasePR {
         // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
         // one line is a good indicator that there were no interesting commits.
         if (this.changelogEmpty(changelogEntry) && !this.snapshot) {
-            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`);
             return undefined;
         }
         const packageName = await this.getPackageName();
@@ -66480,7 +63829,6 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PHPYoshi = void 0;
 const release_pr_1 = __nccwpck_require__(86786);
 const conventional_commits_1 = __nccwpck_require__(34771);
-const checkpoint_1 = __nccwpck_require__(25279);
 const commit_split_1 = __nccwpck_require__(12475);
 const semver = __nccwpck_require__(11383);
 // Generic
@@ -66490,6 +63838,7 @@ const php_client_version_1 = __nccwpck_require__(78124);
 const php_manifest_1 = __nccwpck_require__(87539);
 const root_composer_1 = __nccwpck_require__(82211);
 const version_1 = __nccwpck_require__(9892);
+const logger_1 = __nccwpck_require__(68809);
 const CHANGELOG_SECTIONS = [
     { type: 'feat', section: 'Features' },
     { type: 'fix', section: 'Bug Fixes' },
@@ -66591,7 +63940,7 @@ class PHPYoshi extends release_pr_1.ReleasePR {
                     const bump = await cc.suggestBump(contents.parsedContent);
                     const candidate = semver.inc(contents.parsedContent, bump.releaseType);
                     if (!candidate) {
-                        checkpoint_1.checkpoint(`failed to update ${pkgKey} version`, checkpoint_1.CheckpointType.Failure);
+                        logger_1.logger.error(`failed to update ${pkgKey} version`);
                         continue;
                     }
                     const meta = JSON.parse((await this.gh.getFileContents(`${pkgKey}/composer.json`))
@@ -66676,13 +64025,16 @@ ${entryUpdate}
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Python = void 0;
+const chalk = __nccwpck_require__(78818);
 const release_pr_1 = __nccwpck_require__(86786);
 // Generic
 const changelog_1 = __nccwpck_require__(3325);
 // Python specific.
 const setup_py_1 = __nccwpck_require__(11519);
 const setup_cfg_1 = __nccwpck_require__(40483);
-const version_py_1 = __nccwpck_require__(24823);
+const python_file_with_version_1 = __nccwpck_require__(70464);
+const pyproject_toml_1 = __nccwpck_require__(89290);
+const logger_1 = __nccwpck_require__(68809);
 const CHANGELOG_SECTIONS = [
     { type: 'feat', section: 'Features' },
     { type: 'fix', section: 'Bug Fixes' },
@@ -66704,6 +64056,7 @@ class Python extends release_pr_1.ReleasePR {
         this.changelogSections = (_a = options.changelogSections) !== null && _a !== void 0 ? _a : CHANGELOG_SECTIONS;
     }
     async buildUpdates(changelogEntry, candidate, packageName) {
+        var _a;
         const updates = [];
         updates.push(new changelog_1.Changelog({
             path: this.addPath(this.changelogPath),
@@ -66723,11 +64076,34 @@ class Python extends release_pr_1.ReleasePR {
             version: candidate.version,
             packageName: packageName.name,
         }));
+        const parsedPyProject = await this.getPyProject();
+        const pyProject = (parsedPyProject === null || parsedPyProject === void 0 ? void 0 : parsedPyProject.project) || ((_a = parsedPyProject === null || parsedPyProject === void 0 ? void 0 : parsedPyProject.tool) === null || _a === void 0 ? void 0 : _a.poetry);
+        if (pyProject) {
+            updates.push(new pyproject_toml_1.PyProjectToml({
+                path: this.addPath('pyproject.toml'),
+                changelogEntry,
+                version: candidate.version,
+                packageName: packageName.name,
+            }));
+            if (pyProject.name) {
+                updates.push(new python_file_with_version_1.PythonFileWithVersion({
+                    path: this.addPath(`${pyProject.name}/__init__.py`),
+                    changelogEntry,
+                    version: candidate.version,
+                    packageName: packageName.name,
+                }));
+            }
+        }
+        else {
+            logger_1.logger.error(parsedPyProject
+                ? 'invalid pyproject.toml'
+                : `file ${chalk.green('pyproject.toml')} did not exist`);
+        }
         // There should be only one version.py, but foreach in case that is incorrect
         const versionPyFilesSearch = this.gh.findFilesByFilename('version.py', this.path);
         const versionPyFiles = await versionPyFilesSearch;
         versionPyFiles.forEach(path => {
-            updates.push(new version_py_1.VersionPy({
+            updates.push(new python_file_with_version_1.PythonFileWithVersion({
                 path: this.addPath(path),
                 changelogEntry,
                 version: candidate.version,
@@ -66735,6 +64111,16 @@ class Python extends release_pr_1.ReleasePR {
             }));
         });
         return updates;
+    }
+    async getPyProject() {
+        let content;
+        try {
+            content = await this.gh.getFileContents('pyproject.toml');
+        }
+        catch (e) {
+            return null;
+        }
+        return pyproject_toml_1.parsePyProject(content.parsedContent);
     }
     defaultInitialVersion() {
         return '0.1.0';
@@ -66769,10 +64155,10 @@ const fs_1 = __nccwpck_require__(35747);
 const path_1 = __nccwpck_require__(85622);
 const release_pr_1 = __nccwpck_require__(86786);
 const conventional_commits_1 = __nccwpck_require__(34771);
-const checkpoint_1 = __nccwpck_require__(25279);
 const indent_commit_1 = __nccwpck_require__(13170);
 const changelog_1 = __nccwpck_require__(3325);
 const version_rb_1 = __nccwpck_require__(86044);
+const logger_1 = __nccwpck_require__(68809);
 const CHANGELOG_SECTIONS = [
     { type: 'feat', section: 'Features' },
     { type: 'fix', section: 'Bug Fixes' },
@@ -66797,7 +64183,7 @@ class RubyYoshi extends release_pr_1.ReleasePR {
             path: packageName.name,
         });
         if (commits.length === 0) {
-            checkpoint_1.checkpoint(`no commits found since ${lastReleaseSha}`, checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error(`no commits found since ${lastReleaseSha}`);
             return undefined;
         }
         else {
@@ -66824,7 +64210,7 @@ class RubyYoshi extends release_pr_1.ReleasePR {
             // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
             // one line is a good indicator that there were no interesting commits.
             if (this.changelogEmpty(changelogEntry)) {
-                checkpoint_1.checkpoint(`no user facing commits found since ${lastReleaseSha ? lastReleaseSha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+                logger_1.logger.error(`no user facing commits found since ${lastReleaseSha ? lastReleaseSha : 'beginning of time'}`);
                 return undefined;
             }
             const updates = [];
@@ -66979,13 +64365,13 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Rust = void 0;
 const release_pr_1 = __nccwpck_require__(86786);
 const conventional_commits_1 = __nccwpck_require__(34771);
-const checkpoint_1 = __nccwpck_require__(25279);
 // Generic
 const changelog_1 = __nccwpck_require__(3325);
 // Cargo.toml support
 const cargo_toml_1 = __nccwpck_require__(90420);
 const cargo_lock_1 = __nccwpck_require__(68875);
 const common_1 = __nccwpck_require__(11659);
+const logger_1 = __nccwpck_require__(68809);
 class Rust extends release_pr_1.ReleasePR {
     async _run() {
         const prefix = this.monorepoTags ? `${this.packageName}-` : undefined;
@@ -67013,7 +64399,7 @@ class Rust extends release_pr_1.ReleasePR {
         // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
         // one line is a good indicator that there were no interesting commits.
         if (this.changelogEmpty(changelogEntry)) {
-            checkpoint_1.checkpoint(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`);
             return undefined;
         }
         const workspaceManifest = await this.getWorkspaceManifest();
@@ -67030,7 +64416,7 @@ class Rust extends release_pr_1.ReleasePR {
             workspaceManifest.workspace &&
             workspaceManifest.workspace.members) {
             const members = workspaceManifest.workspace.members;
-            checkpoint_1.checkpoint(`found workspace with ${members.length} members, upgrading all`, checkpoint_1.CheckpointType.Success);
+            logger_1.logger.info(`found workspace with ${members.length} members, upgrading all`);
             for (const member of members) {
                 manifestPaths.push(`${member}/Cargo.toml`);
             }
@@ -67038,7 +64424,7 @@ class Rust extends release_pr_1.ReleasePR {
         }
         else {
             const manifestPath = this.addPath('Cargo.toml');
-            checkpoint_1.checkpoint(`single crate found, updating ${manifestPath}`, checkpoint_1.CheckpointType.Success);
+            logger_1.logger.info(`single crate found, updating ${manifestPath}`);
             manifestPaths.push(this.addPath('Cargo.toml'));
             lockPath = this.addPath('Cargo.lock');
         }
@@ -67093,10 +64479,10 @@ class Rust extends release_pr_1.ReleasePR {
         // Then keep only the "path commits" that are relevant for this release
         const commits = allPathCommits.filter(commit => relevantCommits.has(commit.sha));
         if (commits.length) {
-            checkpoint_1.checkpoint(`found ${commits.length} commits for ${path} since ${sha ? sha : 'beginning of time'}`, checkpoint_1.CheckpointType.Success);
+            logger_1.logger.info(`found ${commits.length} commits for ${path} since ${sha ? sha : 'beginning of time'}`);
         }
         else {
-            checkpoint_1.checkpoint(`no commits found since ${sha}`, checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error(`no commits found since ${sha}`);
         }
         return commits;
     }
@@ -67269,7 +64655,7 @@ exports.TerraformModule = TerraformModule;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Changelog = void 0;
-const checkpoint_1 = __nccwpck_require__(25279);
+const logger_1 = __nccwpck_require__(68809);
 class Changelog {
     constructor(options) {
         this.create = true;
@@ -67283,12 +64669,12 @@ class Changelog {
         // Handle both H2 (features/BREAKING CHANGES) and H3 (fixes).
         const lastEntryIndex = content.search(/\n###? v?[0-9[]/s);
         if (lastEntryIndex === -1) {
-            checkpoint_1.checkpoint(`${this.path} not found`, checkpoint_1.CheckpointType.Failure);
-            checkpoint_1.checkpoint(`creating ${this.path}`, checkpoint_1.CheckpointType.Success);
+            logger_1.logger.error(`${this.path} not found`);
+            logger_1.logger.info(`creating ${this.path}`);
             return `${this.header()}\n${this.changelogEntry}\n`;
         }
         else {
-            checkpoint_1.checkpoint(`updating ${this.path}`, checkpoint_1.CheckpointType.Success);
+            logger_1.logger.info(`updating ${this.path}`);
             const before = content.slice(0, lastEntryIndex);
             const after = content.slice(lastEntryIndex);
             return `${before}\n${this.changelogEntry}\n${after}`.trim() + '\n';
@@ -67325,8 +64711,8 @@ exports.Changelog = Changelog;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ChartYaml = void 0;
-const checkpoint_1 = __nccwpck_require__(25279);
 const yaml = __nccwpck_require__(31882);
+const logger_1 = __nccwpck_require__(68809);
 class ChartYaml {
     constructor(options) {
         this.create = false;
@@ -67341,7 +64727,7 @@ class ChartYaml {
             return '';
         }
         const parsed = JSON.parse(JSON.stringify(data));
-        checkpoint_1.checkpoint(`updating ${this.path} from ${parsed.version} to ${this.version}`, checkpoint_1.CheckpointType.Success);
+        logger_1.logger.info(`updating ${this.path} from ${parsed.version} to ${this.version}`);
         parsed.version = this.version;
         return yaml.dump(parsed);
     }
@@ -67609,7 +64995,7 @@ exports.VersionsManifest = VersionsManifest;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DuneProject = void 0;
-const checkpoint_1 = __nccwpck_require__(25279);
+const logger_1 = __nccwpck_require__(68809);
 class DuneProject {
     constructor(options) {
         this.create = false;
@@ -67621,7 +65007,7 @@ class DuneProject {
     updateContent(content) {
         const oldVersion = content.match(/^\(version ([A-Za-z0-9_\-+.~]+)\)$/m);
         if (oldVersion) {
-            checkpoint_1.checkpoint(`updating ${this.path} from ${oldVersion[1]} to ${this.version}`, checkpoint_1.CheckpointType.Success);
+            logger_1.logger.info(`updating ${this.path} from ${oldVersion[1]} to ${this.version}`);
         }
         return content.replace(/^\(version ([A-Za-z0-9_\-+.~]+)\)$/m, `(version ${this.version})`);
     }
@@ -67651,7 +65037,7 @@ exports.DuneProject = DuneProject;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.EsyJson = void 0;
-const checkpoint_1 = __nccwpck_require__(25279);
+const logger_1 = __nccwpck_require__(68809);
 class EsyJson {
     constructor(options) {
         this.create = false;
@@ -67662,7 +65048,7 @@ class EsyJson {
     }
     updateContent(content) {
         const parsed = JSON.parse(content);
-        checkpoint_1.checkpoint(`updating ${this.path} from ${parsed.version} to ${this.version}`, checkpoint_1.CheckpointType.Success);
+        logger_1.logger.info(`updating ${this.path} from ${parsed.version} to ${this.version}`);
         parsed.version = this.version;
         return JSON.stringify(parsed, null, 2) + '\n';
     }
@@ -67692,7 +65078,7 @@ exports.EsyJson = EsyJson;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Opam = void 0;
-const checkpoint_1 = __nccwpck_require__(25279);
+const logger_1 = __nccwpck_require__(68809);
 class Opam {
     constructor(options) {
         this.create = false;
@@ -67704,7 +65090,7 @@ class Opam {
     updateContent(content) {
         const oldVersion = content.match(/^version: "([A-Za-z0-9_\-+.~]+)"$/m);
         if (oldVersion) {
-            checkpoint_1.checkpoint(`updating ${this.path} from ${oldVersion[1]} to ${this.version}`, checkpoint_1.CheckpointType.Success);
+            logger_1.logger.info(`updating ${this.path} from ${oldVersion[1]} to ${this.version}`);
         }
         return content.replace(/^version: "[A-Za-z0-9_\-+.~]+"$/m, `version: "${this.version}"`);
     }
@@ -67734,8 +65120,8 @@ exports.Opam = Opam;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PackageJson = void 0;
-const checkpoint_1 = __nccwpck_require__(25279);
 const package_json_stringify_1 = __nccwpck_require__(85695);
+const logger_1 = __nccwpck_require__(68809);
 class PackageJson {
     constructor(options) {
         this.create = false;
@@ -67750,7 +65136,7 @@ class PackageJson {
     }
     updateContent(content) {
         const parsed = JSON.parse(content);
-        checkpoint_1.checkpoint(`updating ${this.path} from ${parsed.version} to ${this.version}`, checkpoint_1.CheckpointType.Success);
+        logger_1.logger.info(`updating ${this.path} from ${parsed.version} to ${this.version}`);
         this.updateVersion(parsed);
         return package_json_stringify_1.packageJsonStringify(parsed);
     }
@@ -67853,7 +65239,7 @@ exports.PHPClientVersion = PHPClientVersion;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PHPManifest = void 0;
-const checkpoint_1 = __nccwpck_require__(25279);
+const logger_1 = __nccwpck_require__(68809);
 class PHPManifest {
     constructor(options) {
         this.create = false;
@@ -67865,7 +65251,7 @@ class PHPManifest {
     }
     updateContent(content) {
         if (!this.versions || this.versions.size === 0) {
-            checkpoint_1.checkpoint(`no updates necessary for ${this.path}`, checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error(`no updates necessary for ${this.path}`);
             return content;
         }
         const parsed = JSON.parse(content);
@@ -67874,7 +65260,7 @@ class PHPManifest {
                 return;
             for (const [key, version] of this.versions) {
                 if (module.name === key) {
-                    checkpoint_1.checkpoint(`adding ${key}@${version} to manifest`, checkpoint_1.CheckpointType.Success);
+                    logger_1.logger.info(`adding ${key}@${version} to manifest`);
                     module.versions.unshift(`v${version}`);
                 }
             }
@@ -67889,6 +65275,98 @@ class PHPManifest {
 }
 exports.PHPManifest = PHPManifest;
 //# sourceMappingURL=php-manifest.js.map
+
+/***/ }),
+
+/***/ 89290:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PyProjectToml = exports.parsePyProject = void 0;
+const TOML = __nccwpck_require__(62901);
+const toml_edit_1 = __nccwpck_require__(64874);
+const logger_1 = __nccwpck_require__(68809);
+function parsePyProject(content) {
+    return TOML.parse(content);
+}
+exports.parsePyProject = parsePyProject;
+class PyProjectToml {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        var _a;
+        const parsed = parsePyProject(content);
+        const project = parsed.project || ((_a = parsed.tool) === null || _a === void 0 ? void 0 : _a.poetry);
+        if (!(project === null || project === void 0 ? void 0 : project.version)) {
+            const msg = `invalid ${this.path}`;
+            logger_1.logger.error(msg);
+            throw new Error(msg);
+        }
+        return toml_edit_1.replaceTomlValue(content, (parsed.project ? ['project'] : ['tool', 'poetry']).concat('version'), this.version);
+    }
+}
+exports.PyProjectToml = PyProjectToml;
+//# sourceMappingURL=pyproject-toml.js.map
+
+/***/ }),
+
+/***/ 70464:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PythonFileWithVersion = void 0;
+/**
+ * Python file with a __version__ property (or attribute, or whatever).
+ */
+class PythonFileWithVersion {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        return content.replace(/(__version__ ?= ?["'])[0-9]+\.[0-9]+\.[0-9](?:-\w+)?(["'])/, `$1${this.version}$2`);
+    }
+}
+exports.PythonFileWithVersion = PythonFileWithVersion;
+//# sourceMappingURL=python-file-with-version.js.map
 
 /***/ }),
 
@@ -67966,43 +65444,6 @@ exports.SetupPy = SetupPy;
 
 /***/ }),
 
-/***/ 24823:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.VersionPy = void 0;
-class VersionPy {
-    constructor(options) {
-        this.create = false;
-        this.path = options.path;
-        this.changelogEntry = options.changelogEntry;
-        this.version = options.version;
-        this.packageName = options.packageName;
-    }
-    updateContent(content) {
-        return content.replace(/(__version__ ?= ?["'])[0-9]+\.[0-9]+\.[0-9](?:-\w+)?(["'])/, `$1${this.version}$2`);
-    }
-}
-exports.VersionPy = VersionPy;
-//# sourceMappingURL=version-py.js.map
-
-/***/ }),
-
 /***/ 9817:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -68066,7 +65507,7 @@ exports.ReleasePleaseManifest = ReleasePleaseManifest;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.RootComposer = void 0;
-const checkpoint_1 = __nccwpck_require__(25279);
+const logger_1 = __nccwpck_require__(68809);
 class RootComposer {
     constructor(options) {
         this.create = false;
@@ -68078,7 +65519,7 @@ class RootComposer {
     }
     updateContent(content) {
         if (!this.versions || this.versions.size === 0) {
-            checkpoint_1.checkpoint(`no updates necessary for ${this.path}`, checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error(`no updates necessary for ${this.path}`);
             return content;
         }
         const parsed = JSON.parse(content);
@@ -68086,7 +65527,7 @@ class RootComposer {
             // eslint-disable-next-line prefer-const
             for (let [key, version] of this.versions.entries()) {
                 version = version || '1.0.0';
-                checkpoint_1.checkpoint(`updating ${key} from ${parsed.replace[key]} to ${version}`, checkpoint_1.CheckpointType.Success);
+                logger_1.logger.info(`updating ${key} from ${parsed.replace[key]} to ${version}`);
                 parsed.replace[key] = version;
             }
         }
@@ -68118,9 +65559,9 @@ exports.RootComposer = RootComposer;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CargoLock = void 0;
-const checkpoint_1 = __nccwpck_require__(25279);
-const toml_edit_1 = __nccwpck_require__(73416);
+const toml_edit_1 = __nccwpck_require__(64874);
 const common_1 = __nccwpck_require__(11659);
+const logger_1 = __nccwpck_require__(68809);
 /**
  * Updates `Cargo.lock` lockfiles, preserving formatting and comments.
  */
@@ -68140,7 +65581,7 @@ class CargoLock {
         }
         const parsed = common_1.parseCargoLockfile(payload);
         if (!parsed.package) {
-            checkpoint_1.checkpoint(`${this.path} is not a Cargo lockfile`, checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error(`${this.path} is not a Cargo lockfile`);
             throw new Error(`${this.path} is not a Cargo lockfile`);
         }
         // n.b for `replaceTomlString`, we need to keep track of the index
@@ -68161,7 +65602,7 @@ class CargoLock {
             // which is lucky because `replaceTomlString` expect "all strings" in its
             // `path` argument.
             const packageIndex = i.toString();
-            checkpoint_1.checkpoint(`updating ${pkg.name} in ${this.path}`, checkpoint_1.CheckpointType.Success);
+            logger_1.logger.info(`updating ${pkg.name} in ${this.path}`);
             payload = toml_edit_1.replaceTomlValue(payload, ['package', packageIndex, 'version'], nextVersion);
         }
         return payload;
@@ -68192,9 +65633,9 @@ exports.CargoLock = CargoLock;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CargoToml = void 0;
-const checkpoint_1 = __nccwpck_require__(25279);
-const toml_edit_1 = __nccwpck_require__(73416);
+const toml_edit_1 = __nccwpck_require__(64874);
 const common_1 = __nccwpck_require__(11659);
+const logger_1 = __nccwpck_require__(68809);
 /**
  * Updates `Cargo.toml` manifests, preserving formatting and comments.
  */
@@ -68216,12 +65657,12 @@ class CargoToml {
         const parsed = common_1.parseCargoManifest(payload);
         if (!parsed.package) {
             const msg = `${this.path} is not a package manifest (might be a cargo workspace)`;
-            checkpoint_1.checkpoint(msg, checkpoint_1.CheckpointType.Failure);
+            logger_1.logger.error(msg);
             throw new Error(msg);
         }
         for (const [pkgName, pkgVersion] of this.versions) {
             if (parsed.package.name === pkgName) {
-                checkpoint_1.checkpoint(`updating ${this.path}'s own version from ${(_a = parsed.package) === null || _a === void 0 ? void 0 : _a.version} to ${pkgVersion}`, checkpoint_1.CheckpointType.Success);
+                logger_1.logger.info(`updating ${this.path}'s own version from ${(_a = parsed.package) === null || _a === void 0 ? void 0 : _a.version} to ${pkgVersion}`);
                 payload = toml_edit_1.replaceTomlValue(payload, ['package', 'version'], pkgVersion);
                 continue; // to next [pkgName, pkgVersion] pair
             }
@@ -68235,10 +65676,10 @@ class CargoToml {
                 }
                 const dep = deps[pkgName];
                 if (typeof dep === 'string' || typeof dep.path === 'undefined') {
-                    checkpoint_1.checkpoint(`skipping ${depKind}.${pkgName} in ${this.path}`, checkpoint_1.CheckpointType.Success);
+                    logger_1.logger.info(`skipping ${depKind}.${pkgName} in ${this.path}`);
                     continue; // to next depKind
                 }
-                checkpoint_1.checkpoint(`updating ${this.path} ${depKind}.${pkgName} from ${dep.version} to ${pkgVersion}`, checkpoint_1.CheckpointType.Success);
+                logger_1.logger.info(`updating ${this.path} ${depKind}.${pkgName} from ${dep.version} to ${pkgVersion}`);
                 payload = toml_edit_1.replaceTomlValue(payload, [depKind, pkgName, 'version'], pkgVersion);
             }
             // Update platform-specific dependencies
@@ -68254,10 +65695,10 @@ class CargoToml {
                         }
                         const dep = deps[pkgName];
                         if (typeof dep === 'string' || typeof dep.path === 'undefined') {
-                            checkpoint_1.checkpoint(`skipping target.${targetName}.${depKind}.${pkgName} in ${this.path}`, checkpoint_1.CheckpointType.Success);
+                            logger_1.logger.info(`skipping target.${targetName}.${depKind}.${pkgName} in ${this.path}`);
                             continue; // to next depKind
                         }
-                        checkpoint_1.checkpoint(`updating ${this.path} target.${targetName}.${depKind}.${pkgName} from ${dep.version} to ${pkgVersion}`, checkpoint_1.CheckpointType.Success);
+                        logger_1.logger.info(`updating ${this.path} target.${targetName}.${depKind}.${pkgName} from ${dep.version} to ${pkgVersion}`);
                         payload = toml_edit_1.replaceTomlValue(payload, ['target', targetName, depKind, pkgName, 'version'], pkgVersion);
                     }
                 }
@@ -68313,7 +65754,131 @@ exports.parseCargoLockfile = parseCargoLockfile;
 
 /***/ }),
 
-/***/ 73416:
+/***/ 18562:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SamplesPackageJson = void 0;
+const logger_1 = __nccwpck_require__(68809);
+class SamplesPackageJson {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        const parsed = JSON.parse(content);
+        if (!parsed.dependencies || !parsed.dependencies[this.packageName]) {
+            return content;
+        }
+        logger_1.logger.info(`updating ${this.packageName} dependency in ${this.path} from ${parsed.dependencies[this.packageName]} to ^${this.version}`);
+        parsed.dependencies[this.packageName] = `^${this.version}`;
+        return JSON.stringify(parsed, null, 2) + '\n';
+    }
+}
+exports.SamplesPackageJson = SamplesPackageJson;
+//# sourceMappingURL=samples-package-json.js.map
+
+/***/ }),
+
+/***/ 19696:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ModuleVersion = void 0;
+const logger_1 = __nccwpck_require__(68809);
+class ModuleVersion {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        const oldVersion = content.match(/v[0-9]+\.[0-9]+\.[0-9]+(-\w+)?/);
+        if (oldVersion) {
+            logger_1.logger.info(`updating ${this.path} from ${oldVersion} to v${this.version}`);
+        }
+        return content.replace(/v[0-9]+\.[0-9]+\.[0-9]+(-\w+)?/g, `v${this.version}`);
+    }
+}
+exports.ModuleVersion = ModuleVersion;
+//# sourceMappingURL=module-version.js.map
+
+/***/ }),
+
+/***/ 4996:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+// Copyright 2020 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ReadMe = void 0;
+class ReadMe {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        const minorVersion = this.version.split('.').slice(0, 2).join('.');
+        return content.replace(/version = "~> [\d]+.[\d]+"/, `version = "~> ${minorVersion}"`);
+    }
+}
+exports.ReadMe = ReadMe;
+//# sourceMappingURL=readme.js.map
+
+/***/ }),
+
+/***/ 64874:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -68442,130 +66007,6 @@ function replaceTomlValue(input, path, newValue) {
 }
 exports.replaceTomlValue = replaceTomlValue;
 //# sourceMappingURL=toml-edit.js.map
-
-/***/ }),
-
-/***/ 18562:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.SamplesPackageJson = void 0;
-const checkpoint_1 = __nccwpck_require__(25279);
-class SamplesPackageJson {
-    constructor(options) {
-        this.create = false;
-        this.path = options.path;
-        this.changelogEntry = options.changelogEntry;
-        this.version = options.version;
-        this.packageName = options.packageName;
-    }
-    updateContent(content) {
-        const parsed = JSON.parse(content);
-        if (!parsed.dependencies || !parsed.dependencies[this.packageName]) {
-            return content;
-        }
-        checkpoint_1.checkpoint(`updating ${this.packageName} dependency in ${this.path} from ${parsed.dependencies[this.packageName]} to ^${this.version}`, checkpoint_1.CheckpointType.Success);
-        parsed.dependencies[this.packageName] = `^${this.version}`;
-        return JSON.stringify(parsed, null, 2) + '\n';
-    }
-}
-exports.SamplesPackageJson = SamplesPackageJson;
-//# sourceMappingURL=samples-package-json.js.map
-
-/***/ }),
-
-/***/ 19696:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ModuleVersion = void 0;
-const checkpoint_1 = __nccwpck_require__(25279);
-class ModuleVersion {
-    constructor(options) {
-        this.create = false;
-        this.path = options.path;
-        this.changelogEntry = options.changelogEntry;
-        this.version = options.version;
-        this.packageName = options.packageName;
-    }
-    updateContent(content) {
-        const oldVersion = content.match(/v[0-9]+\.[0-9]+\.[0-9]+(-\w+)?/);
-        if (oldVersion) {
-            checkpoint_1.checkpoint(`updating ${this.path} from ${oldVersion} to v${this.version}`, checkpoint_1.CheckpointType.Success);
-        }
-        return content.replace(/v[0-9]+\.[0-9]+\.[0-9]+(-\w+)?/g, `v${this.version}`);
-    }
-}
-exports.ModuleVersion = ModuleVersion;
-//# sourceMappingURL=module-version.js.map
-
-/***/ }),
-
-/***/ 4996:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ReadMe = void 0;
-class ReadMe {
-    constructor(options) {
-        this.create = false;
-        this.path = options.path;
-        this.changelogEntry = options.changelogEntry;
-        this.version = options.version;
-        this.packageName = options.packageName;
-    }
-    updateContent(content) {
-        const minorVersion = this.version.split('.').slice(0, 2).join('.');
-        return content.replace(/version = "~> [\d]+.[\d]+"/, `version = "~> ${minorVersion}"`);
-    }
-}
-exports.ReadMe = ReadMe;
-//# sourceMappingURL=readme.js.map
 
 /***/ }),
 
@@ -68825,19 +66266,20 @@ class ComponentBranchName extends BranchName {
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.checkpoint = exports.CheckpointType = void 0;
-const chalk = __nccwpck_require__(78818);
-const figures = __nccwpck_require__(57099);
+const logger_1 = __nccwpck_require__(68809);
 var CheckpointType;
 (function (CheckpointType) {
     CheckpointType["Success"] = "success";
     CheckpointType["Failure"] = "failure";
 })(CheckpointType = exports.CheckpointType || (exports.CheckpointType = {}));
 exports.checkpoint = function (msg, type) {
-    const prefix = type === CheckpointType.Success
-        ? chalk.green(figures.tick)
-        : chalk.red(figures.cross);
     if (process.env.ENVIRONMENT !== 'test') {
-        console.info(`${prefix} ${msg}`);
+        if (type === CheckpointType.Success) {
+            logger_1.logger.info(msg);
+        }
+        else {
+            logger_1.logger.error(msg);
+        }
     }
 };
 //# sourceMappingURL=checkpoint.js.map
@@ -68887,6 +66329,62 @@ function indentCommit(commit) {
 }
 exports.indentCommit = indentCommit;
 //# sourceMappingURL=indent-commit.js.map
+
+/***/ }),
+
+/***/ 68809:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.setLogger = exports.logger = void 0;
+const chalk = __nccwpck_require__(78818);
+const figures = __nccwpck_require__(57099);
+const errorPrefix = chalk.red(figures.cross);
+const warnPrefix = chalk.yellow(figures.warning);
+const infoPrefix = chalk.green(figures.tick);
+const debugPrefix = chalk.gray(figures.pointer);
+const tracePrefix = chalk.dim.gray(figures.pointerSmall);
+class CheckpointLogger {
+    constructor() {
+        this.error = (...args) => {
+            console.error(`${errorPrefix}`, ...args);
+        };
+        this.warn = (...args) => {
+            console.warn(`${warnPrefix}`, ...args);
+        };
+        this.info = (...args) => {
+            console.info(`${infoPrefix}`, ...args);
+        };
+        this.debug = (...args) => {
+            console.debug(`${debugPrefix}`, ...args);
+        };
+        this.trace = (...args) => {
+            console.trace(`${tracePrefix}`, ...args);
+        };
+    }
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+exports.logger = new CheckpointLogger();
+function setLogger(userLogger) {
+    exports.logger = userLogger;
+}
+exports.setLogger = setLogger;
+//# sourceMappingURL=logger.js.map
 
 /***/ }),
 
@@ -76177,394 +73675,6 @@ module.exports = path => {
 
 	return path.replace(/\\/g, '/');
 };
-
-
-/***/ }),
-
-/***/ 73460:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
-
-"use strict";
-
-
-const fs = __nccwpck_require__(35747)
-const EventEmitter = __nccwpck_require__(28614)
-const flatstr = __nccwpck_require__(35298)
-const inherits = __nccwpck_require__(31669).inherits
-
-const BUSY_WRITE_TIMEOUT = 100
-
-const sleep = __nccwpck_require__(86950)
-
-// 16 MB - magic number
-// This constant ensures that SonicBoom only needs
-// 32 MB of free memory to run. In case of having 1GB+
-// of data to write, this prevents an out of memory
-// condition.
-const MAX_WRITE = 16 * 1024 * 1024
-
-function openFile (file, sonic) {
-  sonic._opening = true
-  sonic._writing = true
-  sonic._asyncDrainScheduled = false
-
-  // NOTE: 'error' and 'ready' events emitted below only relevant when sonic.sync===false
-  // for sync mode, there is no way to add a listener that will receive these
-
-  function fileOpened (err, fd) {
-    if (err) {
-      sonic._reopening = false
-      sonic._writing = false
-      sonic._opening = false
-
-      if (sonic.sync) {
-        process.nextTick(() => {
-          if (sonic.listenerCount('error') > 0) {
-            sonic.emit('error', err)
-          }
-        })
-      } else {
-        sonic.emit('error', err)
-      }
-      return
-    }
-
-    sonic.fd = fd
-    sonic.file = file
-    sonic._reopening = false
-    sonic._opening = false
-    sonic._writing = false
-
-    if (sonic.sync) {
-      process.nextTick(() => sonic.emit('ready'))
-    } else {
-      sonic.emit('ready')
-    }
-
-    if (sonic._reopening) {
-      return
-    }
-
-    // start
-    const len = sonic._buf.length
-    if (len > 0 && len > sonic.minLength && !sonic.destroyed) {
-      actualWrite(sonic)
-    }
-  }
-
-  if (sonic.sync) {
-    try {
-      const fd = fs.openSync(file, 'a')
-      fileOpened(null, fd)
-    } catch (err) {
-      fileOpened(err)
-      throw err
-    }
-  } else {
-    fs.open(file, 'a', fileOpened)
-  }
-}
-
-function SonicBoom (opts) {
-  if (!(this instanceof SonicBoom)) {
-    return new SonicBoom(opts)
-  }
-
-  let { fd, dest, minLength, sync } = opts || {}
-
-  fd = fd || dest
-
-  this._buf = ''
-  this.fd = -1
-  this._writing = false
-  this._writingBuf = ''
-  this._ending = false
-  this._reopening = false
-  this._asyncDrainScheduled = false
-  this.file = null
-  this.destroyed = false
-  this.sync = sync || false
-
-  this.minLength = minLength || 0
-
-  if (typeof fd === 'number') {
-    this.fd = fd
-    process.nextTick(() => this.emit('ready'))
-  } else if (typeof fd === 'string') {
-    openFile(fd, this)
-  } else {
-    throw new Error('SonicBoom supports only file descriptors and files')
-  }
-
-  this.release = (err, n) => {
-    if (err) {
-      if (err.code === 'EAGAIN') {
-        if (this.sync) {
-          // This error code should not happen in sync mode, because it is
-          // not using the underlining operating system asynchronous functions.
-          // However it happens, and so we handle it.
-          // Ref: https://github.com/pinojs/pino/issues/783
-          try {
-            sleep(BUSY_WRITE_TIMEOUT)
-            this.release(undefined, 0)
-          } catch (err) {
-            this.release(err)
-          }
-        } else {
-          // Let's give the destination some time to process the chunk.
-          setTimeout(() => {
-            fs.write(this.fd, this._writingBuf, 'utf8', this.release)
-          }, BUSY_WRITE_TIMEOUT)
-        }
-      } else {
-        // The error maybe recoverable later, so just put data back to this._buf
-        this._buf = this._writingBuf + this._buf
-        this._writingBuf = ''
-        this._writing = false
-
-        this.emit('error', err)
-      }
-      return
-    }
-
-    if (this._writingBuf.length !== n) {
-      this._writingBuf = this._writingBuf.slice(n)
-      if (this.sync) {
-        try {
-          do {
-            n = fs.writeSync(this.fd, this._writingBuf, 'utf8')
-            this._writingBuf = this._writingBuf.slice(n)
-          } while (this._writingBuf.length !== 0)
-        } catch (err) {
-          this.release(err)
-          return
-        }
-      } else {
-        fs.write(this.fd, this._writingBuf, 'utf8', this.release)
-        return
-      }
-    }
-
-    this._writingBuf = ''
-
-    if (this.destroyed) {
-      return
-    }
-
-    const len = this._buf.length
-    if (this._reopening) {
-      this._writing = false
-      this._reopening = false
-      this.reopen()
-    } else if (len > 0 && len > this.minLength) {
-      actualWrite(this)
-    } else if (this._ending) {
-      if (len > 0) {
-        actualWrite(this)
-      } else {
-        this._writing = false
-        actualClose(this)
-      }
-    } else {
-      this._writing = false
-      if (this.sync) {
-        if (!this._asyncDrainScheduled) {
-          this._asyncDrainScheduled = true
-          process.nextTick(emitDrain, this)
-        }
-      } else {
-        this.emit('drain')
-      }
-    }
-  }
-
-  this.on('newListener', function (name) {
-    if (name === 'drain') {
-      this._asyncDrainScheduled = false
-    }
-  })
-}
-
-function emitDrain (sonic) {
-  const hasListeners = sonic.listenerCount('drain') > 0
-  if (!hasListeners) return
-  sonic._asyncDrainScheduled = false
-  sonic.emit('drain')
-}
-
-inherits(SonicBoom, EventEmitter)
-
-SonicBoom.prototype.write = function (data) {
-  if (this.destroyed) {
-    throw new Error('SonicBoom destroyed')
-  }
-
-  this._buf += data
-  const len = this._buf.length
-  if (!this._writing && len > this.minLength) {
-    actualWrite(this)
-  }
-  return len < 16384
-}
-
-SonicBoom.prototype.flush = function () {
-  if (this.destroyed) {
-    throw new Error('SonicBoom destroyed')
-  }
-
-  if (this._writing || this.minLength <= 0) {
-    return
-  }
-
-  actualWrite(this)
-}
-
-SonicBoom.prototype.reopen = function (file) {
-  if (this.destroyed) {
-    throw new Error('SonicBoom destroyed')
-  }
-
-  if (this._opening) {
-    this.once('ready', () => {
-      this.reopen(file)
-    })
-    return
-  }
-
-  if (this._ending) {
-    return
-  }
-
-  if (!this.file) {
-    throw new Error('Unable to reopen a file descriptor, you must pass a file to SonicBoom')
-  }
-
-  this._reopening = true
-
-  if (this._writing) {
-    return
-  }
-
-  const fd = this.fd
-  this.once('ready', () => {
-    if (fd !== this.fd) {
-      fs.close(fd, (err) => {
-        if (err) {
-          return this.emit('error', err)
-        }
-      })
-    }
-  })
-
-  openFile(file || this.file, this)
-}
-
-SonicBoom.prototype.end = function () {
-  if (this.destroyed) {
-    throw new Error('SonicBoom destroyed')
-  }
-
-  if (this._opening) {
-    this.once('ready', () => {
-      this.end()
-    })
-    return
-  }
-
-  if (this._ending) {
-    return
-  }
-
-  this._ending = true
-
-  if (!this._writing && this._buf.length > 0 && this.fd >= 0) {
-    actualWrite(this)
-    return
-  }
-
-  if (this._writing) {
-    return
-  }
-
-  actualClose(this)
-}
-
-SonicBoom.prototype.flushSync = function () {
-  if (this.destroyed) {
-    throw new Error('SonicBoom destroyed')
-  }
-
-  if (this.fd < 0) {
-    throw new Error('sonic boom is not ready yet')
-  }
-
-  while (this._buf.length > 0) {
-    try {
-      fs.writeSync(this.fd, this._buf, 'utf8')
-      this._buf = ''
-    } catch (err) {
-      if (err.code !== 'EAGAIN') {
-        throw err
-      }
-
-      sleep(BUSY_WRITE_TIMEOUT)
-    }
-  }
-}
-
-SonicBoom.prototype.destroy = function () {
-  if (this.destroyed) {
-    return
-  }
-  actualClose(this)
-}
-
-function actualWrite (sonic) {
-  sonic._writing = true
-  let buf = sonic._buf
-  const release = sonic.release
-  if (buf.length > MAX_WRITE) {
-    buf = buf.slice(0, MAX_WRITE)
-    sonic._buf = sonic._buf.slice(MAX_WRITE)
-  } else {
-    sonic._buf = ''
-  }
-  flatstr(buf)
-  sonic._writingBuf = buf
-  if (sonic.sync) {
-    try {
-      const written = fs.writeSync(sonic.fd, buf, 'utf8')
-      release(null, written)
-    } catch (err) {
-      release(err)
-    }
-  } else {
-    fs.write(sonic.fd, buf, 'utf8', release)
-  }
-}
-
-function actualClose (sonic) {
-  if (sonic.fd === -1) {
-    sonic.once('ready', actualClose.bind(null, sonic))
-    return
-  }
-  // TODO write a test to check if we are not leaking fds
-  fs.close(sonic.fd, (err) => {
-    if (err) {
-      sonic.emit('error', err)
-      return
-    }
-
-    if (sonic._ending && !sonic._writing) {
-      sonic.emit('finish')
-    }
-    sonic.emit('close')
-  })
-  sonic.destroyed = true
-  sonic._buf = ''
-}
-
-module.exports = SonicBoom
 
 
 /***/ }),
@@ -87446,14 +84556,6 @@ module.exports = eval("require")("encoding");
 
 /***/ }),
 
-/***/ 21462:
-/***/ ((module) => {
-
-module.exports = eval("require")("pino-pretty");
-
-
-/***/ }),
-
 /***/ 92008:
 /***/ ((module) => {
 
@@ -87462,19 +84564,11 @@ module.exports = JSON.parse("[\"assert\",\"buffer\",\"child_process\",\"cluster\
 
 /***/ }),
 
-/***/ 98686:
-/***/ ((module) => {
-
-"use strict";
-module.exports = JSON.parse("{\"_args\":[[\"pino@6.11.3\",\"/home/runner/work/release-please-action/release-please-action\"]],\"_from\":\"pino@6.11.3\",\"_id\":\"pino@6.11.3\",\"_inBundle\":false,\"_integrity\":\"sha512-drPtqkkSf0ufx2gaea3TryFiBHdNIdXKf5LN0hTM82SXI4xVIve2wLwNg92e1MT6m3jASLu6VO7eGY6+mmGeyw==\",\"_location\":\"/pino\",\"_phantomChildren\":{},\"_requested\":{\"type\":\"version\",\"registry\":true,\"raw\":\"pino@6.11.3\",\"name\":\"pino\",\"escapedName\":\"pino\",\"rawSpec\":\"6.11.3\",\"saveSpec\":null,\"fetchSpec\":\"6.11.3\"},\"_requiredBy\":[\"/code-suggester\"],\"_resolved\":\"https://registry.npmjs.org/pino/-/pino-6.11.3.tgz\",\"_spec\":\"6.11.3\",\"_where\":\"/home/runner/work/release-please-action/release-please-action\",\"author\":{\"name\":\"Matteo Collina\",\"email\":\"hello@matteocollina.com\"},\"bin\":{\"pino\":\"bin.js\"},\"browser\":\"./browser.js\",\"bugs\":{\"url\":\"https://github.com/pinojs/pino/issues\"},\"contributors\":[{\"name\":\"David Mark Clements\",\"email\":\"huperekchuno@googlemail.com\"},{\"name\":\"James Sumners\",\"email\":\"james.sumners@gmail.com\"},{\"name\":\"Thomas Watson Steen\",\"email\":\"w@tson.dk\",\"url\":\"https://twitter.com/wa7son\"}],\"dependencies\":{\"fast-redact\":\"^3.0.0\",\"fast-safe-stringify\":\"^2.0.7\",\"flatstr\":\"^1.0.12\",\"pino-std-serializers\":\"^3.1.0\",\"quick-format-unescaped\":\"^4.0.3\",\"sonic-boom\":\"^1.0.2\"},\"description\":\"super fast, all natural json logger\",\"devDependencies\":{\"airtap\":\"4.0.3\",\"benchmark\":\"^2.1.4\",\"bole\":\"^4.0.0\",\"bunyan\":\"^1.8.14\",\"docsify-cli\":\"^4.4.1\",\"eslint\":\"^7.17.0\",\"eslint-config-standard\":\"^16.0.2\",\"eslint-plugin-import\":\"^2.22.1\",\"eslint-plugin-node\":\"^11.1.0\",\"eslint-plugin-promise\":\"^4.2.1\",\"execa\":\"^5.0.0\",\"fastbench\":\"^1.0.1\",\"flush-write-stream\":\"^2.0.0\",\"import-fresh\":\"^3.2.1\",\"log\":\"^6.0.0\",\"loglevel\":\"^1.6.7\",\"pino-pretty\":\"^4.1.0\",\"pre-commit\":\"^1.2.2\",\"proxyquire\":\"^2.1.3\",\"pump\":\"^3.0.0\",\"semver\":\"^7.0.0\",\"split2\":\"^3.1.1\",\"steed\":\"^1.1.3\",\"strip-ansi\":\"^6.0.0\",\"tap\":\"^15.0.1\",\"tape\":\"^5.0.0\",\"through2\":\"^4.0.0\",\"winston\":\"^3.3.3\"},\"files\":[\"pino.js\",\"bin.js\",\"browser.js\",\"pretty.js\",\"usage.txt\",\"test\",\"docs\",\"example.js\",\"lib\"],\"homepage\":\"http://getpino.io\",\"keywords\":[\"fast\",\"logger\",\"stream\",\"json\"],\"license\":\"MIT\",\"main\":\"pino.js\",\"name\":\"pino\",\"precommit\":\"test\",\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/pinojs/pino.git\"},\"scripts\":{\"bench\":\"node benchmarks/utils/runbench all\",\"bench-basic\":\"node benchmarks/utils/runbench basic\",\"bench-child\":\"node benchmarks/utils/runbench child\",\"bench-child-child\":\"node benchmarks/utils/runbench child-child\",\"bench-child-creation\":\"node benchmarks/utils/runbench child-creation\",\"bench-deep-object\":\"node benchmarks/utils/runbench deep-object\",\"bench-formatters\":\"node benchmarks/utils/runbench formatters\",\"bench-longs-tring\":\"node benchmarks/utils/runbench long-string\",\"bench-multi-arg\":\"node benchmarks/utils/runbench multi-arg\",\"bench-object\":\"node benchmarks/utils/runbench object\",\"browser-test\":\"airtap --local 8080 test/browser*test.js\",\"cov-ui\":\"tap --coverage-report=html test/*test.js test/*/*test.js\",\"docs\":\"docsify serve\",\"lint\":\"eslint .\",\"test\":\"npm run lint && tap --100 test/*test.js test/*/*test.js\",\"test-ci\":\"npm run lint && tap test/*test.js test/*/*test.js --coverage-report=lcovonly\",\"update-bench-doc\":\"node benchmarks/utils/generate-benchmark-doc > docs/benchmarks.md\"},\"version\":\"6.11.3\"}");
-
-/***/ }),
-
 /***/ 50409:
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"11.10.0"};
+module.exports = {"i8":"11.11.0"};
 
 /***/ }),
 
@@ -87603,14 +84697,6 @@ module.exports = require("url");;
 
 "use strict";
 module.exports = require("util");;
-
-/***/ }),
-
-/***/ 92184:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("vm");;
 
 /***/ }),
 
