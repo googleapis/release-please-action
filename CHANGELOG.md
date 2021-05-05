@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.28.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.27.0...v2.28.0) (2021-05-05)
+
+
+### Features
+
+* **release-please:** upgrade to release-please@11.11.0 ([#305](https://www.github.com/google-github-actions/release-please-action/issues/305)) ([48a8af5](https://www.github.com/google-github-actions/release-please-action/commit/48a8af5a36a420b485e8ed31a58edfea61270446))
+
 ## [2.27.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.26.0...v2.27.0) (2021-05-04)
 
 
