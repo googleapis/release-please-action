@@ -50,7 +50,7 @@ async function runManifest (command) {
       if (!release) {
         continue
       }
-      core.setOuput(`${path}--release_created`, true)
+      core.setOutput(`${path}--release_created`, true)
       for (const [key, val] of Object.entries(release)) {
         core.setOutput(`${path}--${key}`, val)
       }
