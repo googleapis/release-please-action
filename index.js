@@ -45,13 +45,18 @@ async function runManifest (command) {
 
   const releasesCreated = await factory.runCommand('manifest-release', manifestOpts)
   if (releasesCreated) {
+    core.setOutput('release_created', true)
     core.setOutput('releases_created', true)
     for (const [path, release] of Object.entries(releasesCreated)) {
       if (!release) {
         continue
       }
       for (const [key, val] of Object.entries(release)) {
-        core.setOutput(`${path}--${key}`, val)
+        if (path === '.') {
+          core.setOutput(key, val)
+        } else {
+          core.setOutput(`${path}--${key}`, val)
+        }
       }
     }
   }
