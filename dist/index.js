@@ -52,13 +52,18 @@ async function runManifest (command) {
 
   const releasesCreated = await factory.runCommand('manifest-release', manifestOpts)
   if (releasesCreated) {
+    core.setOutput('release_created', true)
     core.setOutput('releases_created', true)
     for (const [path, release] of Object.entries(releasesCreated)) {
       if (!release) {
         continue
       }
       for (const [key, val] of Object.entries(release)) {
-        core.setOutput(`${path}--${key}`, val)
+        if (path === '.') {
+          core.setOutput(key, val)
+        } else {
+          core.setOutput(`${path}--${key}`, val)
+        }
       }
     }
   }
@@ -84576,7 +84581,7 @@ module.exports = {"i8":"11.11.0"};
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"_args\":[[\"strong-log-transformer@2.1.0\",\"/home/runner/work/release-please-action/release-please-action\"]],\"_from\":\"strong-log-transformer@2.1.0\",\"_id\":\"strong-log-transformer@2.1.0\",\"_inBundle\":false,\"_integrity\":\"sha512-B3Hgul+z0L9a236FAUC9iZsL+nVHgoCJnqCbN588DjYxvGXaXaaFbfmQ/JhvKjZwsOukuR72XbHv71Qkug0HxA==\",\"_location\":\"/strong-log-transformer\",\"_phantomChildren\":{},\"_requested\":{\"type\":\"version\",\"registry\":true,\"raw\":\"strong-log-transformer@2.1.0\",\"name\":\"strong-log-transformer\",\"escapedName\":\"strong-log-transformer\",\"rawSpec\":\"2.1.0\",\"saveSpec\":null,\"fetchSpec\":\"2.1.0\"},\"_requiredBy\":[\"/@lerna/child-process\"],\"_resolved\":\"https://registry.npmjs.org/strong-log-transformer/-/strong-log-transformer-2.1.0.tgz\",\"_spec\":\"2.1.0\",\"_where\":\"/home/runner/work/release-please-action/release-please-action\",\"author\":{\"name\":\"Ryan Graham\",\"email\":\"ryan@strongloop.com\"},\"bin\":{\"sl-log-transformer\":\"bin/sl-log-transformer.js\"},\"bugs\":{\"url\":\"https://github.com/strongloop/strong-log-transformer/issues\"},\"dependencies\":{\"duplexer\":\"^0.1.1\",\"minimist\":\"^1.2.0\",\"through\":\"^2.3.4\"},\"description\":\"Stream transformer that prefixes lines with timestamps and other things.\",\"devDependencies\":{\"tap\":\"^12.0.1\"},\"directories\":{\"test\":\"test\"},\"engines\":{\"node\":\">=4\"},\"homepage\":\"https://github.com/strongloop/strong-log-transformer\",\"keywords\":[\"logging\",\"streams\"],\"license\":\"Apache-2.0\",\"main\":\"index.js\",\"name\":\"strong-log-transformer\",\"repository\":{\"type\":\"git\",\"url\":\"git://github.com/strongloop/strong-log-transformer.git\"},\"scripts\":{\"test\":\"tap --100 test/test-*\"},\"version\":\"2.1.0\"}");
+module.exports = JSON.parse("{\"name\":\"strong-log-transformer\",\"version\":\"2.1.0\",\"description\":\"Stream transformer that prefixes lines with timestamps and other things.\",\"author\":\"Ryan Graham <ryan@strongloop.com>\",\"license\":\"Apache-2.0\",\"repository\":{\"type\":\"git\",\"url\":\"git://github.com/strongloop/strong-log-transformer\"},\"keywords\":[\"logging\",\"streams\"],\"bugs\":{\"url\":\"https://github.com/strongloop/strong-log-transformer/issues\"},\"homepage\":\"https://github.com/strongloop/strong-log-transformer\",\"directories\":{\"test\":\"test\"},\"bin\":{\"sl-log-transformer\":\"bin/sl-log-transformer.js\"},\"main\":\"index.js\",\"scripts\":{\"test\":\"tap --100 test/test-*\"},\"dependencies\":{\"duplexer\":\"^0.1.1\",\"minimist\":\"^1.2.0\",\"through\":\"^2.3.4\"},\"devDependencies\":{\"tap\":\"^12.0.1\"},\"engines\":{\"node\":\">=4\"},\"_resolved\":\"https://registry.npmjs.org/strong-log-transformer/-/strong-log-transformer-2.1.0.tgz\",\"_integrity\":\"sha512-B3Hgul+z0L9a236FAUC9iZsL+nVHgoCJnqCbN588DjYxvGXaXaaFbfmQ/JhvKjZwsOukuR72XbHv71Qkug0HxA==\",\"_from\":\"strong-log-transformer@2.1.0\"}");
 
 /***/ }),
 
