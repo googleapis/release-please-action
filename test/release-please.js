@@ -363,6 +363,7 @@ describe('release-please-action', () => {
       release_created: true,
       'path/pkgA--upload_url': 'http://example.com',
       'path/pkgA--tag_name': 'v1.0.0',
+      'path/pkgA--release_created': true,
       tag_name: 'v1.0.0',
       upload_url: 'http://example.com',
       pr: 25
