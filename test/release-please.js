@@ -345,6 +345,10 @@ describe('release-please-action', () => {
         {
           upload_url: 'http://example.com',
           tag_name: 'v1.0.0'
+        },
+        '.': {
+          upload_url: 'http://example.com',
+          tag_name: 'v1.0.0'
         }
       })
 
@@ -356,8 +360,11 @@ describe('release-please-action', () => {
     sinon.assert.calledOnce(manifestReleasePRStub)
     assert.deepStrictEqual(output, {
       releases_created: true,
+      release_created: true,
       'path/pkgA--upload_url': 'http://example.com',
       'path/pkgA--tag_name': 'v1.0.0',
+      tag_name: 'v1.0.0',
+      upload_url: 'http://example.com',
       pr: 25
     })
   })
