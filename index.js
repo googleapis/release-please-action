@@ -123,6 +123,7 @@ async function main () {
       token,
       label: RELEASE_LABEL,
       bumpMinorPreMajor,
+      changelogPath,
       changelogSections,
       versionFile,
       defaultBranch,

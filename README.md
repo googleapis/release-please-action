@@ -58,6 +58,7 @@ Automate releases with Conventional Commit Messages.
 | `command`          | release-please command to run, either `github-release`, or `release-pr`, `manifest`, `manifest-pr` (_defaults to running both_) |
 | `default-branch`  | branch to open pull release PR against (detected by default) |
 | `pull-request-title-pattern`  | title pattern used to make release PR, defaults to using `chore${scope}: release${component} ${version}`. |
+| `changelog-path` | configure alternate path for `CHANGELOG.md`. Default `CHANGELOG.md` |
 
 | output | description |
 |:---:|---|
