@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.29.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.28.1...v2.29.0) (2021-07-28)
+
+
+### Features
+
+* add release_created per path in manifest PR ([#310](https://www.github.com/google-github-actions/release-please-action/issues/310)) ([5f94ede](https://www.github.com/google-github-actions/release-please-action/commit/5f94ededed7a7a441d1c47eca064ec7aeda117ec))
+* **release-please:** update to release-please with rust mono-repo support ([#327](https://www.github.com/google-github-actions/release-please-action/issues/327)) ([4140ff7](https://www.github.com/google-github-actions/release-please-action/commit/4140ff739454a552bc374b97833ba8487a907c76))
+
+
+### Bug Fixes
+
+* support alternate CHANGELOG.md path ([#329](https://www.github.com/google-github-actions/release-please-action/issues/329)) ([3e6dc1e](https://www.github.com/google-github-actions/release-please-action/commit/3e6dc1e3aa39466a14ad5275b71e68b636f49285))
+
 ### [2.28.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.28.0...v2.28.1) (2021-06-20)
 
 
