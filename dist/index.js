@@ -52,11 +52,15 @@ async function runManifest (command) {
 
   const releasesCreated = await factory.runCommand('manifest-release', manifestOpts)
   if (releasesCreated) {
-    core.setOutput('release_created', true)
     core.setOutput('releases_created', true)
     for (const [path, release] of Object.entries(releasesCreated)) {
       if (!release) {
         continue
+      }
+      if (path === '.') {
+        core.setOutput('release_created', true)
+      } else {
+        core.setOutput(`${path}--release_created`, true)
       }
       for (const [key, val] of Object.entries(release)) {
         if (path === '.') {
@@ -7825,8 +7829,9 @@ function _objectWithoutProperties(source, excluded) {
   return target;
 }
 
-const VERSION = "3.4.0";
+const VERSION = "3.5.1";
 
+const _excluded = ["authStrategy"];
 class Octokit {
   constructor(options = {}) {
     const hook = new beforeAfterHook.Collection();
@@ -7888,7 +7893,7 @@ class Octokit {
       const {
         authStrategy
       } = options,
-            otherOptions = _objectWithoutProperties(options, ["authStrategy"]);
+            otherOptions = _objectWithoutProperties(options, _excluded);
 
       const auth = authStrategy(Object.assign({
         request: this.request,
@@ -8330,7 +8335,7 @@ function withDefaults(oldDefaults, newDefaults) {
   });
 }
 
-const VERSION = "6.0.11";
+const VERSION = "6.0.12";
 
 const userAgent = `octokit-endpoint.js/${VERSION} ${universalUserAgent.getUserAgent()}`; // DEFAULTS has all properties set that EndpointOptions has, except url.
 // So we use RequestParameters and add method as additional required property.
@@ -8367,7 +8372,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 var request = __nccwpck_require__(36234);
 var universalUserAgent = __nccwpck_require__(45030);
 
-const VERSION = "4.6.1";
+const VERSION = "4.6.4";
 
 class GraphqlError extends Error {
   constructor(request, response) {
@@ -8488,7 +8493,60 @@ exports.withCustomRequest = withCustomRequest;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-const VERSION = "2.13.3";
+const VERSION = "2.14.0";
+
+function ownKeys(object, enumerableOnly) {
+  var keys = Object.keys(object);
+
+  if (Object.getOwnPropertySymbols) {
+    var symbols = Object.getOwnPropertySymbols(object);
+
+    if (enumerableOnly) {
+      symbols = symbols.filter(function (sym) {
+        return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+      });
+    }
+
+    keys.push.apply(keys, symbols);
+  }
+
+  return keys;
+}
+
+function _objectSpread2(target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i] != null ? arguments[i] : {};
+
+    if (i % 2) {
+      ownKeys(Object(source), true).forEach(function (key) {
+        _defineProperty(target, key, source[key]);
+      });
+    } else if (Object.getOwnPropertyDescriptors) {
+      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+    } else {
+      ownKeys(Object(source)).forEach(function (key) {
+        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+      });
+    }
+  }
+
+  return target;
+}
+
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
 
 /**
  * Some “list” response that can be paginated have a different response structure
@@ -8507,6 +8565,13 @@ const VERSION = "2.13.3";
  * otherwise match: https://developer.github.com/v3/repos/statuses/#get-the-combined-status-for-a-specific-ref
  */
 function normalizePaginatedListResponse(response) {
+  // endpoints can respond with 204 if repository is empty
+  if (!response.data) {
+    return _objectSpread2(_objectSpread2({}, response), {}, {
+      data: []
+    });
+  }
+
   const responseNeedsNormalization = "total_count" in response.data && !("url" in response.data);
   if (!responseNeedsNormalization) return response; // keep the additional properties intact as there is currently no other way
   // to retrieve the same information.
@@ -8545,19 +8610,32 @@ function iterator(octokit, route, parameters) {
         if (!url) return {
           done: true
         };
-        const response = await requestMethod({
-          method,
-          url,
-          headers
-        });
-        const normalizedResponse = normalizePaginatedListResponse(response); // `response.headers.link` format:
-        // '<https://api.github.com/users/aseemk/followers?page=2>; rel="next", <https://api.github.com/users/aseemk/followers?page=2>; rel="last"'
-        // sets `url` to undefined if "next" URL is not present or `link` header is not set
 
-        url = ((normalizedResponse.headers.link || "").match(/<([^>]+)>;\s*rel="next"/) || [])[1];
-        return {
-          value: normalizedResponse
-        };
+        try {
+          const response = await requestMethod({
+            method,
+            url,
+            headers
+          });
+          const normalizedResponse = normalizePaginatedListResponse(response); // `response.headers.link` format:
+          // '<https://api.github.com/users/aseemk/followers?page=2>; rel="next", <https://api.github.com/users/aseemk/followers?page=2>; rel="last"'
+          // sets `url` to undefined if "next" URL is not present or `link` header is not set
+
+          url = ((normalizedResponse.headers.link || "").match(/<([^>]+)>;\s*rel="next"/) || [])[1];
+          return {
+            value: normalizedResponse
+          };
+        } catch (error) {
+          if (error.status !== 409) throw error;
+          url = "";
+          return {
+            value: {
+              status: 200,
+              headers: {},
+              data: []
+            }
+          };
+        }
       }
 
     })
@@ -8599,7 +8677,7 @@ const composePaginateRest = Object.assign(paginate, {
   iterator
 });
 
-const paginatingEndpoints = ["GET /app/installations", "GET /applications/grants", "GET /authorizations", "GET /enterprises/{enterprise}/actions/permissions/organizations", "GET /enterprises/{enterprise}/actions/runner-groups", "GET /enterprises/{enterprise}/actions/runner-groups/{runner_group_id}/organizations", "GET /enterprises/{enterprise}/actions/runner-groups/{runner_group_id}/runners", "GET /enterprises/{enterprise}/actions/runners", "GET /enterprises/{enterprise}/actions/runners/downloads", "GET /events", "GET /gists", "GET /gists/public", "GET /gists/starred", "GET /gists/{gist_id}/comments", "GET /gists/{gist_id}/commits", "GET /gists/{gist_id}/forks", "GET /installation/repositories", "GET /issues", "GET /marketplace_listing/plans", "GET /marketplace_listing/plans/{plan_id}/accounts", "GET /marketplace_listing/stubbed/plans", "GET /marketplace_listing/stubbed/plans/{plan_id}/accounts", "GET /networks/{owner}/{repo}/events", "GET /notifications", "GET /organizations", "GET /orgs/{org}/actions/permissions/repositories", "GET /orgs/{org}/actions/runner-groups", "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/repositories", "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/runners", "GET /orgs/{org}/actions/runners", "GET /orgs/{org}/actions/runners/downloads", "GET /orgs/{org}/actions/secrets", "GET /orgs/{org}/actions/secrets/{secret_name}/repositories", "GET /orgs/{org}/blocks", "GET /orgs/{org}/credential-authorizations", "GET /orgs/{org}/events", "GET /orgs/{org}/failed_invitations", "GET /orgs/{org}/hooks", "GET /orgs/{org}/installations", "GET /orgs/{org}/invitations", "GET /orgs/{org}/invitations/{invitation_id}/teams", "GET /orgs/{org}/issues", "GET /orgs/{org}/members", "GET /orgs/{org}/migrations", "GET /orgs/{org}/migrations/{migration_id}/repositories", "GET /orgs/{org}/outside_collaborators", "GET /orgs/{org}/projects", "GET /orgs/{org}/public_members", "GET /orgs/{org}/repos", "GET /orgs/{org}/team-sync/groups", "GET /orgs/{org}/teams", "GET /orgs/{org}/teams/{team_slug}/discussions", "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments", "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions", "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions", "GET /orgs/{org}/teams/{team_slug}/invitations", "GET /orgs/{org}/teams/{team_slug}/members", "GET /orgs/{org}/teams/{team_slug}/projects", "GET /orgs/{org}/teams/{team_slug}/repos", "GET /orgs/{org}/teams/{team_slug}/team-sync/group-mappings", "GET /orgs/{org}/teams/{team_slug}/teams", "GET /projects/columns/{column_id}/cards", "GET /projects/{project_id}/collaborators", "GET /projects/{project_id}/columns", "GET /repos/{owner}/{repo}/actions/artifacts", "GET /repos/{owner}/{repo}/actions/runners", "GET /repos/{owner}/{repo}/actions/runners/downloads", "GET /repos/{owner}/{repo}/actions/runs", "GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts", "GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs", "GET /repos/{owner}/{repo}/actions/secrets", "GET /repos/{owner}/{repo}/actions/workflows", "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs", "GET /repos/{owner}/{repo}/assignees", "GET /repos/{owner}/{repo}/branches", "GET /repos/{owner}/{repo}/check-runs/{check_run_id}/annotations", "GET /repos/{owner}/{repo}/check-suites/{check_suite_id}/check-runs", "GET /repos/{owner}/{repo}/code-scanning/alerts", "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances", "GET /repos/{owner}/{repo}/code-scanning/analyses", "GET /repos/{owner}/{repo}/collaborators", "GET /repos/{owner}/{repo}/comments", "GET /repos/{owner}/{repo}/comments/{comment_id}/reactions", "GET /repos/{owner}/{repo}/commits", "GET /repos/{owner}/{repo}/commits/{commit_sha}/branches-where-head", "GET /repos/{owner}/{repo}/commits/{commit_sha}/comments", "GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls", "GET /repos/{owner}/{repo}/commits/{ref}/check-runs", "GET /repos/{owner}/{repo}/commits/{ref}/check-suites", "GET /repos/{owner}/{repo}/commits/{ref}/statuses", "GET /repos/{owner}/{repo}/contributors", "GET /repos/{owner}/{repo}/deployments", "GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses", "GET /repos/{owner}/{repo}/events", "GET /repos/{owner}/{repo}/forks", "GET /repos/{owner}/{repo}/git/matching-refs/{ref}", "GET /repos/{owner}/{repo}/hooks", "GET /repos/{owner}/{repo}/invitations", "GET /repos/{owner}/{repo}/issues", "GET /repos/{owner}/{repo}/issues/comments", "GET /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions", "GET /repos/{owner}/{repo}/issues/events", "GET /repos/{owner}/{repo}/issues/{issue_number}/comments", "GET /repos/{owner}/{repo}/issues/{issue_number}/events", "GET /repos/{owner}/{repo}/issues/{issue_number}/labels", "GET /repos/{owner}/{repo}/issues/{issue_number}/reactions", "GET /repos/{owner}/{repo}/issues/{issue_number}/timeline", "GET /repos/{owner}/{repo}/keys", "GET /repos/{owner}/{repo}/labels", "GET /repos/{owner}/{repo}/milestones", "GET /repos/{owner}/{repo}/milestones/{milestone_number}/labels", "GET /repos/{owner}/{repo}/notifications", "GET /repos/{owner}/{repo}/pages/builds", "GET /repos/{owner}/{repo}/projects", "GET /repos/{owner}/{repo}/pulls", "GET /repos/{owner}/{repo}/pulls/comments", "GET /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions", "GET /repos/{owner}/{repo}/pulls/{pull_number}/comments", "GET /repos/{owner}/{repo}/pulls/{pull_number}/commits", "GET /repos/{owner}/{repo}/pulls/{pull_number}/files", "GET /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers", "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews", "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments", "GET /repos/{owner}/{repo}/releases", "GET /repos/{owner}/{repo}/releases/{release_id}/assets", "GET /repos/{owner}/{repo}/secret-scanning/alerts", "GET /repos/{owner}/{repo}/stargazers", "GET /repos/{owner}/{repo}/subscribers", "GET /repos/{owner}/{repo}/tags", "GET /repos/{owner}/{repo}/teams", "GET /repositories", "GET /repositories/{repository_id}/environments/{environment_name}/secrets", "GET /scim/v2/enterprises/{enterprise}/Groups", "GET /scim/v2/enterprises/{enterprise}/Users", "GET /scim/v2/organizations/{org}/Users", "GET /search/code", "GET /search/commits", "GET /search/issues", "GET /search/labels", "GET /search/repositories", "GET /search/topics", "GET /search/users", "GET /teams/{team_id}/discussions", "GET /teams/{team_id}/discussions/{discussion_number}/comments", "GET /teams/{team_id}/discussions/{discussion_number}/comments/{comment_number}/reactions", "GET /teams/{team_id}/discussions/{discussion_number}/reactions", "GET /teams/{team_id}/invitations", "GET /teams/{team_id}/members", "GET /teams/{team_id}/projects", "GET /teams/{team_id}/repos", "GET /teams/{team_id}/team-sync/group-mappings", "GET /teams/{team_id}/teams", "GET /user/blocks", "GET /user/emails", "GET /user/followers", "GET /user/following", "GET /user/gpg_keys", "GET /user/installations", "GET /user/installations/{installation_id}/repositories", "GET /user/issues", "GET /user/keys", "GET /user/marketplace_purchases", "GET /user/marketplace_purchases/stubbed", "GET /user/memberships/orgs", "GET /user/migrations", "GET /user/migrations/{migration_id}/repositories", "GET /user/orgs", "GET /user/public_emails", "GET /user/repos", "GET /user/repository_invitations", "GET /user/starred", "GET /user/subscriptions", "GET /user/teams", "GET /users", "GET /users/{username}/events", "GET /users/{username}/events/orgs/{org}", "GET /users/{username}/events/public", "GET /users/{username}/followers", "GET /users/{username}/following", "GET /users/{username}/gists", "GET /users/{username}/gpg_keys", "GET /users/{username}/keys", "GET /users/{username}/orgs", "GET /users/{username}/projects", "GET /users/{username}/received_events", "GET /users/{username}/received_events/public", "GET /users/{username}/repos", "GET /users/{username}/starred", "GET /users/{username}/subscriptions"];
+const paginatingEndpoints = ["GET /app/hook/deliveries", "GET /app/installations", "GET /applications/grants", "GET /authorizations", "GET /enterprises/{enterprise}/actions/permissions/organizations", "GET /enterprises/{enterprise}/actions/runner-groups", "GET /enterprises/{enterprise}/actions/runner-groups/{runner_group_id}/organizations", "GET /enterprises/{enterprise}/actions/runner-groups/{runner_group_id}/runners", "GET /enterprises/{enterprise}/actions/runners", "GET /enterprises/{enterprise}/actions/runners/downloads", "GET /events", "GET /gists", "GET /gists/public", "GET /gists/starred", "GET /gists/{gist_id}/comments", "GET /gists/{gist_id}/commits", "GET /gists/{gist_id}/forks", "GET /installation/repositories", "GET /issues", "GET /marketplace_listing/plans", "GET /marketplace_listing/plans/{plan_id}/accounts", "GET /marketplace_listing/stubbed/plans", "GET /marketplace_listing/stubbed/plans/{plan_id}/accounts", "GET /networks/{owner}/{repo}/events", "GET /notifications", "GET /organizations", "GET /orgs/{org}/actions/permissions/repositories", "GET /orgs/{org}/actions/runner-groups", "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/repositories", "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/runners", "GET /orgs/{org}/actions/runners", "GET /orgs/{org}/actions/runners/downloads", "GET /orgs/{org}/actions/secrets", "GET /orgs/{org}/actions/secrets/{secret_name}/repositories", "GET /orgs/{org}/blocks", "GET /orgs/{org}/credential-authorizations", "GET /orgs/{org}/events", "GET /orgs/{org}/failed_invitations", "GET /orgs/{org}/hooks", "GET /orgs/{org}/hooks/{hook_id}/deliveries", "GET /orgs/{org}/installations", "GET /orgs/{org}/invitations", "GET /orgs/{org}/invitations/{invitation_id}/teams", "GET /orgs/{org}/issues", "GET /orgs/{org}/members", "GET /orgs/{org}/migrations", "GET /orgs/{org}/migrations/{migration_id}/repositories", "GET /orgs/{org}/outside_collaborators", "GET /orgs/{org}/projects", "GET /orgs/{org}/public_members", "GET /orgs/{org}/repos", "GET /orgs/{org}/team-sync/groups", "GET /orgs/{org}/teams", "GET /orgs/{org}/teams/{team_slug}/discussions", "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments", "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions", "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions", "GET /orgs/{org}/teams/{team_slug}/invitations", "GET /orgs/{org}/teams/{team_slug}/members", "GET /orgs/{org}/teams/{team_slug}/projects", "GET /orgs/{org}/teams/{team_slug}/repos", "GET /orgs/{org}/teams/{team_slug}/team-sync/group-mappings", "GET /orgs/{org}/teams/{team_slug}/teams", "GET /projects/columns/{column_id}/cards", "GET /projects/{project_id}/collaborators", "GET /projects/{project_id}/columns", "GET /repos/{owner}/{repo}/actions/artifacts", "GET /repos/{owner}/{repo}/actions/runners", "GET /repos/{owner}/{repo}/actions/runners/downloads", "GET /repos/{owner}/{repo}/actions/runs", "GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts", "GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs", "GET /repos/{owner}/{repo}/actions/secrets", "GET /repos/{owner}/{repo}/actions/workflows", "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs", "GET /repos/{owner}/{repo}/assignees", "GET /repos/{owner}/{repo}/branches", "GET /repos/{owner}/{repo}/check-runs/{check_run_id}/annotations", "GET /repos/{owner}/{repo}/check-suites/{check_suite_id}/check-runs", "GET /repos/{owner}/{repo}/code-scanning/alerts", "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances", "GET /repos/{owner}/{repo}/code-scanning/analyses", "GET /repos/{owner}/{repo}/collaborators", "GET /repos/{owner}/{repo}/comments", "GET /repos/{owner}/{repo}/comments/{comment_id}/reactions", "GET /repos/{owner}/{repo}/commits", "GET /repos/{owner}/{repo}/commits/{commit_sha}/branches-where-head", "GET /repos/{owner}/{repo}/commits/{commit_sha}/comments", "GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls", "GET /repos/{owner}/{repo}/commits/{ref}/check-runs", "GET /repos/{owner}/{repo}/commits/{ref}/check-suites", "GET /repos/{owner}/{repo}/commits/{ref}/statuses", "GET /repos/{owner}/{repo}/contributors", "GET /repos/{owner}/{repo}/deployments", "GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses", "GET /repos/{owner}/{repo}/events", "GET /repos/{owner}/{repo}/forks", "GET /repos/{owner}/{repo}/git/matching-refs/{ref}", "GET /repos/{owner}/{repo}/hooks", "GET /repos/{owner}/{repo}/hooks/{hook_id}/deliveries", "GET /repos/{owner}/{repo}/invitations", "GET /repos/{owner}/{repo}/issues", "GET /repos/{owner}/{repo}/issues/comments", "GET /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions", "GET /repos/{owner}/{repo}/issues/events", "GET /repos/{owner}/{repo}/issues/{issue_number}/comments", "GET /repos/{owner}/{repo}/issues/{issue_number}/events", "GET /repos/{owner}/{repo}/issues/{issue_number}/labels", "GET /repos/{owner}/{repo}/issues/{issue_number}/reactions", "GET /repos/{owner}/{repo}/issues/{issue_number}/timeline", "GET /repos/{owner}/{repo}/keys", "GET /repos/{owner}/{repo}/labels", "GET /repos/{owner}/{repo}/milestones", "GET /repos/{owner}/{repo}/milestones/{milestone_number}/labels", "GET /repos/{owner}/{repo}/notifications", "GET /repos/{owner}/{repo}/pages/builds", "GET /repos/{owner}/{repo}/projects", "GET /repos/{owner}/{repo}/pulls", "GET /repos/{owner}/{repo}/pulls/comments", "GET /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions", "GET /repos/{owner}/{repo}/pulls/{pull_number}/comments", "GET /repos/{owner}/{repo}/pulls/{pull_number}/commits", "GET /repos/{owner}/{repo}/pulls/{pull_number}/files", "GET /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers", "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews", "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments", "GET /repos/{owner}/{repo}/releases", "GET /repos/{owner}/{repo}/releases/{release_id}/assets", "GET /repos/{owner}/{repo}/secret-scanning/alerts", "GET /repos/{owner}/{repo}/stargazers", "GET /repos/{owner}/{repo}/subscribers", "GET /repos/{owner}/{repo}/tags", "GET /repos/{owner}/{repo}/teams", "GET /repositories", "GET /repositories/{repository_id}/environments/{environment_name}/secrets", "GET /scim/v2/enterprises/{enterprise}/Groups", "GET /scim/v2/enterprises/{enterprise}/Users", "GET /scim/v2/organizations/{org}/Users", "GET /search/code", "GET /search/commits", "GET /search/issues", "GET /search/labels", "GET /search/repositories", "GET /search/topics", "GET /search/users", "GET /teams/{team_id}/discussions", "GET /teams/{team_id}/discussions/{discussion_number}/comments", "GET /teams/{team_id}/discussions/{discussion_number}/comments/{comment_number}/reactions", "GET /teams/{team_id}/discussions/{discussion_number}/reactions", "GET /teams/{team_id}/invitations", "GET /teams/{team_id}/members", "GET /teams/{team_id}/projects", "GET /teams/{team_id}/repos", "GET /teams/{team_id}/team-sync/group-mappings", "GET /teams/{team_id}/teams", "GET /user/blocks", "GET /user/emails", "GET /user/followers", "GET /user/following", "GET /user/gpg_keys", "GET /user/installations", "GET /user/installations/{installation_id}/repositories", "GET /user/issues", "GET /user/keys", "GET /user/marketplace_purchases", "GET /user/marketplace_purchases/stubbed", "GET /user/memberships/orgs", "GET /user/migrations", "GET /user/migrations/{migration_id}/repositories", "GET /user/orgs", "GET /user/public_emails", "GET /user/repos", "GET /user/repository_invitations", "GET /user/starred", "GET /user/subscriptions", "GET /user/teams", "GET /users", "GET /users/{username}/events", "GET /users/{username}/events/orgs/{org}", "GET /users/{username}/events/public", "GET /users/{username}/followers", "GET /users/{username}/following", "GET /users/{username}/gists", "GET /users/{username}/gpg_keys", "GET /users/{username}/keys", "GET /users/{username}/orgs", "GET /users/{username}/projects", "GET /users/{username}/received_events", "GET /users/{username}/received_events/public", "GET /users/{username}/repos", "GET /users/{username}/starred", "GET /users/{username}/subscriptions"];
 
 function isPaginatingEndpoint(arg) {
   if (typeof arg === "string") {
@@ -8640,7 +8718,7 @@ exports.paginatingEndpoints = paginatingEndpoints;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-const VERSION = "1.0.3";
+const VERSION = "1.0.4";
 
 /**
  * @param octokit Octokit instance
@@ -8678,29 +8756,18 @@ exports.requestLog = requestLog;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-function _defineProperty(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
-
-  return obj;
-}
-
 function ownKeys(object, enumerableOnly) {
   var keys = Object.keys(object);
 
   if (Object.getOwnPropertySymbols) {
     var symbols = Object.getOwnPropertySymbols(object);
-    if (enumerableOnly) symbols = symbols.filter(function (sym) {
-      return Object.getOwnPropertyDescriptor(object, sym).enumerable;
-    });
+
+    if (enumerableOnly) {
+      symbols = symbols.filter(function (sym) {
+        return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+      });
+    }
+
     keys.push.apply(keys, symbols);
   }
 
@@ -8727,9 +8794,25 @@ function _objectSpread2(target) {
   return target;
 }
 
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
 const Endpoints = {
   actions: {
     addSelectedRepoToOrgSecret: ["PUT /orgs/{org}/actions/secrets/{secret_name}/repositories/{repository_id}"],
+    approveWorkflowRun: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/approve"],
     cancelWorkflowRun: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel"],
     createOrUpdateEnvironmentSecret: ["PUT /repositories/{repository_id}/environments/{environment_name}/secrets/{secret_name}"],
     createOrUpdateOrgSecret: ["PUT /orgs/{org}/actions/secrets/{secret_name}"],
@@ -8843,6 +8926,11 @@ const Endpoints = {
         previews: ["corsair"]
       }
     }],
+    createContentAttachmentForRepo: ["POST /repos/{owner}/{repo}/content_references/{content_reference_id}/attachments", {
+      mediaType: {
+        previews: ["corsair"]
+      }
+    }],
     createFromManifest: ["POST /app-manifests/{code}/conversions"],
     createInstallationAccessToken: ["POST /app/installations/{installation_id}/access_tokens"],
     deleteAuthorization: ["DELETE /applications/{client_id}/grant"],
@@ -8857,6 +8945,7 @@ const Endpoints = {
     getSubscriptionPlanForAccountStubbed: ["GET /marketplace_listing/stubbed/accounts/{account_id}"],
     getUserInstallation: ["GET /users/{username}/installation"],
     getWebhookConfigForApp: ["GET /app/hook/config"],
+    getWebhookDelivery: ["GET /app/hook/deliveries/{delivery_id}"],
     listAccountsForPlan: ["GET /marketplace_listing/plans/{plan_id}/accounts"],
     listAccountsForPlanStubbed: ["GET /marketplace_listing/stubbed/plans/{plan_id}/accounts"],
     listInstallationReposForAuthenticatedUser: ["GET /user/installations/{installation_id}/repositories"],
@@ -8867,6 +8956,8 @@ const Endpoints = {
     listReposAccessibleToInstallation: ["GET /installation/repositories"],
     listSubscriptionsForAuthenticatedUser: ["GET /user/marketplace_purchases"],
     listSubscriptionsForAuthenticatedUserStubbed: ["GET /user/marketplace_purchases/stubbed"],
+    listWebhookDeliveries: ["GET /app/hook/deliveries"],
+    redeliverWebhookDelivery: ["POST /app/hook/deliveries/{delivery_id}/attempts"],
     removeRepoFromInstallation: ["DELETE /user/installations/{installation_id}/repositories/{repository_id}"],
     resetToken: ["PATCH /applications/{client_id}/token"],
     revokeInstallationAccessToken: ["DELETE /installation/token"],
@@ -8905,8 +8996,11 @@ const Endpoints = {
     }],
     getAnalysis: ["GET /repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}"],
     getSarif: ["GET /repos/{owner}/{repo}/code-scanning/sarifs/{sarif_id}"],
+    listAlertInstances: ["GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances"],
     listAlertsForRepo: ["GET /repos/{owner}/{repo}/code-scanning/alerts"],
-    listAlertsInstances: ["GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances"],
+    listAlertsInstances: ["GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances", {}, {
+      renamed: ["codeScanning", "listAlertInstances"]
+    }],
     listRecentAnalyses: ["GET /repos/{owner}/{repo}/code-scanning/analyses"],
     updateAlert: ["PATCH /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}"],
     uploadSarif: ["POST /repos/{owner}/{repo}/code-scanning/sarifs"]
@@ -9153,6 +9247,7 @@ const Endpoints = {
     getMembershipForUser: ["GET /orgs/{org}/memberships/{username}"],
     getWebhook: ["GET /orgs/{org}/hooks/{hook_id}"],
     getWebhookConfigForOrg: ["GET /orgs/{org}/hooks/{hook_id}/config"],
+    getWebhookDelivery: ["GET /orgs/{org}/hooks/{hook_id}/deliveries/{delivery_id}"],
     list: ["GET /organizations"],
     listAppInstallations: ["GET /orgs/{org}/installations"],
     listBlockedUsers: ["GET /orgs/{org}/blocks"],
@@ -9165,8 +9260,10 @@ const Endpoints = {
     listOutsideCollaborators: ["GET /orgs/{org}/outside_collaborators"],
     listPendingInvitations: ["GET /orgs/{org}/invitations"],
     listPublicMembers: ["GET /orgs/{org}/public_members"],
+    listWebhookDeliveries: ["GET /orgs/{org}/hooks/{hook_id}/deliveries"],
     listWebhooks: ["GET /orgs/{org}/hooks"],
     pingWebhook: ["POST /orgs/{org}/hooks/{hook_id}/pings"],
+    redeliverWebhookDelivery: ["POST /orgs/{org}/hooks/{hook_id}/deliveries/{delivery_id}/attempts"],
     removeMember: ["DELETE /orgs/{org}/members/{username}"],
     removeMembershipForUser: ["DELETE /orgs/{org}/memberships/{username}"],
     removeOutsideCollaborator: ["DELETE /orgs/{org}/outside_collaborators/{username}"],
@@ -9388,6 +9485,11 @@ const Endpoints = {
         previews: ["squirrel-girl"]
       }
     }],
+    createForRelease: ["POST /repos/{owner}/{repo}/releases/{release_id}/reactions", {
+      mediaType: {
+        previews: ["squirrel-girl"]
+      }
+    }],
     createForTeamDiscussionCommentInOrg: ["POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions", {
       mediaType: {
         previews: ["squirrel-girl"]
@@ -9488,6 +9590,7 @@ const Endpoints = {
       }
     }],
     compareCommits: ["GET /repos/{owner}/{repo}/compare/{base}...{head}"],
+    compareCommitsWithBasehead: ["GET /repos/{owner}/{repo}/compare/{basehead}"],
     createCommitComment: ["POST /repos/{owner}/{repo}/commits/{commit_sha}/comments"],
     createCommitSignatureProtection: ["POST /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures", {
       mediaType: {
@@ -9602,6 +9705,7 @@ const Endpoints = {
     getLatestRelease: ["GET /repos/{owner}/{repo}/releases/latest"],
     getPages: ["GET /repos/{owner}/{repo}/pages"],
     getPagesBuild: ["GET /repos/{owner}/{repo}/pages/builds/{build_id}"],
+    getPagesHealthCheck: ["GET /repos/{owner}/{repo}/pages/health"],
     getParticipationStats: ["GET /repos/{owner}/{repo}/stats/participation"],
     getPullRequestReviewProtection: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"],
     getPunchCardStats: ["GET /repos/{owner}/{repo}/stats/punch_card"],
@@ -9618,6 +9722,7 @@ const Endpoints = {
     getViews: ["GET /repos/{owner}/{repo}/traffic/views"],
     getWebhook: ["GET /repos/{owner}/{repo}/hooks/{hook_id}"],
     getWebhookConfigForRepo: ["GET /repos/{owner}/{repo}/hooks/{hook_id}/config"],
+    getWebhookDelivery: ["GET /repos/{owner}/{repo}/hooks/{hook_id}/deliveries/{delivery_id}"],
     listBranches: ["GET /repos/{owner}/{repo}/branches"],
     listBranchesForHeadCommit: ["GET /repos/{owner}/{repo}/commits/{commit_sha}/branches-where-head", {
       mediaType: {
@@ -9651,9 +9756,11 @@ const Endpoints = {
     listReleases: ["GET /repos/{owner}/{repo}/releases"],
     listTags: ["GET /repos/{owner}/{repo}/tags"],
     listTeams: ["GET /repos/{owner}/{repo}/teams"],
+    listWebhookDeliveries: ["GET /repos/{owner}/{repo}/hooks/{hook_id}/deliveries"],
     listWebhooks: ["GET /repos/{owner}/{repo}/hooks"],
     merge: ["POST /repos/{owner}/{repo}/merges"],
     pingWebhook: ["POST /repos/{owner}/{repo}/hooks/{hook_id}/pings"],
+    redeliverWebhookDelivery: ["POST /repos/{owner}/{repo}/hooks/{hook_id}/deliveries/{delivery_id}/attempts"],
     removeAppAccessRestrictions: ["DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps", {}, {
       mapToData: "apps"
     }],
@@ -9810,7 +9917,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "5.0.1";
+const VERSION = "5.4.1";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -9928,7 +10035,8 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var deprecation = __nccwpck_require__(58932);
 var once = _interopDefault(__nccwpck_require__(1223));
 
-const logOnce = once(deprecation => console.warn(deprecation));
+const logOnceCode = once(deprecation => console.warn(deprecation));
+const logOnceHeaders = once(deprecation => console.warn(deprecation));
 /**
  * Error with extra properties to help with debugging
  */
@@ -9945,14 +10053,17 @@ class RequestError extends Error {
 
     this.name = "HttpError";
     this.status = statusCode;
-    Object.defineProperty(this, "code", {
-      get() {
-        logOnce(new deprecation.Deprecation("[@octokit/request-error] `error.code` is deprecated, use `error.status`."));
-        return statusCode;
-      }
+    let headers;
 
-    });
-    this.headers = options.headers || {}; // redact request credentials without mutating original request options
+    if ("headers" in options && typeof options.headers !== "undefined") {
+      headers = options.headers;
+    }
+
+    if ("response" in options) {
+      this.response = options.response;
+      headers = options.response.headers;
+    } // redact request credentials without mutating original request options
+
 
     const requestCopy = Object.assign({}, options.request);
 
@@ -9967,7 +10078,22 @@ class RequestError extends Error {
     .replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]") // OAuth tokens can be passed as URL query parameters, although it is not recommended
     // see https://developer.github.com/v3/#oauth2-token-sent-in-a-header
     .replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
-    this.request = requestCopy;
+    this.request = requestCopy; // deprecations
+
+    Object.defineProperty(this, "code", {
+      get() {
+        logOnceCode(new deprecation.Deprecation("[@octokit/request-error] `error.code` is deprecated, use `error.status`."));
+        return statusCode;
+      }
+
+    });
+    Object.defineProperty(this, "headers", {
+      get() {
+        logOnceHeaders(new deprecation.Deprecation("[@octokit/request-error] `error.headers` is deprecated, use `error.response.headers`."));
+        return headers || {};
+      }
+
+    });
   }
 
 }
@@ -9994,13 +10120,15 @@ var isPlainObject = __nccwpck_require__(63287);
 var nodeFetch = _interopDefault(__nccwpck_require__(80467));
 var requestError = __nccwpck_require__(10537);
 
-const VERSION = "5.4.15";
+const VERSION = "5.6.0";
 
 function getBufferResponse(response) {
   return response.arrayBuffer();
 }
 
 function fetchWrapper(requestOptions) {
+  const log = requestOptions.request && requestOptions.request.log ? requestOptions.request.log : console;
+
   if (isPlainObject.isPlainObject(requestOptions.body) || Array.isArray(requestOptions.body)) {
     requestOptions.body = JSON.stringify(requestOptions.body);
   }
@@ -10016,12 +10144,18 @@ function fetchWrapper(requestOptions) {
     redirect: requestOptions.redirect
   }, // `requestOptions.request.agent` type is incompatible
   // see https://github.com/octokit/types.ts/pull/264
-  requestOptions.request)).then(response => {
+  requestOptions.request)).then(async response => {
     url = response.url;
     status = response.status;
 
     for (const keyAndValue of response.headers) {
       headers[keyAndValue[0]] = keyAndValue[1];
+    }
+
+    if ("deprecation" in headers) {
+      const matches = headers.link && headers.link.match(/<([^>]+)>; rel="deprecation"/);
+      const deprecationLink = matches && matches.pop();
+      log.warn(`[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`);
     }
 
     if (status === 204 || status === 205) {
@@ -10035,49 +10169,43 @@ function fetchWrapper(requestOptions) {
       }
 
       throw new requestError.RequestError(response.statusText, status, {
-        headers,
+        response: {
+          url,
+          status,
+          headers,
+          data: undefined
+        },
         request: requestOptions
       });
     }
 
     if (status === 304) {
       throw new requestError.RequestError("Not modified", status, {
-        headers,
+        response: {
+          url,
+          status,
+          headers,
+          data: await getResponseData(response)
+        },
         request: requestOptions
       });
     }
 
     if (status >= 400) {
-      return response.text().then(message => {
-        const error = new requestError.RequestError(message, status, {
+      const data = await getResponseData(response);
+      const error = new requestError.RequestError(toErrorMessage(data), status, {
+        response: {
+          url,
+          status,
           headers,
-          request: requestOptions
-        });
-
-        try {
-          let responseBody = JSON.parse(error.message);
-          Object.assign(error, responseBody);
-          let errors = responseBody.errors; // Assumption `errors` would always be in Array format
-
-          error.message = error.message + ": " + errors.map(JSON.stringify).join(", ");
-        } catch (e) {// ignore, see octokit/rest.js#684
-        }
-
-        throw error;
+          data
+        },
+        request: requestOptions
       });
+      throw error;
     }
 
-    const contentType = response.headers.get("content-type");
-
-    if (/application\/json/.test(contentType)) {
-      return response.json();
-    }
-
-    if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
-      return response.text();
-    }
-
-    return getBufferResponse(response);
+    return getResponseData(response);
   }).then(data => {
     return {
       status,
@@ -10086,15 +10214,40 @@ function fetchWrapper(requestOptions) {
       data
     };
   }).catch(error => {
-    if (error instanceof requestError.RequestError) {
-      throw error;
-    }
-
+    if (error instanceof requestError.RequestError) throw error;
     throw new requestError.RequestError(error.message, 500, {
-      headers,
       request: requestOptions
     });
   });
+}
+
+async function getResponseData(response) {
+  const contentType = response.headers.get("content-type");
+
+  if (/application\/json/.test(contentType)) {
+    return response.json();
+  }
+
+  if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
+    return response.text();
+  }
+
+  return getBufferResponse(response);
+}
+
+function toErrorMessage(data) {
+  if (typeof data === "string") return data; // istanbul ignore else - just in case
+
+  if ("message" in data) {
+    if (Array.isArray(data.errors)) {
+      return `${data.message}: ${data.errors.map(JSON.stringify).join(", ")}`;
+    }
+
+    return data.message;
+  } // istanbul ignore next - just in case
+
+
+  return `Unknown error: ${JSON.stringify(data)}`;
 }
 
 function withDefaults(oldEndpoint, newDefaults) {
@@ -10149,7 +10302,7 @@ var pluginRequestLog = __nccwpck_require__(68883);
 var pluginPaginateRest = __nccwpck_require__(64193);
 var pluginRestEndpointMethods = __nccwpck_require__(83044);
 
-const VERSION = "18.5.3";
+const VERSION = "18.6.7";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.legacyRestEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`
@@ -14558,10 +14711,10 @@ module.exports = function (config) {
   })
 
   return Q.all([
-    readFile(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
+    readFile(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
   ])
     .spread((template, header, commit, footer) => {
       const writerOpts = getWriterOpts(config)
@@ -14780,10 +14933,10 @@ function conventionalChangelogWriterInit (context, options) {
     includeDetails: false,
     ignoreReverted: true,
     doFlush: true,
-    mainTemplate: readFileSync(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
-    headerPartial: readFileSync(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
-    commitPartial: readFileSync(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
-    footerPartial: readFileSync(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
+    mainTemplate: readFileSync(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
+    headerPartial: readFileSync(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
+    commitPartial: readFileSync(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
+    footerPartial: readFileSync(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
   }, options)
 
   if ((!_.isFunction(options.transform) && _.isObject(options.transform)) || _.isUndefined(options.transform)) {
@@ -21265,10 +21418,10 @@ const npmRunPath = __nccwpck_require__(20502);
 const onetime = __nccwpck_require__(89082);
 const makeError = __nccwpck_require__(62187);
 const normalizeStdio = __nccwpck_require__(10166);
-const {spawnedKill, spawnedCancel, setupTimeout, setExitHandler} = __nccwpck_require__(39819);
+const {spawnedKill, spawnedCancel, setupTimeout, validateTimeout, setExitHandler} = __nccwpck_require__(39819);
 const {handleInput, getSpawnedResult, makeAllStream, validateInputSync} = __nccwpck_require__(32592);
 const {mergePromise, getSpawnedPromise} = __nccwpck_require__(97814);
-const {joinCommand, parseCommand} = __nccwpck_require__(88286);
+const {joinCommand, parseCommand, getEscapedCommand} = __nccwpck_require__(88286);
 
 const DEFAULT_MAX_BUFFER = 1000 * 1000 * 100;
 
@@ -21332,6 +21485,9 @@ const handleOutput = (options, value, error) => {
 const execa = (file, args, options) => {
 	const parsed = handleArguments(file, args, options);
 	const command = joinCommand(file, args);
+	const escapedCommand = getEscapedCommand(file, args);
+
+	validateTimeout(parsed.options);
 
 	let spawned;
 	try {
@@ -21345,6 +21501,7 @@ const execa = (file, args, options) => {
 			stderr: '',
 			all: '',
 			command,
+			escapedCommand,
 			parsed,
 			timedOut: false,
 			isCanceled: false,
@@ -21377,6 +21534,7 @@ const execa = (file, args, options) => {
 				stderr,
 				all,
 				command,
+				escapedCommand,
 				parsed,
 				timedOut,
 				isCanceled: context.isCanceled,
@@ -21392,6 +21550,7 @@ const execa = (file, args, options) => {
 
 		return {
 			command,
+			escapedCommand,
 			exitCode: 0,
 			stdout,
 			stderr,
@@ -21417,6 +21576,7 @@ module.exports = execa;
 module.exports.sync = (file, args, options) => {
 	const parsed = handleArguments(file, args, options);
 	const command = joinCommand(file, args);
+	const escapedCommand = getEscapedCommand(file, args);
 
 	validateInputSync(parsed.options);
 
@@ -21430,6 +21590,7 @@ module.exports.sync = (file, args, options) => {
 			stderr: '',
 			all: '',
 			command,
+			escapedCommand,
 			parsed,
 			timedOut: false,
 			isCanceled: false,
@@ -21448,6 +21609,7 @@ module.exports.sync = (file, args, options) => {
 			signal: result.signal,
 			exitCode: result.status,
 			command,
+			escapedCommand,
 			parsed,
 			timedOut: result.error && result.error.code === 'ETIMEDOUT',
 			isCanceled: false,
@@ -21463,6 +21625,7 @@ module.exports.sync = (file, args, options) => {
 
 	return {
 		command,
+		escapedCommand,
 		exitCode: 0,
 		stdout,
 		stderr,
@@ -21523,15 +21686,34 @@ module.exports.node = (scriptPath, args, options = {}) => {
 
 "use strict";
 
-const SPACES_REGEXP = / +/g;
-
-const joinCommand = (file, args = []) => {
+const normalizeArgs = (file, args = []) => {
 	if (!Array.isArray(args)) {
-		return file;
+		return [file];
 	}
 
-	return [file, ...args].join(' ');
+	return [file, ...args];
 };
+
+const NO_ESCAPE_REGEXP = /^[\w.-]+$/;
+const DOUBLE_QUOTES_REGEXP = /"/g;
+
+const escapeArg = arg => {
+	if (typeof arg !== 'string' || NO_ESCAPE_REGEXP.test(arg)) {
+		return arg;
+	}
+
+	return `"${arg.replace(DOUBLE_QUOTES_REGEXP, '\\"')}"`;
+};
+
+const joinCommand = (file, args) => {
+	return normalizeArgs(file, args).join(' ');
+};
+
+const getEscapedCommand = (file, args) => {
+	return normalizeArgs(file, args).map(arg => escapeArg(arg)).join(' ');
+};
+
+const SPACES_REGEXP = / +/g;
 
 // Handle `execa.command()`
 const parseCommand = command => {
@@ -21552,6 +21734,7 @@ const parseCommand = command => {
 
 module.exports = {
 	joinCommand,
+	getEscapedCommand,
 	parseCommand
 };
 
@@ -21597,6 +21780,7 @@ const makeError = ({
 	signal,
 	exitCode,
 	command,
+	escapedCommand,
 	timedOut,
 	isCanceled,
 	killed,
@@ -21625,6 +21809,7 @@ const makeError = ({
 
 	error.shortMessage = shortMessage;
 	error.command = command;
+	error.escapedCommand = escapedCommand;
 	error.exitCode = exitCode;
 	error.signal = signal;
 	error.signalDescription = signalDescription;
@@ -21729,10 +21914,6 @@ const setupTimeout = (spawned, {timeout, killSignal = 'SIGTERM'}, spawnedPromise
 		return spawnedPromise;
 	}
 
-	if (!Number.isFinite(timeout) || timeout < 0) {
-		throw new TypeError(`Expected the \`timeout\` option to be a non-negative integer, got \`${timeout}\` (${typeof timeout})`);
-	}
-
 	let timeoutId;
 	const timeoutPromise = new Promise((resolve, reject) => {
 		timeoutId = setTimeout(() => {
@@ -21745,6 +21926,12 @@ const setupTimeout = (spawned, {timeout, killSignal = 'SIGTERM'}, spawnedPromise
 	});
 
 	return Promise.race([timeoutPromise, safeSpawnedPromise]);
+};
+
+const validateTimeout = ({timeout}) => {
+	if (timeout !== undefined && (!Number.isFinite(timeout) || timeout < 0)) {
+		throw new TypeError(`Expected the \`timeout\` option to be a non-negative integer, got \`${timeout}\` (${typeof timeout})`);
+	}
 };
 
 // `cleanup` option handling
@@ -21766,6 +21953,7 @@ module.exports = {
 	spawnedKill,
 	spawnedCancel,
 	setupTimeout,
+	validateTimeout,
 	setExitHandler
 };
 
@@ -21898,7 +22086,7 @@ const mergeStream = __nccwpck_require__(2621);
 // `input` option
 const handleInput = (spawned, input) => {
 	// Checking for stdin is workaround for https://github.com/nodejs/node/issues/26852
-	// TODO: Remove `|| spawned.stdin === undefined` once we drop support for Node.js <=12.2.0
+	// @todo remove `|| spawned.stdin === undefined` once we drop support for Node.js <=12.2.0
 	if (input === undefined || spawned.stdin === undefined) {
 		return;
 	}
@@ -32924,14 +33112,15 @@ module.exports = isMatch;
   var undefined;
 
   /** Used as the semantic version number. */
-  var VERSION = '4.17.20';
+  var VERSION = '4.17.21';
 
   /** Used as the size to enable large array optimizations. */
   var LARGE_ARRAY_SIZE = 200;
 
   /** Error message constants. */
   var CORE_ERROR_TEXT = 'Unsupported core-js use. Try https://npms.io/search?q=ponyfill.',
-      FUNC_ERROR_TEXT = 'Expected a function';
+      FUNC_ERROR_TEXT = 'Expected a function',
+      INVALID_TEMPL_VAR_ERROR_TEXT = 'Invalid `variable` option passed into `_.template`';
 
   /** Used to stand-in for `undefined` hash values. */
   var HASH_UNDEFINED = '__lodash_hash_undefined__';
@@ -33064,10 +33253,11 @@ module.exports = isMatch;
   var reRegExpChar = /[\\^$.*+?()[\]{}|]/g,
       reHasRegExpChar = RegExp(reRegExpChar.source);
 
-  /** Used to match leading and trailing whitespace. */
-  var reTrim = /^\s+|\s+$/g,
-      reTrimStart = /^\s+/,
-      reTrimEnd = /\s+$/;
+  /** Used to match leading whitespace. */
+  var reTrimStart = /^\s+/;
+
+  /** Used to match a single whitespace character. */
+  var reWhitespace = /\s/;
 
   /** Used to match wrap detail comments. */
   var reWrapComment = /\{(?:\n\/\* \[wrapped with .+\] \*\/)?\n?/,
@@ -33076,6 +33266,18 @@ module.exports = isMatch;
 
   /** Used to match words composed of alphanumeric characters. */
   var reAsciiWord = /[^\x00-\x2f\x3a-\x40\x5b-\x60\x7b-\x7f]+/g;
+
+  /**
+   * Used to validate the `validate` option in `_.template` variable.
+   *
+   * Forbids characters which could potentially change the meaning of the function argument definition:
+   * - "()," (modification of function parameters)
+   * - "=" (default value)
+   * - "[]{}" (destructuring of function parameters)
+   * - "/" (beginning of a comment)
+   * - whitespace
+   */
+  var reForbiddenIdentifierChars = /[()=,{}\[\]\/\s]/;
 
   /** Used to match backslashes in property paths. */
   var reEscapeChar = /\\(\\)?/g;
@@ -33906,6 +34108,19 @@ module.exports = isMatch;
   }
 
   /**
+   * The base implementation of `_.trim`.
+   *
+   * @private
+   * @param {string} string The string to trim.
+   * @returns {string} Returns the trimmed string.
+   */
+  function baseTrim(string) {
+    return string
+      ? string.slice(0, trimmedEndIndex(string) + 1).replace(reTrimStart, '')
+      : string;
+  }
+
+  /**
    * The base implementation of `_.unary` without support for storing metadata.
    *
    * @private
@@ -34236,6 +34451,21 @@ module.exports = isMatch;
     return hasUnicode(string)
       ? unicodeToArray(string)
       : asciiToArray(string);
+  }
+
+  /**
+   * Used by `_.trim` and `_.trimEnd` to get the index of the last non-whitespace
+   * character of `string`.
+   *
+   * @private
+   * @param {string} string The string to inspect.
+   * @returns {number} Returns the index of the last non-whitespace character.
+   */
+  function trimmedEndIndex(string) {
+    var index = string.length;
+
+    while (index-- && reWhitespace.test(string.charAt(index))) {}
+    return index;
   }
 
   /**
@@ -45406,7 +45636,7 @@ module.exports = isMatch;
       if (typeof value != 'string') {
         return value === 0 ? value : +value;
       }
-      value = value.replace(reTrim, '');
+      value = baseTrim(value);
       var isBinary = reIsBinary.test(value);
       return (isBinary || reIsOctal.test(value))
         ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
@@ -47778,6 +48008,12 @@ module.exports = isMatch;
       if (!variable) {
         source = 'with (obj) {\n' + source + '\n}\n';
       }
+      // Throw an error if a forbidden character was found in `variable`, to prevent
+      // potential command injection attacks.
+      else if (reForbiddenIdentifierChars.test(variable)) {
+        throw new Error(INVALID_TEMPL_VAR_ERROR_TEXT);
+      }
+
       // Cleanup code by stripping empty strings.
       source = (isEvaluating ? source.replace(reEmptyStringLeading, '') : source)
         .replace(reEmptyStringMiddle, '$1')
@@ -47891,7 +48127,7 @@ module.exports = isMatch;
     function trim(string, chars, guard) {
       string = toString(string);
       if (string && (guard || chars === undefined)) {
-        return string.replace(reTrim, '');
+        return baseTrim(string);
       }
       if (!string || !(chars = baseToString(chars))) {
         return string;
@@ -47926,7 +48162,7 @@ module.exports = isMatch;
     function trimEnd(string, chars, guard) {
       string = toString(string);
       if (string && (guard || chars === undefined)) {
-        return string.replace(reTrimEnd, '');
+        return string.slice(0, trimmedEndIndex(string) + 1);
       }
       if (!string || !(chars = baseToString(chars))) {
         return string;
@@ -53358,16 +53594,12 @@ module.exports = npa
 module.exports.resolve = resolve
 module.exports.Result = Result
 
-let url
-let HostedGit
-let semver
-let path_
-function path () {
-  if (!path_) path_ = __nccwpck_require__(85622)
-  return path_
-}
-let validatePackageName
-let os
+const url = __nccwpck_require__(78835)
+const HostedGit = __nccwpck_require__(88869)
+const semver = __nccwpck_require__(11383)
+const path = global.FAKE_WINDOWS ? __nccwpck_require__(85622).win32 : __nccwpck_require__(85622)
+const validatePackageName = __nccwpck_require__(64150)
+const { homedir } = __nccwpck_require__(12087)
 
 const isWindows = process.platform === 'win32' || global.FAKE_WINDOWS
 const hasSlashes = isWindows ? /\\|[/]/ : /[/]/
@@ -53379,33 +53611,30 @@ function npa (arg, where) {
   let name
   let spec
   if (typeof arg === 'object') {
-    if (arg instanceof Result && (!where || where === arg.where)) {
+    if (arg instanceof Result && (!where || where === arg.where))
       return arg
-    } else if (arg.name && arg.rawSpec) {
+    else if (arg.name && arg.rawSpec)
       return npa.resolve(arg.name, arg.rawSpec, where || arg.where)
-    } else {
+    else
       return npa(arg.raw, where || arg.where)
-    }
   }
   const nameEndsAt = arg[0] === '@' ? arg.slice(1).indexOf('@') + 1 : arg.indexOf('@')
   const namePart = nameEndsAt > 0 ? arg.slice(0, nameEndsAt) : arg
-  if (isURL.test(arg)) {
+  if (isURL.test(arg))
     spec = arg
-  } else if (isGit.test(arg)) {
+  else if (isGit.test(arg))
     spec = `git+ssh://${arg}`
-  } else if (namePart[0] !== '@' && (hasSlashes.test(namePart) || isFilename.test(namePart))) {
+  else if (namePart[0] !== '@' && (hasSlashes.test(namePart) || isFilename.test(namePart)))
     spec = arg
-  } else if (nameEndsAt > 0) {
+  else if (nameEndsAt > 0) {
     name = namePart
     spec = arg.slice(nameEndsAt + 1)
   } else {
-    if (!validatePackageName) validatePackageName = __nccwpck_require__(64150)
     const valid = validatePackageName(arg)
-    if (valid.validForOldPackages) {
+    if (valid.validForOldPackages)
       name = arg
-    } else {
+    else
       spec = arg
-    }
   }
   return resolve(name, spec, where, arg)
 }
@@ -53417,27 +53646,29 @@ function resolve (name, spec, where, arg) {
     raw: arg,
     name: name,
     rawSpec: spec,
-    fromArgument: arg != null
+    fromArgument: arg != null,
   })
 
-  if (name) res.setName(name)
+  if (name)
+    res.setName(name)
 
-  if (spec && (isFilespec.test(spec) || /^file:/i.test(spec))) {
+  if (spec && (isFilespec.test(spec) || /^file:/i.test(spec)))
     return fromFile(res, where)
-  } else if (spec && /^npm:/i.test(spec)) {
+  else if (spec && /^npm:/i.test(spec))
     return fromAlias(res, where)
-  }
-  if (!HostedGit) HostedGit = __nccwpck_require__(88869)
-  const hosted = HostedGit.fromUrl(spec, { noGitPlus: true, noCommittish: true })
-  if (hosted) {
+
+  const hosted = HostedGit.fromUrl(spec, {
+    noGitPlus: true,
+    noCommittish: true,
+  })
+  if (hosted)
     return fromHostedGit(res, hosted)
-  } else if (spec && isURL.test(spec)) {
+  else if (spec && isURL.test(spec))
     return fromURL(res)
-  } else if (spec && (hasSlashes.test(spec) || isFilename.test(spec))) {
+  else if (spec && (hasSlashes.test(spec) || isFilename.test(spec)))
     return fromFile(res, where)
-  } else {
+  else
     return fromRegistry(res)
-  }
 }
 
 function invalidPackageName (name, valid) {
@@ -53455,29 +53686,29 @@ function Result (opts) {
   this.type = opts.type
   this.registry = opts.registry
   this.where = opts.where
-  if (opts.raw == null) {
+  if (opts.raw == null)
     this.raw = opts.name ? opts.name + '@' + opts.rawSpec : opts.rawSpec
-  } else {
+  else
     this.raw = opts.raw
-  }
+
   this.name = undefined
   this.escapedName = undefined
   this.scope = undefined
   this.rawSpec = opts.rawSpec == null ? '' : opts.rawSpec
   this.saveSpec = opts.saveSpec
   this.fetchSpec = opts.fetchSpec
-  if (opts.name) this.setName(opts.name)
+  if (opts.name)
+    this.setName(opts.name)
   this.gitRange = opts.gitRange
   this.gitCommittish = opts.gitCommittish
   this.hosted = opts.hosted
 }
 
 Result.prototype.setName = function (name) {
-  if (!validatePackageName) validatePackageName = __nccwpck_require__(64150)
   const valid = validatePackageName(name)
-  if (!valid.validForOldPackages) {
+  if (!valid.validForOldPackages)
     throw invalidPackageName(name, valid)
-  }
+
   this.name = name
   this.scope = name[0] === '@' ? name.slice(0, name.indexOf('/')) : undefined
   // scoped packages in couch must have slash url-encoded, e.g. @foo%2Fbar
@@ -53487,9 +53718,11 @@ Result.prototype.setName = function (name) {
 
 Result.prototype.toString = function () {
   const full = []
-  if (this.name != null && this.name !== '') full.push(this.name)
+  if (this.name != null && this.name !== '')
+    full.push(this.name)
   const spec = this.saveSpec || this.fetchSpec || this.rawSpec
-  if (spec != null && spec !== '') full.push(spec)
+  if (spec != null && spec !== '')
+    full.push(spec)
   return full.length ? full.join('@') : this.raw
 }
 
@@ -53503,46 +53736,92 @@ function setGitCommittish (res, committish) {
   if (committish != null && committish.length >= 7 && committish.slice(0, 7) === 'semver:') {
     res.gitRange = decodeURIComponent(committish.slice(7))
     res.gitCommittish = null
-  } else {
+  } else
     res.gitCommittish = committish === '' ? null : committish
-  }
+
   return res
 }
 
-const isAbsolutePath = /^[/]|^[A-Za-z]:/
-
-function resolvePath (where, spec) {
-  if (isAbsolutePath.test(spec)) return spec
-  return path().resolve(where, spec)
-}
-
-function isAbsolute (dir) {
-  if (dir[0] === '/') return true
-  if (/^[A-Za-z]:/.test(dir)) return true
-  return false
-}
-
 function fromFile (res, where) {
-  if (!where) where = process.cwd()
+  if (!where)
+    where = process.cwd()
   res.type = isFilename.test(res.rawSpec) ? 'file' : 'directory'
   res.where = where
 
-  const spec = res.rawSpec.replace(/\\/g, '/')
-    .replace(/^file:[/]*([A-Za-z]:)/, '$1') // drive name paths on windows
-    .replace(/^file:(?:[/]*([~./]))?/, '$1')
-  if (/^~[/]/.test(spec)) {
-    // this is needed for windows and for file:~/foo/bar
-    if (!os) os = __nccwpck_require__(12087)
-    res.fetchSpec = resolvePath(os.homedir(), spec.slice(2))
-    res.saveSpec = 'file:' + spec
-  } else {
-    res.fetchSpec = resolvePath(where, spec)
-    if (isAbsolute(spec)) {
-      res.saveSpec = 'file:' + spec
-    } else {
-      res.saveSpec = 'file:' + path().relative(where, res.fetchSpec)
-    }
+  // always put the '/' on where when resolving urls, or else
+  // file:foo from /path/to/bar goes to /path/to/foo, when we want
+  // it to be /path/to/foo/bar
+
+  let specUrl
+  let resolvedUrl
+  const prefix = (!/^file:/.test(res.rawSpec) ? 'file:' : '')
+  const rawWithPrefix = prefix + res.rawSpec
+  let rawNoPrefix = rawWithPrefix.replace(/^file:/, '')
+  try {
+    resolvedUrl = new url.URL(rawWithPrefix, `file://${path.resolve(where)}/`)
+    specUrl = new url.URL(rawWithPrefix)
+  } catch (originalError) {
+    const er = new Error('Invalid file: URL, must comply with RFC 8909')
+    throw Object.assign(er, {
+      raw: res.rawSpec,
+      spec: res,
+      where,
+      originalError,
+    })
   }
+
+  // environment switch for testing
+  if (process.env.NPM_PACKAGE_ARG_8909_STRICT !== '1') {
+    // XXX backwards compatibility lack of compliance with 8909
+    // Remove when we want a breaking change to come into RFC compliance.
+    if (resolvedUrl.host && resolvedUrl.host !== 'localhost') {
+      const rawSpec = res.rawSpec.replace(/^file:\/\//, 'file:///')
+      resolvedUrl = new url.URL(rawSpec, `file://${path.resolve(where)}/`)
+      specUrl = new url.URL(rawSpec)
+      rawNoPrefix = rawSpec.replace(/^file:/, '')
+    }
+    // turn file:/../foo into file:../foo
+    if (/^\/\.\.?(\/|$)/.test(rawNoPrefix)) {
+      const rawSpec = res.rawSpec.replace(/^file:\//, 'file:')
+      resolvedUrl = new url.URL(rawSpec, `file://${path.resolve(where)}/`)
+      specUrl = new url.URL(rawSpec)
+      rawNoPrefix = rawSpec.replace(/^file:/, '')
+    }
+    // XXX end 8909 violation backwards compatibility section
+  }
+
+  // file:foo - relative url to ./foo
+  // file:/foo - absolute path /foo
+  // file:///foo - absolute path to /foo, no authority host
+  // file://localhost/foo - absolute path to /foo, on localhost
+  // file://foo - absolute path to / on foo host (error!)
+  if (resolvedUrl.host && resolvedUrl.host !== 'localhost') {
+    const msg = `Invalid file: URL, must be absolute if // present`
+    throw Object.assign(new Error(msg), {
+      raw: res.rawSpec,
+      parsed: resolvedUrl,
+    })
+  }
+
+  // turn /C:/blah into just C:/blah on windows
+  let specPath = decodeURIComponent(specUrl.pathname)
+  let resolvedPath = decodeURIComponent(resolvedUrl.pathname)
+  if (isWindows) {
+    specPath = specPath.replace(/^\/+([a-z]:\/)/i, '$1')
+    resolvedPath = resolvedPath.replace(/^\/+([a-z]:\/)/i, '$1')
+  }
+
+  // replace ~ with homedir, but keep the ~ in the saveSpec
+  // otherwise, make it relative to where param
+  if (/^\/~(\/|$)/.test(specPath)) {
+    res.saveSpec = `file:${specPath.substr(1)}`
+    resolvedPath = path.resolve(homedir(), specPath.substr(3))
+  } else if (!path.isAbsolute(rawNoPrefix))
+    res.saveSpec = `file:${path.relative(where, resolvedPath)}`
+  else
+    res.saveSpec = `file:${path.resolve(resolvedPath)}`
+
+  res.fetchSpec = path.resolve(where, resolvedPath)
   return res
 }
 
@@ -53572,12 +53851,12 @@ function matchGitScp (spec) {
   const matched = spec.match(/^git\+ssh:\/\/([^:#]+:[^#]+(?:\.git)?)(?:#(.*))?$/i)
   return matched && !matched[1].match(/:[0-9]+\/?.*$/i) && {
     fetchSpec: matched[1],
-    gitCommittish: matched[2] == null ? null : matched[2]
+    gitCommittish: matched[2] == null ? null : matched[2],
   }
 }
 
 function fromURL (res) {
-  if (!url) url = __nccwpck_require__(78835)
+  // eslint-disable-next-line node/no-deprecated-api
   const urlparse = url.parse(res.rawSpec)
   res.saveSpec = res.rawSpec
   // check the protocol, and then see if it's git or not
@@ -53588,9 +53867,10 @@ function fromURL (res) {
     case 'git+rsync:':
     case 'git+ftp:':
     case 'git+file:':
-    case 'git+ssh:':
+    case 'git+ssh:': {
       res.type = 'git'
-      const match = urlparse.protocol === 'git+ssh:' && matchGitScp(res.rawSpec)
+      const match = urlparse.protocol === 'git+ssh:' ? matchGitScp(res.rawSpec)
+        : null
       if (match) {
         setGitCommittish(res, match.gitCommittish)
         res.fetchSpec = match.fetchSpec
@@ -53606,6 +53886,7 @@ function fromURL (res) {
         res.fetchSpec = url.format(urlparse)
       }
       break
+    }
     case 'http:':
     case 'https:':
       res.type = 'remote'
@@ -53621,12 +53902,12 @@ function fromURL (res) {
 
 function fromAlias (res, where) {
   const subSpec = npa(res.rawSpec.substr(4), where)
-  if (subSpec.type === 'alias') {
+  if (subSpec.type === 'alias')
     throw new Error('nested aliases not supported')
-  }
-  if (!subSpec.registry) {
+
+  if (!subSpec.registry)
     throw new Error('aliases only work for registry deps')
-  }
+
   res.subSpec = subSpec
   res.registry = true
   res.type = 'alias'
@@ -53637,22 +53918,21 @@ function fromAlias (res, where) {
 
 function fromRegistry (res) {
   res.registry = true
-  const spec = res.rawSpec === '' ? 'latest' : res.rawSpec
+  const spec = res.rawSpec === '' ? 'latest' : res.rawSpec.trim()
   // no save spec for registry components as we save based on the fetched
   // version, not on the argument so this can't compute that.
   res.saveSpec = null
   res.fetchSpec = spec
-  if (!semver) semver = __nccwpck_require__(11383)
   const version = semver.valid(spec, true)
   const range = semver.validRange(spec, true)
-  if (version) {
+  if (version)
     res.type = 'version'
-  } else if (range) {
+  else if (range)
     res.type = 'range'
-  } else {
-    if (encodeURIComponent(spec) !== spec) {
+  else {
+    if (encodeURIComponent(spec) !== spec)
       throw invalidTagName(spec)
-    }
+
     res.type = 'tag'
   }
   return res
@@ -59671,6 +59951,71 @@ exports.ConventionalCommits = ConventionalCommits;
 
 /***/ }),
 
+/***/ 93637:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.MissingReleaseNotesError = exports.DuplicateReleaseError = exports.AuthError = exports.GitHubAPIError = void 0;
+class GitHubAPIError extends Error {
+    constructor(requestError, message) {
+        super(message !== null && message !== void 0 ? message : requestError.message);
+        this.status = requestError.status;
+        this.body = GitHubAPIError.parseErrorBody(requestError);
+        this.name = GitHubAPIError.name;
+        this.cause = requestError;
+    }
+    static parseErrorBody(requestError) {
+        return requestError.response.data;
+    }
+    static parseErrors(requestError) {
+        return GitHubAPIError.parseErrorBody(requestError).errors || [];
+    }
+}
+exports.GitHubAPIError = GitHubAPIError;
+class AuthError extends GitHubAPIError {
+    constructor(requestError) {
+        super(requestError, 'unauthorized');
+        this.status = 401;
+        this.name = AuthError.name;
+    }
+}
+exports.AuthError = AuthError;
+class DuplicateReleaseError extends GitHubAPIError {
+    constructor(requestError, tag) {
+        super(requestError);
+        this.tag = tag;
+        this.name = DuplicateReleaseError.name;
+    }
+}
+exports.DuplicateReleaseError = DuplicateReleaseError;
+class MissingReleaseNotesError extends Error {
+    constructor(changelogContents, version) {
+        super(`could not find changelog entry corresponding to release ${version}`);
+        this.changelogContents = changelogContents;
+        this.version = version;
+        this.name = MissingReleaseNotesError.name;
+    }
+}
+exports.MissingReleaseNotesError = MissingReleaseNotesError;
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
 /***/ 75695:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -59876,9 +60221,11 @@ const logger_1 = __nccwpck_require__(68809);
 exports.GITHUB_RELEASE_LABEL = 'autorelease: tagged';
 class GitHubRelease {
     constructor(options) {
+        var _a;
         this.draft = !!options.draft;
         this.gh = options.github;
         this.releasePR = options.releasePR;
+        this.releaseLabel = (_a = options.releaseLabel) !== null && _a !== void 0 ? _a : exports.GITHUB_RELEASE_LABEL;
     }
     async createRelease(version, mergedPR) {
         let candidate;
@@ -59907,7 +60254,7 @@ class GitHubRelease {
         await this.gh.commentOnIssue(`:robot: Release is at ${release.html_url} :sunflower:`, candidate.pullNumber);
         // Add a label indicating that a release has been created on GitHub,
         // but a publication has not yet occurred.
-        await this.gh.addLabels([exports.GITHUB_RELEASE_LABEL], candidate.pullNumber);
+        await this.gh.addLabels([this.releaseLabel], candidate.pullNumber);
         // Remove 'autorelease: pending' which indicates a GitHub release
         // has not yet been created.
         await this.gh.removeLabels(this.releasePR.labels, candidate.pullNumber);
@@ -59938,7 +60285,7 @@ class GitHubRelease {
             };
         }
         else {
-            console.warn(`failed to parse version information from ${params.version}`);
+            logger_1.logger.warn(`failed to parse version information from ${params.version}`);
             return undefined;
         }
     }
@@ -59973,6 +60320,7 @@ const logger_1 = __nccwpck_require__(68809);
 const rest_1 = __nccwpck_require__(55375);
 const request_1 = __nccwpck_require__(36234);
 const graphql_1 = __nccwpck_require__(88467);
+const request_error_1 = __nccwpck_require__(10537);
 function isReposListResponse(arg) {
     return typeof arg === 'object' && Object.hasOwnProperty.call(arg, 'name');
 }
@@ -59981,9 +60329,524 @@ const semver = __nccwpck_require__(11383);
 const graphql_to_commits_1 = __nccwpck_require__(92802);
 const branch_name_1 = __nccwpck_require__(16344);
 const constants_1 = __nccwpck_require__(52661);
+const errors_1 = __nccwpck_require__(93637);
 let probotMode = false;
 class GitHub {
     constructor(options) {
+        this.graphqlRequest = wrapAsync(async (opts, maxRetries = 1) => {
+            while (maxRetries >= 0) {
+                try {
+                    return await this.makeGraphqlRequest(opts);
+                }
+                catch (err) {
+                    if (err.status !== 502) {
+                        throw err;
+                    }
+                }
+                maxRetries -= 1;
+            }
+        });
+        /**
+         * Returns the list of commits since a given SHA on the target branch
+         *
+         * @param {string} sha SHA of the base commit or undefined for all commits
+         * @param {string} path If provided, limit to commits that affect the provided path
+         * @param {number} per_page Pagination option. Defaults to 100
+         * @returns {Commit[]} List of commits
+         * @throws {GitHubAPIError} on an API error
+         */
+        this.commitsSinceShaRest = wrapAsync(async (sha, path, per_page = 100) => {
+            let page = 1;
+            let found = false;
+            const baseBranch = await this.getDefaultBranch();
+            const commits = [];
+            while (!found) {
+                const response = await this.request('GET /repos/{owner}/{repo}/commits{?sha,page,per_page,path}', {
+                    owner: this.owner,
+                    repo: this.repo,
+                    sha: baseBranch,
+                    page,
+                    per_page,
+                    path,
+                });
+                for (const commit of response.data) {
+                    if (commit.sha === sha) {
+                        found = true;
+                        break;
+                    }
+                    // skip merge commits
+                    if (commit.parents.length === 2) {
+                        continue;
+                    }
+                    commits.push([commit.sha, commit.commit.message]);
+                }
+                page++;
+            }
+            const ret = [];
+            for (const [ref, message] of commits) {
+                const files = [];
+                let page = 1;
+                let moreFiles = true;
+                while (moreFiles) {
+                    // the "Get Commit" resource is a bit of an outlier in terms of GitHub's
+                    // normal pagination: https://git.io/JmVZq
+                    // The behavior is to return an object representing the commit, a
+                    // property of which is an array of files. GitHub will return as many
+                    // associated files as there are, up to a limit of 300, on the initial
+                    // request. If there are more associated files, it will send "Links"
+                    // headers to get the next set. There is a total limit of 3000
+                    // files returned per commit.
+                    // In practice, the links headers are just the same resourceID plus a
+                    // "page=N" query parameter with "page=1" being the initial set.
+                    //
+                    // TODO: it is more robust to follow the link.next headers (in case
+                    // GitHub ever changes the pattern) OR use ocktokit pagination for this
+                    // endpoint when https://git.io/JmVll is addressed.
+                    const response = (await this.request('GET /repos/{owner}/{repo}/commits/{ref}{?page}', { owner: this.owner, repo: this.repo, ref, page }));
+                    const commitFiles = response.data.files;
+                    if (!commitFiles) {
+                        moreFiles = false;
+                        break;
+                    }
+                    files.push(...commitFiles.map(f => { var _a; return (_a = f.filename) !== null && _a !== void 0 ? _a : ''; }));
+                    // < 300 files means we hit the end
+                    // page === 10 means we're at 3000 and that's the limit GH is gonna
+                    // cough up anyway.
+                    if (commitFiles.length < 300 || page === 10) {
+                        moreFiles = false;
+                        break;
+                    }
+                    page++;
+                }
+                ret.push({ sha: ref, message, files });
+            }
+            return ret;
+        });
+        /**
+         * Find the SHA of the commit at the provided tag.
+         *
+         * @param {string} name Tag name
+         * @returns {string} The SHA of the commit
+         * @throws {GitHubAPIError} on an API error
+         */
+        this.getTagSha = wrapAsync(async (name) => {
+            const refResponse = (await this.request('GET /repos/:owner/:repo/git/refs/tags/:name', {
+                owner: this.owner,
+                repo: this.repo,
+                name,
+            }));
+            return refResponse.data.object.sha;
+        });
+        this.allTags = wrapAsync(async (prefix) => {
+            // If we've fallen back to using allTags, support "-", "@", and "/" as a
+            // suffix separating the library name from the version #. This allows
+            // a repository to be seamlessly be migrated from a tool like lerna:
+            const prefixes = [];
+            if (prefix) {
+                prefix = prefix.substring(0, prefix.length - 1);
+                for (const suffix of ['-', '@', '/']) {
+                    prefixes.push(`${prefix}${suffix}`);
+                }
+            }
+            const tags = {};
+            for await (const response of this.octokit.paginate.iterator(this.decoratePaginateOpts({
+                method: 'GET',
+                url: `/repos/${this.owner}/${this.repo}/tags?per_page=100`,
+            }))) {
+                response.data.forEach(data => {
+                    // For monorepos, a prefix can be provided, indicating that only tags
+                    // matching the prefix should be returned:
+                    if (!isReposListResponse(data))
+                        return;
+                    let version = data.name;
+                    if (prefix) {
+                        let match = false;
+                        for (prefix of prefixes) {
+                            if (data.name.startsWith(prefix)) {
+                                version = data.name.replace(prefix, '');
+                                match = true;
+                            }
+                        }
+                        if (!match)
+                            return;
+                    }
+                    if (semver.valid(version)) {
+                        version = semver.valid(version);
+                        tags[version] = { sha: data.commit.sha, name: data.name, version };
+                    }
+                });
+            }
+            return tags;
+        });
+        /**
+         * Return a list of merged pull requests. The list is not guaranteed to be sorted
+         * by merged_at, but is generally most recent first.
+         *
+         * @param {string} targetBranch - Base branch of the pull request. Defaults to
+         *   the configured default branch.
+         * @param {number} page - Page of results. Defaults to 1.
+         * @param {number} perPage - Number of results per page. Defaults to 100.
+         * @returns {MergedGitHubPR[]} - List of merged pull requests
+         * @throws {GitHubAPIError} on an API error
+         */
+        this.findMergedPullRequests = wrapAsync(async (targetBranch, page = 1, perPage = 100) => {
+            if (!targetBranch) {
+                targetBranch = await this.getDefaultBranch();
+            }
+            // TODO: is sorting by updated better?
+            const pullsResponse = (await this.request(`GET /repos/:owner/:repo/pulls?state=closed&per_page=${perPage}&page=${page}&base=${targetBranch}&sort=created&direction=desc`, {
+                owner: this.owner,
+                repo: this.repo,
+            }));
+            // TODO: distinguish between no more pages and a full page of
+            // closed, non-merged pull requests. At page size of 100, this unlikely
+            // to matter
+            if (!pullsResponse.data) {
+                return [];
+            }
+            return (pullsResponse.data
+                // only return merged pull requests
+                .filter(pull => {
+                return !!pull.merged_at;
+            })
+                .map(pull => {
+                const labels = pull.labels
+                    ? pull.labels.map(l => {
+                        return l.name + '';
+                    })
+                    : [];
+                return {
+                    sha: pull.merge_commit_sha,
+                    number: pull.number,
+                    baseRefName: pull.base.ref,
+                    headRefName: pull.head.ref,
+                    labels,
+                    title: pull.title,
+                    body: pull.body + '',
+                };
+            }));
+        });
+        /**
+         * Find an existing release pull request with a matching title and labels
+         *
+         * @param {string} title Substring to match against the issue title
+         * @param {string[]} labels List of labels to match the issues
+         * @return {IssuesListResponseItem|undefined}
+         * @throws {AuthError} if the user is not authenticated to make this request
+         * @throws {GitHubAPIError} on other API errors
+         */
+        this.findExistingReleaseIssue = wrapAsync(async (title, labels) => {
+            for await (const response of this.octokit.paginate.iterator(this.decoratePaginateOpts({
+                method: 'GET',
+                url: `/repos/${this.owner}/${this.repo}/issues?labels=${labels.join(',')}`,
+                per_page: 100,
+            }))) {
+                for (let i = 0; response.data[i] !== undefined; i++) {
+                    const issue = response.data[i];
+                    if (issue.title.indexOf(title) !== -1 && issue.state === 'open') {
+                        return issue;
+                    }
+                }
+            }
+            return undefined;
+        }, e => {
+            if (e instanceof request_error_1.RequestError && e.status === 404) {
+                // the most likely cause of a 404 during this step is actually
+                // that the user does not have access to the repo:
+                throw new errors_1.AuthError(e);
+            }
+        });
+        /**
+         * Open a pull request
+         *
+         * @param {GitHubPR} options The pull request options
+         * @throws {GitHubAPIError} on an API error
+         */
+        this.openPR = wrapAsync(async (options) => {
+            var _a;
+            const defaultBranch = await this.getDefaultBranch();
+            // check if there's an existing PR, so that we can opt to update it
+            // rather than creating a new PR.
+            const refName = `refs/heads/${options.branch}`;
+            let openReleasePR;
+            const releasePRCandidates = await this.findOpenReleasePRs(options.labels);
+            for (const releasePR of releasePRCandidates) {
+                if (refName && refName.includes(releasePR.head.ref)) {
+                    openReleasePR = releasePR;
+                    break;
+                }
+            }
+            // Short-circuit if there have been no changes to the pull-request body.
+            if (openReleasePR && openReleasePR.body === options.body) {
+                logger_1.logger.info(`PR https://github.com/${this.owner}/${this.repo}/pull/${openReleasePR.number} remained the same`);
+                return undefined;
+            }
+            //  Update the files for the release if not already supplied
+            const changes = (_a = options.changes) !== null && _a !== void 0 ? _a : (await this.getChangeSet(options.updates, defaultBranch));
+            const prNumber = await code_suggester_1.createPullRequest(this.octokit, changes, {
+                upstreamOwner: this.owner,
+                upstreamRepo: this.repo,
+                title: options.title,
+                branch: options.branch,
+                description: options.body,
+                primary: defaultBranch,
+                force: true,
+                fork: this.fork,
+                message: options.title,
+                logger: logger_1.logger,
+            });
+            // If a release PR was already open, update the title and body:
+            if (openReleasePR) {
+                logger_1.logger.info(`update pull-request #${openReleasePR.number}: ${chalk.yellow(options.title)}`);
+                await this.request('PATCH /repos/:owner/:repo/pulls/:pull_number', {
+                    pull_number: openReleasePR.number,
+                    owner: this.owner,
+                    repo: this.repo,
+                    title: options.title,
+                    body: options.body,
+                    state: 'open',
+                });
+                return openReleasePR.number;
+            }
+            else {
+                return prNumber;
+            }
+        });
+        /**
+         * Returns the repository's default/primary branch.
+         *
+         * @returns {string}
+         * @throws {GitHubAPIError} on an API error
+         */
+        this.getRepositoryDefaultBranch = wrapAsync(async () => {
+            if (this.repositoryDefaultBranch) {
+                return this.repositoryDefaultBranch;
+            }
+            const { data } = await this.octokit.repos.get({
+                repo: this.repo,
+                owner: this.owner,
+                headers: {
+                    Authorization: `token ${this.token}`,
+                },
+            });
+            this.repositoryDefaultBranch = data.default_branch;
+            return this.repositoryDefaultBranch;
+        });
+        /**
+         * Close a pull request
+         *
+         * @param {number} prNumber The pull request number
+         * @returns {boolean} Whether the request was attempts
+         * @throws {GitHubAPIError} on an API error
+         */
+        this.closePR = wrapAsync(async (prNumber) => {
+            if (this.fork)
+                return false;
+            await this.request('PATCH /repos/:owner/:repo/pulls/:pull_number', {
+                owner: this.owner,
+                repo: this.repo,
+                pull_number: prNumber,
+                state: 'closed',
+            });
+            return true;
+        });
+        /**
+         * Fetch the contents of a file with the Contents API
+         *
+         * @param {string} path The path to the file in the repository
+         * @param {string} branch The branch to fetch from
+         * @returns {GitHubFileContents}
+         * @throws {GitHubAPIError} on other API errors
+         */
+        this.getFileContentsWithSimpleAPI = wrapAsync(async (path, ref, isBranch = true) => {
+            ref = isBranch ? GitHub.fullyQualifyBranchRef(ref) : ref;
+            const options = {
+                owner: this.owner,
+                repo: this.repo,
+                path,
+                ref,
+            };
+            const resp = await this.request('GET /repos/:owner/:repo/contents/:path', options);
+            return {
+                parsedContent: Buffer.from(resp.data.content, 'base64').toString('utf8'),
+                content: resp.data.content,
+                sha: resp.data.sha,
+            };
+        });
+        /**
+         * Fetch the contents of a file
+         *
+         * @param {string} path The path to the file in the repository
+         * @param {string} branch The branch to fetch from
+         * @returns {GitHubFileContents}
+         * @throws {GitHubAPIError} on other API errors
+         */
+        this.getFileContentsOnBranch = wrapAsync(async (path, branch) => {
+            try {
+                return await this.getFileContentsWithSimpleAPI(path, branch);
+            }
+            catch (err) {
+                if (err.status === 403) {
+                    return await this.getFileContentsWithDataAPI(path, branch);
+                }
+                throw err;
+            }
+        });
+        /**
+         * Create a GitHub release
+         *
+         * @param {string} packageName name of the package
+         * @param {string} tagName tag to create
+         * @param {string} sha SHA of commit to tag at
+         * @param {string} releaseNotes Notes to add to release
+         * @param {boolean} draft Whether or not to create the release as a draft
+         * @throws {DuplicateReleaseError} if the release tag already exists
+         * @throws {GitHubAPIError} on other API errors
+         */
+        this.createRelease = wrapAsync(async (packageName, tagName, sha, releaseNotes, draft) => {
+            logger_1.logger.info(`creating release ${tagName}`);
+            const name = packageName ? `${packageName} ${tagName}` : tagName;
+            return (await this.request('POST /repos/:owner/:repo/releases', {
+                owner: this.owner,
+                repo: this.repo,
+                tag_name: tagName,
+                target_commitish: sha,
+                body: releaseNotes,
+                name,
+                draft: draft,
+            })).data;
+        }, e => {
+            if (e instanceof request_error_1.RequestError) {
+                if (e.status === 422 &&
+                    errors_1.GitHubAPIError.parseErrors(e).some(error => {
+                        return error.code === 'already_exists';
+                    })) {
+                    throw new errors_1.DuplicateReleaseError(e, 'tagName');
+                }
+            }
+        });
+        /**
+         * Remove labels from an issue or pull request
+         *
+         * @param {string[]} labels The names of the labels to remove
+         * @param {number} prNumber The issue or pull request number
+         * @return {boolean} Whether or not the request was attempted
+         * @throws {GitHubAPIError} on an API error
+         */
+        this.removeLabels = wrapAsync(async (labels, prNumber) => {
+            if (this.fork)
+                return false;
+            for (let i = 0, label; i < labels.length; i++) {
+                label = labels[i];
+                logger_1.logger.info(`removing label ${chalk.green(label)} from ${chalk.green('' + prNumber)}`);
+                await this.request('DELETE /repos/:owner/:repo/issues/:issue_number/labels/:name', {
+                    owner: this.owner,
+                    repo: this.repo,
+                    issue_number: prNumber,
+                    name: label,
+                });
+            }
+            return true;
+        });
+        /**
+         * Returns a list of paths to all files with a given name.
+         *
+         * If a prefix is specified, only return paths that match
+         * the provided prefix.
+         *
+         * @param filename The name of the file to find
+         * @param ref Git reference to search files in
+         * @param prefix Optional path prefix used to filter results
+         * @throws {GitHubAPIError} on an API error
+         */
+        this.findFilesByFilenameAndRef = wrapAsync(async (filename, ref, prefix) => {
+            if (prefix) {
+                prefix = this.normalizePrefix(prefix);
+            }
+            const response = await this.octokit.git.getTree({
+                owner: this.owner,
+                repo: this.repo,
+                tree_sha: ref,
+                recursive: 'true',
+            });
+            return response.data.tree
+                .filter(file => {
+                const path = file.path;
+                return (path &&
+                    // match the filename
+                    path.endsWith(filename) &&
+                    // match the prefix if provided
+                    (!prefix || path.startsWith(prefix)));
+            })
+                .map(file => {
+                let path = file.path;
+                // strip the prefix if provided
+                if (prefix) {
+                    const pfix = new RegExp(`^${prefix}[/\\\\]`);
+                    path = path.replace(pfix, '');
+                }
+                return path;
+            });
+        });
+        /**
+         * Returns a list of paths to all files with a given file
+         * extension.
+         *
+         * If a prefix is specified, only return paths that match
+         * the provided prefix.
+         *
+         * @param extension The file extension used to filter results.
+         *   Example: `js`, `java`
+         * @param ref Git reference to search files in
+         * @param prefix Optional path prefix used to filter results
+         * @returns {string[]} List of file paths
+         * @throws {GitHubAPIError} on an API error
+         */
+        this.findFilesByExtensionAndRef = wrapAsync(async (extension, ref, prefix) => {
+            if (prefix) {
+                prefix = this.normalizePrefix(prefix);
+            }
+            const response = await this.octokit.git.getTree({
+                owner: this.owner,
+                repo: this.repo,
+                tree_sha: ref,
+                recursive: 'true',
+            });
+            return response.data.tree
+                .filter(file => {
+                const path = file.path;
+                return (path &&
+                    // match the file extension
+                    path.endsWith(`.${extension}`) &&
+                    // match the prefix if provided
+                    (!prefix || path.startsWith(prefix)));
+            })
+                .map(file => {
+                let path = file.path;
+                // strip the prefix if provided
+                if (prefix) {
+                    const pfix = new RegExp(`^${prefix}[/\\\\]`);
+                    path = path.replace(pfix, '');
+                }
+                return path;
+            });
+        });
+        /**
+         * Makes a comment on a issue/pull request.
+         *
+         * @param {string} comment - The body of the comment to post.
+         * @param {number} number - The issue or pull request number.
+         * @throws {GitHubAPIError} on an API error
+         */
+        this.commentOnIssue = wrapAsync(async (comment, number) => {
+            logger_1.logger.info(`adding comment to https://github.com/${this.owner}/${this.repo}/issue/${number}`);
+            return (await this.request('POST /repos/:owner/:repo/issues/:issue_number/comments', {
+                owner: this.owner,
+                repo: this.repo,
+                issue_number: number,
+                body: comment,
+            })).data;
+        });
         this.defaultBranch = options.defaultBranch;
         this.token = options.token;
         this.owner = options.owner;
@@ -60027,19 +60890,6 @@ class GitHub {
         }
         return this.graphql(opts);
     }
-    async graphqlRequest(opts, maxRetries = 1) {
-        while (maxRetries >= 0) {
-            try {
-                return await this.makeGraphqlRequest(opts);
-            }
-            catch (err) {
-                if (err.status !== 502) {
-                    throw err;
-                }
-            }
-            maxRetries -= 1;
-        }
-    }
     decoratePaginateOpts(opts) {
         if (probotMode) {
             return opts;
@@ -60052,74 +60902,18 @@ class GitHub {
             });
         }
     }
-    async commitsSinceShaRest(sha, path, per_page = 100) {
-        let page = 1;
-        let found = false;
-        const baseBranch = await this.getDefaultBranch();
-        const commits = [];
-        while (!found) {
-            const response = await this.request('GET /repos/{owner}/{repo}/commits{?sha,page,per_page,path}', {
-                owner: this.owner,
-                repo: this.repo,
-                sha: baseBranch,
-                page,
-                per_page,
-                path,
-            });
-            for (const commit of response.data) {
-                if (commit.sha === sha) {
-                    found = true;
-                    break;
-                }
-                // skip merge commits
-                if (commit.parents.length === 2) {
-                    continue;
-                }
-                commits.push([commit.sha, commit.commit.message]);
-            }
-            page++;
-        }
-        const ret = [];
-        for (const [ref, message] of commits) {
-            const files = [];
-            let page = 1;
-            let moreFiles = true;
-            while (moreFiles) {
-                // the "Get Commit" resource is a bit of an outlier in terms of GitHub's
-                // normal pagination: https://git.io/JmVZq
-                // The behavior is to return an object representing the commit, a
-                // property of which is an array of files. GitHub will return as many
-                // associated files as there are, up to a limit of 300, on the initial
-                // request. If there are more associated files, it will send "Links"
-                // headers to get the next set. There is a total limit of 3000
-                // files returned per commit.
-                // In practice, the links headers are just the same resourceID plus a
-                // "page=N" query parameter with "page=1" being the initial set.
-                //
-                // TODO: it is more robust to follow the link.next headers (in case
-                // GitHub ever changes the pattern) OR use ocktokit pagination for this
-                // endpoint when https://git.io/JmVll is addressed.
-                const response = (await this.request('GET /repos/{owner}/{repo}/commits/{ref}{?page}', { owner: this.owner, repo: this.repo, ref, page }));
-                const commitFiles = response.data.files;
-                if (!commitFiles) {
-                    moreFiles = false;
-                    break;
-                }
-                files.push(...commitFiles.map(f => { var _a; return (_a = f.filename) !== null && _a !== void 0 ? _a : ''; }));
-                // < 300 files means we hit the end
-                // page === 10 means we're at 3000 and that's the limit GH is gonna
-                // cough up anyway.
-                if (commitFiles.length < 300 || page === 10) {
-                    moreFiles = false;
-                    break;
-                }
-                page++;
-            }
-            ret.push({ sha: ref, message, files });
-        }
-        return ret;
-    }
-    // Commit.files only for commits from PRs.
+    /**
+     * Returns the list of commits since a given SHA on the target branch
+     *
+     * Note: Commit.files only for commits from PRs.
+     *
+     * @param {string|undefined} sha SHA of the base commit or undefined for all commits
+     * @param {number} perPage Pagination option. Defaults to 100
+     * @param {boolean} labels Whether or not to return labels. Defaults to false
+     * @param {string|null} path If provided, limit to commits that affect the provided path
+     * @returns {Commit[]} List of commits
+     * @throws {GitHubAPIError} on an API error
+     */
     async commitsSinceSha(sha, perPage = 100, labels = false, path = null) {
         const commits = [];
         const method = labels ? 'commitsWithLabels' : 'commitsWithFiles';
@@ -60263,6 +61057,15 @@ class GitHub {
         }, 3);
         return graphql_to_commits_1.graphqlToCommits(this, response);
     }
+    /**
+     * Return the pull request files
+     *
+     * @param {number} num Pull request number
+     * @param {string} cursor Pagination cursor
+     * @param {number} maxFilesChanged Number of files to return per page
+     * @return {PREdge}
+     * @throws {GitHubAPIError} on an API error
+     */
     async pullRequestFiles(num, cursor, maxFilesChanged = 100) {
         // Used to handle the edge-case in which a PR has more than 100
         // modified files attached to it.
@@ -60293,20 +61096,13 @@ class GitHub {
         });
         return { node: response.repository.pullRequest };
     }
-    async getTagSha(name) {
-        const refResponse = (await this.request('GET /repos/:owner/:repo/git/refs/tags/:name', {
-            owner: this.owner,
-            repo: this.repo,
-            name,
-        }));
-        return refResponse.data.object.sha;
-    }
     /**
      * Find the "last" merged PR given a headBranch. "last" here means
      * the most recently created. Includes all associated files.
      *
      * @param {string} headBranch - e.g. "release-please/branches/main"
      * @returns {MergedGitHubPRWithFiles} - if found, otherwise undefined.
+     * @throws {GitHubAPIError} on an API error
      */
     async lastMergedPRByHeadBranch(headBranch) {
         const baseBranch = await this.getDefaultBranch();
@@ -60370,11 +61166,19 @@ class GitHub {
         }
         return result;
     }
-    // If we can't find a release branch (a common cause of this, as an example
-    // is that we might be dealing with the first relese), use the last semver
-    // tag that's available on the repository:
-    // TODO: it would be good to not need to maintain this logic, and the
-    // logic that introspects version based on the prior release PR.
+    /**
+     * If we can't find a release branch (a common cause of this, as an example
+     * is that we might be dealing with the first relese), use the last semver
+     * tag that's available on the repository:
+     *
+     * TODO: it would be good to not need to maintain this logic, and the
+     * logic that introspects version based on the prior release PR.
+     *
+     * @param {string} prefix If provided, filter the tags with this prefix
+     * @param {boolean} preRelease Whether or not to include pre-releases
+     * @return {GitHubTag|undefined}
+     * @throws {GitHubAPIError} on an API error   *
+     */
     async latestTagFallback(prefix, preRelease = false) {
         const tags = await this.allTags(prefix);
         const versions = Object.keys(tags).filter(t => {
@@ -60403,47 +61207,6 @@ class GitHub {
             sha: tags[versions[0]].sha,
             version: tags[versions[0]].version,
         };
-    }
-    async allTags(prefix) {
-        // If we've fallen back to using allTags, support "-", "@", and "/" as a
-        // suffix separating the library name from the version #. This allows
-        // a repository to be seamlessly be migrated from a tool like lerna:
-        const prefixes = [];
-        if (prefix) {
-            prefix = prefix.substring(0, prefix.length - 1);
-            for (const suffix of ['-', '@', '/']) {
-                prefixes.push(`${prefix}${suffix}`);
-            }
-        }
-        const tags = {};
-        for await (const response of this.octokit.paginate.iterator(this.decoratePaginateOpts({
-            method: 'GET',
-            url: `/repos/${this.owner}/${this.repo}/tags?per_page=100`,
-        }))) {
-            response.data.forEach(data => {
-                // For monorepos, a prefix can be provided, indicating that only tags
-                // matching the prefix should be returned:
-                if (!isReposListResponse(data))
-                    return;
-                let version = data.name;
-                if (prefix) {
-                    let match = false;
-                    for (prefix of prefixes) {
-                        if (data.name.startsWith(prefix)) {
-                            version = data.name.replace(prefix, '');
-                            match = true;
-                        }
-                    }
-                    if (!match)
-                        return;
-                }
-                if (semver.valid(version)) {
-                    version = semver.valid(version);
-                    tags[version] = { sha: data.commit.sha, name: data.name, version };
-                }
-            });
-        }
-        return tags;
     }
     async mergeCommitsGraphQL(cursor) {
         const targetBranch = await this.getDefaultBranch();
@@ -60491,6 +61254,11 @@ class GitHub {
             num: 25,
             targetBranch,
         });
+        // if the branch does exist, return null
+        if (!response.repository.ref) {
+            logger_1.logger.warn(`Could not find commits for branch ${targetBranch} - it likely does not exist.`);
+            return null;
+        }
         const history = response.repository.ref.target.history;
         const commits = (history.nodes || []);
         return {
@@ -60533,6 +61301,7 @@ class GitHub {
      * @param {number} maxResults - Limit the number of results searched.
      *   Defaults to unlimited.
      * @returns {CommitWithPullRequest}
+     * @throws {GitHubAPIError} on an API error
      */
     async findMergeCommit(filter, maxResults = Number.MAX_SAFE_INTEGER) {
         const generator = this.mergeCommitIterator(maxResults);
@@ -60549,12 +61318,17 @@ class GitHub {
      * @param maxResults {number} maxResults - Limit the number of results searched.
      *   Defaults to unlimited.
      * @yields {CommitWithPullRequest}
+     * @throws {GitHubAPIError} on an API error
      */
     async *mergeCommitIterator(maxResults = Number.MAX_SAFE_INTEGER) {
         let cursor = undefined;
         let results = 0;
         while (results < maxResults) {
             const response = await this.mergeCommitsGraphQL(cursor);
+            // no response usually means that the branch can't be found
+            if (!response) {
+                break;
+            }
             for (let i = 0; i < response.data.length; i++) {
                 results += 1;
                 yield response.data[i];
@@ -60574,6 +61348,7 @@ class GitHub {
      * @param {number} maxResults - Limit the number of results searched.
      *   Defaults to unlimited.
      * @returns {Commit[]} - List of commits to current branch
+     * @throws {GitHubAPIError} on an API error
      */
     async commitsSince(filter, maxResults = Number.MAX_SAFE_INTEGER) {
         const commits = [];
@@ -60587,53 +61362,6 @@ class GitHub {
         return commits;
     }
     /**
-     * Return a list of merged pull requests. The list is not guaranteed to be sorted
-     * by merged_at, but is generally most recent first.
-     *
-     * @param {string} targetBranch - Base branch of the pull request. Defaults to
-     *   the configured default branch.
-     * @param {number} page - Page of results. Defaults to 1.
-     * @param {number} perPage - Number of results per page. Defaults to 100.
-     * @returns {MergedGitHubPR[]} - List of merged pull requests
-     */
-    async findMergedPullRequests(targetBranch, page = 1, perPage = 100) {
-        if (!targetBranch) {
-            targetBranch = await this.getDefaultBranch();
-        }
-        // TODO: is sorting by updated better?
-        const pullsResponse = (await this.request(`GET /repos/:owner/:repo/pulls?state=closed&per_page=${perPage}&page=${page}&base=${targetBranch}&sort=created&direction=desc`, {
-            owner: this.owner,
-            repo: this.repo,
-        }));
-        // TODO: distinguish between no more pages and a full page of
-        // closed, non-merged pull requests. At page size of 100, this unlikely
-        // to matter
-        if (!pullsResponse.data) {
-            return [];
-        }
-        return (pullsResponse.data
-            // only return merged pull requests
-            .filter(pull => {
-            return !!pull.merged_at;
-        })
-            .map(pull => {
-            const labels = pull.labels
-                ? pull.labels.map(l => {
-                    return l.name + '';
-                })
-                : [];
-            return {
-                sha: pull.merge_commit_sha,
-                number: pull.number,
-                baseRefName: pull.base.ref,
-                headRefName: pull.head.ref,
-                labels,
-                title: pull.title,
-                body: pull.body + '',
-            };
-        }));
-    }
-    /**
      * Helper to find the first merged pull request that matches the
      * given criteria. The helper will paginate over all pull requests
      * merged into the specified target branch.
@@ -60643,6 +61371,7 @@ class GitHub {
      *   returns whether a pull request matches certain criteria
      * @returns {MergedGitHubPR | undefined} - Returns the first matching
      *   pull request, or `undefined` if no matching pull request found.
+     * @throws {GitHubAPIError} on an API error
      */
     async findMergedPullRequest(targetBranch, filter) {
         let page = 1;
@@ -60657,10 +61386,11 @@ class GitHub {
         }
         return undefined;
     }
-    // The default matcher will rule out pre-releases.
     /**
      * Find the last merged pull request that targeted the default
      * branch and looks like a release PR.
+     *
+     * Note: The default matcher will rule out pre-releases.
      *
      * @param {string[]} labels - If provided, ensure that the pull
      *   request has all of the specified labels
@@ -60671,6 +61401,7 @@ class GitHub {
      * @param {number} maxResults - Limit the number of results searched.
      *   Defaults to unlimited.
      * @returns {MergedGitHubPR|undefined}
+     * @throws {GitHubAPIError} on an API error
      */
     async findMergedReleasePR(labels, branchPrefix = undefined, preRelease = true, maxResults = Number.MAX_SAFE_INTEGER) {
         branchPrefix = (branchPrefix === null || branchPrefix === void 0 ? void 0 : branchPrefix.endsWith('-')) ? branchPrefix.replace(/-$/, '')
@@ -60720,6 +61451,14 @@ class GitHub {
         });
         return hasAll;
     }
+    /**
+     * Find open pull requests with matching labels.
+     *
+     * @param {string[]} labels List of labels to match
+     * @param {number} perPage Optional. Defaults to 100
+     * @return {PullsListResponseItems} Pull requests
+     * @throws {GitHubAPIError} on an API error
+     */
     async findOpenReleasePRs(labels, perPage = 100) {
         const baseLabel = await this.getBaseLabel();
         const openReleasePRs = [];
@@ -60747,11 +61486,19 @@ class GitHub {
         }
         return openReleasePRs;
     }
+    /**
+     * Add labels to an issue or pull request
+     *
+     * @param {string[]} labels List of labels to add
+     * @param {number} pr Issue or pull request number
+     * @return {boolean} Whether or not the labels were added
+     * @throws {GitHubAPIError} on an API error
+     */
     async addLabels(labels, pr) {
         // If the PR is being created from a fork, it will not have permission
         // to add and remove labels from the PR:
         if (this.fork) {
-            logger_1.logger.error('release labels were not added, due to PR being created from fork');
+            logger_1.logger.warn('release labels were not added, due to PR being created from fork');
             return false;
         }
         logger_1.logger.info(`adding label ${chalk.green(labels.join(','))} to https://github.com/${this.owner}/${this.repo}/pull/${pr}`);
@@ -60763,83 +61510,14 @@ class GitHub {
         });
         return true;
     }
-    async findExistingReleaseIssue(title, labels) {
-        try {
-            for await (const response of this.octokit.paginate.iterator(this.decoratePaginateOpts({
-                method: 'GET',
-                url: `/repos/${this.owner}/${this.repo}/issues?labels=${labels.join(',')}`,
-                per_page: 100,
-            }))) {
-                for (let i = 0; response.data[i] !== undefined; i++) {
-                    const issue = response.data[i];
-                    if (issue.title.indexOf(title) !== -1 && issue.state === 'open') {
-                        return issue;
-                    }
-                }
-            }
-        }
-        catch (err) {
-            if (err.status === 404) {
-                // the most likely cause of a 404 during this step is actually
-                // that the user does not have access to the repo:
-                throw new AuthError();
-            }
-            else {
-                throw err;
-            }
-        }
-        return undefined;
-    }
-    async openPR(options) {
-        var _a;
-        const defaultBranch = await this.getDefaultBranch();
-        // check if there's an existing PR, so that we can opt to update it
-        // rather than creating a new PR.
-        const refName = `refs/heads/${options.branch}`;
-        let openReleasePR;
-        const releasePRCandidates = await this.findOpenReleasePRs(options.labels);
-        for (const releasePR of releasePRCandidates) {
-            if (refName && refName.includes(releasePR.head.ref)) {
-                openReleasePR = releasePR;
-                break;
-            }
-        }
-        // Short-circuit if there have been no changes to the pull-request body.
-        if (openReleasePR && openReleasePR.body === options.body) {
-            logger_1.logger.error(`PR https://github.com/${this.owner}/${this.repo}/pull/${openReleasePR.number} remained the same`);
-            return undefined;
-        }
-        //  Update the files for the release if not already supplied
-        const changes = (_a = options.changes) !== null && _a !== void 0 ? _a : (await this.getChangeSet(options.updates, defaultBranch));
-        const prNumber = await code_suggester_1.createPullRequest(this.octokit, changes, {
-            upstreamOwner: this.owner,
-            upstreamRepo: this.repo,
-            title: options.title,
-            branch: options.branch,
-            description: options.body,
-            primary: defaultBranch,
-            force: true,
-            fork: this.fork,
-            message: options.title,
-            logger: logger_1.logger,
-        });
-        // If a release PR was already open, update the title and body:
-        if (openReleasePR) {
-            logger_1.logger.info(`update pull-request #${openReleasePR.number}: ${chalk.yellow(options.title)}`);
-            await this.request('PATCH /repos/:owner/:repo/pulls/:pull_number', {
-                pull_number: openReleasePR.number,
-                owner: this.owner,
-                repo: this.repo,
-                title: options.title,
-                body: options.body,
-                state: 'open',
-            });
-            return openReleasePR.number;
-        }
-        else {
-            return prNumber;
-        }
-    }
+    /**
+     * Given a set of proposed updates, build a changeset to suggest.
+     *
+     * @param {Update[]} updates The proposed updates
+     * @param {string} defaultBranch The target branch
+     * @return {Changes} The changeset to suggest.
+     * @throws {GitHubAPIError} on an API error
+     */
     async getChangeSet(updates, defaultBranch) {
         const changes = new Map();
         for (const update of updates) {
@@ -60861,7 +61539,7 @@ class GitHub {
                 // if the file is missing and create = false, just continue
                 // to the next update, otherwise create the file.
                 if (!update.create) {
-                    logger_1.logger.error(`file ${chalk.green(update.path)} did not exist`);
+                    logger_1.logger.warn(`file ${chalk.green(update.path)} did not exist`);
                     continue;
                 }
             }
@@ -60888,42 +61566,13 @@ class GitHub {
      * to the repository's default/primary branch.
      *
      * @returns {string}
+     * @throws {GitHubAPIError} on an API error
      */
     async getDefaultBranch() {
         if (!this.defaultBranch) {
             this.defaultBranch = await this.getRepositoryDefaultBranch();
         }
         return this.defaultBranch;
-    }
-    /**
-     * Returns the repository's default/primary branch.
-     *
-     * @returns {string}
-     */
-    async getRepositoryDefaultBranch() {
-        if (this.repositoryDefaultBranch) {
-            return this.repositoryDefaultBranch;
-        }
-        const { data } = await this.octokit.repos.get({
-            repo: this.repo,
-            owner: this.owner,
-            headers: {
-                Authorization: `token ${this.token}`,
-            },
-        });
-        this.repositoryDefaultBranch = data.default_branch;
-        return this.repositoryDefaultBranch;
-    }
-    async closePR(prNumber) {
-        if (this.fork)
-            return false;
-        await this.request('PATCH /repos/:owner/:repo/pulls/:pull_number', {
-            owner: this.owner,
-            repo: this.repo,
-            pull_number: prNumber,
-            state: 'closed',
-        });
-        return true;
     }
     // Takes a potentially unqualified branch name, and turns it
     // into a fully qualified ref.
@@ -60936,21 +61585,14 @@ class GitHub {
         }
         return final;
     }
-    async getFileContentsWithSimpleAPI(path, ref, isBranch = true) {
-        ref = isBranch ? GitHub.fullyQualifyBranchRef(ref) : ref;
-        const options = {
-            owner: this.owner,
-            repo: this.repo,
-            path,
-            ref,
-        };
-        const resp = await this.request('GET /repos/:owner/:repo/contents/:path', options);
-        return {
-            parsedContent: Buffer.from(resp.data.content, 'base64').toString('utf8'),
-            content: resp.data.content,
-            sha: resp.data.sha,
-        };
-    }
+    /**
+     * Fetch the contents of a file using the Git data API
+     *
+     * @param {string} path The path to the file in the repository
+     * @param {string} branch The branch to fetch from
+     * @returns {GitHubFileContents}
+     * @throws {GitHubAPIError} on other API errors
+     */
     async getFileContentsWithDataAPI(path, branch) {
         const options = {
             owner: this.owner,
@@ -60973,47 +61615,15 @@ class GitHub {
             sha: resp.data.sha,
         };
     }
+    /**
+     * Fetch the contents of a file from the configured branch
+     *
+     * @param {string} path The path to the file in the repository
+     * @returns {GitHubFileContents}
+     * @throws {GitHubAPIError} on other API errors
+     */
     async getFileContents(path) {
         return await this.getFileContentsOnBranch(path, await this.getDefaultBranch());
-    }
-    async getFileContentsOnBranch(path, branch) {
-        try {
-            return await this.getFileContentsWithSimpleAPI(path, branch);
-        }
-        catch (err) {
-            if (err.status === 403) {
-                return await this.getFileContentsWithDataAPI(path, branch);
-            }
-            throw err;
-        }
-    }
-    async createRelease(packageName, tagName, sha, releaseNotes, draft) {
-        logger_1.logger.info(`creating release ${tagName}`);
-        const name = packageName ? `${packageName} ${tagName}` : tagName;
-        return (await this.request('POST /repos/:owner/:repo/releases', {
-            owner: this.owner,
-            repo: this.repo,
-            tag_name: tagName,
-            target_commitish: sha,
-            body: releaseNotes,
-            name,
-            draft: draft,
-        })).data;
-    }
-    async removeLabels(labels, prNumber) {
-        if (this.fork)
-            return false;
-        for (let i = 0, label; i < labels.length; i++) {
-            label = labels[i];
-            logger_1.logger.info(`removing label ${chalk.green(label)} from ${chalk.green('' + prNumber)}`);
-            await this.request('DELETE /repos/:owner/:repo/issues/:issue_number/labels/:name', {
-                owner: this.owner,
-                repo: this.repo,
-                issue_number: prNumber,
-                name: label,
-            });
-        }
-        return true;
     }
     normalizePrefix(prefix) {
         return prefix.replace(/^[/\\]/, '').replace(/[/\\]$/, '');
@@ -61025,46 +61635,9 @@ class GitHub {
      * the provided prefix.
      *
      * @param filename The name of the file to find
-     * @param ref Git reference to search files in
      * @param prefix Optional path prefix used to filter results
-     */
-    async findFilesByFilenameAndRef(filename, ref, prefix) {
-        if (prefix) {
-            prefix = this.normalizePrefix(prefix);
-        }
-        const response = await this.octokit.git.getTree({
-            owner: this.owner,
-            repo: this.repo,
-            tree_sha: ref,
-            recursive: 'true',
-        });
-        return response.data.tree
-            .filter(file => {
-            const path = file.path;
-            return (path &&
-                // match the filename
-                path.endsWith(filename) &&
-                // match the prefix if provided
-                (!prefix || path.startsWith(prefix)));
-        })
-            .map(file => {
-            let path = file.path;
-            // strip the prefix if provided
-            if (prefix) {
-                const pfix = new RegExp(`^${prefix}[/\\\\]`);
-                path = path.replace(pfix, '');
-            }
-            return path;
-        });
-    }
-    /**
-     * Returns a list of paths to all files with a given name.
-     *
-     * If a prefix is specified, only return paths that match
-     * the provided prefix.
-     *
-     * @param filename The name of the file to find
-     * @param prefix Optional path prefix used to filter results
+     * @returns {string[]} List of file paths
+     * @throws {GitHubAPIError} on an API error
      */
     async findFilesByFilename(filename, prefix) {
         return this.findFilesByFilenameAndRef(filename, await this.getDefaultBranch(), prefix);
@@ -61078,81 +61651,44 @@ class GitHub {
      *
      * @param extension The file extension used to filter results.
      *   Example: `js`, `java`
-     * @param ref Git reference to search files in
      * @param prefix Optional path prefix used to filter results
-     */
-    async findFilesByExtensionAndRef(extension, ref, prefix) {
-        if (prefix) {
-            prefix = this.normalizePrefix(prefix);
-        }
-        const response = await this.octokit.git.getTree({
-            owner: this.owner,
-            repo: this.repo,
-            tree_sha: ref,
-            recursive: 'true',
-        });
-        return response.data.tree
-            .filter(file => {
-            const path = file.path;
-            return (path &&
-                // match the file extension
-                path.endsWith(`.${extension}`) &&
-                // match the prefix if provided
-                (!prefix || path.startsWith(prefix)));
-        })
-            .map(file => {
-            let path = file.path;
-            // strip the prefix if provided
-            if (prefix) {
-                const pfix = new RegExp(`^${prefix}[/\\\\]`);
-                path = path.replace(pfix, '');
-            }
-            return path;
-        });
-    }
-    /**
-     * Returns a list of paths to all files with a given file
-     * extension.
-     *
-     * If a prefix is specified, only return paths that match
-     * the provided prefix.
-     *
-     * @param extension The file extension used to filter results.
-     *   Example: `js`, `java`
-     * @param prefix Optional path prefix used to filter results
+     * @returns {string[]} List of file paths
+     * @throws {GitHubAPIError} on an API error
      */
     async findFilesByExtension(extension, prefix) {
         return this.findFilesByExtensionAndRef(extension, await this.getDefaultBranch(), prefix);
     }
-    /**
-     * Makes a comment on a issue/pull request.
-     *
-     * @param {string} comment - The body of the comment to post.
-     * @param {number} number - The issue or pull request number.
-     */
-    async commentOnIssue(comment, number) {
-        logger_1.logger.info(`adding comment to https://github.com/${this.owner}/${this.repo}/issue/${number}`);
-        return (await this.request('POST /repos/:owner/:repo/issues/:issue_number/comments', {
-            owner: this.owner,
-            repo: this.repo,
-            issue_number: number,
-            body: comment,
-        })).data;
-    }
 }
 exports.GitHub = GitHub;
-class AuthError extends Error {
-    constructor() {
-        super('unauthorized');
-        this.status = 401;
-    }
-}
+/**
+ * Wrap an async method with error handling
+ *
+ * @param fn Async function that can throw Errors
+ * @param errorHandler An optional error handler for rethrowing custom exceptions
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const wrapAsync = (fn, errorHandler) => {
+    return async (...args) => {
+        try {
+            return await fn(...args);
+        }
+        catch (e) {
+            if (errorHandler) {
+                errorHandler(e);
+            }
+            if (e instanceof request_error_1.RequestError) {
+                throw new errors_1.GitHubAPIError(e);
+            }
+            throw e;
+        }
+    };
+};
 //# sourceMappingURL=github.js.map
 
 /***/ }),
 
 /***/ 92802:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
@@ -61171,6 +61707,7 @@ class AuthError extends Error {
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.graphqlToCommits = void 0;
+const logger_1 = __nccwpck_require__(68809);
 const CONVENTIONAL_COMMIT_REGEX = /^[\w]+(\(\w+\))?!?: /;
 async function graphqlToCommits(github, response) {
     const commitHistory = response.repository.ref.target.history;
@@ -61226,7 +61763,7 @@ async function graphqlToCommit(github, commitEdge, observedSHAs) {
                 // TODO: figure out why prEdge.node.number sometimes links to
                 // data in GitHub that no longer exists, this would only cause
                 // issues for mono-repos that use commit-split.
-                console.warn(err);
+                logger_1.logger.warn(err);
                 break;
             }
             continue;
@@ -61290,6 +61827,7 @@ function prefixFromLabel(labels) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 var release_pr_1 = __nccwpck_require__(86786);
 Object.defineProperty(exports, "ReleasePR", ({ enumerable: true, get: function () { return release_pr_1.ReleasePR; } }));
+exports.Errors = __nccwpck_require__(93637);
 var factory_1 = __nccwpck_require__(75695);
 Object.defineProperty(exports, "factory", ({ enumerable: true, get: function () { return factory_1.factory; } }));
 var releasers_1 = __nccwpck_require__(14606);
@@ -61575,6 +62113,7 @@ class Manifest {
         const releaserClass = _1.factory.releasePRClass(releaseType);
         const releasePR = new releaserClass({
             github: this.gh,
+            skipDependencyUpdates: true,
             ...releaserOptions,
         });
         return [releasePR, draft];
@@ -61841,6 +62380,395 @@ exports.Manifest = Manifest;
 
 /***/ }),
 
+/***/ 77430:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.postOrder = void 0;
+const semver = __nccwpck_require__(11383);
+const conventional_commits_1 = __nccwpck_require__(34771);
+const changelog_1 = __nccwpck_require__(3325);
+const cargo_lock_1 = __nccwpck_require__(68875);
+const cargo_toml_1 = __nccwpck_require__(90420);
+const common_1 = __nccwpck_require__(11659);
+const checkpoint_1 = __nccwpck_require__(25279);
+const plugin_1 = __nccwpck_require__(33574);
+class CargoWorkspaceDependencyUpdates extends plugin_1.ManifestPlugin {
+    async getWorkspaceManifest() {
+        const content = await this.gh.getFileContents('Cargo.toml');
+        return common_1.parseCargoManifest(content.parsedContent);
+    }
+    async run(newManifestVersions, pkgsWithPRData) {
+        const workspaceManifest = await this.getWorkspaceManifest();
+        if (!workspaceManifest.workspace) {
+            throw new Error("cargo-workspace plugin used, but top-level Cargo.toml isn't a cargo workspace");
+        }
+        if (!workspaceManifest.workspace.members) {
+            throw new Error('cargo-workspace plugin used, but top-level Cargo.toml has no members');
+        }
+        const crateInfos = await this.getAllCrateInfos(workspaceManifest.workspace.members, pkgsWithPRData);
+        const crateInfoMap = new Map(crateInfos.map(crate => [crate.name, crate]));
+        const crateGraph = buildCrateGraph(crateInfoMap);
+        const order = postOrder(crateGraph);
+        const orderedCrates = order.map(name => crateInfoMap.get(name));
+        const versions = new Map();
+        for (const data of pkgsWithPRData) {
+            if (data.config.releaseType !== 'rust' || data.config.path === '.') {
+                continue;
+            }
+            versions.set(data.config.packageName, data.prData.version);
+        }
+        // Try to upgrade /all/ packages, even those release-please did not bump
+        for (const crate of orderedCrates) {
+            // This should update all the dependencies that have been bumped by release-please
+            const dependencyUpdates = new cargo_toml_1.CargoToml({
+                path: crate.manifestPath,
+                changelogEntry: 'updating dependencies',
+                version: 'unused',
+                versions,
+                packageName: 'unused',
+            });
+            let newContent = dependencyUpdates.updateContent(crate.manifestContent);
+            if (newContent === crate.manifestContent) {
+                // guess that package didn't depend on any of the bumped packages
+                continue;
+            }
+            let updatedManifest = {
+                content: newContent,
+                mode: '100644',
+            };
+            if (crate.manifestPkg) {
+                // package was already bumped by release-please, just update the change
+                // to also include dependency updates.
+                crate.manifestPkg.prData.changes.set(crate.manifestPath, updatedManifest);
+                await this.setChangelogEntry(crate.manifestPkg.config, crate.manifestPkg.prData.changes, crate.manifestContent, updatedManifest.content // bug if undefined
+                );
+            }
+            else {
+                // package was not bumped by release-please, but let's bump it ourselves,
+                // because one of its dependencies was upgraded.
+                let version;
+                const patch = semver.inc(crate.version, 'patch');
+                if (patch === null) {
+                    this.log(`Don't know how to patch ${crate.path}'s version(${crate.version})`, checkpoint_1.CheckpointType.Failure);
+                    version = crate.version;
+                }
+                else {
+                    version = patch;
+                }
+                // we need to reprocess its Cargo manifest to bump its own version
+                versions.set(crate.name, version);
+                newContent = dependencyUpdates.updateContent(crate.manifestContent);
+                updatedManifest = {
+                    content: newContent,
+                    mode: '100644',
+                };
+                const changes = new Map([[crate.manifestPath, updatedManifest]]);
+                newManifestVersions.set(crate.path, version);
+                const manifestPkg = {
+                    config: {
+                        releaseType: 'rust',
+                        packageName: crate.name,
+                        path: crate.path,
+                    },
+                    prData: {
+                        changes,
+                        version,
+                    },
+                };
+                pkgsWithPRData.push(manifestPkg);
+                await this.setChangelogEntry(manifestPkg.config, manifestPkg.prData.changes, crate.manifestContent, updatedManifest.content // bug if undefined
+                );
+            }
+        }
+        // Upgrade package.lock
+        {
+            const lockfilePath = 'Cargo.lock';
+            const dependencyUpdates = new cargo_lock_1.CargoLock({
+                path: lockfilePath,
+                changelogEntry: 'updating cargo lockfile',
+                version: 'unused',
+                versions,
+                packageName: 'unused',
+            });
+            const oldContent = (await this.gh.getFileContents(lockfilePath))
+                .parsedContent;
+            const newContent = dependencyUpdates.updateContent(oldContent);
+            if (newContent !== oldContent) {
+                const changes = new Map([
+                    [
+                        lockfilePath,
+                        {
+                            content: newContent,
+                            mode: '100644',
+                        },
+                    ],
+                ]);
+                pkgsWithPRData.push({
+                    config: {
+                        path: '.',
+                        packageName: 'cargo workspace',
+                        releaseType: 'rust',
+                    },
+                    prData: {
+                        changes,
+                        version: 'lockfile maintenance',
+                    },
+                });
+            }
+        }
+        return [newManifestVersions, pkgsWithPRData];
+    }
+    async setChangelogEntry(config, changes, originalManifestContent, updatedManifestContent) {
+        var _a, _b, _c, _d, _e, _f;
+        const originalManifest = common_1.parseCargoManifest(originalManifestContent);
+        const updatedManifest = common_1.parseCargoManifest(updatedManifestContent);
+        const depUpdateNotes = this.getChangelogDepsNotes(originalManifest, updatedManifest);
+        if (!depUpdateNotes) {
+            return;
+        }
+        const cc = new conventional_commits_1.ConventionalCommits({
+            changelogSections: [{ type: 'deps', section: 'Dependencies' }],
+            commits: [
+                {
+                    sha: '',
+                    message: 'deps: The following workspace dependencies were updated',
+                    files: [],
+                },
+            ],
+            owner: this.gh.owner,
+            repository: this.gh.repo,
+            bumpMinorPreMajor: config.bumpMinorPreMajor,
+        });
+        let tagPrefix = config.packageName;
+        tagPrefix += '-v';
+        const originalVersion = (_b = (_a = originalManifest.package) === null || _a === void 0 ? void 0 : _a.version) !== null && _b !== void 0 ? _b : '?';
+        const updatedVersion = (_d = (_c = updatedManifest.package) === null || _c === void 0 ? void 0 : _c.version) !== null && _d !== void 0 ? _d : '?';
+        let changelogEntry = await cc.generateChangelogEntry({
+            version: updatedVersion,
+            currentTag: tagPrefix + updatedVersion,
+            previousTag: tagPrefix + originalVersion,
+        });
+        changelogEntry += depUpdateNotes;
+        let updatedChangelog;
+        let changelogPath = (_e = config.changelogPath) !== null && _e !== void 0 ? _e : 'CHANGELOG.md';
+        if (config.path !== '.') {
+            changelogPath = `${config.path}/${changelogPath}`;
+        }
+        const exChangelog = (_f = changes.get(changelogPath)) === null || _f === void 0 ? void 0 : _f.content;
+        if (exChangelog) {
+            updatedChangelog = this.updateChangelogEntry(exChangelog, changelogEntry, updatedManifest);
+        }
+        else {
+            updatedChangelog = await this.newChangelogEntry(changelogEntry, changelogPath, updatedManifest);
+        }
+        if (updatedChangelog) {
+            changes.set(changelogPath, {
+                content: updatedChangelog,
+                mode: '100644',
+            });
+        }
+    }
+    getChangelogDepsNotes(originalManifest, updatedManifest) {
+        var _a;
+        let depUpdateNotes = '';
+        const depTypes = [
+            'dependencies',
+            'dev-dependencies',
+            'build-dependencies',
+        ];
+        const depVer = (s) => {
+            if (s === undefined) {
+                return undefined;
+            }
+            if (typeof s === 'string') {
+                return s;
+            }
+            else {
+                return s.version;
+            }
+        };
+        const getDepMap = (cargoDeps) => {
+            const result = {};
+            for (const [key, val] of Object.entries(cargoDeps)) {
+                const ver = depVer(val);
+                if (ver) {
+                    result[key] = ver;
+                }
+            }
+            return result;
+        };
+        const updates = new Map();
+        for (const depType of depTypes) {
+            const depUpdates = [];
+            const pkgDepTypes = updatedManifest[depType];
+            if (pkgDepTypes === undefined) {
+                continue;
+            }
+            for (const [depName, currentDepVer] of Object.entries(getDepMap(pkgDepTypes))) {
+                const origDepVer = depVer((_a = originalManifest[depType]) === null || _a === void 0 ? void 0 : _a[depName]);
+                if (currentDepVer !== origDepVer) {
+                    depUpdates.push(`\n    * ${depName} bumped from ${origDepVer} to ${currentDepVer}`);
+                }
+            }
+            if (depUpdates.length > 0) {
+                updates.set(depType, depUpdates);
+            }
+        }
+        for (const [dt, notes] of updates) {
+            depUpdateNotes += `\n  * ${dt}`;
+            for (const note of notes) {
+                depUpdateNotes += note;
+            }
+        }
+        return depUpdateNotes;
+    }
+    updateChangelogEntry(exChangelog, changelogEntry, updatedManifest) {
+        var _a, _b, _c, _d;
+        const pkgVersion = (_b = (_a = updatedManifest.package) === null || _a === void 0 ? void 0 : _a.version) !== null && _b !== void 0 ? _b : '?';
+        const pkgName = (_d = (_c = updatedManifest.package) === null || _c === void 0 ? void 0 : _c.name) !== null && _d !== void 0 ? _d : '?';
+        changelogEntry = changelogEntry.replace(new RegExp(`^###? \\[${pkgVersion}\\].*### Dependencies`, 's'), '### Dependencies');
+        const match = exChangelog.match(new RegExp(`(?<before>^.*?###? \\[${pkgVersion}\\].*?\n)(?<after>###? [0-9[].*)`, 's'));
+        if (!match) {
+            this.log(`Appending update notes to end of changelog for ${pkgName}`, checkpoint_1.CheckpointType.Failure);
+            changelogEntry = `${exChangelog}\n\n\n${changelogEntry}`;
+        }
+        else {
+            const { before, after } = match.groups;
+            changelogEntry = `${before.trim()}\n\n\n${changelogEntry}\n\n${after.trim()}`;
+        }
+        return changelogEntry;
+    }
+    async newChangelogEntry(changelogEntry, changelogPath, updatedManifest) {
+        var _a, _b, _c, _d;
+        let changelog;
+        try {
+            changelog = (await this.gh.getFileContents(changelogPath)).parsedContent;
+        }
+        catch (e) {
+            if (e.status !== 404) {
+                this.log(`Failed to retrieve ${changelogPath}: ${e}`, checkpoint_1.CheckpointType.Failure);
+                return '';
+            }
+            else {
+                this.log(`Creating a new changelog at ${changelogPath}`, checkpoint_1.CheckpointType.Success);
+            }
+        }
+        const changelogUpdater = new changelog_1.Changelog({
+            path: changelogPath,
+            changelogEntry,
+            version: (_b = (_a = updatedManifest.package) === null || _a === void 0 ? void 0 : _a.version) !== null && _b !== void 0 ? _b : '?',
+            packageName: (_d = (_c = updatedManifest.package) === null || _c === void 0 ? void 0 : _c.name) !== null && _d !== void 0 ? _d : '?',
+        });
+        return changelogUpdater.updateContent(changelog);
+    }
+    async getAllCrateInfos(members, pkgsWithPRData) {
+        var _a, _b, _c, _d;
+        const manifests = [];
+        for (const pkgPath of members) {
+            const manifestPath = `${pkgPath}/Cargo.toml`;
+            const manifestPkg = pkgsWithPRData.find(pkg => pkg.config.path === pkgPath);
+            // original contents of the manifest for the target package
+            const manifestContent = (_b = (_a = manifestPkg === null || manifestPkg === void 0 ? void 0 : manifestPkg.prData.changes.get(manifestPath)) === null || _a === void 0 ? void 0 : _a.content) !== null && _b !== void 0 ? _b : (await this.gh.getFileContents(manifestPath)).parsedContent;
+            const manifest = await common_1.parseCargoManifest(manifestContent);
+            const pkgName = (_c = manifest.package) === null || _c === void 0 ? void 0 : _c.name;
+            if (!pkgName) {
+                throw new Error(`package manifest at ${manifestPath} is missing [package.name]`);
+            }
+            const version = (_d = manifest.package) === null || _d === void 0 ? void 0 : _d.version;
+            if (!version) {
+                throw new Error(`package manifest at ${manifestPath} is missing [package.version]`);
+            }
+            manifests.push({
+                path: pkgPath,
+                name: pkgName,
+                version,
+                manifest,
+                manifestContent,
+                manifestPath,
+                manifestPkg,
+            });
+        }
+        return manifests;
+    }
+}
+exports.default = CargoWorkspaceDependencyUpdates;
+function buildCrateGraph(crateInfoMap) {
+    var _a, _b, _c;
+    const graph = new Map();
+    for (const crate of crateInfoMap.values()) {
+        const allDeps = Object.keys({
+            ...((_a = crate.manifest.dependencies) !== null && _a !== void 0 ? _a : {}),
+            ...((_b = crate.manifest['dev-dependencies']) !== null && _b !== void 0 ? _b : {}),
+            ...((_c = crate.manifest['build-dependencies']) !== null && _c !== void 0 ? _c : {}),
+        });
+        console.log({ allDeps });
+        const workspaceDeps = allDeps.filter(dep => crateInfoMap.has(dep));
+        graph.set(crate.name, {
+            name: crate.name,
+            deps: workspaceDeps,
+        });
+    }
+    return graph;
+}
+/**
+ * Given a list of graph nodes that form a DAG, returns the node names in
+ * post-order (reverse depth-first), suitable for dependency updates and bumping.
+ */
+function postOrder(graph) {
+    const result = [];
+    const resultSet = new Set();
+    // we're iterating the `Map` in insertion order (as per ECMA262), but
+    // that does not reflect any particular traversal of the graph, so we
+    // visit all nodes, opportunistically short-circuiting leafs when we've
+    // already visited them.
+    for (const node of graph.values()) {
+        visitPostOrder(graph, node, result, resultSet, []);
+    }
+    return result;
+}
+exports.postOrder = postOrder;
+function visitPostOrder(graph, node, result, resultSet, path) {
+    if (resultSet.has(node.name)) {
+        return;
+    }
+    if (path.indexOf(node.name) !== -1) {
+        throw new Error(`found cycle in dependency graph: ${path.join(' -> ')} -> ${node.name}`);
+    }
+    {
+        const nextPath = [...path, node.name];
+        for (const depName of node.deps) {
+            const dep = graph.get(depName);
+            if (!dep) {
+                throw new Error(`dependency not found in graph: ${depName}`);
+            }
+            visitPostOrder(graph, dep, result, resultSet, nextPath);
+        }
+    }
+    if (!resultSet.has(node.name)) {
+        resultSet.add(node.name);
+        result.push(node.name);
+    }
+}
+//# sourceMappingURL=cargo-workspace.js.map
+
+/***/ }),
+
 /***/ 66680:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -61862,8 +62790,10 @@ exports.Manifest = Manifest;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getPlugin = void 0;
 const node_workspace_1 = __nccwpck_require__(23256);
+const cargo_workspace_1 = __nccwpck_require__(77430);
 const plugins = {
     'node-workspace': node_workspace_1.default,
+    'cargo-workspace': cargo_workspace_1.default,
 };
 function getPlugin(pluginType, github, config) {
     const plugin = plugins[pluginType];
@@ -61955,8 +62885,11 @@ class NodeWorkspaceDependencyUpdates extends plugin_1.ManifestPlugin {
         // similar to https://git.io/JqUOB
         // `collectPackages` includes "localDependents" of our release-please updated
         // packages as they need to be patch bumped.
+        const isCandidate = (node) => rpUpdatedPkgs.has(node.location);
         const updatesWithDependents = cu.collectPackages(packageGraph, {
-            isCandidate: node => rpUpdatedPkgs.has(node.location),
+            isCandidate,
+            onInclude: name => this.log(`${name} collected for update (dependency-only = ${!isCandidate(packageGraph.get(name))})`, checkpoint_1.CheckpointType.Success),
+            excludeDependents: false,
         });
         // our implementation of producing a Map<pkgName, newVersion> similar to
         // `this.updatesVersions` which is used to set updated package
@@ -61975,17 +62908,36 @@ class NodeWorkspaceDependencyUpdates extends plugin_1.ManifestPlugin {
                 source = constants_1.RELEASE_PLEASE;
             }
             else {
-                // must be a dependent, assume a "patch" bump.
-                const patch = semver.inc(node.version, 'patch');
-                if (patch === null) {
-                    this.log(`Don't know how to patch ${node.name}'s version(${node.version})`, checkpoint_1.CheckpointType.Failure);
-                    invalidVersions.add(node.name);
-                    version = node.version;
-                    source = 'failed to patch bump';
+                // must be a dependent, check for releaseAs config otherwise default
+                // to a patch bump.
+                const pkgConfig = this.config.parsedPackages.find(p => {
+                    const pkgPath = `${p.path}/package.json`;
+                    const match = pkgPath === node.location;
+                    this.log(`Checking node "${node.location}" against parsed package "${pkgPath}"`, match ? checkpoint_1.CheckpointType.Success : checkpoint_1.CheckpointType.Failure);
+                    return match;
+                });
+                if (!pkgConfig) {
+                    this.log(`No pkgConfig found for ${node.location}`, checkpoint_1.CheckpointType.Failure);
+                }
+                else if (!pkgConfig.releaseAs) {
+                    this.log(`No pkgConfig.releaseAs for ${node.location}`, checkpoint_1.CheckpointType.Failure);
+                }
+                if (pkgConfig === null || pkgConfig === void 0 ? void 0 : pkgConfig.releaseAs) {
+                    version = pkgConfig.releaseAs;
+                    source = 'release-as configuration';
                 }
                 else {
-                    version = patch;
-                    source = 'dependency bump';
+                    const patch = semver.inc(node.version, 'patch');
+                    if (patch === null) {
+                        this.log(`Don't know how to patch ${node.name}'s version(${node.version})`, checkpoint_1.CheckpointType.Failure);
+                        invalidVersions.add(node.name);
+                        version = node.version;
+                        source = 'failed to patch bump';
+                    }
+                    else {
+                        version = patch;
+                        source = 'dependency bump';
+                    }
                 }
             }
             this.log(`setting ${node.location} to ${version} from ${source}`, checkpoint_1.CheckpointType.Success);
@@ -62249,7 +63201,7 @@ const changelog_1 = __nccwpck_require__(3325);
 const logger_1 = __nccwpck_require__(68809);
 class ReleasePR {
     constructor(options) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         this.changelogPath = 'CHANGELOG.md';
         this.bumpMinorPreMajor = options.bumpMinorPreMajor || false;
         this.bumpPatchForMinorPreMajor = options.bumpPatchForMinorPreMajor || false;
@@ -62270,6 +63222,7 @@ class ReleasePR {
         this.changelogPath = (_b = options.changelogPath) !== null && _b !== void 0 ? _b : this.changelogPath;
         this.pullRequestTitlePattern = options.pullRequestTitlePattern;
         this.extraFiles = (_c = options.extraFiles) !== null && _c !== void 0 ? _c : [];
+        this.forManifestReleaser = (_d = options.skipDependencyUpdates) !== null && _d !== void 0 ? _d : false;
     }
     // A releaser can override this method to automatically detect the
     // packageName from source code (e.g. package.json "name")
@@ -62304,7 +63257,7 @@ class ReleasePR {
         // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
         // one line is a good indicator that there were no interesting commits.
         if (this.changelogEmpty(changelogEntry)) {
-            logger_1.logger.error(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`);
+            logger_1.logger.warn(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`);
             return undefined;
         }
         const packageName = await this.getPackageName();
@@ -62320,13 +63273,13 @@ class ReleasePR {
     async run() {
         await this.validateConfiguration();
         if (this.snapshot && !this.supportsSnapshots()) {
-            logger_1.logger.error('snapshot releases not supported for this releaser');
+            logger_1.logger.warn('snapshot releases not supported for this releaser');
             return;
         }
         const mergedPR = await this.gh.findMergedReleasePR(this.labels, undefined, true, 100);
         if (mergedPR) {
             // a PR already exists in the autorelease: pending state.
-            logger_1.logger.error(`pull #${mergedPR.number} ${mergedPR.sha} has not yet been released`);
+            logger_1.logger.warn(`pull #${mergedPR.number} ${mergedPR.sha} has not yet been released`);
             return undefined;
         }
         else {
@@ -62368,7 +63321,7 @@ class ReleasePR {
                 if (includePackageName && !pr.title.includes(` ${packageName.name} `)) {
                     continue;
                 }
-                logger_1.logger.error(`closing pull #${pr.number}`);
+                logger_1.logger.info(`closing pull #${pr.number}`);
                 await this.gh.closePR(pr.number);
             }
         }
@@ -62546,13 +63499,13 @@ class ReleasePR {
         await this.validateConfiguration();
         const mergedPR = await this.findMergedRelease();
         if (!mergedPR) {
-            logger_1.logger.error('No merged release PR found');
+            logger_1.logger.warn('No merged release PR found');
             return undefined;
         }
         const branchName = branch_name_1.BranchName.parse(mergedPR.headRefName);
         const version = await this.detectReleaseVersion(mergedPR, branchName);
         if (!version) {
-            logger_1.logger.error('Unable to detect release version');
+            logger_1.logger.warn('Unable to detect release version');
             return undefined;
         }
         return this.buildReleaseForVersion(version, mergedPR);
@@ -62596,6 +63549,21 @@ class ReleasePR {
         return await this.gh.findMergedPullRequest(targetBranch, filter);
     }
     /**
+     * Normalize version parsing when searching for a latest release.
+     *
+     * @param version The raw version string
+     * @param preRelease Whether to allow pre-release versions or not
+     * @returns {string|null} The normalized version string or null if
+     *   we want to disallow this version.
+     */
+    normalizeVersion(version, preRelease = false) {
+        // Consider any version with a '-' as a pre-release version
+        if (!preRelease && version.indexOf('-') >= 0) {
+            return null;
+        }
+        return semver.valid(version);
+    }
+    /**
      * Find the most recent matching release tag on the branch we're
      * configured for.
      *
@@ -62628,13 +63596,8 @@ class ReleasePR {
             if (!version) {
                 continue;
             }
-            // What's left by now should just be the version string.
-            // Check for pre-releases if needed.
-            if (!preRelease && version.indexOf('-') >= 0) {
-                continue;
-            }
             // Make sure we did get a valid semver.
-            const normalizedVersion = semver.valid(version);
+            const normalizedVersion = this.normalizeVersion(version, preRelease);
             if (!normalizedVersion) {
                 continue;
             }
@@ -62757,7 +63720,7 @@ class GoYoshi extends release_pr_1.ReleasePR {
         // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
         // one line is a good indicator that there were no interesting commits.
         if (this.changelogEmpty(changelogEntry)) {
-            logger_1.logger.error(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`);
+            logger_1.logger.warn(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`);
             return undefined;
         }
         const updates = [];
@@ -63152,6 +64115,21 @@ class JavaLTS extends java_yoshi_1.JavaYoshi {
             version,
         };
     }
+    /**
+     * Normalize version parsing when searching for a latest release.
+     *
+     * @param version The raw version string
+     * @param preRelease Whether to allow pre-release versions or not
+     * @returns {string|null} The normalized version string or null if
+     *   we want to disallow this version.
+     */
+    normalizeVersion(version, preRelease = false) {
+        // Consider any version with a '-SNAPSHOT' as a pre-release version
+        if (!preRelease && version.endsWith('-SNAPSHOT')) {
+            return null;
+        }
+        return version;
+    }
 }
 exports.JavaLTS = JavaLTS;
 //# sourceMappingURL=java-lts.js.map
@@ -63223,7 +64201,7 @@ class JavaYoshi extends release_pr_1.ReleasePR {
             this.snapshot = snapshotNeeded;
         }
         else if (!snapshotNeeded) {
-            logger_1.logger.error('release asked for a snapshot, but no snapshot is needed');
+            logger_1.logger.warn('release asked for a snapshot, but no snapshot is needed');
             return undefined;
         }
         if (this.snapshot) {
@@ -63243,7 +64221,7 @@ class JavaYoshi extends release_pr_1.ReleasePR {
                 labels: true,
             });
         if (commits.length === 0) {
-            logger_1.logger.error(`no commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`);
+            logger_1.logger.warn(`no commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`);
             return undefined;
         }
         let prSHA = commits[0].sha;
@@ -63272,7 +64250,7 @@ class JavaYoshi extends release_pr_1.ReleasePR {
         // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
         // one line is a good indicator that there were no interesting commits.
         if (this.changelogEmpty(changelogEntry) && !this.snapshot) {
-            logger_1.logger.error(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`);
+            logger_1.logger.warn(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`);
             return undefined;
         }
         const packageName = await this.getPackageName();
@@ -64100,7 +65078,7 @@ class Python extends release_pr_1.ReleasePR {
             }
         }
         else {
-            logger_1.logger.error(parsedPyProject
+            logger_1.logger.warn(parsedPyProject
                 ? 'invalid pyproject.toml'
                 : `file ${chalk.green('pyproject.toml')} did not exist`);
         }
@@ -64188,7 +65166,7 @@ class RubyYoshi extends release_pr_1.ReleasePR {
             path: packageName.name,
         });
         if (commits.length === 0) {
-            logger_1.logger.error(`no commits found since ${lastReleaseSha}`);
+            logger_1.logger.warn(`no commits found since ${lastReleaseSha}`);
             return undefined;
         }
         else {
@@ -64202,10 +65180,13 @@ class RubyYoshi extends release_pr_1.ReleasePR {
                 mainTemplate: fs_1.readFileSync(__nccwpck_require__.ab + "template.hbs", 'utf8'),
                 changelogSections: CHANGELOG_SECTIONS,
             });
-            const candidate = await this.coerceReleaseCandidate(cc, {
-                version: this.lastPackageVersion,
-                name: this.lastPackageVersion,
-            });
+            const githubTag = this.lastPackageVersion
+                ? {
+                    version: this.lastPackageVersion,
+                    name: this.lastPackageVersion,
+                }
+                : undefined;
+            const candidate = await this.coerceReleaseCandidate(cc, githubTag);
             const changelogEntry = await cc.generateChangelogEntry({
                 version: candidate.version,
                 currentTag: `v${candidate.version}`,
@@ -64215,7 +65196,7 @@ class RubyYoshi extends release_pr_1.ReleasePR {
             // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
             // one line is a good indicator that there were no interesting commits.
             if (this.changelogEmpty(changelogEntry)) {
-                logger_1.logger.error(`no user facing commits found since ${lastReleaseSha ? lastReleaseSha : 'beginning of time'}`);
+                logger_1.logger.warn(`no user facing commits found since ${lastReleaseSha ? lastReleaseSha : 'beginning of time'}`);
                 return undefined;
             }
             const updates = [];
@@ -64369,7 +65350,6 @@ function postProcessCommits(commits) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Rust = void 0;
 const release_pr_1 = __nccwpck_require__(86786);
-const conventional_commits_1 = __nccwpck_require__(34771);
 // Generic
 const changelog_1 = __nccwpck_require__(3325);
 // Cargo.toml support
@@ -64378,48 +65358,24 @@ const cargo_lock_1 = __nccwpck_require__(68875);
 const common_1 = __nccwpck_require__(11659);
 const logger_1 = __nccwpck_require__(68809);
 class Rust extends release_pr_1.ReleasePR {
-    async _run() {
-        const prefix = this.monorepoTags ? `${this.packageName}-` : undefined;
-        const latestTag = await this.latestTag(prefix);
-        const commits = await this.commits({
-            sha: latestTag ? latestTag.sha : undefined,
-            path: this.path,
-        });
-        const cc = new conventional_commits_1.ConventionalCommits({
-            commits,
-            owner: this.gh.owner,
-            repository: this.gh.repo,
-            bumpMinorPreMajor: this.bumpMinorPreMajor,
-            changelogSections: this.changelogSections,
-        });
-        const candidate = await this.coerceReleaseCandidate(cc, latestTag);
-        const changelogEntry = await cc.generateChangelogEntry({
-            version: candidate.version,
-            currentTag: await this.normalizeTagName(candidate.version),
-            previousTag: candidate.previousTag
-                ? await this.normalizeTagName(candidate.previousTag)
-                : undefined,
-        });
-        // don't create a release candidate until user facing changes
-        // (fix, feat, BREAKING CHANGE) have been made; a CHANGELOG that's
-        // one line is a good indicator that there were no interesting commits.
-        if (this.changelogEmpty(changelogEntry)) {
-            logger_1.logger.error(`no user facing commits found since ${latestTag ? latestTag.sha : 'beginning of time'}`);
-            return undefined;
-        }
-        const workspaceManifest = await this.getWorkspaceManifest();
+    async buildUpdates(changelogEntry, candidate, packageName) {
         const updates = [];
         updates.push(new changelog_1.Changelog({
             path: this.addPath(this.changelogPath),
             changelogEntry,
             version: candidate.version,
-            packageName: this.packageName,
+            packageName: packageName.name,
         }));
+        const workspaceManifest = await this.getWorkspaceManifest();
         const manifestPaths = [];
         let lockPath;
+        if (this.forManifestReleaser) {
+            logger_1.logger.info('working for manifest releaser, only touching package, not dependencies');
+        }
         if (workspaceManifest &&
             workspaceManifest.workspace &&
-            workspaceManifest.workspace.members) {
+            workspaceManifest.workspace.members &&
+            !this.forManifestReleaser) {
             const members = workspaceManifest.workspace.members;
             logger_1.logger.info(`found workspace with ${members.length} members, upgrading all`);
             for (const member of members) {
@@ -64434,32 +65390,26 @@ class Rust extends release_pr_1.ReleasePR {
             lockPath = this.addPath('Cargo.lock');
         }
         const versions = new Map();
-        versions.set(this.packageName, candidate.version);
+        versions.set(packageName.name, candidate.version);
         for (const path of manifestPaths) {
             updates.push(new cargo_toml_1.CargoToml({
                 path,
                 changelogEntry,
                 version: 'unused',
                 versions,
-                packageName: this.packageName,
+                packageName: packageName.name,
             }));
         }
-        if (await this.exists(lockPath)) {
+        if ((await this.exists(lockPath)) && !this.forManifestReleaser) {
             updates.push(new cargo_lock_1.CargoLock({
                 path: lockPath,
                 changelogEntry,
                 version: 'unused',
                 versions,
-                packageName: this.packageName,
+                packageName: packageName.name,
             }));
         }
-        return await this.openPR({
-            sha: commits[0].sha,
-            changelogEntry: `${changelogEntry}\n---\n`,
-            updates,
-            version: candidate.version,
-            includePackageName: this.monorepoTags,
-        });
+        return updates;
     }
     async commits(opts) {
         const sha = opts.sha;
@@ -64487,17 +65437,47 @@ class Rust extends release_pr_1.ReleasePR {
             logger_1.logger.info(`found ${commits.length} commits for ${path} since ${sha ? sha : 'beginning of time'}`);
         }
         else {
-            logger_1.logger.error(`no commits found since ${sha}`);
+            logger_1.logger.warn(`no commits found since ${sha}`);
         }
         return commits;
     }
     defaultInitialVersion() {
         return '0.1.0';
     }
+    // Always prefer the Cargo.toml name
+    async getPackageName() {
+        var _a, _b;
+        if (this._packageName === undefined) {
+            const packageManifest = await this.getPackageManifest();
+            this.packageName = this._packageName = (_b = (_a = packageManifest === null || packageManifest === void 0 ? void 0 : packageManifest.package) === null || _a === void 0 ? void 0 : _a.name) !== null && _b !== void 0 ? _b : this.packageName;
+        }
+        return {
+            name: this.packageName,
+            getComponent: () => this.packageName,
+        };
+    }
+    /**
+     * @returns the package's manifest, ie. `crates/foobar/Cargo.toml`
+     */
+    async getPackageManifest() {
+        if (this.packageManifest === undefined) {
+            this.packageManifest = await this.getManifest(this.addPath('Cargo.toml'));
+        }
+        return this.packageManifest;
+    }
+    /**
+     * @returns the workspace's manifest, ie. `Cargo.toml` (top-level)
+     */
     async getWorkspaceManifest() {
+        if (this.workspaceManifest === undefined) {
+            this.workspaceManifest = await this.getManifest('Cargo.toml');
+        }
+        return this.workspaceManifest;
+    }
+    async getManifest(path) {
         let content;
         try {
-            content = await this.gh.getFileContents('Cargo.toml');
+            content = await this.gh.getFileContents(path);
         }
         catch (e) {
             return null;
@@ -64548,13 +65528,13 @@ class Simple extends release_pr_1.ReleasePR {
     async buildUpdates(changelogEntry, candidate, packageName) {
         const updates = [];
         updates.push(new changelog_1.Changelog({
-            path: this.changelogPath,
+            path: this.addPath(this.changelogPath),
             changelogEntry,
             version: candidate.version,
             packageName: packageName.name,
         }));
         updates.push(new version_txt_1.VersionTxt({
-            path: 'version.txt',
+            path: this.addPath('version.txt'),
             changelogEntry,
             version: candidate.version,
             packageName: packageName.name,
@@ -64674,7 +65654,7 @@ class Changelog {
         // Handle both H2 (features/BREAKING CHANGES) and H3 (fixes).
         const lastEntryIndex = content.search(/\n###? v?[0-9[]/s);
         if (lastEntryIndex === -1) {
-            logger_1.logger.error(`${this.path} not found`);
+            logger_1.logger.warn(`${this.path} not found`);
             logger_1.logger.info(`creating ${this.path}`);
             return `${this.header()}\n${this.changelogEntry}\n`;
         }
@@ -65256,7 +66236,7 @@ class PHPManifest {
     }
     updateContent(content) {
         if (!this.versions || this.versions.size === 0) {
-            logger_1.logger.error(`no updates necessary for ${this.path}`);
+            logger_1.logger.info(`no updates necessary for ${this.path}`);
             return content;
         }
         const parsed = JSON.parse(content);
@@ -65524,7 +66504,7 @@ class RootComposer {
     }
     updateContent(content) {
         if (!this.versions || this.versions.size === 0) {
-            logger_1.logger.error(`no updates necessary for ${this.path}`);
+            logger_1.logger.info(`no updates necessary for ${this.path}`);
             return content;
         }
         const parsed = JSON.parse(content);
@@ -66528,7 +67508,7 @@ exports.PullRequestTitle = PullRequestTitle;
 /***/ }),
 
 /***/ 80746:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
@@ -66547,12 +67527,19 @@ exports.PullRequestTitle = PullRequestTitle;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.extractReleaseNotes = void 0;
+const errors_1 = __nccwpck_require__(93637);
+/**
+ * Parse release notes for a specific release from the CHANGELOG contents
+ *
+ * @param {string} changelogContents The entire CHANGELOG contents
+ * @param {string} version The release version to extract notes from
+ */
 function extractReleaseNotes(changelogContents, version) {
     version = version.replace(/^v/, '');
     const latestRe = new RegExp(`## v?\\[?${version}[^\\n]*\\n(.*?)(\\n##\\s|\\n### \\[?[0-9]+\\.|($(?![\r\n])))`, 'ms');
     const match = changelogContents.match(latestRe);
     if (!match) {
-        throw Error('could not find changelog entry corresponding to release PR');
+        throw new errors_1.MissingReleaseNotesError(changelogContents, version);
     }
     return match[1];
 }
@@ -84573,7 +85560,7 @@ module.exports = JSON.parse("[\"assert\",\"buffer\",\"child_process\",\"cluster\
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"11.11.0"};
+module.exports = {"i8":"11.15.0"};
 
 /***/ }),
 
