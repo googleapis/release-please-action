@@ -9007,16 +9007,8 @@ const Endpoints = {
     uploadSarif: ["POST /repos/{owner}/{repo}/code-scanning/sarifs"]
   },
   codesOfConduct: {
-    getAllCodesOfConduct: ["GET /codes_of_conduct", {
-      mediaType: {
-        previews: ["scarlet-witch"]
-      }
-    }],
-    getConductCode: ["GET /codes_of_conduct/{key}", {
-      mediaType: {
-        previews: ["scarlet-witch"]
-      }
-    }],
+    getAllCodesOfConduct: ["GET /codes_of_conduct"],
+    getConductCode: ["GET /codes_of_conduct/{key}"],
     getForRepo: ["GET /repos/{owner}/{repo}/community/code_of_conduct", {
       mediaType: {
         previews: ["scarlet-witch"]
@@ -9918,7 +9910,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "5.4.1";
+const VERSION = "5.5.1";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -10303,7 +10295,7 @@ var pluginRequestLog = __nccwpck_require__(68883);
 var pluginPaginateRest = __nccwpck_require__(64193);
 var pluginRestEndpointMethods = __nccwpck_require__(83044);
 
-const VERSION = "18.6.7";
+const VERSION = "18.7.1";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.legacyRestEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`
@@ -30924,8 +30916,7 @@ isStream.duplex = stream =>
 
 isStream.transform = stream =>
 	isStream.duplex(stream) &&
-	typeof stream._transform === 'function' &&
-	typeof stream._transformState === 'object';
+	typeof stream._transform === 'function';
 
 module.exports = isStream;
 
@@ -59876,6 +59867,7 @@ function hasExtendedContext(line) {
 class ConventionalCommits {
     constructor(options) {
         this.commits = options.commits;
+        this.parsedCommits = getParsedCommits(options.commits, options.commitFilter);
         this.bumpMinorPreMajor = options.bumpMinorPreMajor || false;
         this.bumpPatchForMinorPreMajor = options.bumpPatchForMinorPreMajor || false;
         this.host = options.host || 'https://www.github.com';
@@ -59921,14 +59913,14 @@ class ConventionalCommits {
         preset.writerOpts.mainTemplate =
             this.mainTemplate || preset.writerOpts.mainTemplate;
         const parsed = conventionalChangelogWriter
-            .parseArray(getParsedCommits(this.commits, this.commitFilter), context, preset.writerOpts)
+            .parseArray(this.parsedCommits, context, preset.writerOpts)
             .trim();
         return parsed;
     }
     async guessReleaseType(preMajor) {
         const VERSIONS = ['major', 'minor', 'patch'];
         const preset = await presetFactory({ preMajor });
-        const commits = conventionalCommitsFilter(getParsedCommits(this.commits, this.commitFilter));
+        const commits = conventionalCommitsFilter(this.parsedCommits);
         let result = preset.recommendedBumpOpts.whatBump(commits, preset.recommendedBumpOpts);
         if (result && result.level !== null) {
             result.releaseType = VERSIONS[result.level];
@@ -59971,7 +59963,24 @@ exports.ConventionalCommits = ConventionalCommits;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.MissingReleaseNotesError = exports.DuplicateReleaseError = exports.AuthError = exports.GitHubAPIError = void 0;
+exports.MissingReleaseNotesError = exports.DuplicateReleaseError = exports.AuthError = exports.GitHubAPIError = exports.MissingRequiredFileError = exports.ConfigurationError = void 0;
+class ConfigurationError extends Error {
+    constructor(message, releaserName, repository) {
+        super(`${releaserName} (${repository}): ${message}`);
+        this.releaserName = releaserName;
+        this.repository = repository;
+        this.name = ConfigurationError.name;
+    }
+}
+exports.ConfigurationError = ConfigurationError;
+class MissingRequiredFileError extends ConfigurationError {
+    constructor(file, releaserName, repository) {
+        super(`Missing required file: ${file}`, releaserName, repository);
+        this.file = file;
+        this.name = MissingRequiredFileError.name;
+    }
+}
+exports.MissingRequiredFileError = MissingRequiredFileError;
 class GitHubAPIError extends Error {
     constructor(requestError, message) {
         super(message !== null && message !== void 0 ? message : requestError.message);
@@ -59981,10 +59990,12 @@ class GitHubAPIError extends Error {
         this.cause = requestError;
     }
     static parseErrorBody(requestError) {
-        return requestError.response.data;
+        const body = requestError.response;
+        return (body === null || body === void 0 ? void 0 : body.data) || undefined;
     }
     static parseErrors(requestError) {
-        return GitHubAPIError.parseErrorBody(requestError).errors || [];
+        var _a;
+        return ((_a = GitHubAPIError.parseErrorBody(requestError)) === null || _a === void 0 ? void 0 : _a.errors) || [];
     }
 }
 exports.GitHubAPIError = GitHubAPIError;
@@ -61341,6 +61352,29 @@ class GitHub {
         }
     }
     /**
+     * Iterate through merged pull requests with a max number of results scanned.
+     *
+     * @param maxResults {number} maxResults - Limit the number of results searched.
+     *   Defaults to unlimited.
+     * @yields {MergedGitHubPR}
+     * @throws {GitHubAPIError} on an API error
+     */
+    async *mergedPullRequestIterator(branch, maxResults = Number.MAX_SAFE_INTEGER) {
+        let page = 1;
+        const results = 0;
+        while (results < maxResults) {
+            const pullRequests = await this.findMergedPullRequests(branch, page);
+            // no response usually means we ran out of results
+            if (pullRequests.length === 0) {
+                break;
+            }
+            for (let i = 0; i < pullRequests.length; i++) {
+                yield pullRequests[i];
+            }
+            page += 1;
+        }
+    }
+    /**
      * Returns the list of commits to the default branch after the provided filter
      * query has been satified.
      *
@@ -61370,20 +61404,18 @@ class GitHub {
      * @param {string} targetBranch - Base branch of the pull request
      * @param {MergedPullRequestFilter} filter - Callback function that
      *   returns whether a pull request matches certain criteria
+     * @param {number} maxResults - Limit the number of results searched.
+     *   Defaults to unlimited.
      * @returns {MergedGitHubPR | undefined} - Returns the first matching
      *   pull request, or `undefined` if no matching pull request found.
      * @throws {GitHubAPIError} on an API error
      */
-    async findMergedPullRequest(targetBranch, filter) {
-        let page = 1;
-        let mergedPullRequests = await this.findMergedPullRequests(targetBranch, page);
-        while (mergedPullRequests.length > 0) {
-            const found = mergedPullRequests.find(filter);
-            if (found) {
-                return found;
+    async findMergedPullRequest(targetBranch, filter, maxResults = Number.MAX_SAFE_INTEGER) {
+        const generator = this.mergedPullRequestIterator(targetBranch, maxResults);
+        for await (const mergedPullRequest of generator) {
+            if (filter(mergedPullRequest)) {
+                return mergedPullRequest;
             }
-            page += 1;
-            mergedPullRequests = await this.findMergedPullRequests(targetBranch, page);
         }
         return undefined;
     }
@@ -61407,10 +61439,8 @@ class GitHub {
     async findMergedReleasePR(labels, branchPrefix = undefined, preRelease = true, maxResults = Number.MAX_SAFE_INTEGER) {
         branchPrefix = (branchPrefix === null || branchPrefix === void 0 ? void 0 : branchPrefix.endsWith('-')) ? branchPrefix.replace(/-$/, '')
             : branchPrefix;
-        const mergedCommit = await this.findMergeCommit((_commit, mergedPullRequest) => {
-            if (!mergedPullRequest) {
-                return false;
-            }
+        const targetBranch = await this.getDefaultBranch();
+        const mergedReleasePullRequest = await this.findMergedPullRequest(targetBranch, mergedPullRequest => {
             // If labels specified, ensure the pull request has all the specified labels
             if (labels.length > 0 &&
                 !this.hasAllLabels(labels, mergedPullRequest.labels)) {
@@ -61442,7 +61472,7 @@ class GitHub {
             }
             return true;
         }, maxResults);
-        return mergedCommit === null || mergedCommit === void 0 ? void 0 : mergedCommit.pullRequest;
+        return mergedReleasePullRequest;
     }
     hasAllLabels(labelsA, labelsB) {
         let hasAll = true;
@@ -62223,13 +62253,6 @@ class Manifest {
                 `(https://github.com/googleapis/${constants_1.RELEASE_PLEASE}#${constants_1.RELEASE_PLEASE}).`;
         return [body, changes];
     }
-    async commitsSinceSha(sha) {
-        let fromSha = sha;
-        if (fromSha === undefined) {
-            fromSha = (await this.getConfigJson())['bootstrap-sha'];
-        }
-        return this.gh.commitsSinceShaRest(fromSha);
-    }
     async getPlugins() {
         var _a;
         const plugins = [];
@@ -62239,16 +62262,38 @@ class Manifest {
         }
         return plugins;
     }
+    async resolveLastReleaseSha(branchName) {
+        const config = await this.getConfigJson();
+        let lastReleaseSha;
+        let source = 'no last release sha found';
+        if (config['last-release-sha']) {
+            lastReleaseSha = config['last-release-sha'];
+            source = 'last-release-sha';
+        }
+        else {
+            const lastMergedPR = await this.gh.lastMergedPRByHeadBranch(branchName);
+            if (lastMergedPR) {
+                lastReleaseSha = lastMergedPR.sha;
+                source = 'last-release-pr';
+            }
+            else if (config['bootstrap-sha']) {
+                lastReleaseSha = config['bootstrap-sha'];
+                source = 'bootstrap-sha';
+            }
+        }
+        this.checkpoint(`Found last release sha "${lastReleaseSha}" using "${source}"`, checkpoint_1.CheckpointType.Success);
+        return lastReleaseSha;
+    }
     async pullRequest() {
         const valid = await this.validate();
         if (!valid) {
             return;
         }
         const branchName = (await this.getBranchName()).toString();
-        const lastMergedPR = await this.gh.lastMergedPRByHeadBranch(branchName);
-        const commits = await this.commitsSinceSha(lastMergedPR === null || lastMergedPR === void 0 ? void 0 : lastMergedPR.sha);
-        const packagesForReleasers = await this.getPackagesToRelease(commits, lastMergedPR === null || lastMergedPR === void 0 ? void 0 : lastMergedPR.sha);
-        let [newManifestVersions, pkgsWithChanges] = await this.runReleasers(packagesForReleasers, lastMergedPR === null || lastMergedPR === void 0 ? void 0 : lastMergedPR.sha);
+        const lastReleaseSha = await this.resolveLastReleaseSha(branchName);
+        const commits = await this.gh.commitsSinceShaRest(lastReleaseSha);
+        const packagesForReleasers = await this.getPackagesToRelease(commits, lastReleaseSha);
+        let [newManifestVersions, pkgsWithChanges] = await this.runReleasers(packagesForReleasers, lastReleaseSha);
         if (pkgsWithChanges.length === 0) {
             this.checkpoint('No user facing changes to release', checkpoint_1.CheckpointType.Success);
             return;
@@ -63277,6 +63322,7 @@ class ReleasePR {
             logger_1.logger.warn('snapshot releases not supported for this releaser');
             return;
         }
+        // TODO: consider switching to this.findMergedRelease()
         const mergedPR = await this.gh.findMergedReleasePR(this.labels, undefined, true, 100);
         if (mergedPR) {
             // a PR already exists in the autorelease: pending state.
@@ -63349,17 +63395,23 @@ class ReleasePR {
         let version = latestTag ? latestTag.version : this.defaultInitialVersion();
         // If a commit contains the footer release-as: 1.x.x, we use this version
         // from the commit footer rather than the version returned by suggestBump().
-        const releaseAsCommit = cc.commits.find((element) => {
-            if (element.message.match(releaseAsRe)) {
+        let forcedVersion;
+        const releaseAsCommit = cc.parsedCommits.find(element => {
+            var _a, _b;
+            const bodyMatch = (_a = element.body) === null || _a === void 0 ? void 0 : _a.match(releaseAsRe);
+            if (bodyMatch) {
+                forcedVersion = bodyMatch[1];
                 return true;
             }
-            else {
-                return false;
+            const footerMatch = (_b = element.footer) === null || _b === void 0 ? void 0 : _b.match(releaseAsRe);
+            if (footerMatch) {
+                forcedVersion = footerMatch[1];
+                return true;
             }
+            return false;
         });
         if (releaseAsCommit) {
-            const match = releaseAsCommit.message.match(releaseAsRe);
-            version = match[1];
+            version = forcedVersion;
         }
         else if (preRelease) {
             // Handle pre-release format v1.0.0-alpha1, alpha2, etc.
@@ -63809,13 +63861,7 @@ exports.Go = void 0;
 const release_pr_1 = __nccwpck_require__(86786);
 // Generic
 const changelog_1 = __nccwpck_require__(3325);
-const DEFAULT_CHANGELOG_PATH = 'CHANGES.md';
 class Go extends release_pr_1.ReleasePR {
-    constructor(options) {
-        var _a;
-        super(options);
-        this.changelogPath = (_a = options.changelogPath) !== null && _a !== void 0 ? _a : DEFAULT_CHANGELOG_PATH;
-    }
     async buildUpdates(changelogEntry, candidate, packageName) {
         const updates = [];
         updates.push(new changelog_1.Changelog({
@@ -63930,6 +63976,7 @@ const go_yoshi_1 = __nccwpck_require__(2831);
 const java_bom_1 = __nccwpck_require__(54965);
 const java_lts_1 = __nccwpck_require__(79096);
 const java_yoshi_1 = __nccwpck_require__(42334);
+const krm_blueprint_1 = __nccwpck_require__(2119);
 const node_1 = __nccwpck_require__(94564);
 const php_yoshi_1 = __nccwpck_require__(7492);
 const python_1 = __nccwpck_require__(17508);
@@ -63946,6 +63993,7 @@ const releasers = {
     'java-bom': java_bom_1.JavaBom,
     'java-lts': java_lts_1.JavaLTS,
     'java-yoshi': java_yoshi_1.JavaYoshi,
+    'krm-blueprint': krm_blueprint_1.KRMBlueprint,
     node: node_1.Node,
     ocaml: ocaml_1.OCaml,
     'php-yoshi': php_yoshi_1.PHPYoshi,
@@ -64171,6 +64219,7 @@ const java_update_1 = __nccwpck_require__(70301);
 const stability_1 = __nccwpck_require__(28824);
 const bump_type_1 = __nccwpck_require__(93826);
 const logger_1 = __nccwpck_require__(68809);
+const errors_1 = __nccwpck_require__(93637);
 const CHANGELOG_SECTIONS = [
     { type: 'feat', section: 'Features' },
     { type: 'fix', section: 'Bug Fixes' },
@@ -64188,7 +64237,18 @@ const CHANGELOG_SECTIONS = [
 class JavaYoshi extends release_pr_1.ReleasePR {
     async getVersionManifestContent() {
         if (!this.versionsManifestContent) {
-            this.versionsManifestContent = await this.gh.getFileContents('versions.txt');
+            try {
+                this.versionsManifestContent = await this.gh.getFileContents('versions.txt');
+            }
+            catch (e) {
+                if (e instanceof errors_1.GitHubAPIError) {
+                    if (e.status === 404) {
+                        // on missing file, throw a configuration error
+                        throw new errors_1.MissingRequiredFileError('versions.txt', JavaYoshi.name, this.gh.repo);
+                    }
+                }
+                throw e;
+            }
         }
         return this.versionsManifestContent;
     }
@@ -64625,6 +64685,71 @@ class Version {
 }
 exports.Version = Version;
 //# sourceMappingURL=version.js.map
+
+/***/ }),
+
+/***/ 2119:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.KRMBlueprint = void 0;
+const release_pr_1 = __nccwpck_require__(86786);
+// Generic
+const changelog_1 = __nccwpck_require__(3325);
+// KRM specific.
+const krm_blueprint_version_1 = __nccwpck_require__(17490);
+const KRMBlueprintAttribAnnotation = 'cnrm.cloud.google.com/blueprint';
+const hasKRMBlueprintAttrib = (content) => content.includes(KRMBlueprintAttribAnnotation);
+class KRMBlueprint extends release_pr_1.ReleasePR {
+    async buildUpdates(changelogEntry, candidate, packageName) {
+        const updates = [];
+        updates.push(new changelog_1.Changelog({
+            path: this.addPath(this.changelogPath),
+            changelogEntry,
+            version: candidate.version,
+            packageName: packageName.name,
+        }));
+        const versionsMap = new Map();
+        if (candidate.previousTag) {
+            versionsMap.set('previous', candidate.previousTag);
+        }
+        // Update version in all yaml files with attribution annotation
+        const yamlPaths = await this.gh.findFilesByExtension('yaml');
+        for (const yamlPath of yamlPaths) {
+            const contents = await this.gh.getFileContents(this.addPath(yamlPath));
+            if (hasKRMBlueprintAttrib(contents.parsedContent)) {
+                updates.push(new krm_blueprint_version_1.KRMBlueprintVersion({
+                    path: this.addPath(yamlPath),
+                    changelogEntry,
+                    version: candidate.version,
+                    packageName: packageName.name,
+                    versions: versionsMap,
+                }));
+            }
+        }
+        return updates;
+    }
+    defaultInitialVersion() {
+        return '0.1.0';
+    }
+}
+exports.KRMBlueprint = KRMBlueprint;
+//# sourceMappingURL=krm-blueprint.js.map
 
 /***/ }),
 
@@ -65958,6 +66083,58 @@ class VersionsManifest extends java_update_1.JavaUpdate {
 }
 exports.VersionsManifest = VersionsManifest;
 //# sourceMappingURL=versions-manifest.js.map
+
+/***/ }),
+
+/***/ 17490:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.KRMBlueprintVersion = void 0;
+const logger_1 = __nccwpck_require__(68809);
+class KRMBlueprintVersion {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+        this.versions = options.versions;
+    }
+    updateContent(content) {
+        var _a;
+        // js-yaml(and kpt TS SDK) does not preserve comments hence regex match
+        // match starting cnrm/ ending with semver to prevent wrong updates like pinned config.kubernetes.io/function
+        let matchRegex = '(cnrm/.*/)(v[0-9]+.[0-9]+.[0-9]+)+(-w+)?';
+        // if explicit previous version, match only that version
+        if ((_a = this.versions) === null || _a === void 0 ? void 0 : _a.has('previous')) {
+            matchRegex = `(cnrm/.*/)(${this.versions.get('previous')})+(-w+)?`;
+        }
+        const oldVersion = content.match(new RegExp(matchRegex));
+        if (oldVersion) {
+            logger_1.logger.info(`updating ${this.path} from ${oldVersion[2]} to v${this.version}`);
+        }
+        const newVersion = content.replace(new RegExp(matchRegex, 'g'), `$1v${this.version}`);
+        return newVersion;
+    }
+}
+exports.KRMBlueprintVersion = KRMBlueprintVersion;
+//# sourceMappingURL=krm-blueprint-version.js.map
 
 /***/ }),
 
@@ -85561,7 +85738,7 @@ module.exports = JSON.parse("[\"assert\",\"buffer\",\"child_process\",\"cluster\
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"11.15.0"};
+module.exports = {"i8":"11.18.0"};
 
 /***/ }),
 
@@ -85569,7 +85746,7 @@ module.exports = {"i8":"11.15.0"};
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"name\":\"strong-log-transformer\",\"version\":\"2.1.0\",\"description\":\"Stream transformer that prefixes lines with timestamps and other things.\",\"author\":\"Ryan Graham <ryan@strongloop.com>\",\"license\":\"Apache-2.0\",\"repository\":{\"type\":\"git\",\"url\":\"git://github.com/strongloop/strong-log-transformer\"},\"keywords\":[\"logging\",\"streams\"],\"bugs\":{\"url\":\"https://github.com/strongloop/strong-log-transformer/issues\"},\"homepage\":\"https://github.com/strongloop/strong-log-transformer\",\"directories\":{\"test\":\"test\"},\"bin\":{\"sl-log-transformer\":\"bin/sl-log-transformer.js\"},\"main\":\"index.js\",\"scripts\":{\"test\":\"tap --100 test/test-*\"},\"dependencies\":{\"duplexer\":\"^0.1.1\",\"minimist\":\"^1.2.0\",\"through\":\"^2.3.4\"},\"devDependencies\":{\"tap\":\"^12.0.1\"},\"engines\":{\"node\":\">=4\"},\"_resolved\":\"https://registry.npmjs.org/strong-log-transformer/-/strong-log-transformer-2.1.0.tgz\",\"_integrity\":\"sha512-B3Hgul+z0L9a236FAUC9iZsL+nVHgoCJnqCbN588DjYxvGXaXaaFbfmQ/JhvKjZwsOukuR72XbHv71Qkug0HxA==\",\"_from\":\"strong-log-transformer@2.1.0\"}");
+module.exports = JSON.parse("{\"_args\":[[\"strong-log-transformer@2.1.0\",\"/usr/local/google/home/joeldodge/release-please-action\"]],\"_from\":\"strong-log-transformer@2.1.0\",\"_id\":\"strong-log-transformer@2.1.0\",\"_inBundle\":false,\"_integrity\":\"sha512-B3Hgul+z0L9a236FAUC9iZsL+nVHgoCJnqCbN588DjYxvGXaXaaFbfmQ/JhvKjZwsOukuR72XbHv71Qkug0HxA==\",\"_location\":\"/strong-log-transformer\",\"_phantomChildren\":{},\"_requested\":{\"type\":\"version\",\"registry\":true,\"raw\":\"strong-log-transformer@2.1.0\",\"name\":\"strong-log-transformer\",\"escapedName\":\"strong-log-transformer\",\"rawSpec\":\"2.1.0\",\"saveSpec\":null,\"fetchSpec\":\"2.1.0\"},\"_requiredBy\":[\"/@lerna/child-process\"],\"_resolved\":\"https://registry.npmjs.org/strong-log-transformer/-/strong-log-transformer-2.1.0.tgz\",\"_spec\":\"2.1.0\",\"_where\":\"/usr/local/google/home/joeldodge/release-please-action\",\"author\":{\"name\":\"Ryan Graham\",\"email\":\"ryan@strongloop.com\"},\"bin\":{\"sl-log-transformer\":\"bin/sl-log-transformer.js\"},\"bugs\":{\"url\":\"https://github.com/strongloop/strong-log-transformer/issues\"},\"dependencies\":{\"duplexer\":\"^0.1.1\",\"minimist\":\"^1.2.0\",\"through\":\"^2.3.4\"},\"description\":\"Stream transformer that prefixes lines with timestamps and other things.\",\"devDependencies\":{\"tap\":\"^12.0.1\"},\"directories\":{\"test\":\"test\"},\"engines\":{\"node\":\">=4\"},\"homepage\":\"https://github.com/strongloop/strong-log-transformer\",\"keywords\":[\"logging\",\"streams\"],\"license\":\"Apache-2.0\",\"main\":\"index.js\",\"name\":\"strong-log-transformer\",\"repository\":{\"type\":\"git\",\"url\":\"git://github.com/strongloop/strong-log-transformer.git\"},\"scripts\":{\"test\":\"tap --100 test/test-*\"},\"version\":\"2.1.0\"}");
 
 /***/ }),
 
