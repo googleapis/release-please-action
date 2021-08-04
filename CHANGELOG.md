@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.29.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.29.0...v2.29.1) (2021-08-04)
+
+
+### Bug Fixes
+
+* **release-please:** buf fixes for pre-release versions ([#334](https://www.github.com/google-github-actions/release-please-action/issues/334)) ([d7f1090](https://www.github.com/google-github-actions/release-please-action/commit/d7f1090a7d15d4d583ae88a9c15b29aef294d022))
+
 ## [2.29.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.28.1...v2.29.0) (2021-07-28)
 
 
