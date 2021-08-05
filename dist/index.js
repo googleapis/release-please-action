@@ -14708,10 +14708,10 @@ module.exports = function (config) {
   })
 
   return Q.all([
-    readFile(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
+    readFile(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
   ])
     .spread((template, header, commit, footer) => {
       const writerOpts = getWriterOpts(config)
@@ -14930,10 +14930,10 @@ function conventionalChangelogWriterInit (context, options) {
     includeDetails: false,
     ignoreReverted: true,
     doFlush: true,
-    mainTemplate: readFileSync(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
-    headerPartial: readFileSync(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
-    commitPartial: readFileSync(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
-    footerPartial: readFileSync(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
+    mainTemplate: readFileSync(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
+    headerPartial: readFileSync(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
+    commitPartial: readFileSync(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
+    footerPartial: readFileSync(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
   }, options)
 
   if ((!_.isFunction(options.transform) && _.isObject(options.transform)) || _.isUndefined(options.transform)) {
@@ -59967,7 +59967,7 @@ exports.ConventionalCommits = ConventionalCommits;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.MissingReleaseNotesError = exports.DuplicateReleaseError = exports.AuthError = exports.GitHubAPIError = exports.PathNotFoundError = exports.MissingRequiredFileError = exports.ConfigurationError = void 0;
+exports.MissingReleaseNotesError = exports.DuplicateReleaseError = exports.AuthError = exports.GitHubAPIError = exports.MissingRequiredFileError = exports.ConfigurationError = void 0;
 class ConfigurationError extends Error {
     constructor(message, releaserName, repository) {
         super(`${releaserName} (${repository}): ${message}`);
@@ -59985,14 +59985,6 @@ class MissingRequiredFileError extends ConfigurationError {
     }
 }
 exports.MissingRequiredFileError = MissingRequiredFileError;
-class PathNotFoundError extends Error {
-    constructor(path) {
-        super(`Could not find requested path: ${path}`);
-        this.path = path;
-        this.name = PathNotFoundError.name;
-    }
-}
-exports.PathNotFoundError = PathNotFoundError;
 class GitHubAPIError extends Error {
     constructor(requestError, message) {
         super(message !== null && message !== void 0 ? message : requestError.message);
@@ -60710,7 +60702,7 @@ class GitHub {
                 return await this.getFileContentsWithSimpleAPI(path, branch);
             }
             catch (err) {
-                if (err.status === 403 || err.status === 404) {
+                if (err.status === 403) {
                     return await this.getFileContentsWithDataAPI(path, branch);
                 }
                 throw err;
@@ -61645,7 +61637,7 @@ class GitHub {
         const repoTree = await this.request('GET /repos/:owner/:repo/git/trees/:branch', options);
         const blobDescriptor = repoTree.data.tree.find(tree => tree.path === path);
         if (!blobDescriptor) {
-            throw new errors_1.PathNotFoundError(path);
+            throw new Error(`Could not find requested path: ${path}`);
         }
         const resp = await this.request('GET /repos/:owner/:repo/git/blobs/:sha', {
             owner: this.owner,
@@ -64247,10 +64239,11 @@ class JavaYoshi extends release_pr_1.ReleasePR {
                 this.versionsManifestContent = await this.gh.getFileContents('versions.txt');
             }
             catch (e) {
-                if ((e instanceof errors_1.GitHubAPIError && e.status === 404) ||
-                    e instanceof errors_1.PathNotFoundError) {
-                    // on missing file, throw a configuration error
-                    throw new errors_1.MissingRequiredFileError('versions.txt', JavaYoshi.name, this.gh.repo);
+                if (e instanceof errors_1.GitHubAPIError) {
+                    if (e.status === 404) {
+                        // on missing file, throw a configuration error
+                        throw new errors_1.MissingRequiredFileError('versions.txt', JavaYoshi.name, this.gh.repo);
+                    }
                 }
                 throw e;
             }
@@ -85764,7 +85757,7 @@ module.exports = JSON.parse("[\"assert\",\"buffer\",\"child_process\",\"cluster\
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"11.20.1"};
+module.exports = {"i8":"11.20.2"};
 
 /***/ }),
 
