@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.29.2](https://www.github.com/google-github-actions/release-please-action/compare/v2.29.1...v2.29.2) (2021-08-05)
+
+
+### Bug Fixes
+
+* **relese-please:** rollback bad release ([#338](https://www.github.com/google-github-actions/release-please-action/issues/338)) ([68f6fc6](https://www.github.com/google-github-actions/release-please-action/commit/68f6fc67aa29c63452a09eba621445ce2c6dfcb7))
+
 ### [2.29.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.29.0...v2.29.1) (2021-08-04)
 
 
