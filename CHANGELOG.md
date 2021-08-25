@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.30.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.29.2...v2.30.0) (2021-08-25)
+
+
+### Features
+
+* add support for simple php projects ([#344](https://www.github.com/google-github-actions/release-please-action/issues/344)) ([d6f40e4](https://www.github.com/google-github-actions/release-please-action/commit/d6f40e4317daf6906456fefc0d4c081dfe03b51d))
+
 ### [2.29.2](https://www.github.com/google-github-actions/release-please-action/compare/v2.29.1...v2.29.2) (2021-08-05)
 
 
