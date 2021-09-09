@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.31.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.30.0...v2.31.0) (2021-09-09)
+
+
+### Features
+
+* adds elixir support ([#354](https://www.github.com/google-github-actions/release-please-action/issues/354)) ([59f4915](https://www.github.com/google-github-actions/release-please-action/commit/59f49151772e19ad5a5c7959831ce4252f538789))
+
+
+### Bug Fixes
+
+* `Unexpected input(s)` warning for inputs: `config-file` & `manifest-file` ([#356](https://www.github.com/google-github-actions/release-please-action/issues/356)) ([f19ddf2](https://www.github.com/google-github-actions/release-please-action/commit/f19ddf2fe64b11510b2a743ecb73af5bb693d79d))
+* **build:** action with support for PHP ([fd790a2](https://www.github.com/google-github-actions/release-please-action/commit/fd790a278caa544313600a3eb908e5ebaecc6cc5))
+
 ## [2.30.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.29.2...v2.30.0) (2021-08-25)
 
 
