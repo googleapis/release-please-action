@@ -56,6 +56,14 @@ inputs:
     description: 'add title pattern to make release PR, defaults to using "chore${scope}: release${component} ${version}".'
     required: false
     default: 'chore${scope}: release${component} ${version}'
+  config-file:
+    description: 'where can the config file be found in the project?'
+    required: false
+    default: ''
+  manifest-file:
+    description: 'where can the manifest file be found in the project?'
+    required: false
+    default: ''
 
 runs:
   using: 'node12'
