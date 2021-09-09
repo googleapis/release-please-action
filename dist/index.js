@@ -63737,6 +63737,54 @@ exports.ReleasePR = ReleasePR;
 
 /***/ }),
 
+/***/ 54737:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Elixir = void 0;
+const release_pr_1 = __nccwpck_require__(86786);
+// Generic
+const changelog_1 = __nccwpck_require__(3325);
+// mix.exs support
+const elixir_mix_exs_1 = __nccwpck_require__(93655);
+class Elixir extends release_pr_1.ReleasePR {
+    async buildUpdates(changelogEntry, candidate, packageName) {
+        const updates = [];
+        updates.push(new changelog_1.Changelog({
+            path: this.addPath(this.changelogPath),
+            changelogEntry,
+            version: candidate.version,
+            packageName: packageName.name,
+        }));
+        updates.push(new elixir_mix_exs_1.ElixirMixExs({
+            path: this.addPath('mix.exs'),
+            changelogEntry,
+            version: candidate.version,
+            packageName: packageName.name,
+        }));
+        return updates;
+    }
+}
+exports.Elixir = Elixir;
+//# sourceMappingURL=elixir.js.map
+
+/***/ }),
+
 /***/ 2831:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -64060,6 +64108,7 @@ const terraform_module_1 = __nccwpck_require__(72375);
 const rust_1 = __nccwpck_require__(18109);
 const ocaml_1 = __nccwpck_require__(26571);
 const helm_1 = __nccwpck_require__(42474);
+const elixir_1 = __nccwpck_require__(54737);
 const releasers = {
     go: go_1.Go,
     'go-yoshi': go_yoshi_1.GoYoshi,
@@ -64078,6 +64127,7 @@ const releasers = {
     simple: simple_1.Simple,
     'terraform-module': terraform_module_1.TerraformModule,
     helm: helm_1.Helm,
+    elixir: elixir_1.Elixir,
 };
 function getReleasers() {
     return releasers;
@@ -65954,6 +66004,48 @@ class Changelog {
 }
 exports.Changelog = Changelog;
 //# sourceMappingURL=changelog.js.map
+
+/***/ }),
+
+/***/ 93655:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ElixirMixExs = void 0;
+const logger_1 = __nccwpck_require__(68809);
+class ElixirMixExs {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+    }
+    updateContent(content) {
+        const oldVersion = content.match(/version: "([A-Za-z0-9_\-+.~]+)",/);
+        if (oldVersion) {
+            logger_1.logger.info(`updating ${this.path} from ${oldVersion[1]} to ${this.version}`);
+        }
+        return content.replace(/version: "[A-Za-z0-9_\-+.~]+",/, `version: "${this.version}"`);
+    }
+}
+exports.ElixirMixExs = ElixirMixExs;
+//# sourceMappingURL=elixir-mix-exs.js.map
 
 /***/ }),
 
@@ -86085,7 +86177,7 @@ module.exports = JSON.parse("[\"assert\",\"buffer\",\"child_process\",\"cluster\
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"11.22.0"};
+module.exports = {"i8":"11.23.0"};
 
 /***/ }),
 
