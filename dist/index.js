@@ -51,12 +51,14 @@ async function runManifest (command) {
   if (command === 'manifest-pr') return
 
   const releasesCreated = await factory.runCommand('manifest-release', manifestOpts)
+  const pathsReleased = []
   if (releasesCreated) {
     core.setOutput('releases_created', true)
     for (const [path, release] of Object.entries(releasesCreated)) {
       if (!release) {
         continue
       }
+      pathsReleased.push(path)
       if (path === '.') {
         core.setOutput('release_created', true)
       } else {
@@ -71,6 +73,9 @@ async function runManifest (command) {
       }
     }
   }
+  // Paths of all releases that were created, so that they can be passed
+  // to matrix in next step:
+  core.setOutput('paths_released', JSON.stringify(pathsReleased))
 }
 
 async function main () {
