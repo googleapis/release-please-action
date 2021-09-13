@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.32.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.31.0...v2.32.0) (2021-09-13)
+
+
+### Features
+
+* output list of paths released during manifest release ([#362](https://www.github.com/google-github-actions/release-please-action/issues/362)) ([670afac](https://www.github.com/google-github-actions/release-please-action/commit/670afac8ab682e158b4e390a3209d42346e72518))
+
 ## [2.31.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.30.0...v2.31.0) (2021-09-09)
 
 
