@@ -366,7 +366,8 @@ describe('release-please-action', () => {
       'path/pkgA--release_created': true,
       tag_name: 'v1.0.0',
       upload_url: 'http://example.com',
-      pr: 25
+      pr: 25,
+      paths_released: '["path/pkgA","."]'
     })
   })
 
