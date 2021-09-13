@@ -80,6 +80,7 @@ async function main () {
   const { token, fork, defaultBranch, apiUrl, repoUrl } = getGitHubInput()
 
   const bumpMinorPreMajor = getBooleanInput('bump-minor-pre-major')
+  const bumpPatchForMinorPreMajor = getBooleanInput('bump-patch-for-minor-pre-major')
   const monorepoTags = getBooleanInput('monorepo-tags')
   const packageName = core.getInput('package-name')
   const path = core.getInput('path') || undefined
@@ -128,6 +129,7 @@ async function main () {
       token,
       label: RELEASE_LABEL,
       bumpMinorPreMajor,
+      bumpPatchForMinorPreMajor,
       changelogPath,
       changelogSections,
       versionFile,
