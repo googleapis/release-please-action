@@ -7,6 +7,7 @@ const MANIFEST_COMMANDS = ['manifest', 'manifest-pr']
 const RELEASE_LABEL = 'autorelease: pending'
 const GITHUB_RELEASE_COMMAND = 'github-release'
 const GITHUB_RELEASE_PR_COMMAND = 'release-pr'
+const GITHUB_API_URL = 'https://api.github.com'
 
 function getBooleanInput (input) {
   const trueValue = ['true', 'True', 'TRUE', 'yes', 'Yes', 'YES', 'y', 'Y', 'on', 'On', 'ON']
@@ -22,7 +23,7 @@ function getGitHubInput () {
     fork: getBooleanInput('fork'),
     defaultBranch: core.getInput('default-branch') || undefined,
     repoUrl: process.env.GITHUB_REPOSITORY,
-    apiUrl: 'https://api.github.com',
+    apiUrl: core.getInput('github-api-url') || GITHUB_API_URL,
     token: core.getInput('token', { required: true })
   }
 }
