@@ -87,6 +87,7 @@ async function main () {
   const { token, fork, defaultBranch, apiUrl, repoUrl } = getGitHubInput()
 
   const bumpMinorPreMajor = getBooleanInput('bump-minor-pre-major')
+  const bumpPatchForMinorPreMajor = getBooleanInput('bump-patch-for-minor-pre-major')
   const monorepoTags = getBooleanInput('monorepo-tags')
   const packageName = core.getInput('package-name')
   const path = core.getInput('path') || undefined
@@ -135,6 +136,7 @@ async function main () {
       token,
       label: RELEASE_LABEL,
       bumpMinorPreMajor,
+      bumpPatchForMinorPreMajor,
       changelogPath,
       changelogSections,
       versionFile,
@@ -8501,7 +8503,7 @@ exports.withCustomRequest = withCustomRequest;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-const VERSION = "2.16.0";
+const VERSION = "2.16.3";
 
 function ownKeys(object, enumerableOnly) {
   var keys = Object.keys(object);
@@ -9930,7 +9932,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "5.10.0";
+const VERSION = "5.10.4";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -59819,12 +59821,13 @@ exports.CommitSplit = CommitSplit;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.RELEASE_PLEASE_MANIFEST = exports.RELEASE_PLEASE_CONFIG = exports.RELEASE_PLEASE = exports.GH_API_URL = exports.DEFAULT_LABELS = void 0;
+exports.MAX_ISSUE_BODY_SIZE = exports.RELEASE_PLEASE_MANIFEST = exports.RELEASE_PLEASE_CONFIG = exports.RELEASE_PLEASE = exports.GH_API_URL = exports.DEFAULT_LABELS = void 0;
 exports.DEFAULT_LABELS = ['autorelease: pending'];
 exports.GH_API_URL = 'https://api.github.com';
 exports.RELEASE_PLEASE = 'release-please';
 exports.RELEASE_PLEASE_CONFIG = `${exports.RELEASE_PLEASE}-config.json`;
 exports.RELEASE_PLEASE_MANIFEST = `.${exports.RELEASE_PLEASE}-manifest.json`;
+exports.MAX_ISSUE_BODY_SIZE = 65536;
 //# sourceMappingURL=constants.js.map
 
 /***/ }),
@@ -60659,7 +60662,7 @@ class GitHub {
                 upstreamRepo: this.repo,
                 title: options.title,
                 branch: options.branch,
-                description: options.body,
+                description: options.body.slice(0, constants_1.MAX_ISSUE_BODY_SIZE),
                 primary: defaultBranch,
                 force: true,
                 fork: this.fork,
@@ -65397,6 +65400,7 @@ class Python extends release_pr_1.ReleasePR {
         }));
         const parsedPyProject = await this.getPyProject();
         const pyProject = (parsedPyProject === null || parsedPyProject === void 0 ? void 0 : parsedPyProject.project) || ((_a = parsedPyProject === null || parsedPyProject === void 0 ? void 0 : parsedPyProject.tool) === null || _a === void 0 ? void 0 : _a.poetry);
+        let projectName = packageName.name;
         if (pyProject) {
             updates.push(new pyproject_toml_1.PyProjectToml({
                 path: this.addPath('pyproject.toml'),
@@ -65404,20 +65408,19 @@ class Python extends release_pr_1.ReleasePR {
                 version: candidate.version,
                 packageName: packageName.name,
             }));
-            if (pyProject.name) {
-                updates.push(new python_file_with_version_1.PythonFileWithVersion({
-                    path: this.addPath(`${pyProject.name}/__init__.py`),
-                    changelogEntry,
-                    version: candidate.version,
-                    packageName: packageName.name,
-                }));
-            }
+            projectName = pyProject.name;
         }
         else {
             logger_1.logger.warn(parsedPyProject
                 ? 'invalid pyproject.toml'
                 : `file ${chalk.green('pyproject.toml')} did not exist`);
         }
+        updates.push(new python_file_with_version_1.PythonFileWithVersion({
+            path: this.addPath(`${projectName}/__init__.py`),
+            changelogEntry,
+            version: candidate.version,
+            packageName: packageName.name,
+        }));
         // There should be only one version.py, but foreach in case that is incorrect
         const versionPyFilesSearch = this.gh.findFilesByFilename('version.py', this.path);
         const versionPyFiles = await versionPyFilesSearch;
@@ -65633,6 +65636,9 @@ class Ruby extends release_pr_1.ReleasePR {
     }
     async buildUpdates(changelogEntry, candidate, packageName) {
         const updates = [];
+        const versionFile = this.versionFile
+            ? this.versionFile
+            : `lib/${packageName.name.replace(/-/g, '/')}/version.rb`;
         updates.push(new changelog_1.Changelog({
             path: this.addPath(this.changelogPath),
             changelogEntry,
@@ -65640,7 +65646,7 @@ class Ruby extends release_pr_1.ReleasePR {
             packageName: packageName.name,
         }));
         updates.push(new version_rb_1.VersionRB({
-            path: this.addPath(this.versionFile),
+            path: this.addPath(versionFile),
             changelogEntry,
             version: candidate.version,
             packageName: packageName.name,
@@ -86182,7 +86188,7 @@ module.exports = JSON.parse("[\"assert\",\"buffer\",\"child_process\",\"cluster\
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"11.23.0"};
+module.exports = {"i8":"11.24.2"};
 
 /***/ }),
 
