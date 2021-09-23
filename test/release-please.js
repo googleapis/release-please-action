@@ -11,6 +11,7 @@ const defaultInput = {
   fork: 'false',
   clean: 'true',
   'bump-minor-pre-major': 'false',
+  'bump-patch-for-minor-pre-major': 'false',
   path: '',
   'monorepo-tags': 'false',
   'changelog-path': '',
