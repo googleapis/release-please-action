@@ -9,6 +9,8 @@ const GITHUB_RELEASE_COMMAND = 'github-release'
 const GITHUB_RELEASE_PR_COMMAND = 'release-pr'
 const GITHUB_API_URL = 'https://api.github.com'
 
+const signoff = core.getInput('signoff') || undefined
+
 function getBooleanInput (input) {
   const trueValue = ['true', 'True', 'TRUE', 'yes', 'Yes', 'YES', 'y', 'Y', 'on', 'On', 'ON']
   const falseValue = ['false', 'False', 'FALSE', 'no', 'No', 'NO', 'n', 'N', 'off', 'Off', 'OFF']
@@ -31,7 +33,8 @@ function getGitHubInput () {
 function getManifestInput () {
   return {
     configFile: core.getInput('config-file') || CONFIG_FILE,
-    manifestFile: core.getInput('manifest-file') || MANIFEST_FILE
+    manifestFile: core.getInput('manifest-file') || MANIFEST_FILE,
+    signoff
   }
 }
 
@@ -135,7 +138,8 @@ async function main () {
       changelogSections,
       versionFile,
       defaultBranch,
-      pullRequestTitlePattern
+      pullRequestTitlePattern,
+      signoff
     })
 
     if (pr) {
