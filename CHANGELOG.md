@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.33.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.32.0...v2.33.0) (2021-09-23)
+
+
+### Features
+
+* add `bump-patch-for-minor-pre-major` option ([#365](https://www.github.com/google-github-actions/release-please-action/issues/365)) ([435e216](https://www.github.com/google-github-actions/release-please-action/commit/435e216fbed0bacec7eb7bc92d39191c3b2c2c3a))
+* **input:** add github API URL configuration for input ([#368](https://www.github.com/google-github-actions/release-please-action/issues/368)) ([fd7f2ff](https://www.github.com/google-github-actions/release-please-action/commit/fd7f2fff26a5ad2654f5f5dc574fd7818f46daec))
+* **release-please:** add signoff options to sign off commits ([#374](https://www.github.com/google-github-actions/release-please-action/issues/374)) ([7677480](https://www.github.com/google-github-actions/release-please-action/commit/76774804a87fc57538dd196466b0f6898a3a69de))
+
 ## [2.32.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.31.0...v2.32.0) (2021-09-13)
 
 
