@@ -61,6 +61,7 @@ Automate releases with Conventional Commit Messages.
 | `pull-request-title-pattern`  | title pattern used to make release PR, defaults to using `chore${scope}: release${component} ${version}`. |
 | `changelog-path` | configure alternate path for `CHANGELOG.md`. Default `CHANGELOG.md` |
 | `github-api-url` | configure github API URL. Default `https://api.github.com` |
+| `--signoff` | Add [`Signed-off-by`](https://git-scm.com/docs/git-commit#Documentation/git-commit.txt---signoff) line at the end of the commit log message using the user and email provided. (format "Name \<email@example.com\>") |
 
 | output | description |
 |:---:|---|
