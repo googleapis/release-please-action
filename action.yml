@@ -72,6 +72,10 @@ inputs:
     description: 'Add [`Signed-off-by`](https://git-scm.com/docs/git-commit#Documentation/git-commit.txt---signoff) line at the end of the commit log message using the user and email provided. (format "Name \<email@example.com\>")'
     required: false
     default: ''
+  github-api-url:
+    description: 'configure github API URL. Default `https://api.github.com`'
+    required: false
+    default: ''
 
 runs:
   using: 'node12'
