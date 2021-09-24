@@ -1,5 +1,12 @@
 # Changelog
 
+### [2.33.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.33.0...v2.33.1) (2021-09-24)
+
+
+### Bug Fixes
+
+* **input:** miss inputs config for action.yml ([#376](https://www.github.com/google-github-actions/release-please-action/issues/376)) ([c7c1147](https://www.github.com/google-github-actions/release-please-action/commit/c7c114719ac3d17225d5f4b0999e80bad98d4621))
+
 ## [2.33.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.32.0...v2.33.0) (2021-09-23)
 
 
