@@ -100,7 +100,7 @@ async function main () {
   if (!command || command === GITHUB_RELEASE_COMMAND) {
     const releaseCreated = await factory.runCommand(GITHUB_RELEASE_COMMAND, {
       label: RELEASE_LABEL,
-      repoUrl: process.env.GITHUB_REPOSITORY,
+      repoUrl,
       packageName,
       path,
       monorepoTags,
