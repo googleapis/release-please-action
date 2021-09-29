@@ -24,7 +24,7 @@ function getGitHubInput () {
   return {
     fork: getBooleanInput('fork'),
     defaultBranch: core.getInput('default-branch') || undefined,
-    repoUrl: process.env.GITHUB_REPOSITORY,
+    repoUrl: core.getInput('repo-url') || process.env.GITHUB_REPOSITORY,
     apiUrl: core.getInput('github-api-url') || GITHUB_API_URL,
     token: core.getInput('token', { required: true })
   }

@@ -76,6 +76,10 @@ inputs:
     description: 'configure github API URL. Default `https://api.github.com`'
     required: false
     default: ''
+  repo-url:
+    description: 'configure github repository URL. Default `process.env.GITHUB_REPOSITORY`'
+    required: false
+    default: ''
 
 runs:
   using: 'node12'
