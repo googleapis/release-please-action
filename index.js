@@ -108,7 +108,8 @@ async function main () {
       changelogPath,
       releaseType,
       defaultBranch,
-      pullRequestTitlePattern
+      pullRequestTitlePattern,
+      apiUrl
     })
 
     if (releaseCreated) {
