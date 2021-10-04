@@ -24,7 +24,7 @@ function getGitHubInput () {
   return {
     fork: getBooleanInput('fork'),
     defaultBranch: core.getInput('default-branch') || undefined,
-    repoUrl: process.env.GITHUB_REPOSITORY,
+    repoUrl: core.getInput('repo-url') || process.env.GITHUB_REPOSITORY,
     apiUrl: core.getInput('github-api-url') || GITHUB_API_URL,
     token: core.getInput('token', { required: true })
   }
@@ -100,7 +100,7 @@ async function main () {
   if (!command || command === GITHUB_RELEASE_COMMAND) {
     const releaseCreated = await factory.runCommand(GITHUB_RELEASE_COMMAND, {
       label: RELEASE_LABEL,
-      repoUrl: process.env.GITHUB_REPOSITORY,
+      repoUrl,
       packageName,
       path,
       monorepoTags,

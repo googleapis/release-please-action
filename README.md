@@ -62,6 +62,7 @@ Automate releases with Conventional Commit Messages.
 | `changelog-path` | configure alternate path for `CHANGELOG.md`. Default `CHANGELOG.md` |
 | `github-api-url` | configure github API URL. Default `https://api.github.com` |
 | `--signoff` | Add [`Signed-off-by`](https://git-scm.com/docs/git-commit#Documentation/git-commit.txt---signoff) line at the end of the commit log message using the user and email provided. (format "Name \<email@example.com\>") |
+| `repo-url` | configure github repository URL. Default `process.env.GITHUB_REPOSITORY` |
 
 | output | description |
 |:---:|---|
