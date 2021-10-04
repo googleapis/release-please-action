@@ -31,7 +31,7 @@ function getGitHubInput () {
   return {
     fork: getBooleanInput('fork'),
     defaultBranch: core.getInput('default-branch') || undefined,
-    repoUrl: process.env.GITHUB_REPOSITORY,
+    repoUrl: core.getInput('repo-url') || process.env.GITHUB_REPOSITORY,
     apiUrl: core.getInput('github-api-url') || GITHUB_API_URL,
     token: core.getInput('token', { required: true })
   }
@@ -107,7 +107,7 @@ async function main () {
   if (!command || command === GITHUB_RELEASE_COMMAND) {
     const releaseCreated = await factory.runCommand(GITHUB_RELEASE_COMMAND, {
       label: RELEASE_LABEL,
-      repoUrl: process.env.GITHUB_REPOSITORY,
+      repoUrl,
       packageName,
       path,
       monorepoTags,
@@ -115,7 +115,8 @@ async function main () {
       changelogPath,
       releaseType,
       defaultBranch,
-      pullRequestTitlePattern
+      pullRequestTitlePattern,
+      apiUrl
     })
 
     if (releaseCreated) {
@@ -8514,7 +8515,7 @@ exports.withCustomRequest = withCustomRequest;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-const VERSION = "2.16.4";
+const VERSION = "2.16.5";
 
 function ownKeys(object, enumerableOnly) {
   var keys = Object.keys(object);
@@ -9171,74 +9172,26 @@ const Endpoints = {
   },
   migrations: {
     cancelImport: ["DELETE /repos/{owner}/{repo}/import"],
-    deleteArchiveForAuthenticatedUser: ["DELETE /user/migrations/{migration_id}/archive", {
-      mediaType: {
-        previews: ["wyandotte"]
-      }
-    }],
-    deleteArchiveForOrg: ["DELETE /orgs/{org}/migrations/{migration_id}/archive", {
-      mediaType: {
-        previews: ["wyandotte"]
-      }
-    }],
-    downloadArchiveForOrg: ["GET /orgs/{org}/migrations/{migration_id}/archive", {
-      mediaType: {
-        previews: ["wyandotte"]
-      }
-    }],
-    getArchiveForAuthenticatedUser: ["GET /user/migrations/{migration_id}/archive", {
-      mediaType: {
-        previews: ["wyandotte"]
-      }
-    }],
+    deleteArchiveForAuthenticatedUser: ["DELETE /user/migrations/{migration_id}/archive"],
+    deleteArchiveForOrg: ["DELETE /orgs/{org}/migrations/{migration_id}/archive"],
+    downloadArchiveForOrg: ["GET /orgs/{org}/migrations/{migration_id}/archive"],
+    getArchiveForAuthenticatedUser: ["GET /user/migrations/{migration_id}/archive"],
     getCommitAuthors: ["GET /repos/{owner}/{repo}/import/authors"],
     getImportStatus: ["GET /repos/{owner}/{repo}/import"],
     getLargeFiles: ["GET /repos/{owner}/{repo}/import/large_files"],
-    getStatusForAuthenticatedUser: ["GET /user/migrations/{migration_id}", {
-      mediaType: {
-        previews: ["wyandotte"]
-      }
-    }],
-    getStatusForOrg: ["GET /orgs/{org}/migrations/{migration_id}", {
-      mediaType: {
-        previews: ["wyandotte"]
-      }
-    }],
-    listForAuthenticatedUser: ["GET /user/migrations", {
-      mediaType: {
-        previews: ["wyandotte"]
-      }
-    }],
-    listForOrg: ["GET /orgs/{org}/migrations", {
-      mediaType: {
-        previews: ["wyandotte"]
-      }
-    }],
-    listReposForOrg: ["GET /orgs/{org}/migrations/{migration_id}/repositories", {
-      mediaType: {
-        previews: ["wyandotte"]
-      }
-    }],
-    listReposForUser: ["GET /user/migrations/{migration_id}/repositories", {
-      mediaType: {
-        previews: ["wyandotte"]
-      }
-    }],
+    getStatusForAuthenticatedUser: ["GET /user/migrations/{migration_id}"],
+    getStatusForOrg: ["GET /orgs/{org}/migrations/{migration_id}"],
+    listForAuthenticatedUser: ["GET /user/migrations"],
+    listForOrg: ["GET /orgs/{org}/migrations"],
+    listReposForOrg: ["GET /orgs/{org}/migrations/{migration_id}/repositories"],
+    listReposForUser: ["GET /user/migrations/{migration_id}/repositories"],
     mapCommitAuthor: ["PATCH /repos/{owner}/{repo}/import/authors/{author_id}"],
     setLfsPreference: ["PATCH /repos/{owner}/{repo}/import/lfs"],
     startForAuthenticatedUser: ["POST /user/migrations"],
     startForOrg: ["POST /orgs/{org}/migrations"],
     startImport: ["PUT /repos/{owner}/{repo}/import"],
-    unlockRepoForAuthenticatedUser: ["DELETE /user/migrations/{migration_id}/repos/{repo_name}/lock", {
-      mediaType: {
-        previews: ["wyandotte"]
-      }
-    }],
-    unlockRepoForOrg: ["DELETE /orgs/{org}/migrations/{migration_id}/repos/{repo_name}/lock", {
-      mediaType: {
-        previews: ["wyandotte"]
-      }
-    }],
+    unlockRepoForAuthenticatedUser: ["DELETE /user/migrations/{migration_id}/repos/{repo_name}/lock"],
+    unlockRepoForOrg: ["DELETE /orgs/{org}/migrations/{migration_id}/repos/{repo_name}/lock"],
     updateImport: ["PATCH /repos/{owner}/{repo}/import"]
   },
   orgs: {
@@ -9318,131 +9271,31 @@ const Endpoints = {
     restorePackageVersionForUser: ["POST /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}/restore"]
   },
   projects: {
-    addCollaborator: ["PUT /projects/{project_id}/collaborators/{username}", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    createCard: ["POST /projects/columns/{column_id}/cards", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    createColumn: ["POST /projects/{project_id}/columns", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    createForAuthenticatedUser: ["POST /user/projects", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    createForOrg: ["POST /orgs/{org}/projects", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    createForRepo: ["POST /repos/{owner}/{repo}/projects", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    delete: ["DELETE /projects/{project_id}", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    deleteCard: ["DELETE /projects/columns/cards/{card_id}", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    deleteColumn: ["DELETE /projects/columns/{column_id}", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    get: ["GET /projects/{project_id}", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    getCard: ["GET /projects/columns/cards/{card_id}", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    getColumn: ["GET /projects/columns/{column_id}", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    getPermissionForUser: ["GET /projects/{project_id}/collaborators/{username}/permission", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    listCards: ["GET /projects/columns/{column_id}/cards", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    listCollaborators: ["GET /projects/{project_id}/collaborators", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    listColumns: ["GET /projects/{project_id}/columns", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    listForOrg: ["GET /orgs/{org}/projects", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    listForRepo: ["GET /repos/{owner}/{repo}/projects", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    listForUser: ["GET /users/{username}/projects", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    moveCard: ["POST /projects/columns/cards/{card_id}/moves", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    moveColumn: ["POST /projects/columns/{column_id}/moves", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    removeCollaborator: ["DELETE /projects/{project_id}/collaborators/{username}", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    update: ["PATCH /projects/{project_id}", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    updateCard: ["PATCH /projects/columns/cards/{card_id}", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
-    updateColumn: ["PATCH /projects/columns/{column_id}", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }]
+    addCollaborator: ["PUT /projects/{project_id}/collaborators/{username}"],
+    createCard: ["POST /projects/columns/{column_id}/cards"],
+    createColumn: ["POST /projects/{project_id}/columns"],
+    createForAuthenticatedUser: ["POST /user/projects"],
+    createForOrg: ["POST /orgs/{org}/projects"],
+    createForRepo: ["POST /repos/{owner}/{repo}/projects"],
+    delete: ["DELETE /projects/{project_id}"],
+    deleteCard: ["DELETE /projects/columns/cards/{card_id}"],
+    deleteColumn: ["DELETE /projects/columns/{column_id}"],
+    get: ["GET /projects/{project_id}"],
+    getCard: ["GET /projects/columns/cards/{card_id}"],
+    getColumn: ["GET /projects/columns/{column_id}"],
+    getPermissionForUser: ["GET /projects/{project_id}/collaborators/{username}/permission"],
+    listCards: ["GET /projects/columns/{column_id}/cards"],
+    listCollaborators: ["GET /projects/{project_id}/collaborators"],
+    listColumns: ["GET /projects/{project_id}/columns"],
+    listForOrg: ["GET /orgs/{org}/projects"],
+    listForRepo: ["GET /repos/{owner}/{repo}/projects"],
+    listForUser: ["GET /users/{username}/projects"],
+    moveCard: ["POST /projects/columns/cards/{card_id}/moves"],
+    moveColumn: ["POST /projects/columns/{column_id}/moves"],
+    removeCollaborator: ["DELETE /projects/{project_id}/collaborators/{username}"],
+    update: ["PATCH /projects/{project_id}"],
+    updateCard: ["PATCH /projects/columns/cards/{card_id}"],
+    updateColumn: ["PATCH /projects/columns/{column_id}"]
   },
   pulls: {
     checkIfMerged: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
@@ -9469,11 +9322,7 @@ const Endpoints = {
     requestReviewers: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"],
     submitReview: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/events"],
     update: ["PATCH /repos/{owner}/{repo}/pulls/{pull_number}"],
-    updateBranch: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch", {
-      mediaType: {
-        previews: ["lydian"]
-      }
-    }],
+    updateBranch: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch"],
     updateReview: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"],
     updateReviewComment: ["PATCH /repos/{owner}/{repo}/pulls/comments/{comment_id}"]
   },
@@ -9600,11 +9449,7 @@ const Endpoints = {
       mapToData: "users"
     }],
     checkCollaborator: ["GET /repos/{owner}/{repo}/collaborators/{username}"],
-    checkVulnerabilityAlerts: ["GET /repos/{owner}/{repo}/vulnerability-alerts", {
-      mediaType: {
-        previews: ["dorian"]
-      }
-    }],
+    checkVulnerabilityAlerts: ["GET /repos/{owner}/{repo}/vulnerability-alerts"],
     compareCommits: ["GET /repos/{owner}/{repo}/compare/{base}...{head}"],
     compareCommitsWithBasehead: ["GET /repos/{owner}/{repo}/compare/{basehead}"],
     createAutolink: ["POST /repos/{owner}/{repo}/autolinks"],
@@ -9662,33 +9507,17 @@ const Endpoints = {
     deleteRelease: ["DELETE /repos/{owner}/{repo}/releases/{release_id}"],
     deleteReleaseAsset: ["DELETE /repos/{owner}/{repo}/releases/assets/{asset_id}"],
     deleteWebhook: ["DELETE /repos/{owner}/{repo}/hooks/{hook_id}"],
-    disableAutomatedSecurityFixes: ["DELETE /repos/{owner}/{repo}/automated-security-fixes", {
-      mediaType: {
-        previews: ["london"]
-      }
-    }],
+    disableAutomatedSecurityFixes: ["DELETE /repos/{owner}/{repo}/automated-security-fixes"],
     disableLfsForRepo: ["DELETE /repos/{owner}/{repo}/lfs"],
-    disableVulnerabilityAlerts: ["DELETE /repos/{owner}/{repo}/vulnerability-alerts", {
-      mediaType: {
-        previews: ["dorian"]
-      }
-    }],
+    disableVulnerabilityAlerts: ["DELETE /repos/{owner}/{repo}/vulnerability-alerts"],
     downloadArchive: ["GET /repos/{owner}/{repo}/zipball/{ref}", {}, {
       renamed: ["repos", "downloadZipballArchive"]
     }],
     downloadTarballArchive: ["GET /repos/{owner}/{repo}/tarball/{ref}"],
     downloadZipballArchive: ["GET /repos/{owner}/{repo}/zipball/{ref}"],
-    enableAutomatedSecurityFixes: ["PUT /repos/{owner}/{repo}/automated-security-fixes", {
-      mediaType: {
-        previews: ["london"]
-      }
-    }],
+    enableAutomatedSecurityFixes: ["PUT /repos/{owner}/{repo}/automated-security-fixes"],
     enableLfsForRepo: ["PUT /repos/{owner}/{repo}/lfs"],
-    enableVulnerabilityAlerts: ["PUT /repos/{owner}/{repo}/vulnerability-alerts", {
-      mediaType: {
-        previews: ["dorian"]
-      }
-    }],
+    enableVulnerabilityAlerts: ["PUT /repos/{owner}/{repo}/vulnerability-alerts"],
     get: ["GET /repos/{owner}/{repo}"],
     getAccessRestrictions: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions"],
     getAdminBranchProtection: ["GET /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"],
@@ -9855,17 +9684,9 @@ const Endpoints = {
   },
   teams: {
     addOrUpdateMembershipForUserInOrg: ["PUT /orgs/{org}/teams/{team_slug}/memberships/{username}"],
-    addOrUpdateProjectPermissionsInOrg: ["PUT /orgs/{org}/teams/{team_slug}/projects/{project_id}", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
+    addOrUpdateProjectPermissionsInOrg: ["PUT /orgs/{org}/teams/{team_slug}/projects/{project_id}"],
     addOrUpdateRepoPermissionsInOrg: ["PUT /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"],
-    checkPermissionsForProjectInOrg: ["GET /orgs/{org}/teams/{team_slug}/projects/{project_id}", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
+    checkPermissionsForProjectInOrg: ["GET /orgs/{org}/teams/{team_slug}/projects/{project_id}"],
     checkPermissionsForRepoInOrg: ["GET /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"],
     create: ["POST /orgs/{org}/teams"],
     createDiscussionCommentInOrg: ["POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments"],
@@ -9884,11 +9705,7 @@ const Endpoints = {
     listForAuthenticatedUser: ["GET /user/teams"],
     listMembersInOrg: ["GET /orgs/{org}/teams/{team_slug}/members"],
     listPendingInvitationsInOrg: ["GET /orgs/{org}/teams/{team_slug}/invitations"],
-    listProjectsInOrg: ["GET /orgs/{org}/teams/{team_slug}/projects", {
-      mediaType: {
-        previews: ["inertia"]
-      }
-    }],
+    listProjectsInOrg: ["GET /orgs/{org}/teams/{team_slug}/projects"],
     listReposInOrg: ["GET /orgs/{org}/teams/{team_slug}/repos"],
     removeMembershipForUserInOrg: ["DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}"],
     removeProjectInOrg: ["DELETE /orgs/{org}/teams/{team_slug}/projects/{project_id}"],
@@ -9933,7 +9750,7 @@ const Endpoints = {
   }
 };
 
-const VERSION = "5.11.1";
+const VERSION = "5.11.3";
 
 function endpointsToMethods(octokit, endpointsMap) {
   const newMethods = {};
@@ -10318,7 +10135,7 @@ var pluginRequestLog = __nccwpck_require__(68883);
 var pluginPaginateRest = __nccwpck_require__(64193);
 var pluginRestEndpointMethods = __nccwpck_require__(83044);
 
-const VERSION = "18.11.0";
+const VERSION = "18.11.3";
 
 const Octokit = core.Octokit.plugin(pluginRequestLog.requestLog, pluginRestEndpointMethods.legacyRestEndpointMethods, pluginPaginateRest.paginateRest).defaults({
   userAgent: `octokit-rest.js/${VERSION}`
@@ -60258,11 +60075,20 @@ function githubRelease(options) {
 function releasePR(options) {
     const [GHFactoryOptions, RPFactoryOptions] = getGitHubFactoryOpts(options);
     const github = gitHubInstance(GHFactoryOptions);
-    const { releaseType, label, ...RPConstructorOptions } = RPFactoryOptions;
+    const { releaseType, label, latestTagName, latestTagSha, latestTagVersion, ...RPConstructorOptions } = RPFactoryOptions;
+    let latestTag = undefined;
+    if (latestTagName && latestTagSha && latestTagVersion) {
+        latestTag = {
+            name: latestTagName,
+            sha: latestTagSha,
+            version: latestTagVersion,
+        };
+    }
     const labels = getLabels(label);
     return new (exports.factory.releasePRClass(releaseType))({
         github,
         labels,
+        latestTag,
         ...RPConstructorOptions,
     });
 }
@@ -62081,7 +61907,7 @@ class Manifest {
         }
     }
     async getConfigJson() {
-        var _a, _b, _c, _d, _e, _f;
+        var _a, _b, _c, _d, _e, _f, _g, _h;
         // cache config since it's loaded in validate() as well as later on and we
         // never write to it.
         if (!this.configFile) {
@@ -62099,6 +61925,7 @@ class Manifest {
                     changelogPath: pkgCfg['changelog-path'],
                     releaseAs: this.resolveReleaseAs(pkgCfg['release-as'], config['release-as']),
                     draft: (_f = pkgCfg['draft']) !== null && _f !== void 0 ? _f : config['draft'],
+                    skipGithubRelease: (_h = (_g = pkgCfg['skip-github-release']) !== null && _g !== void 0 ? _g : config['skip-github-release']) !== null && _h !== void 0 ? _h : false,
                 };
                 packages.push(pkg);
             }
@@ -62449,6 +62276,11 @@ class Manifest {
                 // a user manually modified the manifest file on the release branch
                 // right before merging it and deleted the entry for this pkg.
                 this.checkpoint(`Unable to find last version for ${pkgLogDisp}.`, checkpoint_1.CheckpointType.Failure);
+                releases[pkg.config.path] = undefined;
+                continue;
+            }
+            if (pkg.config.skipGithubRelease) {
+                this.gh.commentOnIssue(`:robot: ${pkgName} not configured for release :no_entry_sign:`, lastMergedPR.number);
                 releases[pkg.config.path] = undefined;
                 continue;
             }
@@ -63375,6 +63207,7 @@ class ReleasePR {
         this.signoff = options.signoff;
         this.extraFiles = (_c = options.extraFiles) !== null && _c !== void 0 ? _c : [];
         this.forManifestReleaser = (_d = options.skipDependencyUpdates) !== null && _d !== void 0 ? _d : false;
+        this.latestTagOverride = options.latestTag;
     }
     // A releaser can override this method to automatically detect the
     // packageName from source code (e.g. package.json "name")
@@ -63740,6 +63573,9 @@ class ReleasePR {
      *   versions. Defaults to false.
      */
     async latestTag(prefix, preRelease = false) {
+        if (this.latestTagOverride) {
+            return this.latestTagOverride;
+        }
         const branchPrefix = (prefix === null || prefix === void 0 ? void 0 : prefix.endsWith('-')) ? prefix.replace(/-$/, '')
             : prefix;
         // only look at the last 250 or so commits to find the latest tag - we
@@ -63781,6 +63617,78 @@ class ReleasePR {
 }
 exports.ReleasePR = ReleasePR;
 //# sourceMappingURL=release-pr.js.map
+
+/***/ }),
+
+/***/ 95678:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Dart = void 0;
+const release_pr_1 = __nccwpck_require__(86786);
+// Generic
+const changelog_1 = __nccwpck_require__(3325);
+const yaml = __nccwpck_require__(31882);
+// pubspec
+const pubspec_yaml_1 = __nccwpck_require__(99637);
+class Dart extends release_pr_1.ReleasePR {
+    async buildUpdates(changelogEntry, candidate, packageName) {
+        const updates = [];
+        updates.push(new changelog_1.Changelog({
+            path: this.addPath(this.changelogPath),
+            changelogEntry,
+            version: candidate.version,
+            packageName: packageName.name,
+        }));
+        updates.push(new pubspec_yaml_1.PubspecYaml({
+            path: this.addPath('pubspec.yaml'),
+            changelogEntry,
+            version: candidate.version,
+            packageName: packageName.name,
+        }));
+        return updates;
+    }
+    async getPackageName() {
+        var _a;
+        if (this._packageName === undefined) {
+            const pubspecYmlContents = await this.getPubspecYmlContents();
+            const pubspec = yaml.load(pubspecYmlContents.parsedContent, { json: true });
+            if (typeof pubspec === 'object') {
+                this.packageName = this._packageName = (_a = pubspec.name) !== null && _a !== void 0 ? _a : this.packageName;
+            }
+            else {
+                this._packageName = this.packageName;
+            }
+        }
+        return {
+            name: this.packageName,
+            getComponent: () => this.packageName,
+        };
+    }
+    async getPubspecYmlContents() {
+        if (!this.pubspecYmlContents) {
+            this.pubspecYmlContents = await this.gh.getFileContents(this.addPath('pubspec.yaml'));
+        }
+        return this.pubspecYmlContents;
+    }
+}
+exports.Dart = Dart;
+//# sourceMappingURL=dart.js.map
 
 /***/ }),
 
@@ -64156,9 +64064,12 @@ const rust_1 = __nccwpck_require__(18109);
 const ocaml_1 = __nccwpck_require__(26571);
 const helm_1 = __nccwpck_require__(42474);
 const elixir_1 = __nccwpck_require__(54737);
+const java_backport_1 = __nccwpck_require__(49416);
+const dart_1 = __nccwpck_require__(95678);
 const releasers = {
     go: go_1.Go,
     'go-yoshi': go_yoshi_1.GoYoshi,
+    'java-backport': java_backport_1.JavaBackport,
     'java-bom': java_bom_1.JavaBom,
     'java-lts': java_lts_1.JavaLTS,
     'java-yoshi': java_yoshi_1.JavaYoshi,
@@ -64175,6 +64086,7 @@ const releasers = {
     'terraform-module': terraform_module_1.TerraformModule,
     helm: helm_1.Helm,
     elixir: elixir_1.Elixir,
+    dart: dart_1.Dart,
 };
 function getReleasers() {
     return releasers;
@@ -64194,6 +64106,56 @@ function getReleaserTypes() {
 }
 exports.getReleaserTypes = getReleaserTypes;
 //# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 49416:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.JavaBackport = void 0;
+// Java
+const version_1 = __nccwpck_require__(48074);
+const java_yoshi_1 = __nccwpck_require__(42334);
+// This release strategy always bumps the patch version
+class JavaBackport extends java_yoshi_1.JavaYoshi {
+    async coerceVersions(_cc, _candidate, _latestTag, currentVersions) {
+        const bumpType = this.snapshot ? 'snapshot' : 'patch';
+        const newVersions = new Map();
+        for (const [k, version] of currentVersions) {
+            newVersions.set(k, version_1.Version.parse(version).bump(bumpType).toString());
+        }
+        return newVersions;
+    }
+    async coerceReleaseCandidate(cc, latestTag, _preRelease = false) {
+        var _a;
+        const bumpType = this.snapshot ? 'snapshot' : 'patch';
+        const version = version_1.Version.parse((_a = latestTag === null || latestTag === void 0 ? void 0 : latestTag.version) !== null && _a !== void 0 ? _a : this.defaultInitialVersion())
+            .bump(bumpType)
+            .toString();
+        return {
+            previousTag: latestTag === null || latestTag === void 0 ? void 0 : latestTag.version,
+            version,
+        };
+    }
+}
+exports.JavaBackport = JavaBackport;
+//# sourceMappingURL=java-backport.js.map
 
 /***/ }),
 
@@ -65454,8 +65416,15 @@ class Python extends release_pr_1.ReleasePR {
                 ? 'invalid pyproject.toml'
                 : `file ${chalk.green('pyproject.toml')} did not exist`);
         }
+        // TODO: figure out refactor that makes logic for updating __init__.py, version.py, __version__.py etc., configurable
         updates.push(new python_file_with_version_1.PythonFileWithVersion({
             path: this.addPath(`${projectName}/__init__.py`),
+            changelogEntry,
+            version: candidate.version,
+            packageName: packageName.name,
+        }));
+        updates.push(new python_file_with_version_1.PythonFileWithVersion({
+            path: this.addPath(`src/${projectName}/__init__.py`),
             changelogEntry,
             version: candidate.version,
             packageName: packageName.name,
@@ -66737,6 +66706,57 @@ class PHPManifest {
 }
 exports.PHPManifest = PHPManifest;
 //# sourceMappingURL=php-manifest.js.map
+
+/***/ }),
+
+/***/ 99637:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PubspecYaml = void 0;
+const logger_1 = __nccwpck_require__(68809);
+class PubspecYaml {
+    constructor(options) {
+        this.create = false;
+        this.path = options.path;
+        this.changelogEntry = options.changelogEntry;
+        this.version = options.version;
+        this.packageName = options.packageName;
+        this.contents = options.contents;
+    }
+    updateContent(content) {
+        const oldVersion = content.match(/version: ([0-9.]+)\+?([0-9]*$)/);
+        let buildNumber = '';
+        if (oldVersion) {
+            buildNumber = `${oldVersion[2]}`;
+            if (buildNumber.length > 0) {
+                buildNumber = `+${buildNumber}`;
+                logger_1.logger.info(`updating ${this.path} from ${oldVersion[1]}${buildNumber} to ${this.version}${buildNumber}`);
+            }
+            else {
+                logger_1.logger.info(`updating ${this.path} from ${oldVersion[1]} to ${this.version}`);
+            }
+        }
+        return content.replace(/version: ([0-9.]+)\+?([0-9]*$)/, `version: ${this.version}${buildNumber}`);
+    }
+}
+exports.PubspecYaml = PubspecYaml;
+//# sourceMappingURL=pubspec-yaml.js.map
 
 /***/ }),
 
@@ -88431,7 +88451,7 @@ module.exports = JSON.parse("[\"assert\",\"buffer\",\"child_process\",\"cluster\
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"12.2.0"};
+module.exports = {"i8":"12.5.0"};
 
 /***/ }),
 
