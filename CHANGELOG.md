@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.34.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.33.1...v2.34.0) (2021-10-04)
+
+
+### Features
+
+* allow repo url to be set as argument to GitHub action ([#380](https://www.github.com/google-github-actions/release-please-action/issues/380)) ([a0cd0f5](https://www.github.com/google-github-actions/release-please-action/commit/a0cd0f5123ff8cb3d8e4aefd3158a4276c2034ed))
+
+
+### Bug Fixes
+
+* **config:** add apiUrl config on Github release command ([#379](https://www.github.com/google-github-actions/release-please-action/issues/379)) ([906f915](https://www.github.com/google-github-actions/release-please-action/commit/906f9156f8d5659aa73c8cc6c4aea2c65cde2be2))
+
 ### [2.33.1](https://www.github.com/google-github-actions/release-please-action/compare/v2.33.0...v2.33.1) (2021-09-24)
 
 
