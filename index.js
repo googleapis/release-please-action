@@ -8,6 +8,7 @@ const RELEASE_LABEL = 'autorelease: pending'
 const GITHUB_RELEASE_COMMAND = 'github-release'
 const GITHUB_RELEASE_PR_COMMAND = 'release-pr'
 const GITHUB_API_URL = 'https://api.github.com'
+const GITHUB_GRAPHQL_URL = 'https://api.github.com'
 
 const signoff = core.getInput('signoff') || undefined
 
@@ -26,6 +27,7 @@ function getGitHubInput () {
     defaultBranch: core.getInput('default-branch') || undefined,
     repoUrl: core.getInput('repo-url') || process.env.GITHUB_REPOSITORY,
     apiUrl: core.getInput('github-api-url') || GITHUB_API_URL,
+    graphqlUrl: core.getInput('github-graphql-url') || GITHUB_GRAPHQL_URL,
     token: core.getInput('token', { required: true })
   }
 }
@@ -81,7 +83,7 @@ async function main () {
     return await runManifest(command)
   }
 
-  const { token, fork, defaultBranch, apiUrl, repoUrl } = getGitHubInput()
+  const { token, fork, defaultBranch, apiUrl, graphqlUrl, repoUrl } = getGitHubInput()
 
   const bumpMinorPreMajor = getBooleanInput('bump-minor-pre-major')
   const bumpPatchForMinorPreMajor = getBooleanInput('bump-patch-for-minor-pre-major')
@@ -109,7 +111,8 @@ async function main () {
       releaseType,
       defaultBranch,
       pullRequestTitlePattern,
-      apiUrl
+      apiUrl,
+      graphqlUrl
     })
 
     if (releaseCreated) {
@@ -129,6 +132,7 @@ async function main () {
       packageName,
       path,
       apiUrl,
+      graphqlUrl,
       repoUrl,
       fork,
       token,
