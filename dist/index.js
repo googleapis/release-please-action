@@ -14497,10 +14497,10 @@ module.exports = function (config) {
   })
 
   return Q.all([
-    readFile(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
-    readFile(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
+    readFile(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
+    readFile(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
   ])
     .spread((template, header, commit, footer) => {
       const writerOpts = getWriterOpts(config)
@@ -14719,10 +14719,10 @@ function conventionalChangelogWriterInit (context, options) {
     includeDetails: false,
     ignoreReverted: true,
     doFlush: true,
-    mainTemplate: readFileSync(__nccwpck_require__.ab + "template1.hbs", 'utf-8'),
-    headerPartial: readFileSync(__nccwpck_require__.ab + "header1.hbs", 'utf-8'),
-    commitPartial: readFileSync(__nccwpck_require__.ab + "commit1.hbs", 'utf-8'),
-    footerPartial: readFileSync(__nccwpck_require__.ab + "footer.hbs", 'utf-8')
+    mainTemplate: readFileSync(__nccwpck_require__.ab + "template2.hbs", 'utf-8'),
+    headerPartial: readFileSync(__nccwpck_require__.ab + "header2.hbs", 'utf-8'),
+    commitPartial: readFileSync(__nccwpck_require__.ab + "commit2.hbs", 'utf-8'),
+    footerPartial: readFileSync(__nccwpck_require__.ab + "footer1.hbs", 'utf-8')
   }, options)
 
   if ((!_.isFunction(options.transform) && _.isObject(options.transform)) || _.isUndefined(options.transform)) {
