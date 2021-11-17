@@ -56,6 +56,7 @@ Automate releases with Conventional Commit Messages.
 | `changelog-types` | A JSON formatted String containing to override the outputted changelog sections |
 | `version-file` | provide a path to a version file to increment (used by ruby releaser) |
 | `fork`          | Should the PR be created from a fork. Default `false`|
+| `draft` | Should the GitHub release be a draft. Default `false`|
 | `command`          | release-please command to run, either `github-release`, or `release-pr`, `manifest`, `manifest-pr` (_defaults to running both_) |
 | `default-branch`  | branch to open pull release PR against (detected by default) |
 | `pull-request-title-pattern`  | title pattern used to make release PR, defaults to using `chore${scope}: release${component} ${version}`. |
@@ -76,6 +77,7 @@ Automate releases with Conventional Commit Messages.
 | `patch` | Number representing patch semver value |
 | `sha` | sha that a GitHub release was tagged at |
 | `pr` | The PR number of an opened release (undefined if no release created) |
+| `draft` | `true` if the GitHub release is a draft, `false` otherwise |
 
 ### Release types supported
 
