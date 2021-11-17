@@ -84,6 +84,10 @@ inputs:
     description: 'configure github repository URL. Default `process.env.GITHUB_REPOSITORY`'
     required: false
     default: ''
+  draft:
+    description: 'should the GitHub release be a draft'
+    required: false
+    default: false
 
 runs:
   using: 'node12'

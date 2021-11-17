@@ -20,7 +20,8 @@ const defaultInput = {
   'version-file': '',
   'default-branch': '',
   // eslint-disable-next-line no-template-curly-in-string
-  'pull-request-title-pattern': 'chore${scope}: release${component} ${version}'
+  'pull-request-title-pattern': 'chore${scope}: release${component} ${version}',
+  draft: 'false'
 }
 
 let input
@@ -254,7 +255,8 @@ describe('release-please-action', () => {
       patch: 3,
       version: 'v1.2.3',
       sha: 'abc123',
-      pr: 33
+      pr: 33,
+      draft: false
     }
     input = {
       'release-type': 'node',

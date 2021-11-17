@@ -88,6 +88,7 @@ async function main () {
   const bumpMinorPreMajor = getBooleanInput('bump-minor-pre-major')
   const bumpPatchForMinorPreMajor = getBooleanInput('bump-patch-for-minor-pre-major')
   const monorepoTags = getBooleanInput('monorepo-tags')
+  const draft = getBooleanInput('draft')
   const packageName = core.getInput('package-name')
   const path = core.getInput('path') || undefined
   const releaseType = core.getInput('release-type', { required: true })
@@ -112,7 +113,8 @@ async function main () {
       defaultBranch,
       pullRequestTitlePattern,
       apiUrl,
-      graphqlUrl
+      graphqlUrl,
+      draft
     })
 
     if (releaseCreated) {
