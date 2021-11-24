@@ -45,7 +45,7 @@ async function runManifest (command) {
   // argument provided to GitHub action:
   const { fork } = getGitHubInput()
   const manifestOpts = getManifestInput()
-  const github = getGitHubInstance()
+  const github = await getGitHubInstance()
   const manifest = await Manifest.fromManifest(
     github,
     github.repository.defaultBranch,
@@ -64,32 +64,7 @@ async function runManifest (command) {
   }
   if (command === 'manifest-pr') return
 
-  const releasesCreated = await manifest.createReleases()
-  const pathsReleased = []
-  if (releasesCreated) {
-    core.setOutput('releases_created', true)
-    for (const [path, release] of Object.entries(releasesCreated)) {
-      if (!release) {
-        continue
-      }
-      pathsReleased.push(path)
-      if (path === '.') {
-        core.setOutput('release_created', true)
-      } else {
-        core.setOutput(`${path}--release_created`, true)
-      }
-      for (const [key, val] of Object.entries(release)) {
-        if (path === '.') {
-          core.setOutput(key, val)
-        } else {
-          core.setOutput(`${path}--${key}`, val)
-        }
-      }
-    }
-  }
-  // Paths of all releases that were created, so that they can be passed
-  // to matrix in next step:
-  core.setOutput('paths_released', JSON.stringify(pathsReleased))
+  outputReleases(await manifest.createReleases())
 }
 
 async function main () {
@@ -108,7 +83,7 @@ async function main () {
   const changelogTypes = core.getInput('changelog-types') || undefined
   const changelogSections = changelogTypes && JSON.parse(changelogTypes)
   const versionFile = core.getInput('version-file') || undefined
-  const github = getGitHubInstance()
+  const github = await getGitHubInstance()
   const manifest = await Manifest.fromConfig(
     github,
     github.repository.defaultBranch,
@@ -131,14 +106,7 @@ async function main () {
   // First we check for any merged release PRs (PRs merged with the label
   // "autorelease: pending"):
   if (!command || command === GITHUB_RELEASE_COMMAND) {
-    const releasesCreated = await manifest.createReleases()
-    if (releasesCreated.length) {
-      const releaseCreated = releasesCreated[0]
-      core.setOutput('release_created', true)
-      for (const key of Object.keys(releaseCreated)) {
-        core.setOutput(key, releaseCreated[key])
-      }
-    }
+    outputReleases(await manifest.createReleases())
   }
 
   // Next we check for PRs merged since the last release, and groom the
@@ -169,6 +137,39 @@ function getGitHubInstance () {
   }
   if (defaultBranch) githubCreateOpts.defaultBranch = defaultBranch
   return GitHub.create(githubCreateOpts)
+}
+
+function outputReleases (releases) {
+  const pathsReleased = []
+  if (releases.length) {
+    core.setOutput('releases_created', true)
+    for (const release of releases) {
+      if (!release) {
+        continue
+      }
+      const path = release.path || '.'
+      if (path) {
+        pathsReleased.push(path)
+        // If the special root release is set (representing project root)
+        // and this is explicitly a manifest release, set the release_created boolean.
+        if (path === '.') {
+          core.setOutput('release_created', true)
+        } else {
+          core.setOutput(`${path}--release_created`, true)
+        }
+      }
+      for (const [key, val] of Object.entries(release)) {
+        if (path === '.') {
+          core.setOutput(key, val)
+        } else {
+          core.setOutput(`${path}--${key}`, val)
+        }
+      }
+    }
+  }
+  // Paths of all releases that were created, so that they can be passed
+  // to matrix in next step:
+  core.setOutput('paths_released', JSON.stringify(pathsReleased))
 }
 
 /* c8 ignore next 4 */
