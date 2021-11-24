@@ -26,14 +26,14 @@
   "homepage": "https://github.com/bcoe/release-please-action#readme",
   "dependencies": {
     "@actions/core": "^1.2.6",
-    "release-please": "^12.6.0"
+    "release-please": "^13.0.0-candidate.1"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.27.0",
     "c8": "^7.5.0",
-    "mocha": "^8.2.1",
+    "mocha": "^9.1.3",
     "sinon": "^9.2.4",
-    "standard": "^16.0.3"
+    "standard": "^16.0.4"
   },
   "standard": {
     "ignore": "dist/"
