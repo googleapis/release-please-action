@@ -57,13 +57,8 @@ async function runManifest (command) {
     }
   )
   // Create or update release PRs:
-  const pr = await manifest.createPullRequests()
-  if (pr.length) {
-    core.setOutput('pr', pr[0])
-    core.setOutput('prs', JSON.stringify(pr))
-  }
+  outputPRs(await manifest.createPullRequests())
   if (command === 'manifest-pr') return
-
   outputReleases(await manifest.createReleases())
 }
 
@@ -76,6 +71,7 @@ async function main () {
   const { fork } = getGitHubInput()
   const bumpMinorPreMajor = getBooleanInput('bump-minor-pre-major')
   const bumpPatchForMinorPreMajor = getBooleanInput('bump-patch-for-minor-pre-major')
+  const monorepoTags = getBooleanInput('monorepo-tags')
   const packageName = core.getInput('package-name')
   const path = core.getInput('path') || undefined
   const releaseType = core.getInput('release-type', { required: true })
@@ -94,7 +90,8 @@ async function main () {
       releaseType,
       changelogPath,
       changelogSections,
-      versionFile
+      versionFile,
+      includeComponentInTag: monorepoTags
     },
     {
       signoff,
@@ -112,11 +109,7 @@ async function main () {
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
   if (!command || command === GITHUB_RELEASE_PR_COMMAND) {
-    const pr = await manifest.createPullRequests()
-    if (pr.length) {
-      core.setOutput('pr', pr[0])
-      core.setOutput('prs', JSON.stringify(pr))
-    }
+    outputPRs(await manifest.createPullRequests())
   }
 }
 
@@ -140,13 +133,11 @@ function getGitHubInstance () {
 }
 
 function outputReleases (releases) {
+  releases = releases.filter(release => release !== undefined)
   const pathsReleased = []
   if (releases.length) {
     core.setOutput('releases_created', true)
     for (const release of releases) {
-      if (!release) {
-        continue
-      }
       const path = release.path || '.'
       if (path) {
         pathsReleased.push(path)
@@ -170,6 +161,14 @@ function outputReleases (releases) {
   // Paths of all releases that were created, so that they can be passed
   // to matrix in next step:
   core.setOutput('paths_released', JSON.stringify(pathsReleased))
+}
+
+function outputPRs (prs) {
+  prs = prs.filter(pr => pr !== undefined)
+  if (prs.length) {
+    core.setOutput('pr', prs[0])
+    core.setOutput('prs', JSON.stringify(prs))
+  }
 }
 
 /* c8 ignore next 4 */
