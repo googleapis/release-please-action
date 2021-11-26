@@ -62203,7 +62203,7 @@ class Manifest {
         });
         const component = await strategy.getComponent();
         const releasedVersions = {};
-        const latestVersion = await latestReleaseVersion(github, targetBranch, component);
+        const latestVersion = await latestReleaseVersion(github, targetBranch, config.includeComponentInTag ? component : '');
         if (latestVersion) {
             releasedVersions[path] = latestVersion;
         }
@@ -62579,7 +62579,7 @@ class Manifest {
             const strategiesByPath = await this.getStrategiesByPath();
             for (const path in this.repositoryConfig) {
                 const strategy = strategiesByPath[path];
-                const component = strategy.component || (await strategy.getDefaultComponent()) || '';
+                const component = (await strategy.getComponent()) || '';
                 if (this._pathsByComponent[component]) {
                     logger_1.logger.warn(`Multiple paths for ${component}: ${this._pathsByComponent[component]}, ${path}`);
                 }
@@ -65386,6 +65386,9 @@ class Strategy {
         this.includeComponentInTag = (_a = options.includeComponentInTag) !== null && _a !== void 0 ? _a : true;
     }
     async getComponent() {
+        if (!this.includeComponentInTag) {
+            return '';
+        }
         return this.component || (await this.getDefaultComponent());
     }
     async getDefaultComponent() {
@@ -65502,23 +65505,28 @@ class Strategy {
      */
     async buildRelease(mergedPullRequest) {
         if (this.skipGitHubRelease) {
-            return undefined;
+            logger_1.logger.info('Release skipped from strategy config');
+            return;
+        }
+        if (!mergedPullRequest.sha) {
+            logger_1.logger.error('Pull request should have been merged');
+            return;
         }
         const pullRequestTitle = pull_request_title_1.PullRequestTitle.parse(mergedPullRequest.title) ||
             pull_request_title_1.PullRequestTitle.parse(mergedPullRequest.title, manifest_1.MANIFEST_PULL_REQUEST_TITLE_PATTERN);
         if (!pullRequestTitle) {
-            throw new Error(`Bad pull request title: '${mergedPullRequest.title}'`);
+            logger_1.logger.error(`Bad pull request title: '${mergedPullRequest.title}'`);
+            return;
         }
         const branchName = branch_name_1.BranchName.parse(mergedPullRequest.headBranchName);
         if (!branchName) {
-            throw new Error(`Bad branch name: ${mergedPullRequest.headBranchName}`);
-        }
-        if (!mergedPullRequest.sha) {
-            throw new Error('Pull request should have been merged');
+            logger_1.logger.error(`Bad branch name: ${mergedPullRequest.headBranchName}`);
+            return;
         }
         const pullRequestBody = pull_request_body_1.PullRequestBody.parse(mergedPullRequest.body);
         if (!pullRequestBody) {
-            throw new Error('could not parse pull request body as a release PR');
+            logger_1.logger.error('Could not parse pull request body as a release PR');
+            return;
         }
         const component = await this.getComponent();
         logger_1.logger.info('component:', component);
@@ -65535,7 +65543,8 @@ class Strategy {
         }
         const version = pullRequestTitle.getVersion() || (releaseData === null || releaseData === void 0 ? void 0 : releaseData.version);
         if (!version) {
-            throw new Error('Pull request should have included version');
+            logger_1.logger.error('Pull request should have included version');
+            return;
         }
         const tag = new tag_name_1.TagName(version, this.includeComponentInTag ? component : undefined, this.tagSeparator);
         return {
@@ -87919,7 +87928,7 @@ module.exports = JSON.parse("{\"amp\":\"&\",\"apos\":\"'\",\"gt\":\">\",\"lt\":\
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"i8\":\"13.0.0-candidate.2\"}");
+module.exports = JSON.parse("{\"i8\":\"13.0.0-candidate.3\"}");
 
 /***/ }),
 
