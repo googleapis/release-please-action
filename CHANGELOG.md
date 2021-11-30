@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.35.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.34.0...v2.35.0) (2021-10-16)
+
+
+### Features
+
+* **input:** add github GraphQL URL configuration for input ([#385](https://www.github.com/google-github-actions/release-please-action/issues/385)) ([720c5f8](https://www.github.com/google-github-actions/release-please-action/commit/720c5f8f53b8b3ef01ade67dd0ac1a3a8296791d))
+
 ## [2.34.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.33.1...v2.34.0) (2021-10-04)
 
 
