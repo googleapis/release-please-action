@@ -20,7 +20,8 @@ const defaultInput = {
   'version-file': '',
   'default-branch': '',
   // eslint-disable-next-line no-template-curly-in-string
-  'pull-request-title-pattern': 'chore${scope}: release${component} ${version}'
+  'pull-request-title-pattern': 'chore${scope}: release${component} ${version}',
+  'draft-pull-request': 'false'
 }
 
 let input

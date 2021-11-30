@@ -88,6 +88,7 @@ async function main () {
   const versionFile = core.getInput('version-file') || undefined
   const github = await getGitHubInstance()
   const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
+  const draftPullRequest = getBooleanInput('draft-pull-request')
   const manifest = await Manifest.fromConfig(
     github,
     github.repository.defaultBranch,
@@ -100,7 +101,8 @@ async function main () {
       changelogSections,
       versionFile,
       includeComponentInTag: monorepoTags,
-      pullRequestTitlePattern
+      pullRequestTitlePattern,
+      draftPullRequest
     },
     {
       signoff,

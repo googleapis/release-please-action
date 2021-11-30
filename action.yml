@@ -81,9 +81,13 @@ inputs:
     required: false
     default: false
   pull-request-title-pattern:
-    description: 'add title pattern to make release PR, defaults to using "chore${scope}: release${component} ${version}".'
+    description: 'add title pattern to make release PR, defaults to using "chore${scope}: release${component} ${version}"'
     required: false
     default: ''
+  draft-pull-request:
+    description: 'mark pull request as a draft'
+    required: false
+    default: false
 
 runs:
   using: 'node12'
