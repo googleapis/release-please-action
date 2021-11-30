@@ -120,6 +120,32 @@ describe('release-please-action', () => {
     )
   })
 
+  it('opens PR with custom title', async () => {
+    input = {
+      command: 'release-pr',
+      'release-type': 'node',
+      'pull-request-title-pattern': 'beep boop'
+    }
+
+    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
+      createPullRequests: createPullRequestsFake
+    })
+    await action.main()
+
+    sinon.assert.calledOnce(createPullRequestsFake)
+    sinon.assert.calledWith(
+      createManifestCommand,
+      sinon.match.any,
+      'main',
+      sinon.match.hasOwn(
+        'pullRequestTitlePattern',
+        'beep boop'
+      ),
+      sinon.match.any
+    )
+  })
+
   it('both opens PR to the default branch and tags GitHub releases by default', async () => {
     input = {}
 

@@ -80,6 +80,10 @@ inputs:
     description: 'add prefix to tags and branches, allowing multiple libraries to be released from the same repository'
     required: false
     default: false
+  pull-request-title-pattern:
+    description: 'add title pattern to make release PR, defaults to using "chore${scope}: release${component} ${version}".'
+    required: false
+    default: ''
 
 runs:
   using: 'node12'

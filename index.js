@@ -80,6 +80,7 @@ async function main () {
   const changelogSections = changelogTypes && JSON.parse(changelogTypes)
   const versionFile = core.getInput('version-file') || undefined
   const github = await getGitHubInstance()
+  const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
   const manifest = await Manifest.fromConfig(
     github,
     github.repository.defaultBranch,
@@ -91,7 +92,8 @@ async function main () {
       changelogPath,
       changelogSections,
       versionFile,
-      includeComponentInTag: monorepoTags
+      includeComponentInTag: monorepoTags,
+      pullRequestTitlePattern
     },
     {
       signoff,
