@@ -81,6 +81,7 @@ async function main () {
   const versionFile = core.getInput('version-file') || undefined
   const github = await getGitHubInstance()
   const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
+  const draft = getBooleanInput('draft')
   const draftPullRequest = getBooleanInput('draft-pull-request')
   const manifest = await Manifest.fromConfig(
     github,
@@ -98,6 +99,7 @@ async function main () {
       draftPullRequest
     },
     {
+      draft,
       signoff,
       fork
     },

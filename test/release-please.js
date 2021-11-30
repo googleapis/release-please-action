@@ -21,6 +21,7 @@ const defaultInput = {
   'default-branch': '',
   // eslint-disable-next-line no-template-curly-in-string
   'pull-request-title-pattern': 'chore${scope}: release${component} ${version}',
+  draft: 'false',
   'draft-pull-request': 'false'
 }
 

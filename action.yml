@@ -84,6 +84,10 @@ inputs:
     description: 'add title pattern to make release PR, defaults to using "chore${scope}: release${component} ${version}"'
     required: false
     default: ''
+  draft:
+    description: 'mark release as a draft'
+    required: false
+    default: false
   draft-pull-request:
     description: 'mark pull request as a draft'
     required: false
