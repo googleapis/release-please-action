@@ -151,7 +151,10 @@ function outputReleases (releases) {
           core.setOutput(`${path}--release_created`, true)
         }
       }
-      for (const [key, val] of Object.entries(release)) {
+      for (let [key, val] of Object.entries(release)) {
+        // Historically tagName was output as tag_name, keep this
+        // consistent to avoid breaking change:
+        if (key === 'tagName') key = 'tag_name'
         if (path === '.') {
           core.setOutput(key, val)
         } else {

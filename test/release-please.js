@@ -152,7 +152,7 @@ describe('release-please-action', () => {
     const createReleasesFake = sandbox.fake.returns([
       {
         upload_url: 'http://example.com',
-        tag_name: 'v1.0.0'
+        tagName: 'v1.0.0'
       }
     ])
     const createPullRequestsFake = sandbox.fake.returns([22])
