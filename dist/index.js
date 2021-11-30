@@ -87,6 +87,7 @@ async function main () {
   const changelogSections = changelogTypes && JSON.parse(changelogTypes)
   const versionFile = core.getInput('version-file') || undefined
   const github = await getGitHubInstance()
+  const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
   const manifest = await Manifest.fromConfig(
     github,
     github.repository.defaultBranch,
@@ -98,7 +99,8 @@ async function main () {
       changelogPath,
       changelogSections,
       versionFile,
-      includeComponentInTag: monorepoTags
+      includeComponentInTag: monorepoTags,
+      pullRequestTitlePattern
     },
     {
       signoff,
@@ -60438,7 +60440,6 @@ const presetFactory = __nccwpck_require__(88761);
 const DEFAULT_HOST = 'https://github.com';
 class DefaultChangelogNotes {
     constructor(options = {}) {
-        this.changelogSections = options.changelogSections;
         this.commitPartial = options.commitPartial;
         this.headerPartial = options.headerPartial;
         this.mainTemplate = options.mainTemplate;
@@ -60454,8 +60455,8 @@ class DefaultChangelogNotes {
             linkCompare: !!options.previousTag,
         };
         const config = {};
-        if (this.changelogSections) {
-            config.types = this.changelogSections;
+        if (options.changelogSections) {
+            config.types = options.changelogSections;
         }
         const preset = await presetFactory(config);
         preset.writerOpts.commitPartial =
@@ -60487,6 +60488,39 @@ class DefaultChangelogNotes {
 }
 exports.DefaultChangelogNotes = DefaultChangelogNotes;
 //# sourceMappingURL=default.js.map
+
+/***/ }),
+
+/***/ 88433:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.GitHubChangelogNotes = void 0;
+class GitHubChangelogNotes {
+    constructor(github) {
+        this.github = github;
+    }
+    async buildNotes(_commits, options) {
+        return await this.github.generateReleaseNotes(options.currentTag, options.targetBranch, options.previousTag);
+    }
+}
+exports.GitHubChangelogNotes = GitHubChangelogNotes;
+//# sourceMappingURL=github.js.map
 
 /***/ }),
 
@@ -60907,7 +60941,7 @@ exports.DuplicateReleaseError = DuplicateReleaseError;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.buildPlugin = exports.buildStrategy = exports.getVersioningStrategyTypes = exports.getReleaserTypes = void 0;
+exports.buildChangelogNotes = exports.buildPlugin = exports.buildStrategy = exports.getChangelogTypes = exports.getVersioningStrategyTypes = exports.getReleaserTypes = void 0;
 const go_1 = __nccwpck_require__(45953);
 const go_yoshi_1 = __nccwpck_require__(6492);
 const java_yoshi_1 = __nccwpck_require__(35330);
@@ -60931,6 +60965,8 @@ const service_pack_1 = __nccwpck_require__(56772);
 const dependency_manifest_1 = __nccwpck_require__(25029);
 const node_workspace_1 = __nccwpck_require__(23256);
 const cargo_workspace_1 = __nccwpck_require__(77430);
+const github_1 = __nccwpck_require__(88433);
+const default_2 = __nccwpck_require__(71480);
 // Factory shared by GitHub Action and CLI for creating Release PRs
 // and GitHub Releases:
 // add any new releasers you create to this type as well as the `releasers`
@@ -60981,6 +61017,10 @@ function getVersioningStrategyTypes() {
     return allVersioningTypes;
 }
 exports.getVersioningStrategyTypes = getVersioningStrategyTypes;
+function getChangelogTypes() {
+    return allChangelogNotesTypes;
+}
+exports.getChangelogTypes = getChangelogTypes;
 async function buildStrategy(options) {
     var _a;
     const targetBranch = (_a = options.targetBranch) !== null && _a !== void 0 ? _a : options.github.repository.defaultBranch;
@@ -60988,6 +61028,11 @@ async function buildStrategy(options) {
         type: options.versioning,
         bumpMinorPreMajor: options.bumpMinorPreMajor,
         bumpPatchForMinorPreMajor: options.bumpPatchForMinorPreMajor,
+    });
+    const changelogNotes = buildChangelogNotes({
+        type: options.changelogType || 'default',
+        github: options.github,
+        changelogSections: options.changelogSections,
     });
     const strategyOptions = {
         github: options.github,
@@ -61003,6 +61048,8 @@ async function buildStrategy(options) {
         skipGitHubRelease: options.skipGithubRelease,
         releaseAs: options.releaseAs,
         includeComponentInTag: options.includeComponentInTag,
+        changelogNotes,
+        pullRequestTitlePattern: options.pullRequestTitlePattern,
     };
     switch (options.releaseType) {
         case 'ruby': {
@@ -61083,6 +61130,18 @@ function buildPlugin(options) {
     }
 }
 exports.buildPlugin = buildPlugin;
+const allChangelogNotesTypes = ['default', 'github'];
+function buildChangelogNotes(options) {
+    switch (options.type) {
+        case 'github':
+            return new github_1.GitHubChangelogNotes(options.github);
+        case 'default':
+            return new default_2.DefaultChangelogNotes(options);
+        default:
+            throw new Error(`Unknown changelog type: ${options.type}`);
+    }
+}
+exports.buildChangelogNotes = buildChangelogNotes;
 //# sourceMappingURL=factory.js.map
 
 /***/ }),
@@ -62017,6 +62076,22 @@ class GitHub {
     async findFilesByExtension(extension, prefix) {
         return this.findFilesByExtensionAndRef(extension, this.repository.defaultBranch, prefix);
     }
+    /**
+     * Generate release notes from GitHub at tag
+     * @param {string} tagName Name of new release tag
+     * @param {string} targetCommitish Target commitish for new tag
+     * @param {string} previousTag Optional. Name of previous tag to analyze commits since
+     */
+    async generateReleaseNotes(tagName, targetCommitish, previousTag) {
+        const resp = await this.octokit.repos.generateReleaseNotes({
+            owner: this.repository.owner,
+            repo: this.repository.repo,
+            tag_name: tagName,
+            previous_tag_name: previousTag,
+            target_commitish: targetCommitish,
+        });
+        return resp.data.body;
+    }
 }
 exports.GitHub = GitHub;
 // Takes a potentially unqualified branch name, and turns it
@@ -62203,7 +62278,7 @@ class Manifest {
         });
         const component = await strategy.getComponent();
         const releasedVersions = {};
-        const latestVersion = await latestReleaseVersion(github, targetBranch, config.includeComponentInTag ? component : '');
+        const latestVersion = await latestReleaseVersion(github, targetBranch, config.includeComponentInTag ? component : '', config.pullRequestTitlePattern);
         if (latestVersion) {
             releasedVersions[path] = latestVersion;
         }
@@ -62613,6 +62688,8 @@ function extractReleaserConfig(config) {
         versionFile: config['version-file'],
         extraFiles: config['extra-files'],
         includeComponentInTag: config['include-component-in-tag'],
+        changelogType: config['changelog-type'],
+        pullRequestTitlePattern: config['pull-request-title-pattern'],
     };
 }
 /**
@@ -62662,7 +62739,7 @@ async function parseReleasedVersions(github, manifestFile, branch) {
  * @param {boolean} preRelease - Whether or not to return pre-release
  *   versions. Defaults to false.
  */
-async function latestReleaseVersion(github, targetBranch, prefix) {
+async function latestReleaseVersion(github, targetBranch, prefix, pullRequestTitlePattern) {
     var _a;
     const branchPrefix = prefix
         ? prefix.endsWith('-')
@@ -62688,7 +62765,7 @@ async function latestReleaseVersion(github, targetBranch, prefix) {
         if (branchName.getComponent() !== branchPrefix) {
             continue;
         }
-        const pullRequestTitle = pull_request_title_1.PullRequestTitle.parse(mergedPullRequest.title);
+        const pullRequestTitle = pull_request_title_1.PullRequestTitle.parse(mergedPullRequest.title, pullRequestTitlePattern);
         if (!pullRequestTitle) {
             continue;
         }
@@ -63807,6 +63884,7 @@ exports.GoYoshi = void 0;
 const strategy_1 = __nccwpck_require__(15871);
 const changelog_1 = __nccwpck_require__(3325);
 const version_1 = __nccwpck_require__(17348);
+const version_go_1 = __nccwpck_require__(54988);
 // Commits containing a scope prefixed with an item in this array will be
 // ignored when generating a release PR for the parent module.
 const IGNORED_SUB_MODULES = new Set([
@@ -63837,6 +63915,13 @@ class GoYoshi extends strategy_1.Strategy {
             updater: new changelog_1.Changelog({
                 version,
                 changelogEntry: options.changelogEntry,
+            }),
+        });
+        updates.push({
+            path: this.addPath('internal/version.go'),
+            createIfMissing: false,
+            updater: new version_go_1.VersionGo({
+                version,
             }),
         });
         return updates;
@@ -64211,11 +64296,67 @@ class JavaYoshi extends strategy_1.Strategy {
         });
         return updates;
     }
+    async updateVersionsMap(versionsMap, conventionalCommits) {
+        let isPromotion = false;
+        const modifiedCommits = [];
+        for (const commit of conventionalCommits) {
+            if (isPromotionCommit(commit)) {
+                isPromotion = true;
+                modifiedCommits.push({
+                    ...commit,
+                    notes: commit.notes.filter(note => !isPromotionNote(note)),
+                });
+            }
+            else {
+                modifiedCommits.push(commit);
+            }
+        }
+        for (const versionKey of versionsMap.keys()) {
+            const version = versionsMap.get(versionKey);
+            if (!version) {
+                logger_1.logger.warn(`didn't find version for ${versionKey}`);
+                continue;
+            }
+            if (isPromotion && isStableArtifact(versionKey)) {
+                versionsMap.set(versionKey, version_1.Version.parse('1.0.0'));
+            }
+            else {
+                const newVersion = await this.versioningStrategy.bump(version, modifiedCommits);
+                versionsMap.set(versionKey, newVersion);
+            }
+        }
+        return versionsMap;
+    }
     initialReleaseVersion() {
         return version_1.Version.parse('0.1.0');
     }
 }
 exports.JavaYoshi = JavaYoshi;
+const VERSIONED_ARTIFACT_REGEX = /^.*-(v\d+[^-]*)$/;
+const VERSION_REGEX = /^v\d+(.*)$/;
+/**
+ * Returns true if the artifact should be considered stable
+ * @param artifact name of the artifact to check
+ */
+function isStableArtifact(artifact) {
+    const match = artifact.match(VERSIONED_ARTIFACT_REGEX);
+    if (!match) {
+        // The artifact does not have a version qualifier at the end
+        return true;
+    }
+    const versionMatch = match[1].match(VERSION_REGEX);
+    if (versionMatch && versionMatch[1]) {
+        // The version is not stable (probably alpha/beta/rc)
+        return false;
+    }
+    return true;
+}
+function isPromotionCommit(commit) {
+    return commit.notes.some(isPromotionNote);
+}
+function isPromotionNote(note) {
+    return note.title === 'RELEASE AS' && note.text === '1.0.0';
+}
 //# sourceMappingURL=java-yoshi.js.map
 
 /***/ }),
@@ -64547,6 +64688,7 @@ class PHPYoshi extends strategy_1.Strategy {
                     version: newVersion.toString(),
                     previousTag: (_a = latestRelease === null || latestRelease === void 0 ? void 0 : latestRelease.tag) === null || _a === void 0 ? void 0 : _a.toString(),
                     currentTag: newVersionTag.toString(),
+                    targetBranch: this.targetBranch,
                 });
                 releaseNotesBody = updatePHPChangelogEntry(`${composer.name} ${newVersion.toString()}`, releaseNotesBody, partialReleaseNotes);
             }
@@ -65384,6 +65526,7 @@ class Strategy {
         this.changelogNotes =
             options.changelogNotes || new default_2.DefaultChangelogNotes(options);
         this.includeComponentInTag = (_a = options.includeComponentInTag) !== null && _a !== void 0 ? _a : true;
+        this.pullRequestTitlePattern = options.pullRequestTitlePattern;
     }
     async getComponent() {
         if (!this.includeComponentInTag) {
@@ -65419,6 +65562,8 @@ class Strategy {
             version: newVersion.toString(),
             previousTag: (_a = latestRelease === null || latestRelease === void 0 ? void 0 : latestRelease.tag) === null || _a === void 0 ? void 0 : _a.toString(),
             currentTag: newVersionTag.toString(),
+            targetBranch: this.targetBranch,
+            changelogSections: this.changelogSections,
         });
     }
     /**
@@ -65435,20 +65580,12 @@ class Strategy {
     async buildReleasePullRequest(commits, latestRelease, draft, labels = []) {
         const conventionalCommits = this.postProcessCommits(commit_1.parseConventionalCommits(commits));
         const newVersion = await this.buildNewVersion(conventionalCommits, latestRelease);
-        const versionsMap = await this.buildVersionsMap(conventionalCommits);
-        for (const versionKey of versionsMap.keys()) {
-            const version = versionsMap.get(versionKey);
-            if (!version) {
-                logger_1.logger.warn(`didn't find version for ${versionKey}`);
-                continue;
-            }
-            const newVersion = await this.versioningStrategy.bump(version, conventionalCommits);
-            versionsMap.set(versionKey, newVersion);
-        }
+        const versionsMap = await this.updateVersionsMap(await this.buildVersionsMap(conventionalCommits), conventionalCommits);
         const component = await this.getComponent();
         logger_1.logger.debug('component:', component);
         const newVersionTag = new tag_name_1.TagName(newVersion, this.includeComponentInTag ? component : undefined, this.tagSeparator);
-        const pullRequestTitle = pull_request_title_1.PullRequestTitle.ofComponentTargetBranchVersion(component || '', this.targetBranch, newVersion);
+        logger_1.logger.warn('pull request title pattern:', this.pullRequestTitlePattern);
+        const pullRequestTitle = pull_request_title_1.PullRequestTitle.ofComponentTargetBranchVersion(component || '', this.targetBranch, newVersion, this.pullRequestTitlePattern);
         const branchName = component
             ? branch_name_1.BranchName.ofComponentTargetBranch(component, this.targetBranch)
             : branch_name_1.BranchName.ofTargetBranch(this.targetBranch);
@@ -65483,6 +65620,18 @@ class Strategy {
     changelogEmpty(changelogEntry) {
         return changelogEntry.split('\n').length <= 1;
     }
+    async updateVersionsMap(versionsMap, conventionalCommits) {
+        for (const versionKey of versionsMap.keys()) {
+            const version = versionsMap.get(versionKey);
+            if (!version) {
+                logger_1.logger.warn(`didn't find version for ${versionKey}`);
+                continue;
+            }
+            const newVersion = await this.versioningStrategy.bump(version, conventionalCommits);
+            versionsMap.set(versionKey, newVersion);
+        }
+        return versionsMap;
+    }
     async buildNewVersion(conventionalCommits, latestRelease) {
         if (this.releaseAs) {
             logger_1.logger.warn(`Setting version for ${this.path} from release-as configuration`);
@@ -65512,7 +65661,7 @@ class Strategy {
             logger_1.logger.error('Pull request should have been merged');
             return;
         }
-        const pullRequestTitle = pull_request_title_1.PullRequestTitle.parse(mergedPullRequest.title) ||
+        const pullRequestTitle = pull_request_title_1.PullRequestTitle.parse(mergedPullRequest.title, this.pullRequestTitlePattern) ||
             pull_request_title_1.PullRequestTitle.parse(mergedPullRequest.title, manifest_1.MANIFEST_PULL_REQUEST_TITLE_PATTERN);
         if (!pullRequestTitle) {
             logger_1.logger.error(`Bad pull request title: '${mergedPullRequest.title}'`);
@@ -65813,6 +65962,37 @@ class ElixirMixExs extends default_1.DefaultUpdater {
 }
 exports.ElixirMixExs = ElixirMixExs;
 //# sourceMappingURL=elixir-mix-exs.js.map
+
+/***/ }),
+
+/***/ 54988:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.VersionGo = void 0;
+const default_1 = __nccwpck_require__(69995);
+class VersionGo extends default_1.DefaultUpdater {
+    updateContent(content) {
+        return content.replace(/const Version = "[0-9]+\.[0-9]+\.[0-9](-\w+)?"/, `const Version = "${this.version.toString()}"`);
+    }
+}
+exports.VersionGo = VersionGo;
+//# sourceMappingURL=version-go.js.map
 
 /***/ }),
 
@@ -67126,7 +67306,13 @@ const version_1 = __nccwpck_require__(17348);
 // import {RELEASE_PLEASE} from '../constants';
 const RELEASE_PLEASE = 'release-please';
 function getAllResourceNames() {
-    return [AutoreleaseBranchName, ComponentBranchName, DefaultBranchName];
+    return [
+        AutoreleaseBranchName,
+        ComponentBranchName,
+        DefaultBranchName,
+        V12ComponentBranchName,
+        V12DefaultBranchName,
+    ];
 }
 class BranchName {
     constructor(_branchName) { }
@@ -67146,10 +67332,10 @@ class BranchName {
         return new AutoreleaseBranchName(`release-v${version}`);
     }
     static ofTargetBranch(targetBranch) {
-        return new DefaultBranchName(`${RELEASE_PLEASE}/branches/${targetBranch}`);
+        return new DefaultBranchName(`${RELEASE_PLEASE}--branches--${targetBranch}`);
     }
     static ofComponentTargetBranch(component, targetBranch) {
-        return new ComponentBranchName(`${RELEASE_PLEASE}/branches/${targetBranch}/components/${component}`);
+        return new ComponentBranchName(`${RELEASE_PLEASE}--branches--${targetBranch}--components--${component}`);
     }
     static matches(_branchName) {
         return false;
@@ -67168,6 +67354,11 @@ class BranchName {
     }
 }
 exports.BranchName = BranchName;
+/**
+ * This is the legacy branch pattern used by releasetool
+ *
+ * @see https://github.com/googleapis/releasetool
+ */
 const AUTORELEASE_PATTERN = /^release-?(?<component>[\w-.]*)?-v(?<version>[0-9].*)$/;
 class AutoreleaseBranchName extends BranchName {
     static matches(branchName) {
@@ -67189,7 +67380,54 @@ class AutoreleaseBranchName extends BranchName {
         return `release-v${(_b = this.version) === null || _b === void 0 ? void 0 : _b.toString()}`;
     }
 }
-const DEFAULT_PATTERN = `^${RELEASE_PLEASE}/branches/(?<branch>[^/]+)$`;
+/**
+ * This is a parsable branch pattern used by release-please v12.
+ * It has potential issues due to git treating `/` like directories.
+ * This should be removed at some point in the future.
+ *
+ * @see https://github.com/googleapis/release-please/issues/1024
+ */
+const V12_DEFAULT_PATTERN = `^${RELEASE_PLEASE}/branches/(?<branch>[^/]+)$`;
+class V12DefaultBranchName extends BranchName {
+    static matches(branchName) {
+        return !!branchName.match(V12_DEFAULT_PATTERN);
+    }
+    constructor(branchName) {
+        super(branchName);
+        const match = branchName.match(V12_DEFAULT_PATTERN);
+        if (match === null || match === void 0 ? void 0 : match.groups) {
+            this.targetBranch = match.groups['branch'];
+        }
+    }
+    toString() {
+        return `${RELEASE_PLEASE}/branches/${this.targetBranch}`;
+    }
+}
+/**
+ * This is a parsable branch pattern used by release-please v12.
+ * It has potential issues due to git treating `/` like directories.
+ * This should be removed at some point in the future.
+ *
+ * @see https://github.com/googleapis/release-please/issues/1024
+ */
+const V12_COMPONENT_PATTERN = `^${RELEASE_PLEASE}/branches/(?<branch>[^/]+)/components/(?<component>.+)$`;
+class V12ComponentBranchName extends BranchName {
+    static matches(branchName) {
+        return !!branchName.match(V12_COMPONENT_PATTERN);
+    }
+    constructor(branchName) {
+        super(branchName);
+        const match = branchName.match(V12_COMPONENT_PATTERN);
+        if (match === null || match === void 0 ? void 0 : match.groups) {
+            this.targetBranch = match.groups['branch'];
+            this.component = match.groups['component'];
+        }
+    }
+    toString() {
+        return `${RELEASE_PLEASE}/branches/${this.targetBranch}/components/${this.component}`;
+    }
+}
+const DEFAULT_PATTERN = `^${RELEASE_PLEASE}--branches--(?<branch>.+)$`;
 class DefaultBranchName extends BranchName {
     static matches(branchName) {
         return !!branchName.match(DEFAULT_PATTERN);
@@ -67202,10 +67440,10 @@ class DefaultBranchName extends BranchName {
         }
     }
     toString() {
-        return `${RELEASE_PLEASE}/branches/${this.targetBranch}`;
+        return `${RELEASE_PLEASE}--branches--${this.targetBranch}`;
     }
 }
-const COMPONENT_PATTERN = `^${RELEASE_PLEASE}/branches/(?<branch>[^/]+)/components/(?<component>.+)$`;
+const COMPONENT_PATTERN = `^${RELEASE_PLEASE}--branches--(?<branch>.+)--components--(?<component>.+)$`;
 class ComponentBranchName extends BranchName {
     static matches(branchName) {
         return !!branchName.match(COMPONENT_PATTERN);
@@ -67219,7 +67457,7 @@ class ComponentBranchName extends BranchName {
         }
     }
     toString() {
-        return `${RELEASE_PLEASE}/branches/${this.targetBranch}/components/${this.component}`;
+        return `${RELEASE_PLEASE}--branches--${this.targetBranch}--components--${this.component}`;
     }
 }
 //# sourceMappingURL=branch-name.js.map
@@ -87928,7 +88166,7 @@ module.exports = JSON.parse("{\"amp\":\"&\",\"apos\":\"'\",\"gt\":\">\",\"lt\":\
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"i8\":\"13.0.0-candidate.3\"}");
+module.exports = JSON.parse("{\"i8\":\"13.0.0-candidate.4\"}");
 
 /***/ }),
 
