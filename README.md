@@ -64,6 +64,7 @@ Automate releases with Conventional Commit Messages.
 | `--signoff` | Add [`Signed-off-by`](https://git-scm.com/docs/git-commit#Documentation/git-commit.txt---signoff) line at the end of the commit log message using the user and email provided. (format "Name \<email@example.com\>") |
 | `repo-url` | configure github repository URL. Default `process.env.GITHUB_REPOSITORY` |
 | `github-graphql-url` | configure github GraphQL URL. Default `https://api.github.com` |
+| `extra-files` | Multiline input to claim extra files to bump. |
 
 | output | description |
 |:---:|---|
