@@ -87,7 +87,7 @@ inputs:
   extra-files:
     description: 'extra files to bump'
     required: false
-    default: []
+    default: ''
 
 runs:
   using: 'node12'
