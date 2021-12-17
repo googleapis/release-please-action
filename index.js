@@ -96,6 +96,7 @@ async function main () {
   const changelogSections = changelogTypes && JSON.parse(changelogTypes)
   const versionFile = core.getInput('version-file') || undefined
   const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
+  const extraFiles = core.getMultilineInput('extra-files')
 
   // First we check for any merged release PRs (PRs merged with the label
   // "autorelease: pending"):
@@ -144,7 +145,8 @@ async function main () {
       versionFile,
       defaultBranch,
       pullRequestTitlePattern,
-      signoff
+      signoff,
+      extraFiles
     })
 
     if (pr) {
