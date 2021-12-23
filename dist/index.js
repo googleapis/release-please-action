@@ -67367,8 +67367,9 @@ function parseCommits(message) {
 function parseConventionalCommits(commits) {
     const conventionalCommits = [];
     for (const commit of commits) {
+        const commitMessage = preprocessCommitMessage(commit);
         try {
-            for (const parsedCommit of parseCommits(commit.message)) {
+            for (const parsedCommit of parseCommits(commitMessage)) {
                 const breaking = parsedCommit.notes.filter(note => note.title === 'BREAKING CHANGE')
                     .length > 0;
                 conventionalCommits.push({
@@ -67392,6 +67393,18 @@ function parseConventionalCommits(commits) {
     return conventionalCommits;
 }
 exports.parseConventionalCommits = parseConventionalCommits;
+function preprocessCommitMessage(commit) {
+    // look for 'BEGIN_COMMIT_OVERRIDE' section of pull request body
+    if (commit.pullRequest) {
+        const overrideMessage = (commit.pullRequest.body.split('BEGIN_COMMIT_OVERRIDE')[1] || '')
+            .split('END_COMMIT_OVERRIDE')[0]
+            .trim();
+        if (overrideMessage) {
+            return overrideMessage;
+        }
+    }
+    return commit.message;
+}
 //# sourceMappingURL=commit.js.map
 
 /***/ }),
@@ -67840,7 +67853,7 @@ class GitHub {
                     // match the filename
                     path.endsWith(filename) &&
                     // match the prefix if provided
-                    (!prefix || path.startsWith(prefix)));
+                    (!prefix || path.startsWith(`${prefix}/`)));
             })
                 .map(file => {
                 let path = file.path;
@@ -67978,7 +67991,7 @@ class GitHub {
                     // match the file extension
                     path.endsWith(`.${extension}`) &&
                     // match the prefix if provided
-                    (!prefix || path.startsWith(prefix)));
+                    (!prefix || path.startsWith(`${prefix}/`)));
             })
                 .map(file => {
                 let path = file.path;
@@ -68155,14 +68168,17 @@ class GitHub {
      * @param {string} targetBranch Target branch of commit
      * @param {CommitFilter} filter Callback function that returns whether a
      *   commit/pull request matches certain criteria
-     * @param {number} maxResults Limit the number of results searched.
+     * @param {CommitIteratorOptions} options Query options
+     * @param {number} options.maxResults Limit the number of results searched.
      *   Defaults to unlimited.
+     * @param {boolean} options.backfillFiles If set, use the REST API for
+     *   fetching the list of touched files in this commit. Defaults to `false`.
      * @returns {Commit[]} List of commits to current branch
      * @throws {GitHubAPIError} on an API error
      */
-    async commitsSince(targetBranch, filter, maxResults = Number.MAX_SAFE_INTEGER) {
+    async commitsSince(targetBranch, filter, options = {}) {
         const commits = [];
-        const generator = this.mergeCommitIterator(targetBranch, maxResults);
+        const generator = this.mergeCommitIterator(targetBranch, options);
         for await (const commit of generator) {
             if (filter(commit)) {
                 break;
@@ -68175,16 +68191,21 @@ class GitHub {
      * Iterate through commit history with a max number of results scanned.
      *
      * @param {string} targetBranch target branch of commit
-     * @param {number} maxResults maxResults - Limit the number of results searched.
+     * @param {CommitIteratorOptions} options Query options
+     * @param {number} options.maxResults Limit the number of results searched.
      *   Defaults to unlimited.
+     * @param {boolean} options.backfillFiles If set, use the REST API for
+     *   fetching the list of touched files in this commit. Defaults to `false`.
      * @yields {Commit}
      * @throws {GitHubAPIError} on an API error
      */
-    async *mergeCommitIterator(targetBranch, maxResults = Number.MAX_SAFE_INTEGER) {
+    async *mergeCommitIterator(targetBranch, options = {}) {
+        var _a;
+        const maxResults = (_a = options.maxResults) !== null && _a !== void 0 ? _a : Number.MAX_SAFE_INTEGER;
         let cursor = undefined;
         let results = 0;
         while (results < maxResults) {
-            const response = await this.mergeCommitsGraphQL(targetBranch, cursor);
+            const response = await this.mergeCommitsGraphQL(targetBranch, cursor, options);
             // no response usually means that the branch can't be found
             if (!response) {
                 break;
@@ -68199,7 +68220,7 @@ class GitHub {
             cursor = response.pageInfo.endCursor;
         }
     }
-    async mergeCommitsGraphQL(targetBranch, cursor) {
+    async mergeCommitsGraphQL(targetBranch, cursor, options = {}) {
         logger_1.logger.debug(`Fetching merge commits on branch ${targetBranch} with cursor: ${cursor}`);
         const response = await this.graphqlRequest({
             query: `query pullRequestsSince($owner: String!, $repo: String!, $num: Int!, $maxFilesChanged: Int, $targetBranch: String!, $cursor: String) {
@@ -68267,7 +68288,6 @@ class GitHub {
             const commit = {
                 sha: graphCommit.sha,
                 message: graphCommit.message,
-                files: [],
             };
             const pullRequest = graphCommit.associatedPullRequests.nodes.find(pr => {
                 return pr.mergeCommit && pr.mergeCommit.oid === graphCommit.sha;
@@ -68288,7 +68308,7 @@ class GitHub {
                 // information for commits with associated pull requests
                 commit.files = files;
             }
-            else {
+            else if (options.backfillFiles) {
                 // In this case, there is no squashed merge commit. This could be a simple
                 // merge commit, a rebase merge commit, or a direct commit to the branch.
                 // Fallback to fetching the list of commits from the REST API. In the future
@@ -68409,14 +68429,17 @@ class GitHub {
         };
     }
     /**
-     * Iterate through merged pull requests with a max number of results scanned.
+     * Iterate through releases with a max number of results scanned.
      *
-     * @param {number} maxResults maxResults - Limit the number of results searched.
+     * @param {ReleaseIteratorOptions} options Query options
+     * @param {number} options.maxResults Limit the number of results searched.
      *   Defaults to unlimited.
      * @yields {GitHubRelease}
      * @throws {GitHubAPIError} on an API error
      */
-    async *releaseIterator(maxResults = Number.MAX_SAFE_INTEGER) {
+    async *releaseIterator(options = {}) {
+        var _a;
+        const maxResults = (_a = options.maxResults) !== null && _a !== void 0 ? _a : Number.MAX_SAFE_INTEGER;
         let results = 0;
         let cursor = undefined;
         while (true) {
@@ -68489,6 +68512,33 @@ class GitHub {
                 };
             }),
         };
+    }
+    /**
+     * Iterate through tags with a max number of results scanned.
+     *
+     * @param {TagIteratorOptions} options Query options
+     * @param {number} options.maxResults Limit the number of results searched.
+     *   Defaults to unlimited.
+     * @yields {GitHubTag}
+     * @throws {GitHubAPIError} on an API error
+     */
+    async *tagIterator(options = {}) {
+        const maxResults = options.maxResults || Number.MAX_SAFE_INTEGER;
+        let results = 0;
+        for await (const response of this.octokit.paginate.iterator(this.octokit.rest.repos.listTags, {
+            owner: this.repository.owner,
+            repo: this.repository.repo,
+        })) {
+            for (const tag of response.data) {
+                if ((results += 1) > maxResults) {
+                    break;
+                }
+                yield {
+                    name: tag.name,
+                    sha: tag.commit.sha,
+                };
+            }
+        }
     }
     /**
      * Fetch the contents of a file from the configured branch
@@ -68759,6 +68809,7 @@ class Manifest {
      *   pull request. Defaults to `[autorelease: tagged]`
      */
     constructor(github, targetBranch, repositoryConfig, releasedVersions, manifestOptions) {
+        var _a;
         this.repository = github.repository;
         this.github = github;
         this.targetBranch = targetBranch;
@@ -68766,7 +68817,7 @@ class Manifest {
         this.releasedVersions = releasedVersions;
         this.manifestPath =
             (manifestOptions === null || manifestOptions === void 0 ? void 0 : manifestOptions.manifestPath) || exports.DEFAULT_RELEASE_PLEASE_MANIFEST;
-        this.separatePullRequests = (manifestOptions === null || manifestOptions === void 0 ? void 0 : manifestOptions.separatePullRequests) || false;
+        this.separatePullRequests = (_a = manifestOptions === null || manifestOptions === void 0 ? void 0 : manifestOptions.separatePullRequests) !== null && _a !== void 0 ? _a : Object.keys(repositoryConfig).length === 1;
         this.plugins = (manifestOptions === null || manifestOptions === void 0 ? void 0 : manifestOptions.plugins) || [];
         this.fork = (manifestOptions === null || manifestOptions === void 0 ? void 0 : manifestOptions.fork) || false;
         this.signoffUser = manifestOptions === null || manifestOptions === void 0 ? void 0 : manifestOptions.signoff;
@@ -68832,7 +68883,10 @@ class Manifest {
         if (latestVersion) {
             releasedVersions[path] = latestVersion;
         }
-        return new Manifest(github, targetBranch, repositoryConfig, releasedVersions, manifestOptions);
+        return new Manifest(github, targetBranch, repositoryConfig, releasedVersions, {
+            separatePullRequests: true,
+            ...manifestOptions,
+        });
     }
     /**
      * Build all candidate pull requests for this repository.
@@ -68855,7 +68909,9 @@ class Manifest {
         const releaseShasByPath = {};
         // Releases by path
         const releasesByPath = {};
-        for await (const release of this.github.releaseIterator(400)) {
+        for await (const release of this.github.releaseIterator({
+            maxResults: 400,
+        })) {
             // logger.debug(release);
             const tagName = tag_name_1.TagName.parse(release.tagName);
             if (!tagName) {
@@ -68899,7 +68955,10 @@ class Manifest {
         // seen all release commits
         logger_1.logger.info('Collecting commits since all latest releases');
         const commits = [];
-        const commitGenerator = this.github.mergeCommitIterator(this.targetBranch, 500);
+        const commitGenerator = this.github.mergeCommitIterator(this.targetBranch, {
+            maxResults: 500,
+            backfillFiles: true,
+        });
         const releaseShas = new Set(Object.values(releaseShasByPath));
         logger_1.logger.debug(releaseShas);
         const expectedShas = releaseShas.size;
@@ -68963,6 +69022,7 @@ class Manifest {
             const strategy = strategiesByPath[path];
             let latestRelease = releasesByPath[path];
             if (!latestRelease &&
+                this.releasedVersions[path] &&
                 this.releasedVersions[path].toString() !== '0.0.0') {
                 const version = this.releasedVersions[path];
                 const component = await strategy.getComponent();
@@ -69235,7 +69295,7 @@ exports.Manifest = Manifest;
  */
 function extractReleaserConfig(config) {
     return {
-        releaseType: config['release-type'] || 'node',
+        releaseType: config['release-type'],
         bumpMinorPreMajor: config['bump-minor-pre-major'],
         bumpPatchForMinorPreMajor: config['bump-patch-for-minor-pre-major'],
         changelogSections: config['changelog-sections'],
@@ -69308,11 +69368,15 @@ async function latestReleaseVersion(github, targetBranch, prefix, pullRequestTit
             : prefix
         : undefined;
     logger_1.logger.info(`Looking for latest release on branch: ${targetBranch} with prefix: ${prefix}`);
+    // collect set of recent commit SHAs seen to verify that the release
+    // is in the current branch
+    const commitShas = new Set();
     // only look at the last 250 or so commits to find the latest tag - we
     // don't want to scan the entire repository history if this repo has never
     // been released
-    const generator = github.mergeCommitIterator(targetBranch, 250);
+    const generator = github.mergeCommitIterator(targetBranch, { maxResults: 250 });
     for await (const commitWithPullRequest of generator) {
+        commitShas.add(commitWithPullRequest.sha);
         const mergedPullRequest = commitWithPullRequest.pullRequest;
         if (!mergedPullRequest) {
             continue;
@@ -69337,23 +69401,65 @@ async function latestReleaseVersion(github, targetBranch, prefix, pullRequestTit
         }
         return version;
     }
-    return;
+    // If not found from recent pull requests, look at releases. Iterate
+    // through releases finding valid tags, then cross reference
+    const releaseGenerator = github.releaseIterator();
+    const candidateReleaseVersions = [];
+    for await (const release of releaseGenerator) {
+        const tagName = tag_name_1.TagName.parse(release.tagName);
+        if (!tagName) {
+            continue;
+        }
+        if (tagName.component === branchPrefix) {
+            logger_1.logger.debug(`found release for ${prefix}`, tagName.version);
+            if (!commitShas.has(release.sha)) {
+                logger_1.logger.debug(`SHA not found in recent commits to branch ${targetBranch}, skipping`);
+                continue;
+            }
+            candidateReleaseVersions.push(tagName.version);
+        }
+    }
+    logger_1.logger.debug(`found ${candidateReleaseVersions.length} possible releases.`, candidateReleaseVersions);
+    if (candidateReleaseVersions.length > 0) {
+        // Find largest release number (sort descending then return first)
+        return candidateReleaseVersions.sort((a, b) => b.compare(a))[0];
+    }
+    // If not found from recent pull requests or releases, look at tags. Iterate
+    // through tags and cross reference against SHAs in this branch
+    const tagGenerator = github.tagIterator();
+    const candidateTagVersion = [];
+    for await (const tag of tagGenerator) {
+        const tagName = tag_name_1.TagName.parse(tag.name);
+        if (!tagName) {
+            continue;
+        }
+        if (tagName.component === branchPrefix) {
+            if (!commitShas.has(tag.sha)) {
+                logger_1.logger.debug(`SHA not found in recent commits to branch ${targetBranch}, skipping`);
+                continue;
+            }
+            candidateTagVersion.push(tagName.version);
+        }
+    }
+    logger_1.logger.debug(`found ${candidateTagVersion.length} possible tags.`, candidateTagVersion);
+    // Find largest release number (sort descending then return first)
+    return candidateTagVersion.sort((a, b) => b.compare(a))[0];
 }
 function mergeReleaserConfig(defaultConfig, pathConfig) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
     return {
-        releaseType: (_a = pathConfig.releaseType) !== null && _a !== void 0 ? _a : defaultConfig.releaseType,
-        bumpMinorPreMajor: (_b = pathConfig.bumpMinorPreMajor) !== null && _b !== void 0 ? _b : defaultConfig.bumpMinorPreMajor,
-        bumpPatchForMinorPreMajor: (_c = pathConfig.bumpPatchForMinorPreMajor) !== null && _c !== void 0 ? _c : defaultConfig.bumpPatchForMinorPreMajor,
-        changelogSections: (_d = pathConfig.changelogSections) !== null && _d !== void 0 ? _d : defaultConfig.changelogSections,
-        changelogPath: (_e = pathConfig.changelogPath) !== null && _e !== void 0 ? _e : defaultConfig.changelogPath,
-        releaseAs: (_f = pathConfig.releaseAs) !== null && _f !== void 0 ? _f : defaultConfig.releaseAs,
-        skipGithubRelease: (_g = pathConfig.skipGithubRelease) !== null && _g !== void 0 ? _g : defaultConfig.skipGithubRelease,
-        draft: (_h = pathConfig.draft) !== null && _h !== void 0 ? _h : defaultConfig.draft,
-        component: (_j = pathConfig.component) !== null && _j !== void 0 ? _j : defaultConfig.component,
-        packageName: (_k = pathConfig.packageName) !== null && _k !== void 0 ? _k : defaultConfig.packageName,
-        versionFile: (_l = pathConfig.versionFile) !== null && _l !== void 0 ? _l : defaultConfig.versionFile,
-        extraFiles: (_m = pathConfig.extraFiles) !== null && _m !== void 0 ? _m : defaultConfig.extraFiles,
+        releaseType: (_b = (_a = pathConfig.releaseType) !== null && _a !== void 0 ? _a : defaultConfig.releaseType) !== null && _b !== void 0 ? _b : 'node',
+        bumpMinorPreMajor: (_c = pathConfig.bumpMinorPreMajor) !== null && _c !== void 0 ? _c : defaultConfig.bumpMinorPreMajor,
+        bumpPatchForMinorPreMajor: (_d = pathConfig.bumpPatchForMinorPreMajor) !== null && _d !== void 0 ? _d : defaultConfig.bumpPatchForMinorPreMajor,
+        changelogSections: (_e = pathConfig.changelogSections) !== null && _e !== void 0 ? _e : defaultConfig.changelogSections,
+        changelogPath: (_f = pathConfig.changelogPath) !== null && _f !== void 0 ? _f : defaultConfig.changelogPath,
+        releaseAs: (_g = pathConfig.releaseAs) !== null && _g !== void 0 ? _g : defaultConfig.releaseAs,
+        skipGithubRelease: (_h = pathConfig.skipGithubRelease) !== null && _h !== void 0 ? _h : defaultConfig.skipGithubRelease,
+        draft: (_j = pathConfig.draft) !== null && _j !== void 0 ? _j : defaultConfig.draft,
+        component: (_k = pathConfig.component) !== null && _k !== void 0 ? _k : defaultConfig.component,
+        packageName: (_l = pathConfig.packageName) !== null && _l !== void 0 ? _l : defaultConfig.packageName,
+        versionFile: (_m = pathConfig.versionFile) !== null && _m !== void 0 ? _m : defaultConfig.versionFile,
+        extraFiles: (_o = pathConfig.extraFiles) !== null && _o !== void 0 ? _o : defaultConfig.extraFiles,
     };
 }
 /**
@@ -69453,6 +69559,7 @@ const changelog_1 = __nccwpck_require__(3325);
 const pull_request_title_1 = __nccwpck_require__(1158);
 const pull_request_body_1 = __nccwpck_require__(70774);
 const branch_name_1 = __nccwpck_require__(16344);
+const versioning_strategy_1 = __nccwpck_require__(41941);
 /**
  * The plugin analyzed a cargo workspace and will bump dependencies
  * of managed packages if those dependencies are being updated.
@@ -69512,8 +69619,7 @@ class CargoWorkspace extends workspace_1.WorkspacePlugin {
     }
     bumpVersion(pkg) {
         const version = version_1.Version.parse(pkg.version);
-        version.patch += 1;
-        return version;
+        return new versioning_strategy_1.PatchVersionUpdate().bump(version);
     }
     updateCandidate(existingCandidate, pkg, updatedVersions) {
         const version = updatedVersions.get(pkg.name);
@@ -69764,7 +69870,7 @@ const composite_1 = __nccwpck_require__(40911);
  */
 class Merge extends plugin_1.ManifestPlugin {
     async run(candidates) {
-        if (candidates.length < 2) {
+        if (candidates.length < 1) {
             return candidates;
         }
         const updatesByPath = {};
@@ -69779,6 +69885,9 @@ class Merge extends plugin_1.ManifestPlugin {
                 else {
                     updatesByPath[update.path] = [update];
                 }
+            }
+            for (const label of pullRequest.labels) {
+                labels.add(label);
             }
             releaseData.push(...pullRequest.body.releaseData);
         }
@@ -69852,6 +69961,7 @@ const branch_name_1 = __nccwpck_require__(16344);
 const json_stringify_1 = __nccwpck_require__(69227);
 const changelog_1 = __nccwpck_require__(3325);
 const workspace_1 = __nccwpck_require__(44226);
+const versioning_strategy_1 = __nccwpck_require__(41941);
 class Package extends package_1.Package {
     constructor(rawContent, location, pkg) {
         super(pkg !== null && pkg !== void 0 ? pkg : JSON.parse(rawContent), location);
@@ -69918,8 +70028,7 @@ class NodeWorkspace extends workspace_1.WorkspacePlugin {
     }
     bumpVersion(pkg) {
         const version = version_1.Version.parse(pkg.version);
-        version.patch += 1;
-        return version;
+        return new versioning_strategy_1.PatchVersionUpdate().bump(version);
     }
     updateCandidate(existingCandidate, pkg, updatedVersions) {
         var _a;
@@ -70300,6 +70409,266 @@ exports.WorkspacePlugin = WorkspacePlugin;
 
 /***/ }),
 
+/***/ 95081:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.BaseStrategy = void 0;
+const manifest_1 = __nccwpck_require__(31999);
+const default_1 = __nccwpck_require__(94073);
+const default_2 = __nccwpck_require__(71480);
+const commit_1 = __nccwpck_require__(69158);
+const version_1 = __nccwpck_require__(17348);
+const tag_name_1 = __nccwpck_require__(36503);
+const logger_1 = __nccwpck_require__(68809);
+const pull_request_title_1 = __nccwpck_require__(1158);
+const branch_name_1 = __nccwpck_require__(16344);
+const pull_request_body_1 = __nccwpck_require__(70774);
+const DEFAULT_CHANGELOG_PATH = 'CHANGELOG.md';
+/**
+ * A strategy is responsible for determining which files are
+ * necessary to update in a release pull request.
+ */
+class BaseStrategy {
+    constructor(options) {
+        var _a;
+        this.path = options.path || manifest_1.ROOT_PROJECT_PATH;
+        this.github = options.github;
+        this.packageName = options.packageName;
+        this.component =
+            options.component || this.normalizeComponent(this.packageName);
+        this.versioningStrategy =
+            options.versioningStrategy || new default_1.DefaultVersioningStrategy({});
+        this.targetBranch = options.targetBranch;
+        this.repository = options.github.repository;
+        this.changelogPath = options.changelogPath || DEFAULT_CHANGELOG_PATH;
+        this.changelogSections = options.changelogSections;
+        this.tagSeparator = options.tagSeparator;
+        this.skipGitHubRelease = options.skipGitHubRelease || false;
+        this.releaseAs = options.releaseAs;
+        this.changelogNotes =
+            options.changelogNotes || new default_2.DefaultChangelogNotes(options);
+        this.includeComponentInTag = (_a = options.includeComponentInTag) !== null && _a !== void 0 ? _a : true;
+        this.pullRequestTitlePattern = options.pullRequestTitlePattern;
+    }
+    /**
+     * Return the component for this strategy. This may be a computed field.
+     * @returns {string}
+     */
+    async getComponent() {
+        if (!this.includeComponentInTag) {
+            return '';
+        }
+        return this.component || (await this.getDefaultComponent());
+    }
+    async getDefaultComponent() {
+        return this.normalizeComponent(await this.getDefaultPackageName());
+    }
+    async getDefaultPackageName() {
+        return '';
+    }
+    normalizeComponent(component) {
+        if (!component) {
+            return '';
+        }
+        return component;
+    }
+    /**
+     * Override this method to post process commits
+     * @param {ConventionalCommit[]} commits parsed commits
+     * @returns {ConventionalCommit[]} modified commits
+     */
+    postProcessCommits(commits) {
+        return commits;
+    }
+    async buildReleaseNotes(conventionalCommits, newVersion, newVersionTag, latestRelease) {
+        var _a;
+        return await this.changelogNotes.buildNotes(conventionalCommits, {
+            owner: this.repository.owner,
+            repository: this.repository.repo,
+            version: newVersion.toString(),
+            previousTag: (_a = latestRelease === null || latestRelease === void 0 ? void 0 : latestRelease.tag) === null || _a === void 0 ? void 0 : _a.toString(),
+            currentTag: newVersionTag.toString(),
+            targetBranch: this.targetBranch,
+            changelogSections: this.changelogSections,
+        });
+    }
+    /**
+     * Builds a candidate release pull request
+     * @param {Commit[]} commits Raw commits to consider for this release.
+     * @param {Release} latestRelease Optional. The last release for this
+     *   component if available.
+     * @param {boolean} draft Optional. Whether or not to create the pull
+     *   request as a draft. Defaults to `false`.
+     * @returns {ReleasePullRequest | undefined} The release pull request to
+     *   open for this path/component. Returns undefined if we should not
+     *   open a pull request.
+     */
+    async buildReleasePullRequest(commits, latestRelease, draft, labels = []) {
+        const conventionalCommits = this.postProcessCommits(commit_1.parseConventionalCommits(commits));
+        const newVersion = await this.buildNewVersion(conventionalCommits, latestRelease);
+        const versionsMap = await this.updateVersionsMap(await this.buildVersionsMap(conventionalCommits), conventionalCommits);
+        const component = await this.getComponent();
+        logger_1.logger.debug('component:', component);
+        const newVersionTag = new tag_name_1.TagName(newVersion, this.includeComponentInTag ? component : undefined, this.tagSeparator);
+        logger_1.logger.warn('pull request title pattern:', this.pullRequestTitlePattern);
+        const pullRequestTitle = pull_request_title_1.PullRequestTitle.ofComponentTargetBranchVersion(component || '', this.targetBranch, newVersion, this.pullRequestTitlePattern);
+        const branchName = component
+            ? branch_name_1.BranchName.ofComponentTargetBranch(component, this.targetBranch)
+            : branch_name_1.BranchName.ofTargetBranch(this.targetBranch);
+        const releaseNotesBody = await this.buildReleaseNotes(conventionalCommits, newVersion, newVersionTag, latestRelease);
+        if (this.changelogEmpty(releaseNotesBody)) {
+            logger_1.logger.info(`No user facing commits found since ${latestRelease ? latestRelease.sha : 'beginning of time'} - skipping`);
+            return undefined;
+        }
+        const updates = await this.buildUpdates({
+            changelogEntry: releaseNotesBody,
+            newVersion,
+            versionsMap,
+            latestVersion: latestRelease === null || latestRelease === void 0 ? void 0 : latestRelease.tag.version,
+        });
+        const pullRequestBody = new pull_request_body_1.PullRequestBody([
+            {
+                component,
+                version: newVersion,
+                notes: releaseNotesBody,
+            },
+        ]);
+        return {
+            title: pullRequestTitle,
+            body: pullRequestBody,
+            updates,
+            labels,
+            headRefName: branchName.toString(),
+            version: newVersion,
+            draft: draft !== null && draft !== void 0 ? draft : false,
+        };
+    }
+    changelogEmpty(changelogEntry) {
+        return changelogEntry.split('\n').length <= 1;
+    }
+    async updateVersionsMap(versionsMap, conventionalCommits) {
+        for (const versionKey of versionsMap.keys()) {
+            const version = versionsMap.get(versionKey);
+            if (!version) {
+                logger_1.logger.warn(`didn't find version for ${versionKey}`);
+                continue;
+            }
+            const newVersion = await this.versioningStrategy.bump(version, conventionalCommits);
+            versionsMap.set(versionKey, newVersion);
+        }
+        return versionsMap;
+    }
+    async buildNewVersion(conventionalCommits, latestRelease) {
+        if (this.releaseAs) {
+            logger_1.logger.warn(`Setting version for ${this.path} from release-as configuration`);
+            return version_1.Version.parse(this.releaseAs);
+        }
+        else if (latestRelease) {
+            return await this.versioningStrategy.bump(latestRelease.tag.version, conventionalCommits);
+        }
+        else {
+            return this.initialReleaseVersion();
+        }
+    }
+    async buildVersionsMap(_conventionalCommits) {
+        return new Map();
+    }
+    /**
+     * Given a merged pull request, build the candidate release.
+     * @param {PullRequest} mergedPullRequest The merged release pull request.
+     * @returns {Release} The candidate release.
+     */
+    async buildRelease(mergedPullRequest) {
+        if (this.skipGitHubRelease) {
+            logger_1.logger.info('Release skipped from strategy config');
+            return;
+        }
+        if (!mergedPullRequest.sha) {
+            logger_1.logger.error('Pull request should have been merged');
+            return;
+        }
+        const pullRequestTitle = pull_request_title_1.PullRequestTitle.parse(mergedPullRequest.title, this.pullRequestTitlePattern) ||
+            pull_request_title_1.PullRequestTitle.parse(mergedPullRequest.title, manifest_1.MANIFEST_PULL_REQUEST_TITLE_PATTERN);
+        if (!pullRequestTitle) {
+            logger_1.logger.error(`Bad pull request title: '${mergedPullRequest.title}'`);
+            return;
+        }
+        const branchName = branch_name_1.BranchName.parse(mergedPullRequest.headBranchName);
+        if (!branchName) {
+            logger_1.logger.error(`Bad branch name: ${mergedPullRequest.headBranchName}`);
+            return;
+        }
+        const pullRequestBody = pull_request_body_1.PullRequestBody.parse(mergedPullRequest.body);
+        if (!pullRequestBody) {
+            logger_1.logger.error('Could not parse pull request body as a release PR');
+            return;
+        }
+        const component = await this.getComponent();
+        logger_1.logger.info('component:', component);
+        const releaseData = pullRequestBody.releaseData.length === 1 &&
+            !pullRequestBody.releaseData[0].component
+            ? pullRequestBody.releaseData[0]
+            : pullRequestBody.releaseData.find(releaseData => {
+                return (this.normalizeComponent(releaseData.component) ===
+                    this.normalizeComponent(component));
+            });
+        const notes = releaseData === null || releaseData === void 0 ? void 0 : releaseData.notes;
+        if (notes === undefined) {
+            logger_1.logger.warn('Failed to find release notes');
+        }
+        const version = pullRequestTitle.getVersion() || (releaseData === null || releaseData === void 0 ? void 0 : releaseData.version);
+        if (!version) {
+            logger_1.logger.error('Pull request should have included version');
+            return;
+        }
+        const tag = new tag_name_1.TagName(version, this.includeComponentInTag ? component : undefined, this.tagSeparator);
+        return {
+            tag,
+            notes: notes || '',
+            sha: mergedPullRequest.sha,
+        };
+    }
+    /**
+     * Override this to handle the initial version of a new library.
+     */
+    initialReleaseVersion() {
+        return version_1.Version.parse('1.0.0');
+    }
+    addPath(file) {
+        if (this.path === manifest_1.ROOT_PROJECT_PATH) {
+            return file;
+        }
+        file = file.replace(/^[/\\]/, '');
+        if (this.path === undefined) {
+            return file;
+        }
+        else {
+            const path = this.path.replace(/[/\\]$/, '');
+            return `${path}/${file}`;
+        }
+    }
+}
+exports.BaseStrategy = BaseStrategy;
+//# sourceMappingURL=base.js.map
+
+/***/ }),
+
 /***/ 86518:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -70325,8 +70694,8 @@ const changelog_1 = __nccwpck_require__(3325);
 const yaml = __nccwpck_require__(21917);
 // pubspec
 const pubspec_yaml_1 = __nccwpck_require__(62861);
-const strategy_1 = __nccwpck_require__(15871);
-class Dart extends strategy_1.Strategy {
+const base_1 = __nccwpck_require__(95081);
+class Dart extends base_1.BaseStrategy {
     async buildUpdates(options) {
         const updates = [];
         const version = options.newVersion;
@@ -70394,8 +70763,8 @@ exports.Elixir = void 0;
 const changelog_1 = __nccwpck_require__(3325);
 // mix.exs support
 const elixir_mix_exs_1 = __nccwpck_require__(31612);
-const strategy_1 = __nccwpck_require__(15871);
-class Elixir extends strategy_1.Strategy {
+const base_1 = __nccwpck_require__(95081);
+class Elixir extends base_1.BaseStrategy {
     async buildUpdates(options) {
         const updates = [];
         const version = options.newVersion;
@@ -70442,7 +70811,7 @@ exports.Elixir = Elixir;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GoYoshi = void 0;
-const strategy_1 = __nccwpck_require__(15871);
+const base_1 = __nccwpck_require__(95081);
 const changelog_1 = __nccwpck_require__(3325);
 const version_1 = __nccwpck_require__(17348);
 const version_go_1 = __nccwpck_require__(54988);
@@ -70461,7 +70830,7 @@ const IGNORED_SUB_MODULES = new Set([
 ]);
 const REGEN_PR_REGEX = /.*auto-regenerate.*/;
 const REGEN_ISSUE_REGEX = /(?<prefix>.*)\(#(?<pr>.*)\)(\n|$)/;
-class GoYoshi extends strategy_1.Strategy {
+class GoYoshi extends base_1.BaseStrategy {
     constructor(options) {
         var _a;
         options.changelogPath = (_a = options.changelogPath) !== null && _a !== void 0 ? _a : 'CHANGES.md';
@@ -70565,8 +70934,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Go = void 0;
 // Generic
 const changelog_1 = __nccwpck_require__(3325);
-const strategy_1 = __nccwpck_require__(15871);
-class Go extends strategy_1.Strategy {
+const base_1 = __nccwpck_require__(95081);
+class Go extends base_1.BaseStrategy {
     async buildUpdates(options) {
         const updates = [];
         const version = options.newVersion;
@@ -70611,8 +70980,8 @@ const changelog_1 = __nccwpck_require__(3325);
 const yaml = __nccwpck_require__(21917);
 // helm
 const chart_yaml_1 = __nccwpck_require__(88368);
-const strategy_1 = __nccwpck_require__(15871);
-class Helm extends strategy_1.Strategy {
+const base_1 = __nccwpck_require__(95081);
+class Helm extends base_1.BaseStrategy {
     async buildUpdates(options) {
         const updates = [];
         const version = options.newVersion;
@@ -70679,7 +71048,7 @@ exports.JavaYoshi = void 0;
 const versions_manifest_1 = __nccwpck_require__(78345);
 const version_1 = __nccwpck_require__(17348);
 const java_update_1 = __nccwpck_require__(90276);
-const strategy_1 = __nccwpck_require__(15871);
+const base_1 = __nccwpck_require__(95081);
 const changelog_1 = __nccwpck_require__(3325);
 const java_snapshot_1 = __nccwpck_require__(66860);
 const errors_1 = __nccwpck_require__(93637);
@@ -70703,7 +71072,7 @@ const CHANGELOG_SECTIONS = [
     { type: 'build', section: 'Build System', hidden: true },
     { type: 'ci', section: 'Continuous Integration', hidden: true },
 ];
-class JavaYoshi extends strategy_1.Strategy {
+class JavaYoshi extends base_1.BaseStrategy {
     constructor(options) {
         var _a;
         options.changelogSections = (_a = options.changelogSections) !== null && _a !== void 0 ? _a : CHANGELOG_SECTIONS;
@@ -70946,11 +71315,11 @@ exports.KRMBlueprint = void 0;
 const changelog_1 = __nccwpck_require__(3325);
 // KRM specific.
 const krm_blueprint_version_1 = __nccwpck_require__(17490);
-const strategy_1 = __nccwpck_require__(15871);
+const base_1 = __nccwpck_require__(95081);
 const version_1 = __nccwpck_require__(17348);
 const KRMBlueprintAttribAnnotation = 'cnrm.cloud.google.com/blueprint';
 const hasKRMBlueprintAttrib = (content) => content.includes(KRMBlueprintAttribAnnotation);
-class KRMBlueprint extends strategy_1.Strategy {
+class KRMBlueprint extends base_1.BaseStrategy {
     async buildUpdates(options) {
         const updates = [];
         const version = options.newVersion;
@@ -70967,7 +71336,7 @@ class KRMBlueprint extends strategy_1.Strategy {
             versionsMap.set('previousVersion', options.latestVersion);
         }
         // Update version in all yaml files with attribution annotation
-        const yamlPaths = await this.github.findFilesByExtension('yaml', this.path);
+        const yamlPaths = await this.github.findFilesByExtensionAndRef('yaml', this.targetBranch, this.path);
         for (const yamlPath of yamlPaths) {
             const contents = await this.github.getFileContents(this.addPath(yamlPath));
             if (hasKRMBlueprintAttrib(contents.parsedContent)) {
@@ -71013,12 +71382,12 @@ exports.KRMBlueprint = KRMBlueprint;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Node = void 0;
-const strategy_1 = __nccwpck_require__(15871);
+const base_1 = __nccwpck_require__(95081);
 const package_lock_json_1 = __nccwpck_require__(23443);
 const samples_package_json_1 = __nccwpck_require__(68530);
 const changelog_1 = __nccwpck_require__(3325);
 const package_json_1 = __nccwpck_require__(26588);
-class Node extends strategy_1.Strategy {
+class Node extends base_1.BaseStrategy {
     async buildUpdates(options) {
         const updates = [];
         const version = options.newVersion;
@@ -71108,9 +71477,9 @@ const changelog_1 = __nccwpck_require__(3325);
 const opam_1 = __nccwpck_require__(4401);
 const esy_json_1 = __nccwpck_require__(38500);
 const dune_project_1 = __nccwpck_require__(36275);
-const strategy_1 = __nccwpck_require__(15871);
+const base_1 = __nccwpck_require__(95081);
 const notEsyLock = (path) => !path.startsWith('esy.lock');
-class OCaml extends strategy_1.Strategy {
+class OCaml extends base_1.BaseStrategy {
     async buildUpdates(options) {
         const updates = [];
         const version = options.newVersion;
@@ -71184,7 +71553,7 @@ exports.OCaml = OCaml;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PHPYoshi = void 0;
-const strategy_1 = __nccwpck_require__(15871);
+const base_1 = __nccwpck_require__(95081);
 const changelog_1 = __nccwpck_require__(3325);
 const root_composer_update_packages_1 = __nccwpck_require__(45175);
 const php_manifest_1 = __nccwpck_require__(90190);
@@ -71211,7 +71580,7 @@ const CHANGELOG_SECTIONS = [
     { type: 'build', section: 'Build System', hidden: true },
     { type: 'ci', section: 'Continuous Integration', hidden: true },
 ];
-class PHPYoshi extends strategy_1.Strategy {
+class PHPYoshi extends base_1.BaseStrategy {
     constructor(options) {
         super({
             ...options,
@@ -71409,7 +71778,7 @@ exports.PHP = void 0;
 const changelog_1 = __nccwpck_require__(3325);
 // PHP Specific.
 const root_composer_update_packages_1 = __nccwpck_require__(45175);
-const strategy_1 = __nccwpck_require__(15871);
+const base_1 = __nccwpck_require__(95081);
 const CHANGELOG_SECTIONS = [
     { type: 'feat', section: 'Features' },
     { type: 'fix', section: 'Bug Fixes' },
@@ -71423,7 +71792,7 @@ const CHANGELOG_SECTIONS = [
     { type: 'build', section: 'Build System', hidden: true },
     { type: 'ci', section: 'Continuous Integration', hidden: true },
 ];
-class PHP extends strategy_1.Strategy {
+class PHP extends base_1.BaseStrategy {
     constructor(options) {
         var _a;
         options.changelogSections = (_a = options.changelogSections) !== null && _a !== void 0 ? _a : CHANGELOG_SECTIONS;
@@ -71479,7 +71848,7 @@ exports.PHP = PHP;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Python = void 0;
-const strategy_1 = __nccwpck_require__(15871);
+const base_1 = __nccwpck_require__(95081);
 const changelog_1 = __nccwpck_require__(3325);
 const version_1 = __nccwpck_require__(17348);
 const setup_cfg_1 = __nccwpck_require__(40483);
@@ -71487,7 +71856,7 @@ const setup_py_1 = __nccwpck_require__(11519);
 const pyproject_toml_1 = __nccwpck_require__(89290);
 const logger_1 = __nccwpck_require__(68809);
 const python_file_with_version_1 = __nccwpck_require__(70464);
-class Python extends strategy_1.Strategy {
+class Python extends base_1.BaseStrategy {
     async buildUpdates(options) {
         var _a;
         const updates = [];
@@ -71608,10 +71977,11 @@ const indent_commit_1 = __nccwpck_require__(13170);
 const changelog_1 = __nccwpck_require__(3325);
 // RubyYoshi
 const version_rb_1 = __nccwpck_require__(46979);
-const strategy_1 = __nccwpck_require__(15871);
+const base_1 = __nccwpck_require__(95081);
 const fs_1 = __nccwpck_require__(35747);
 const path_1 = __nccwpck_require__(85622);
 const manifest_1 = __nccwpck_require__(31999);
+const logger_1 = __nccwpck_require__(68809);
 const CHANGELOG_SECTIONS = [
     { type: 'feat', section: 'Features' },
     { type: 'fix', section: 'Bug Fixes' },
@@ -71625,7 +71995,7 @@ const CHANGELOG_SECTIONS = [
     { type: 'build', section: 'Build System', hidden: true },
     { type: 'ci', section: 'Continuous Integration', hidden: true },
 ];
-class RubyYoshi extends strategy_1.Strategy {
+class RubyYoshi extends base_1.BaseStrategy {
     constructor(options) {
         var _a;
         super({
@@ -71686,6 +72056,10 @@ class RubyYoshi extends strategy_1.Strategy {
                     .slice(1)
                     .join('\n')}</code></pre>\n`;
             }
+            if (commit.files === undefined) {
+                logger_1.logger.error('No files for commit - this is likely a bug.');
+                continue;
+            }
             commit.files.forEach(file => {
                 if (this.path === manifest_1.ROOT_PROJECT_PATH || file.startsWith(this.path)) {
                     updatedFiles[file] = true;
@@ -71731,8 +72105,8 @@ const indent_commit_1 = __nccwpck_require__(13170);
 const changelog_1 = __nccwpck_require__(3325);
 // Ruby
 const version_rb_1 = __nccwpck_require__(46979);
-const strategy_1 = __nccwpck_require__(15871);
-class Ruby extends strategy_1.Strategy {
+const base_1 = __nccwpck_require__(95081);
+class Ruby extends base_1.BaseStrategy {
     constructor(options) {
         var _a;
         super(options);
@@ -71801,9 +72175,9 @@ const cargo_toml_1 = __nccwpck_require__(90420);
 const cargo_lock_1 = __nccwpck_require__(68875);
 const common_1 = __nccwpck_require__(11659);
 const logger_1 = __nccwpck_require__(68809);
-const strategy_1 = __nccwpck_require__(15871);
+const base_1 = __nccwpck_require__(95081);
 const version_1 = __nccwpck_require__(17348);
-class Rust extends strategy_1.Strategy {
+class Rust extends base_1.BaseStrategy {
     async buildUpdates(options) {
         const updates = [];
         const version = options.newVersion;
@@ -71924,9 +72298,9 @@ exports.Simple = void 0;
 // Generic
 const changelog_1 = __nccwpck_require__(3325);
 // version.txt support
-const strategy_1 = __nccwpck_require__(15871);
+const base_1 = __nccwpck_require__(95081);
 const default_1 = __nccwpck_require__(69995);
-class Simple extends strategy_1.Strategy {
+class Simple extends base_1.BaseStrategy {
     async buildUpdates(options) {
         const updates = [];
         const version = options.newVersion;
@@ -71978,9 +72352,9 @@ const changelog_1 = __nccwpck_require__(3325);
 // Terraform specific.
 const readme_1 = __nccwpck_require__(4996);
 const module_version_1 = __nccwpck_require__(19696);
-const strategy_1 = __nccwpck_require__(15871);
+const base_1 = __nccwpck_require__(95081);
 const version_1 = __nccwpck_require__(17348);
-class TerraformModule extends strategy_1.Strategy {
+class TerraformModule extends base_1.BaseStrategy {
     async buildUpdates(options) {
         const updates = [];
         const version = options.newVersion;
@@ -72029,262 +72403,6 @@ class TerraformModule extends strategy_1.Strategy {
 }
 exports.TerraformModule = TerraformModule;
 //# sourceMappingURL=terraform-module.js.map
-
-/***/ }),
-
-/***/ 15871:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-// Copyright 2021 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Strategy = void 0;
-const version_1 = __nccwpck_require__(17348);
-const commit_1 = __nccwpck_require__(69158);
-const default_1 = __nccwpck_require__(94073);
-const pull_request_title_1 = __nccwpck_require__(1158);
-const branch_name_1 = __nccwpck_require__(16344);
-const tag_name_1 = __nccwpck_require__(36503);
-const logger_1 = __nccwpck_require__(68809);
-const manifest_1 = __nccwpck_require__(31999);
-const pull_request_body_1 = __nccwpck_require__(70774);
-const default_2 = __nccwpck_require__(71480);
-const DEFAULT_CHANGELOG_PATH = 'CHANGELOG.md';
-/**
- * A strategy is responsible for determining which files are
- * necessary to update in a release pull request.
- */
-class Strategy {
-    constructor(options) {
-        var _a;
-        this.path = options.path || manifest_1.ROOT_PROJECT_PATH;
-        this.github = options.github;
-        this.packageName = options.packageName;
-        this.component =
-            options.component || this.normalizeComponent(this.packageName);
-        this.versioningStrategy =
-            options.versioningStrategy || new default_1.DefaultVersioningStrategy({});
-        this.targetBranch = options.targetBranch;
-        this.repository = options.github.repository;
-        this.changelogPath = options.changelogPath || DEFAULT_CHANGELOG_PATH;
-        this.changelogSections = options.changelogSections;
-        this.tagSeparator = options.tagSeparator;
-        this.skipGitHubRelease = options.skipGitHubRelease || false;
-        this.releaseAs = options.releaseAs;
-        this.changelogNotes =
-            options.changelogNotes || new default_2.DefaultChangelogNotes(options);
-        this.includeComponentInTag = (_a = options.includeComponentInTag) !== null && _a !== void 0 ? _a : true;
-        this.pullRequestTitlePattern = options.pullRequestTitlePattern;
-    }
-    async getComponent() {
-        if (!this.includeComponentInTag) {
-            return '';
-        }
-        return this.component || (await this.getDefaultComponent());
-    }
-    async getDefaultComponent() {
-        return this.normalizeComponent(await this.getDefaultPackageName());
-    }
-    async getDefaultPackageName() {
-        return '';
-    }
-    normalizeComponent(component) {
-        if (!component) {
-            return '';
-        }
-        return component;
-    }
-    /**
-     * Override this method to post process commits
-     * @param {ConventionalCommit[]} commits parsed commits
-     * @returns {ConventionalCommit[]} modified commits
-     */
-    postProcessCommits(commits) {
-        return commits;
-    }
-    async buildReleaseNotes(conventionalCommits, newVersion, newVersionTag, latestRelease) {
-        var _a;
-        return await this.changelogNotes.buildNotes(conventionalCommits, {
-            owner: this.repository.owner,
-            repository: this.repository.repo,
-            version: newVersion.toString(),
-            previousTag: (_a = latestRelease === null || latestRelease === void 0 ? void 0 : latestRelease.tag) === null || _a === void 0 ? void 0 : _a.toString(),
-            currentTag: newVersionTag.toString(),
-            targetBranch: this.targetBranch,
-            changelogSections: this.changelogSections,
-        });
-    }
-    /**
-     * Builds a candidate release pull request
-     * @param {Commit[]} commits Raw commits to consider for this release.
-     * @param {Release} latestRelease Optional. The last release for this
-     *   component if available.
-     * @param {boolean} draft Optional. Whether or not to create the pull
-     *   request as a draft. Defaults to `false`.
-     * @returns {ReleasePullRequest | undefined} The release pull request to
-     *   open for this path/component. Returns undefined if we should not
-     *   open a pull request.
-     */
-    async buildReleasePullRequest(commits, latestRelease, draft, labels = []) {
-        const conventionalCommits = this.postProcessCommits(commit_1.parseConventionalCommits(commits));
-        const newVersion = await this.buildNewVersion(conventionalCommits, latestRelease);
-        const versionsMap = await this.updateVersionsMap(await this.buildVersionsMap(conventionalCommits), conventionalCommits);
-        const component = await this.getComponent();
-        logger_1.logger.debug('component:', component);
-        const newVersionTag = new tag_name_1.TagName(newVersion, this.includeComponentInTag ? component : undefined, this.tagSeparator);
-        logger_1.logger.warn('pull request title pattern:', this.pullRequestTitlePattern);
-        const pullRequestTitle = pull_request_title_1.PullRequestTitle.ofComponentTargetBranchVersion(component || '', this.targetBranch, newVersion, this.pullRequestTitlePattern);
-        const branchName = component
-            ? branch_name_1.BranchName.ofComponentTargetBranch(component, this.targetBranch)
-            : branch_name_1.BranchName.ofTargetBranch(this.targetBranch);
-        const releaseNotesBody = await this.buildReleaseNotes(conventionalCommits, newVersion, newVersionTag, latestRelease);
-        if (this.changelogEmpty(releaseNotesBody)) {
-            logger_1.logger.info(`No user facing commits found since ${latestRelease ? latestRelease.sha : 'beginning of time'} - skipping`);
-            return undefined;
-        }
-        const updates = await this.buildUpdates({
-            changelogEntry: releaseNotesBody,
-            newVersion,
-            versionsMap,
-            latestVersion: latestRelease === null || latestRelease === void 0 ? void 0 : latestRelease.tag.version,
-        });
-        const pullRequestBody = new pull_request_body_1.PullRequestBody([
-            {
-                component,
-                version: newVersion,
-                notes: releaseNotesBody,
-            },
-        ]);
-        return {
-            title: pullRequestTitle,
-            body: pullRequestBody,
-            updates,
-            labels,
-            headRefName: branchName.toString(),
-            version: newVersion,
-            draft: draft !== null && draft !== void 0 ? draft : false,
-        };
-    }
-    changelogEmpty(changelogEntry) {
-        return changelogEntry.split('\n').length <= 1;
-    }
-    async updateVersionsMap(versionsMap, conventionalCommits) {
-        for (const versionKey of versionsMap.keys()) {
-            const version = versionsMap.get(versionKey);
-            if (!version) {
-                logger_1.logger.warn(`didn't find version for ${versionKey}`);
-                continue;
-            }
-            const newVersion = await this.versioningStrategy.bump(version, conventionalCommits);
-            versionsMap.set(versionKey, newVersion);
-        }
-        return versionsMap;
-    }
-    async buildNewVersion(conventionalCommits, latestRelease) {
-        if (this.releaseAs) {
-            logger_1.logger.warn(`Setting version for ${this.path} from release-as configuration`);
-            return version_1.Version.parse(this.releaseAs);
-        }
-        else if (latestRelease) {
-            return await this.versioningStrategy.bump(latestRelease.tag.version, conventionalCommits);
-        }
-        else {
-            return this.initialReleaseVersion();
-        }
-    }
-    async buildVersionsMap(_conventionalCommits) {
-        return new Map();
-    }
-    /**
-     * Given a merged pull request, build the candidate release.
-     * @param {PullRequest} mergedPullRequest The merged release pull request.
-     * @returns {Release} The candidate release.
-     */
-    async buildRelease(mergedPullRequest) {
-        if (this.skipGitHubRelease) {
-            logger_1.logger.info('Release skipped from strategy config');
-            return;
-        }
-        if (!mergedPullRequest.sha) {
-            logger_1.logger.error('Pull request should have been merged');
-            return;
-        }
-        const pullRequestTitle = pull_request_title_1.PullRequestTitle.parse(mergedPullRequest.title, this.pullRequestTitlePattern) ||
-            pull_request_title_1.PullRequestTitle.parse(mergedPullRequest.title, manifest_1.MANIFEST_PULL_REQUEST_TITLE_PATTERN);
-        if (!pullRequestTitle) {
-            logger_1.logger.error(`Bad pull request title: '${mergedPullRequest.title}'`);
-            return;
-        }
-        const branchName = branch_name_1.BranchName.parse(mergedPullRequest.headBranchName);
-        if (!branchName) {
-            logger_1.logger.error(`Bad branch name: ${mergedPullRequest.headBranchName}`);
-            return;
-        }
-        const pullRequestBody = pull_request_body_1.PullRequestBody.parse(mergedPullRequest.body);
-        if (!pullRequestBody) {
-            logger_1.logger.error('Could not parse pull request body as a release PR');
-            return;
-        }
-        const component = await this.getComponent();
-        logger_1.logger.info('component:', component);
-        const releaseData = pullRequestBody.releaseData.length === 1 &&
-            !pullRequestBody.releaseData[0].component
-            ? pullRequestBody.releaseData[0]
-            : pullRequestBody.releaseData.find(releaseData => {
-                return (this.normalizeComponent(releaseData.component) ===
-                    this.normalizeComponent(component));
-            });
-        const notes = releaseData === null || releaseData === void 0 ? void 0 : releaseData.notes;
-        if (notes === undefined) {
-            logger_1.logger.warn('Failed to find release notes');
-        }
-        const version = pullRequestTitle.getVersion() || (releaseData === null || releaseData === void 0 ? void 0 : releaseData.version);
-        if (!version) {
-            logger_1.logger.error('Pull request should have included version');
-            return;
-        }
-        const tag = new tag_name_1.TagName(version, this.includeComponentInTag ? component : undefined, this.tagSeparator);
-        return {
-            tag,
-            notes: notes || '',
-            sha: mergedPullRequest.sha,
-        };
-    }
-    /**
-     * Override this to handle the initial version of a new library.
-     */
-    initialReleaseVersion() {
-        return version_1.Version.parse('1.0.0');
-    }
-    addPath(file) {
-        if (this.path === manifest_1.ROOT_PROJECT_PATH) {
-            return file;
-        }
-        file = file.replace(/^[/\\]/, '');
-        if (this.path === undefined) {
-            return file;
-        }
-        else {
-            const path = this.path.replace(/[/\\]$/, '');
-            return `${path}/${file}`;
-        }
-    }
-}
-exports.Strategy = Strategy;
-//# sourceMappingURL=strategy.js.map
 
 /***/ }),
 
@@ -73679,7 +73797,11 @@ class CargoToml extends default_1.DefaultUpdater {
                 }
                 const dep = deps[pkgName];
                 if (typeof dep === 'string' || typeof dep.path === 'undefined') {
-                    logger_1.logger.info(`skipping ${depKind}.${pkgName} in`);
+                    logger_1.logger.info(`skipping ${depKind}.${pkgName} (no path set)`);
+                    continue; // to next depKind
+                }
+                if (typeof dep.version === 'undefined') {
+                    logger_1.logger.info(`skipping ${depKind}.${pkgName} (no version set)`);
                     continue; // to next depKind
                 }
                 logger_1.logger.info(`updating ${depKind}.${pkgName} from ${dep.version} to ${pkgVersion}`);
@@ -74085,6 +74207,9 @@ class CommitSplit {
     split(commits) {
         const splitCommits = {};
         commits.forEach(commit => {
+            if (commit.files === undefined) {
+                throw new Error(`Commit ${commit.sha} is missing files. Did you set "backfillFiles" to "true"?`);
+            }
             const dedupe = new Set();
             for (let i = 0; i < commit.files.length; i++) {
                 const file = commit.files[i];
@@ -74510,6 +74635,7 @@ class PullRequestTitle {
             .replace('${scope}', scope)
             .replace('${component}', component)
             .replace('${version}', version.toString())
+            .replace('${branch}', this.targetBranch || '')
             .trim();
     }
 }
@@ -74741,7 +74867,7 @@ exports.replaceTomlValue = replaceTomlValue;
 /***/ }),
 
 /***/ 17348:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
@@ -74760,7 +74886,11 @@ exports.replaceTomlValue = replaceTomlValue;
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Version = void 0;
+const semver = __nccwpck_require__(11383);
 const VERSION_REGEX = /(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(-(?<preRelease>[^+]+))?(\+(?<build>.*))?/;
+/**
+ * This data class is used to represent a SemVer version.
+ */
 class Version {
     constructor(major, minor, patch, preRelease, build) {
         this.major = major;
@@ -74769,6 +74899,13 @@ class Version {
         this.preRelease = preRelease;
         this.build = build;
     }
+    /**
+     * Parse a version string into a data class.
+     *
+     * @param {string} versionString the input version string
+     * @returns {Version} the parsed version
+     * @throws {Error} if the version string cannot be parsed
+     */
     static parse(versionString) {
         const match = versionString.match(VERSION_REGEX);
         if (!(match === null || match === void 0 ? void 0 : match.groups)) {
@@ -74781,6 +74918,21 @@ class Version {
         const build = match.groups.build;
         return new Version(major, minor, patch, preRelease, build);
     }
+    /**
+     * Comparator to other Versions to be used in sorting.
+     *
+     * @param {Version} other The other version to compare to
+     * @returns {number} -1 if this version is earlier, 0 if the versions
+     *   are the same, or 1 otherwise.
+     */
+    compare(other) {
+        return semver.compare(this.toString(), other.toString());
+    }
+    /**
+     * Returns a normalized string version of this version.
+     *
+     * @returns {string}
+     */
     toString() {
         const preReleasePart = this.preRelease ? `-${this.preRelease}` : '';
         const buildPart = this.build ? `+${this.build}` : '';
@@ -74814,6 +74966,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AlwaysBumpPatch = void 0;
 const default_1 = __nccwpck_require__(94073);
 const versioning_strategy_1 = __nccwpck_require__(41941);
+/**
+ * This VersioningStrategy always bumps the patch version. This
+ * strategy is useful for backport branches.
+ */
 class AlwaysBumpPatch extends default_1.DefaultVersioningStrategy {
     determineReleaseType(_version, _commits) {
         return new versioning_strategy_1.PatchVersionUpdate();
@@ -74846,11 +75002,34 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DefaultVersioningStrategy = void 0;
 const versioning_strategy_1 = __nccwpck_require__(41941);
 const version_1 = __nccwpck_require__(17348);
+/**
+ * This is the default VersioningStrategy for release-please. Breaking
+ * changes should bump the major, features should bump the minor, and other
+ * significant changes should bump the patch version.
+ */
 class DefaultVersioningStrategy {
+    /**
+     * Create a new DefaultVersioningStrategy
+     * @param {DefaultVersioningStrategyOptions} options Configuration options
+     * @param {boolean} options.bumpMinorPreMajor If the current version is less than 1.0.0,
+     *   then bump the minor version for breaking changes
+     * @param {boolean} options.bumpPatchForMinorPreMajor If the current version is less than
+     *   1.0.0, then bump the patch version for features
+     */
     constructor(options = {}) {
         this.bumpMinorPreMajor = options.bumpMinorPreMajor === true;
         this.bumpPatchForMinorPreMajor = options.bumpPatchForMinorPreMajor === true;
     }
+    /**
+     * Given the current version of an artifact and a list of commits,
+     * return a VersionUpdater that knows how to bump the version.
+     *
+     * This is useful for chaining together versioning strategies.
+     *
+     * @param {Version} version The current version
+     * @param {ConventionalCommit[]} commits The list of commits to consider
+     * @returns {VersionUpdater} Updater for bumping the next version.
+     */
     determineReleaseType(version, commits) {
         // iterate through list of commits and find biggest commit type
         let breaking = 0;
@@ -74889,6 +75068,14 @@ class DefaultVersioningStrategy {
         }
         return new versioning_strategy_1.PatchVersionUpdate();
     }
+    /**
+     * Given the current version of an artifact and a list of commits,
+     * return the next version.
+     *
+     * @param {Version} version The current version
+     * @param {ConventionalCommit[]} commits The list of commits to consider
+     * @returns {Version} The next version
+     */
     bump(version, commits) {
         return this.determineReleaseType(version, commits).bump(version);
     }
@@ -74923,6 +75110,14 @@ const semver = __nccwpck_require__(11383);
 const default_1 = __nccwpck_require__(94073);
 const versioning_strategy_1 = __nccwpck_require__(41941);
 const DEPENDENCY_UPDATE_REGEX = /^deps: update dependency (.*) to (v.*)(\s\(#\d+\))?$/m;
+/**
+ * This VersioningStrategy looks at `deps` type commits and tries to
+ * mirror the semantic version bump for that dependency update. For
+ * example, an update to v2, would be treated as a major version bump.
+ *
+ * It also respects the default commit types and will pick the
+ * greatest version bump.
+ */
 class DependencyManifest extends default_1.DefaultVersioningStrategy {
     determineReleaseType(version, commits) {
         const regularBump = super.determineReleaseType(version, commits);
@@ -74996,7 +75191,7 @@ function buildDependencyUpdates(commits) {
 /***/ }),
 
 /***/ 87719:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
@@ -75015,6 +75210,7 @@ function buildDependencyUpdates(commits) {
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.JavaAddSnapshot = void 0;
+const version_1 = __nccwpck_require__(17348);
 const fakeCommit = {
     message: 'fix: fake fix',
     type: 'fix',
@@ -75028,17 +75224,17 @@ const fakeCommit = {
 };
 class AddSnapshotVersionUpdate {
     constructor(strategy) {
-        this.name = 'java-snapshot';
         this.strategy = strategy;
     }
     bump(version) {
         const nextPatch = this.strategy.bump(version, [fakeCommit]);
-        nextPatch.preRelease = nextPatch.preRelease
-            ? `${nextPatch.preRelease}-SNAPSHOT`
-            : 'SNAPSHOT';
-        return nextPatch;
+        return new version_1.Version(nextPatch.major, nextPatch.minor, nextPatch.patch, nextPatch.preRelease ? `${nextPatch.preRelease}-SNAPSHOT` : 'SNAPSHOT', nextPatch.build);
     }
 }
+/**
+ * This VersioningStrategy is used by Java releases to bump
+ * to the next snapshot version.
+ */
 class JavaAddSnapshot {
     constructor(strategy) {
         this.strategy = strategy;
@@ -75089,7 +75285,6 @@ const fakeCommit = {
 };
 class RemoveSnapshotVersionUpdate {
     constructor(parent) {
-        this.name = 'remove-snapshot';
         this.parent = parent;
     }
     bump(version) {
@@ -75101,6 +75296,10 @@ class RemoveSnapshotVersionUpdate {
             : undefined, version.build);
     }
 }
+/**
+ * This VersioningStrategy is used by Java releases to bump
+ * to the next non-snapshot version.
+ */
 class JavaSnapshot {
     constructor(strategy) {
         this.strategy = strategy;
@@ -75152,10 +75351,12 @@ exports.ServicePackVersioningStrategy = void 0;
 const version_1 = __nccwpck_require__(17348);
 const default_1 = __nccwpck_require__(94073);
 const SERVICE_PACK_PATTERN = /sp\.(\d+)/;
+/**
+ * This version updater knows how to bump from a non-service pack
+ * version to a service pack version and increment the service
+ * pack number in subsequent releases.
+ */
 class ServicePackVersionUpdate {
-    constructor() {
-        this.name = 'service-pack';
-    }
     bump(version) {
         var _a;
         const match = (_a = version.preRelease) === null || _a === void 0 ? void 0 : _a.match(SERVICE_PACK_PATTERN);
@@ -75166,6 +75367,11 @@ class ServicePackVersionUpdate {
         return new version_1.Version(version.major, version.minor, version.patch, 'sp.1', version.build);
     }
 }
+/**
+ * This VersioningStrategy is used for "service pack" versioning. In this
+ * strategy, we use the pre-release field with a pattern of `sp-\d+` where
+ * the number is an auto-incrementing integer starting with 1.
+ */
 class ServicePackVersioningStrategy extends default_1.DefaultVersioningStrategy {
     determineReleaseType(_version, _commits) {
         return new ServicePackVersionUpdate();
@@ -75197,38 +75403,65 @@ exports.ServicePackVersioningStrategy = ServicePackVersioningStrategy;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CustomVersionUpdate = exports.PatchVersionUpdate = exports.MinorVersionUpdate = exports.MajorVersionUpdate = void 0;
 const version_1 = __nccwpck_require__(17348);
+/**
+ * This VersionUpdater performs a SemVer major version bump.
+ */
 class MajorVersionUpdate {
-    constructor() {
-        this.name = 'major';
-    }
+    /**
+     * Returns the new bumped version
+     *
+     * @param {Version} version The current version
+     * @returns {Version} The bumped version
+     */
     bump(version) {
         return new version_1.Version(version.major + 1, 0, 0, version.preRelease, version.build);
     }
 }
 exports.MajorVersionUpdate = MajorVersionUpdate;
+/**
+ * This VersionUpdater performs a SemVer minor version bump.
+ */
 class MinorVersionUpdate {
-    constructor() {
-        this.name = 'minor';
-    }
+    /**
+     * Returns the new bumped version
+     *
+     * @param {Version} version The current version
+     * @returns {Version} The bumped version
+     */
     bump(version) {
         return new version_1.Version(version.major, version.minor + 1, 0, version.preRelease, version.build);
     }
 }
 exports.MinorVersionUpdate = MinorVersionUpdate;
+/**
+ * This VersionUpdater performs a SemVer patch version bump.
+ */
 class PatchVersionUpdate {
-    constructor() {
-        this.name = 'patch';
-    }
+    /**
+     * Returns the new bumped version
+     *
+     * @param {Version} version The current version
+     * @returns {Version} The bumped version
+     */
     bump(version) {
         return new version_1.Version(version.major, version.minor, version.patch + 1, version.preRelease, version.build);
     }
 }
 exports.PatchVersionUpdate = PatchVersionUpdate;
+/**
+ * This VersionUpdater sets the version to a specific version.
+ */
 class CustomVersionUpdate {
     constructor(versionString) {
-        this.name = 'custom';
         this.versionString = versionString;
     }
+    /**
+     * Returns the new bumped version. This version is specified
+     * at initialization.
+     *
+     * @param {Version} version The current version
+     * @returns {Version} The bumped version
+     */
     bump(_version) {
         return version_1.Version.parse(this.versionString);
     }
@@ -89238,7 +89471,7 @@ module.exports = JSON.parse("{\"amp\":\"&\",\"apos\":\"'\",\"gt\":\">\",\"lt\":\
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"i8\":\"13.0.0-candidate.5\"}");
+module.exports = {"i8":"13.0.1"};
 
 /***/ }),
 
