@@ -20,7 +20,7 @@ Automate releases with Conventional Commit Messages.
       release-please:
         runs-on: ubuntu-latest
         steps:
-          - uses: GoogleCloudPlatform/release-please-action@v2
+          - uses: GoogleCloudPlatform/release-please-action@v3
             with:
               release-type: node
               package-name: release-please-action
@@ -37,7 +37,7 @@ Automate releases with Conventional Commit Messages.
     ```yaml
     #...(same as above)
         steps:
-          - uses: GoogleCloudPlatform/release-please-action@v2
+          - uses: GoogleCloudPlatform/release-please-action@v3
             with:
               command: manifest
     ```
@@ -138,7 +138,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2
+      - uses: GoogleCloudPlatform/release-please-action@v3
         with:
           release-type: node
           package-name: release-please-action
@@ -161,7 +161,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2
+      - uses: GoogleCloudPlatform/release-please-action@v3
         with:
           release-type: node
           package-name: release-please-action
@@ -178,7 +178,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2
+      - uses: GoogleCloudPlatform/release-please-action@v3
         with:
           release-type: node
           package-name: release-please-action
@@ -200,7 +200,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2
+      - uses: GoogleCloudPlatform/release-please-action@v3
         id: release
         with:
           release-type: node
@@ -248,7 +248,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2
+      - uses: GoogleCloudPlatform/release-please-action@v3
         id: release
         with:
           release-type: node

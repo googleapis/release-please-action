@@ -1,10 +1,10 @@
 const core = require('@actions/core')
-const { factory } = require('release-please/build/src')
+const { GitHub } = require('release-please/build/src/github')
+const { Manifest } = require('release-please/build/src/manifest')
 
 const CONFIG_FILE = 'release-please-config.json'
 const MANIFEST_FILE = '.release-please-manifest.json'
 const MANIFEST_COMMANDS = ['manifest', 'manifest-pr']
-const RELEASE_LABEL = 'autorelease: pending'
 const GITHUB_RELEASE_COMMAND = 'github-release'
 const GITHUB_RELEASE_PR_COMMAND = 'release-pr'
 const GITHUB_API_URL = 'https://api.github.com'
@@ -12,18 +12,9 @@ const GITHUB_GRAPHQL_URL = 'https://api.github.com'
 
 const signoff = core.getInput('signoff') || undefined
 
-function getBooleanInput (input) {
-  const trueValue = ['true', 'True', 'TRUE', 'yes', 'Yes', 'YES', 'y', 'Y', 'on', 'On', 'ON']
-  const falseValue = ['false', 'False', 'FALSE', 'no', 'No', 'NO', 'n', 'N', 'off', 'Off', 'OFF']
-  const stringInput = core.getInput(input)
-  if (trueValue.indexOf(stringInput) > -1) return true
-  if (falseValue.indexOf(stringInput) > -1) return false
-  throw TypeError(`Wrong boolean value of the input '${input}'`)
-}
-
 function getGitHubInput () {
   return {
-    fork: getBooleanInput('fork'),
+    fork: core.getBooleanInput('fork'),
     defaultBranch: core.getInput('default-branch') || undefined,
     repoUrl: core.getInput('repo-url') || process.env.GITHUB_REPOSITORY,
     apiUrl: core.getInput('github-api-url') || GITHUB_API_URL,
@@ -41,29 +32,123 @@ function getManifestInput () {
 }
 
 async function runManifest (command) {
-  const githubOpts = getGitHubInput()
-  const manifestOpts = { ...githubOpts, ...getManifestInput() }
-  const pr = await factory.runCommand('manifest-pr', manifestOpts)
-  if (pr) {
-    core.setOutput('pr', pr)
-  }
+  // Create the Manifest and GitHub instance from
+  // argument provided to GitHub action:
+  const { fork } = getGitHubInput()
+  const manifestOpts = getManifestInput()
+  const github = await getGitHubInstance()
+  const manifest = await Manifest.fromManifest(
+    github,
+    github.repository.defaultBranch,
+    manifestOpts.configFile,
+    manifestOpts.manifestFile,
+    {
+      signoff,
+      fork
+    }
+  )
+  // Create or update release PRs:
+  outputPRs(await manifest.createPullRequests())
   if (command === 'manifest-pr') return
+  outputReleases(await manifest.createReleases())
+}
 
-  const releasesCreated = await factory.runCommand('manifest-release', manifestOpts)
+async function main () {
+  const command = core.getInput('command') || undefined
+  if (MANIFEST_COMMANDS.includes(command)) {
+    return await runManifest(command)
+  }
+
+  const { fork } = getGitHubInput()
+  const bumpMinorPreMajor = core.getBooleanInput('bump-minor-pre-major')
+  const bumpPatchForMinorPreMajor = core.getBooleanInput('bump-patch-for-minor-pre-major')
+  const monorepoTags = core.getBooleanInput('monorepo-tags')
+  const packageName = core.getInput('package-name')
+  const path = core.getInput('path') || undefined
+  const releaseType = core.getInput('release-type', { required: true })
+  const changelogPath = core.getInput('changelog-path') || undefined
+  const changelogTypes = core.getInput('changelog-types') || undefined
+  const changelogSections = changelogTypes && JSON.parse(changelogTypes)
+  const versionFile = core.getInput('version-file') || undefined
+  const github = await getGitHubInstance()
+  const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
+  const draft = core.getBooleanInput('draft')
+  const draftPullRequest = core.getBooleanInput('draft-pull-request')
+  const manifest = await Manifest.fromConfig(
+    github,
+    github.repository.defaultBranch,
+    {
+      bumpMinorPreMajor,
+      bumpPatchForMinorPreMajor,
+      packageName,
+      releaseType,
+      changelogPath,
+      changelogSections,
+      versionFile,
+      includeComponentInTag: monorepoTags,
+      pullRequestTitlePattern,
+      draftPullRequest
+    },
+    {
+      draft,
+      signoff,
+      fork
+    },
+    path
+  )
+
+  // First we check for any merged release PRs (PRs merged with the label
+  // "autorelease: pending"):
+  if (!command || command === GITHUB_RELEASE_COMMAND) {
+    outputReleases(await manifest.createReleases())
+  }
+
+  // Next we check for PRs merged since the last release, and groom the
+  // release PR:
+  if (!command || command === GITHUB_RELEASE_PR_COMMAND) {
+    outputPRs(await manifest.createPullRequests())
+  }
+}
+
+const releasePlease = {
+  main
+}
+
+function getGitHubInstance () {
+  const { token, defaultBranch, apiUrl, graphqlUrl, repoUrl } = getGitHubInput()
+  const [owner, repo] = repoUrl.split('/')
+  const githubCreateOpts = {
+    owner,
+    repo,
+    apiUrl,
+    graphqlUrl,
+    token
+  }
+  if (defaultBranch) githubCreateOpts.defaultBranch = defaultBranch
+  return GitHub.create(githubCreateOpts)
+}
+
+function outputReleases (releases) {
+  releases = releases.filter(release => release !== undefined)
   const pathsReleased = []
-  if (releasesCreated) {
+  if (releases.length) {
     core.setOutput('releases_created', true)
-    for (const [path, release] of Object.entries(releasesCreated)) {
-      if (!release) {
-        continue
+    for (const release of releases) {
+      const path = release.path || '.'
+      if (path) {
+        pathsReleased.push(path)
+        // If the special root release is set (representing project root)
+        // and this is explicitly a manifest release, set the release_created boolean.
+        if (path === '.') {
+          core.setOutput('release_created', true)
+        } else {
+          core.setOutput(`${path}--release_created`, true)
+        }
       }
-      pathsReleased.push(path)
-      if (path === '.') {
-        core.setOutput('release_created', true)
-      } else {
-        core.setOutput(`${path}--release_created`, true)
-      }
-      for (const [key, val] of Object.entries(release)) {
+      for (let [key, val] of Object.entries(release)) {
+        // Historically tagName was output as tag_name, keep this
+        // consistent to avoid breaking change:
+        if (key === 'tagName') key = 'tag_name'
         if (path === '.') {
           core.setOutput(key, val)
         } else {
@@ -77,85 +162,12 @@ async function runManifest (command) {
   core.setOutput('paths_released', JSON.stringify(pathsReleased))
 }
 
-async function main () {
-  const command = core.getInput('command') || undefined
-  if (MANIFEST_COMMANDS.includes(command)) {
-    return await runManifest(command)
+function outputPRs (prs) {
+  prs = prs.filter(pr => pr !== undefined)
+  if (prs.length) {
+    core.setOutput('pr', prs[0])
+    core.setOutput('prs', JSON.stringify(prs))
   }
-
-  const { token, fork, defaultBranch, apiUrl, graphqlUrl, repoUrl } = getGitHubInput()
-
-  const bumpMinorPreMajor = getBooleanInput('bump-minor-pre-major')
-  const bumpPatchForMinorPreMajor = getBooleanInput('bump-patch-for-minor-pre-major')
-  const monorepoTags = getBooleanInput('monorepo-tags')
-  const packageName = core.getInput('package-name')
-  const path = core.getInput('path') || undefined
-  const releaseType = core.getInput('release-type', { required: true })
-  const changelogPath = core.getInput('changelog-path') || undefined
-  const changelogTypes = core.getInput('changelog-types') || undefined
-  const changelogSections = changelogTypes && JSON.parse(changelogTypes)
-  const versionFile = core.getInput('version-file') || undefined
-  const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
-
-  // First we check for any merged release PRs (PRs merged with the label
-  // "autorelease: pending"):
-  if (!command || command === GITHUB_RELEASE_COMMAND) {
-    const releaseCreated = await factory.runCommand(GITHUB_RELEASE_COMMAND, {
-      label: RELEASE_LABEL,
-      repoUrl,
-      packageName,
-      path,
-      monorepoTags,
-      token,
-      changelogPath,
-      releaseType,
-      defaultBranch,
-      pullRequestTitlePattern,
-      apiUrl,
-      graphqlUrl
-    })
-
-    if (releaseCreated) {
-      core.setOutput('release_created', true)
-      for (const key of Object.keys(releaseCreated)) {
-        core.setOutput(key, releaseCreated[key])
-      }
-    }
-  }
-
-  // Next we check for PRs merged since the last release, and groom the
-  // release PR:
-  if (!command || command === GITHUB_RELEASE_PR_COMMAND) {
-    const pr = await factory.runCommand(GITHUB_RELEASE_PR_COMMAND, {
-      releaseType,
-      monorepoTags,
-      packageName,
-      path,
-      apiUrl,
-      graphqlUrl,
-      repoUrl,
-      fork,
-      token,
-      label: RELEASE_LABEL,
-      bumpMinorPreMajor,
-      bumpPatchForMinorPreMajor,
-      changelogPath,
-      changelogSections,
-      versionFile,
-      defaultBranch,
-      pullRequestTitlePattern,
-      signoff
-    })
-
-    if (pr) {
-      core.setOutput('pr', pr)
-    }
-  }
-}
-
-const releasePlease = {
-  main,
-  getBooleanInput
 }
 
 /* c8 ignore next 4 */

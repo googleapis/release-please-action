@@ -3,9 +3,9 @@ const action = require('../')
 const assert = require('assert')
 const core = require('@actions/core')
 const sinon = require('sinon')
-const { factory, GitHubRelease } = require('release-please/build/src')
+const nock = require('nock')
 const { Manifest } = require('release-please/build/src/manifest')
-const { Node } = require('release-please/build/src/releasers/node')
+// const { Node } = require('release-please/build/src/strategies/node')
 // As defined in action.yml
 const defaultInput = {
   fork: 'false',
@@ -20,7 +20,9 @@ const defaultInput = {
   'version-file': '',
   'default-branch': '',
   // eslint-disable-next-line no-template-curly-in-string
-  'pull-request-title-pattern': 'chore${scope}: release${component} ${version}'
+  'pull-request-title-pattern': 'chore${scope}: release${component} ${version}',
+  draft: 'false',
+  'draft-pull-request': 'false'
 }
 
 let input
@@ -28,6 +30,8 @@ let output
 
 const sandbox = sinon.createSandbox()
 process.env.GITHUB_REPOSITORY = 'google/cloud'
+
+nock.disableNetConnect()
 
 describe('release-please-action', () => {
   beforeEach(() => {
@@ -43,230 +47,230 @@ describe('release-please-action', () => {
         return input[name]
       }
     }
+    core.getBooleanInput = name => {
+      // Float our own helper, for mocking purposes:
+      const trueValue = ['true', 'True', 'TRUE']
+      const falseValue = ['false', 'False', 'FALSE']
+      const val = core.getInput(name)
+      if (trueValue.includes(val)) { return true }
+      if (falseValue.includes(val)) { return false }
+      throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}\n` +
+          'Support boolean input list: `true | True | TRUE | false | False | FALSE`')
+    }
+    // Default branch lookup:
+    nock('https://api.github.com')
+      .get('/repos/google/cloud')
+      .reply(200, {
+        default_branch: 'main'
+      })
   })
   afterEach(() => {
     sandbox.restore()
   })
 
-  const trueValue = ['true', 'True', 'TRUE', 'yes', 'Yes', 'YES', 'y', 'Y', 'on', 'On', 'ON']
-  const falseValue = ['false', 'False', 'FALSE', 'no', 'No', 'NO', 'n', 'N', 'off', 'Off', 'OFF']
-
-  trueValue.forEach(value => {
-    it(`get the boolean true with the input of '${value}'`, () => {
-      input = {
-        fork: value
-      }
-      const actual = action.getBooleanInput('fork')
-      assert.strictEqual(actual, true)
-    })
-  })
-
-  falseValue.forEach(value => {
-    it(`get the boolean with the input of '${value}'`, () => {
-      input = {
-        fork: value
-      }
-      const actual = action.getBooleanInput('fork')
-      assert.strictEqual(actual, false)
-    })
-  })
-
-  it('get an error when inputting the wrong boolean value', () => {
-    input = {
-      fork: 'wrong'
-    }
-    assert.throws(
-      () => {
-        action.getBooleanInput('fork')
-      },
-      { name: 'TypeError', message: "Wrong boolean value of the input 'fork'" }
-    )
-  })
-
-  it('sets pull pullRequestTitlePattern to undefined, if empty string provided', async () => {
-    input = {
-      'release-type': 'node',
-      // eslint-disable-next-line no-template-curly-in-string
-      'pull-request-title-pattern': ''
-    }
-
-    const runCommandStub = sandbox.stub(factory, 'runCommand')
-    const githubReleasePRStub = runCommandStub.withArgs('release-pr').returns(25)
-
-    await action.main()
-
-    sinon.assert.calledOnce(githubReleasePRStub)
-    sinon.assert.calledWith(
-      githubReleasePRStub,
-      'release-pr',
-      // eslint-disable-next-line no-template-curly-in-string
-      sinon.match.hasOwn('pullRequestTitlePattern', undefined)
-    )
-  })
-
   it('opens PR with custom changelogSections', async () => {
     input = {
+      command: 'release-pr',
       'release-type': 'node',
       'changelog-types':
         '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
     }
 
-    const runCommandStub = sandbox.stub(factory, 'runCommand')
-    const githubReleasePRStub = runCommandStub.withArgs('release-pr').returns(25)
-
+    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
+      createPullRequests: createPullRequestsFake
+    })
     await action.main()
 
-    sinon.assert.calledOnce(githubReleasePRStub)
+    sinon.assert.calledOnce(createPullRequestsFake)
     sinon.assert.calledWith(
-      githubReleasePRStub,
-      'release-pr',
+      createManifestCommand,
+      sinon.match.any,
+      'main',
       sinon.match.hasOwn(
         'changelogSections',
         JSON.parse(
           '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
         )
-      )
+      ),
+      sinon.match.any
+    )
+  })
+
+  it('opens PR with custom title', async () => {
+    input = {
+      command: 'release-pr',
+      'release-type': 'node',
+      'pull-request-title-pattern': 'beep boop'
+    }
+
+    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
+      createPullRequests: createPullRequestsFake
+    })
+    await action.main()
+
+    sinon.assert.calledOnce(createPullRequestsFake)
+    sinon.assert.calledWith(
+      createManifestCommand,
+      sinon.match.any,
+      'main',
+      sinon.match.hasOwn(
+        'pullRequestTitlePattern',
+        'beep boop'
+      ),
+      sinon.match.any
     )
   })
 
   it('both opens PR to the default branch and tags GitHub releases by default', async () => {
-    input = {
-      'release-type': 'node'
-    }
+    input = {}
 
-    const runCommandStub = sandbox.stub(factory, 'runCommand')
-
-    const githubReleaseStub = runCommandStub.withArgs('github-release').returns({
-      upload_url: 'http://example.com',
-      tag_name: 'v1.0.0'
+    const createReleasesFake = sandbox.fake.returns([
+      {
+        upload_url: 'http://example.com',
+        tagName: 'v1.0.0'
+      }
+    ])
+    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
+      createPullRequests: createPullRequestsFake,
+      createReleases: createReleasesFake
     })
-
-    const githubReleasePRStub = runCommandStub.withArgs('release-pr').returns(25)
-
     await action.main()
 
-    sinon.assert.calledOnce(githubReleaseStub)
-    sinon.assert.calledOnce(githubReleasePRStub)
-    sinon.assert.calledWith(
-      githubReleaseStub,
-      'github-release',
-      sinon.match.hasOwn('defaultBranch', undefined)
-    )
-    sinon.assert.calledWith(
-      githubReleasePRStub,
-      'release-pr',
-      sinon.match.hasOwn('defaultBranch', undefined)
-    )
+    sinon.assert.calledOnce(createManifestCommand)
+    sinon.assert.calledOnce(createPullRequestsFake)
+    sinon.assert.calledWith(createReleasesFake)
     assert.deepStrictEqual(output, {
       release_created: true,
       upload_url: 'http://example.com',
       tag_name: 'v1.0.0',
-      pr: 25
+      pr: 22,
+      prs: '[22]',
+      releases_created: true,
+      paths_released: '["."]'
     })
   })
 
   it('both opens PR to a different default branch and tags GitHub releases by default', async () => {
     input = {
-      'release-type': 'node',
       'default-branch': 'dev'
     }
 
-    const runCommandStub = sandbox.stub(factory, 'runCommand')
-
-    const githubReleaseStub = runCommandStub.withArgs('github-release').returns({
-      upload_url: 'http://example.com',
-      tag_name: 'v1.0.0'
+    const createReleasesFake = sandbox.fake.returns([
+      {
+        upload_url: 'http://example.com',
+        tag_name: 'v1.0.0'
+      }
+    ])
+    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
+      createPullRequests: createPullRequestsFake,
+      createReleases: createReleasesFake
     })
-
-    const githubReleasePRStub = runCommandStub.withArgs('release-pr').returns(25)
-
     await action.main()
 
-    sinon.assert.calledOnce(githubReleaseStub)
+    sinon.assert.calledOnce(createPullRequestsFake)
+    sinon.assert.calledWith(createReleasesFake)
     sinon.assert.calledWith(
-      githubReleaseStub,
-      'github-release',
-      sinon.match.hasOwn('defaultBranch', 'dev')
+      createManifestCommand,
+      sinon.match.any,
+      'dev',
+      sinon.match.any,
+      sinon.match.any
     )
-    sinon.assert.calledOnce(githubReleasePRStub)
-    sinon.assert.calledWith(
-      githubReleasePRStub,
-      'release-pr',
-      sinon.match.hasOwn('defaultBranch', 'dev')
-    )
-
     assert.deepStrictEqual(output, {
       release_created: true,
       upload_url: 'http://example.com',
       tag_name: 'v1.0.0',
-      pr: 25
+      pr: 22,
+      prs: '[22]',
+      releases_created: true,
+      paths_released: '["."]'
     })
   })
 
   it('only opens PR, if command set to release-pr', async () => {
     input = {
-      'release-type': 'node',
       command: 'release-pr'
     }
 
-    const runCommandStub = sandbox.stub(factory, 'runCommand')
-
-    const githubReleaseStub = runCommandStub.withArgs('github-release').returns({
-      upload_url: 'http://example.com',
-      tag_name: 'v1.0.0'
+    const createReleasesFake = sandbox.fake.returns([
+      {
+        upload_url: 'http://example.com',
+        tag_name: 'v1.0.0'
+      }
+    ])
+    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
+      createPullRequests: createPullRequestsFake,
+      createReleases: createReleasesFake
     })
-
-    const githubReleasePRStub = runCommandStub.withArgs('release-pr').returns(25)
-
     await action.main()
-    sinon.assert.notCalled(githubReleaseStub)
-    sinon.assert.calledOnce(githubReleasePRStub)
+
+    sinon.assert.calledOnce(createManifestCommand)
+    sinon.assert.calledOnce(createPullRequestsFake)
+    sinon.assert.notCalled(createReleasesFake)
+    assert.deepStrictEqual(output, {
+      pr: 22,
+      prs: '[22]'
+    })
   })
 
   it('only creates GitHub release, if command set to github-release', async () => {
     input = {
-      'release-type': 'node',
       command: 'github-release'
     }
 
-    const runCommandStub = sandbox.stub(factory, 'runCommand')
-
-    const githubReleaseStub = runCommandStub.withArgs('github-release').returns({
-      upload_url: 'http://example.com',
-      tag_name: 'v1.0.0'
+    const createReleasesFake = sandbox.fake.returns([
+      {
+        upload_url: 'http://example.com',
+        tag_name: 'v1.0.0'
+      }
+    ])
+    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
+      createPullRequests: createPullRequestsFake,
+      createReleases: createReleasesFake
     })
-
-    const githubReleasePRStub = runCommandStub.withArgs('release-pr').returns(25)
-
     await action.main()
-    sinon.assert.calledOnce(githubReleaseStub)
-    sinon.assert.notCalled(githubReleasePRStub)
+
+    sinon.assert.calledOnce(createManifestCommand)
+    sinon.assert.notCalled(createPullRequestsFake)
+    sinon.assert.calledOnce(createReleasesFake)
+    assert.deepStrictEqual(output, {
+      release_created: true,
+      upload_url: 'http://example.com',
+      tag_name: 'v1.0.0',
+      releases_created: true,
+      paths_released: '["."]'
+    })
   })
 
   it('sets appropriate outputs when GitHub release created', async () => {
     const expected = {
       release_created: true,
+      releases_created: true,
       upload_url: 'http://example.com',
       html_url: 'http://example2.com',
-      tag_name: 'v1.0.0',
+      tag_name: 'v1.2.3',
       major: 1,
       minor: 2,
       patch: 3,
       version: 'v1.2.3',
       sha: 'abc123',
-      pr: 33
+      pr: 33,
+      paths_released: '["."]'
     }
     input = {
       'release-type': 'node',
       command: 'github-release'
     }
-
-    const runCommandStub = sandbox.stub(factory, 'runCommand')
-
-    runCommandStub.withArgs('github-release').returns(expected)
-
-    runCommandStub.withArgs('release-pr').returns(25)
-
+    const createReleasesFake = sandbox.fake.returns([expected])
+    sandbox.stub(Manifest, 'fromConfig').returns({
+      createReleases: createReleasesFake
+    })
     await action.main()
     assert.deepStrictEqual(output, expected)
   })
@@ -276,13 +280,18 @@ describe('release-please-action', () => {
       'release-type': 'node',
       command: 'release-pr'
     }
-
-    const runCommandStub = sandbox.stub(factory, 'runCommand')
-
-    runCommandStub.withArgs('release-pr').returns(95)
-
+    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
+      createPullRequests: createPullRequestsFake
+    })
     await action.main()
-    assert.strictEqual(output.pr, 95)
+
+    sinon.assert.calledOnce(createManifestCommand)
+    sinon.assert.calledOnce(createPullRequestsFake)
+    assert.deepStrictEqual(output, {
+      pr: 22,
+      prs: '[22]'
+    })
   })
 
   it('does not set PR output, when no release PR is returned', async () => {
@@ -290,99 +299,129 @@ describe('release-please-action', () => {
       'release-type': 'node',
       command: 'release-pr'
     }
-
-    const runCommandStub = sandbox.stub(factory, 'runCommand')
-
-    runCommandStub.withArgs('release-pr').returns(undefined)
-
+    const createPullRequestsFake = sandbox.fake.returns([undefined])
+    const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
+      createPullRequests: createPullRequestsFake
+    })
     await action.main()
+    sinon.assert.calledOnce(createManifestCommand)
+    sinon.assert.calledOnce(createPullRequestsFake)
     assert.strictEqual(Object.hasOwnProperty.call(output, 'pr'), false)
   })
 
-  it('creates and runs a ReleasePR instance, using factory', async () => {
-    let maybeReleasePR
-    sandbox.replace(factory, 'call', runnable => {
-      maybeReleasePR = runnable
-    })
-    input = {
-      'release-type': 'node',
-      command: 'release-pr'
-    }
-    await action.main()
-    assert.ok(maybeReleasePR instanceof Node)
-  })
-
-  it('creates and runs a GitHubRelease, using factory', async () => {
-    let maybeGitHubRelease
-    sandbox.replace(factory, 'call', runnable => {
-      maybeGitHubRelease = runnable
-    })
+  it('does not set release output, when no release is returned', async () => {
     input = {
       'release-type': 'node',
       command: 'github-release'
     }
-    await action.main()
-    assert.ok(maybeGitHubRelease instanceof GitHubRelease)
-  })
-
-  it('creates and runs a Manifest, using factory', async () => {
-    let maybeManifest
-    sandbox.replace(factory, 'call', runnable => {
-      maybeManifest = runnable
+    const createReleasesFake = sandbox.fake.returns([undefined])
+    sandbox.stub(Manifest, 'fromConfig').returns({
+      createReleases: createReleasesFake
     })
-    input = { command: 'manifest' }
     await action.main()
-    assert.ok(maybeManifest instanceof Manifest)
+    assert.deepStrictEqual(output, { paths_released: '[]' })
   })
 
-  it('opens PR creates GitHub releases by default for manifest', async () => {
+  it('creates and runs a manifest release', async () => {
     input = { command: 'manifest' }
-
-    const runCommandStub = sandbox.stub(factory, 'runCommand')
-
-    const manifestReleaseStub = runCommandStub.withArgs('manifest-release').resolves(
+    const createReleasesFake = sandbox.fake.returns([
       {
-        'path/pkgA':
-        {
-          upload_url: 'http://example.com',
-          tag_name: 'v1.0.0'
-        },
-        '.': {
-          upload_url: 'http://example.com',
-          tag_name: 'v1.0.0'
-        }
-      })
-
-    const manifestReleasePRStub = runCommandStub.withArgs('manifest-pr').returns(25)
-
+        upload_url: 'http://example.com',
+        tag_name: 'v1.0.0'
+      }
+    ])
+    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createManifestCommand = sandbox.stub(Manifest, 'fromManifest').returns({
+      createPullRequests: createPullRequestsFake,
+      createReleases: createReleasesFake
+    })
     await action.main()
 
-    sinon.assert.calledOnce(manifestReleaseStub)
-    sinon.assert.calledOnce(manifestReleasePRStub)
+    sinon.assert.calledOnce(createPullRequestsFake)
+    sinon.assert.calledWith(createReleasesFake)
+    sinon.assert.calledWith(
+      createManifestCommand,
+      sinon.match.any,
+      'main',
+      sinon.match.any,
+      sinon.match.any
+    )
     assert.deepStrictEqual(output, {
-      releases_created: true,
       release_created: true,
-      'path/pkgA--upload_url': 'http://example.com',
-      'path/pkgA--tag_name': 'v1.0.0',
-      'path/pkgA--release_created': true,
-      tag_name: 'v1.0.0',
       upload_url: 'http://example.com',
-      pr: 25,
-      paths_released: '["path/pkgA","."]'
+      tag_name: 'v1.0.0',
+      pr: 22,
+      prs: '[22]',
+      releases_created: true,
+      paths_released: '["."]'
     })
   })
 
   it('opens PR only for manifest-pr', async () => {
     input = { command: 'manifest-pr' }
-
-    const runCommandStub = sandbox.stub(factory, 'runCommand')
-    const manifestReleasePRStub = runCommandStub.withArgs('manifest-pr').returns(25)
-
+    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createManifestCommand = sandbox.stub(Manifest, 'fromManifest').returns({
+      createPullRequests: createPullRequestsFake
+    })
     await action.main()
 
-    sinon.assert.calledOnce(manifestReleasePRStub)
+    sinon.assert.calledOnce(createPullRequestsFake)
+    sinon.assert.calledWith(
+      createManifestCommand,
+      sinon.match.any,
+      'main',
+      sinon.match.any,
+      sinon.match.any
+    )
     assert.deepStrictEqual(output, {
-      pr: 25
+      pr: 22,
+      prs: '[22]'
+    })
+  })
+
+  it('sets appropriate output if multiple releases and prs created', async () => {
+    input = { command: 'manifest' }
+    const createReleasesFake = sandbox.fake.returns([
+      {
+        upload_url: 'http://example.com',
+        tag_name: 'v1.0.0',
+        path: 'a'
+      },
+      {
+        upload_url: 'http://example2.com',
+        tag_name: 'v1.2.0',
+        path: 'b'
+      }
+    ])
+    const createPullRequestsFake = sandbox.fake.returns([22, 33])
+    const createManifestCommand = sandbox.stub(Manifest, 'fromManifest').returns({
+      createPullRequests: createPullRequestsFake,
+      createReleases: createReleasesFake
+    })
+    await action.main()
+
+    sinon.assert.calledOnce(createPullRequestsFake)
+    sinon.assert.calledWith(createReleasesFake)
+    sinon.assert.calledWith(
+      createManifestCommand,
+      sinon.match.any,
+      'main',
+      sinon.match.any,
+      sinon.match.any
+    )
+    assert.deepStrictEqual(output, {
+      pr: 22,
+      prs: '[22,33]',
+      releases_created: true,
+      'a--release_created': true,
+      'a--upload_url': 'http://example.com',
+      'a--tag_name': 'v1.0.0',
+      'a--path': 'a',
+      'b--release_created': true,
+      'b--upload_url': 'http://example2.com',
+      'b--tag_name': 'v1.2.0',
+      'b--path': 'b',
+      paths_released: '["a","b"]'
     })
   })
 })
