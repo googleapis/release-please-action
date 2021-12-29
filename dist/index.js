@@ -118,7 +118,7 @@ async function main () {
 }
 
 const releasePlease = {
-  main,
+  main
 }
 
 function getGitHubInstance () {
