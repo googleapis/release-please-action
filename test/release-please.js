@@ -47,6 +47,16 @@ describe('release-please-action', () => {
         return input[name]
       }
     }
+    core.getBooleanInput = name => {
+      // Float our own helper, for mocking purposes:
+      const trueValue = ['true', 'True', 'TRUE']
+      const falseValue = ['false', 'False', 'FALSE']
+      const val = core.getInput(name)
+      if (trueValue.includes(val)) { return true }
+      if (falseValue.includes(val)) { return false }
+      throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}\n` +
+          'Support boolean input list: `true | True | TRUE | false | False | FALSE`')
+    }
     // Default branch lookup:
     nock('https://api.github.com')
       .get('/repos/google/cloud')
@@ -56,41 +66,6 @@ describe('release-please-action', () => {
   })
   afterEach(() => {
     sandbox.restore()
-  })
-
-  const trueValue = ['true', 'True', 'TRUE', 'yes', 'Yes', 'YES', 'y', 'Y', 'on', 'On', 'ON']
-  const falseValue = ['false', 'False', 'FALSE', 'no', 'No', 'NO', 'n', 'N', 'off', 'Off', 'OFF']
-
-  trueValue.forEach(value => {
-    it(`get the boolean true with the input of '${value}'`, () => {
-      input = {
-        fork: value
-      }
-      const actual = action.getBooleanInput('fork')
-      assert.strictEqual(actual, true)
-    })
-  })
-
-  falseValue.forEach(value => {
-    it(`get the boolean with the input of '${value}'`, () => {
-      input = {
-        fork: value
-      }
-      const actual = action.getBooleanInput('fork')
-      assert.strictEqual(actual, false)
-    })
-  })
-
-  it('get an error when inputting the wrong boolean value', () => {
-    input = {
-      fork: 'wrong'
-    }
-    assert.throws(
-      () => {
-        action.getBooleanInput('fork')
-      },
-      { name: 'TypeError', message: "Wrong boolean value of the input 'fork'" }
-    )
   })
 
   it('opens PR with custom changelogSections', async () => {
@@ -380,7 +355,6 @@ describe('release-please-action', () => {
       releases_created: true,
       paths_released: '["."]'
     })
-    await action.main()
   })
 
   it('opens PR only for manifest-pr', async () => {
@@ -403,7 +377,6 @@ describe('release-please-action', () => {
       pr: 22,
       prs: '[22]'
     })
-    await action.main()
   })
 
   it('sets appropriate output if multiple releases and prs created', async () => {
@@ -450,6 +423,5 @@ describe('release-please-action', () => {
       'b--path': 'b',
       paths_released: '["a","b"]'
     })
-    await action.main()
   })
 })

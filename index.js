@@ -12,18 +12,9 @@ const GITHUB_GRAPHQL_URL = 'https://api.github.com'
 
 const signoff = core.getInput('signoff') || undefined
 
-function getBooleanInput (input) {
-  const trueValue = ['true', 'True', 'TRUE', 'yes', 'Yes', 'YES', 'y', 'Y', 'on', 'On', 'ON']
-  const falseValue = ['false', 'False', 'FALSE', 'no', 'No', 'NO', 'n', 'N', 'off', 'Off', 'OFF']
-  const stringInput = core.getInput(input)
-  if (trueValue.indexOf(stringInput) > -1) return true
-  if (falseValue.indexOf(stringInput) > -1) return false
-  throw TypeError(`Wrong boolean value of the input '${input}'`)
-}
-
 function getGitHubInput () {
   return {
-    fork: getBooleanInput('fork'),
+    fork: core.getBooleanInput('fork'),
     defaultBranch: core.getInput('default-branch') || undefined,
     repoUrl: core.getInput('repo-url') || process.env.GITHUB_REPOSITORY,
     apiUrl: core.getInput('github-api-url') || GITHUB_API_URL,
@@ -69,9 +60,9 @@ async function main () {
   }
 
   const { fork } = getGitHubInput()
-  const bumpMinorPreMajor = getBooleanInput('bump-minor-pre-major')
-  const bumpPatchForMinorPreMajor = getBooleanInput('bump-patch-for-minor-pre-major')
-  const monorepoTags = getBooleanInput('monorepo-tags')
+  const bumpMinorPreMajor = core.getBooleanInput('bump-minor-pre-major')
+  const bumpPatchForMinorPreMajor = core.getBooleanInput('bump-patch-for-minor-pre-major')
+  const monorepoTags = core.getBooleanInput('monorepo-tags')
   const packageName = core.getInput('package-name')
   const path = core.getInput('path') || undefined
   const releaseType = core.getInput('release-type', { required: true })
@@ -81,8 +72,8 @@ async function main () {
   const versionFile = core.getInput('version-file') || undefined
   const github = await getGitHubInstance()
   const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
-  const draft = getBooleanInput('draft')
-  const draftPullRequest = getBooleanInput('draft-pull-request')
+  const draft = core.getBooleanInput('draft')
+  const draftPullRequest = core.getBooleanInput('draft-pull-request')
   const manifest = await Manifest.fromConfig(
     github,
     github.repository.defaultBranch,
@@ -120,8 +111,7 @@ async function main () {
 }
 
 const releasePlease = {
-  main,
-  getBooleanInput
+  main
 }
 
 function getGitHubInstance () {
