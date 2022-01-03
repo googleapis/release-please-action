@@ -55,6 +55,7 @@ Automate releases with Conventional Commit Messages.
 | `monorepo-tags` | add prefix to tags and branches, allowing multiple libraries to be released from the same repository. |
 | `changelog-types` | A JSON formatted String containing to override the outputted changelog sections |
 | `version-file` | provide a path to a version file to increment (used by ruby releaser) |
+| `extra-files` | add extra-files to bump using the [generic updater](https://github.com/googleapis/release-please/blob/main/docs/customizing.md#updating-arbitrary-files) |
 | `fork`          | Should the PR be created from a fork. Default `false`|
 | `command`          | release-please command to run, either `github-release`, or `release-pr`, `manifest`, `manifest-pr` (_defaults to running both_) |
 | `default-branch`  | branch to open pull release PR against (detected by default) |
