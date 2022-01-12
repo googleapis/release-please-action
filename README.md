@@ -20,7 +20,7 @@ Automate releases with Conventional Commit Messages.
       release-please:
         runs-on: ubuntu-latest
         steps:
-          - uses: GoogleCloudPlatform/release-please-action@v2
+          - uses: GoogleCloudPlatform/release-please-action@v3
             with:
               release-type: node
               package-name: release-please-action
@@ -37,7 +37,7 @@ Automate releases with Conventional Commit Messages.
     ```yaml
     #...(same as above)
         steps:
-          - uses: GoogleCloudPlatform/release-please-action@v2
+          - uses: GoogleCloudPlatform/release-please-action@v3
             with:
               command: manifest
     ```
@@ -47,7 +47,7 @@ Automate releases with Conventional Commit Messages.
 | input | description |
 |:---:|---|
 | `token` | A GitHub secret token, the action defaults to using the special `secrets.GITHUB_TOKEN` |
-| `release-type` | What type of project is this a release for? Reference [Release types supported](#release-types-supported); new types of releases can be [added here](https://github.com/googleapis/release-please/tree/master/src/releasers) |
+| `release-type` | What type of project is this a release for? Reference [Release types supported](#release-types-supported); new types of releases can be [added here](https://github.com/googleapis/release-please/tree/main/src/strategies) |
 | `package-name` | A name for the artifact releases are being created for (this might be the `name` field in a `setup.py` or `package.json`) |
 | `bump-minor-pre-major` | Should breaking changes before 1.0.0 produce minor bumps?  Default `No` |
 | `bump-patch-for-minor-pre-major` | Should feat changes before 1.0.0 produce patch bumps instead of minor bumps?  Default `No` |
@@ -138,7 +138,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2
+      - uses: GoogleCloudPlatform/release-please-action@v3
         with:
           release-type: node
           package-name: release-please-action
@@ -161,7 +161,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2
+      - uses: GoogleCloudPlatform/release-please-action@v3
         with:
           release-type: node
           package-name: release-please-action
@@ -178,7 +178,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2
+      - uses: GoogleCloudPlatform/release-please-action@v3
         with:
           release-type: node
           package-name: release-please-action
@@ -200,7 +200,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2
+      - uses: GoogleCloudPlatform/release-please-action@v3
         id: release
         with:
           release-type: node
@@ -248,7 +248,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v2
+      - uses: GoogleCloudPlatform/release-please-action@v3
         id: release
         with:
           release-type: node

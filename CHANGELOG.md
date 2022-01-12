@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.0.0](https://github.com/google-github-actions/release-please-action/compare/v2.35.0...v3.0.0) (2021-12-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* if switching to manifest releaser, release_created will only be set if "." path is published.
+* switch to using @actions/core getBooleanInput, accepted values for true = ["true", "True", "TRUE"], accepted values for false = ["false", "False", "FALSE"]
+* **release-please:** consolidate manifest and individual releasers (#398)
+
+### Features
+
+* adds support for draft pull requests. ([52ffbbe](https://github.com/google-github-actions/release-please-action/commit/52ffbbe3921654bc238d6ea019dff629208dbc10))
+* adds support for draft releases. ([52ffbbe](https://github.com/google-github-actions/release-please-action/commit/52ffbbe3921654bc238d6ea019dff629208dbc10))
+* **release-please:** consolidate manifest and individual releasers ([#398](https://github.com/google-github-actions/release-please-action/issues/398)) ([52ffbbe](https://github.com/google-github-actions/release-please-action/commit/52ffbbe3921654bc238d6ea019dff629208dbc10))
+
+
+### Code Refactoring
+
+* if switching to manifest releaser, release_created will only be set if "." path is published. ([52ffbbe](https://github.com/google-github-actions/release-please-action/commit/52ffbbe3921654bc238d6ea019dff629208dbc10))
+* switch to using @actions/core getBooleanInput, accepted values for true = ["true", "True", "TRUE"], accepted values for false = ["false", "False", "FALSE"] ([52ffbbe](https://github.com/google-github-actions/release-please-action/commit/52ffbbe3921654bc238d6ea019dff629208dbc10))
+
 ## [2.35.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.34.0...v2.35.0) (2021-10-16)
 
 
