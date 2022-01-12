@@ -1,5 +1,12 @@
 # Changelog
 
+### [3.0.1](https://github.com/google-github-actions/release-please-action/compare/v3.0.0...v3.0.1) (2022-01-12)
+
+
+### Bug Fixes
+
+* **release-please:** pull in latest release-please ([#416](https://github.com/google-github-actions/release-please-action/issues/416)) ([aeaf772](https://github.com/google-github-actions/release-please-action/commit/aeaf772691d9cbd8d48cff6e6bcecc39153b5233))
+
 ## [3.0.0](https://github.com/google-github-actions/release-please-action/compare/v2.35.0...v3.0.0) (2021-12-29)
 
 
