@@ -67548,6 +67548,7 @@ const allReleaseTypes = [
 const releasers = {
     go: options => new go_1.Go(options),
     'go-yoshi': options => new go_yoshi_1.GoYoshi(options),
+    'java-yoshi': options => new java_yoshi_1.JavaYoshi(options),
     'krm-blueprint': options => new krm_blueprint_1.KRMBlueprint(options),
     node: options => new node_1.Node(options),
     ocaml: options => new ocaml_1.OCaml(options),
@@ -67555,7 +67556,6 @@ const releasers = {
     'php-yoshi': options => new php_yoshi_1.PHPYoshi(options),
     python: options => new python_1.Python(options),
     rust: options => new rust_1.Rust(options),
-    simple: options => new simple_1.Simple(options),
     'terraform-module': options => new terraform_module_1.TerraformModule(options),
     helm: options => new helm_1.Helm(options),
     elixir: options => new elixir_1.Elixir(options),
@@ -67602,6 +67602,7 @@ async function buildStrategy(options) {
         includeComponentInTag: options.includeComponentInTag,
         changelogNotes,
         pullRequestTitlePattern: options.pullRequestTitlePattern,
+        extraFiles: options.extraFiles,
     };
     switch (options.releaseType) {
         case 'ruby': {
@@ -67616,23 +67617,15 @@ async function buildStrategy(options) {
                 versionFile: options.versionFile,
             });
         }
-        case 'java-yoshi': {
-            return new java_yoshi_1.JavaYoshi({
-                ...strategyOptions,
-                extraFiles: options.extraFiles,
-            });
-        }
         case 'java-backport': {
             return new java_yoshi_1.JavaYoshi({
                 ...strategyOptions,
-                extraFiles: options.extraFiles,
                 versioningStrategy: new always_bump_patch_1.AlwaysBumpPatch(),
             });
         }
         case 'java-bom': {
             return new java_yoshi_1.JavaYoshi({
                 ...strategyOptions,
-                extraFiles: options.extraFiles,
                 versioningStrategy: new dependency_manifest_1.DependencyManifest({
                     bumpMinorPreMajor: options.bumpMinorPreMajor,
                     bumpPatchForMinorPreMajor: options.bumpPatchForMinorPreMajor,
@@ -67642,8 +67635,13 @@ async function buildStrategy(options) {
         case 'java-lts': {
             return new java_yoshi_1.JavaYoshi({
                 ...strategyOptions,
-                extraFiles: options.extraFiles,
                 versioningStrategy: new service_pack_1.ServicePackVersioningStrategy(),
+            });
+        }
+        case 'simple': {
+            return new simple_1.Simple({
+                ...strategyOptions,
+                versionFile: options.versionFile,
             });
         }
         default: {
@@ -67997,18 +67995,20 @@ class GitHub {
          * Create a GitHub release
          *
          * @param {Release} release Release parameters
-         * @param {boolean} draft Whether or not to create the release as a draft
+         * @param {ReleaseOptions} options Release option parameters
          * @throws {DuplicateReleaseError} if the release tag already exists
          * @throws {GitHubAPIError} on other API errors
          */
         this.createRelease = wrapAsync(async (release, options = {}) => {
             const resp = await this.octokit.repos.createRelease({
+                name: release.name,
                 owner: this.repository.owner,
                 repo: this.repository.repo,
                 tag_name: release.tag.toString(),
                 body: release.notes,
-                sha: release.sha,
                 draft: !!options.draft,
+                prerelease: !!options.prerelease,
+                target_commitish: release.sha,
             });
             return {
                 name: resp.data.name || undefined,
@@ -68354,39 +68354,39 @@ class GitHub {
         logger_1.logger.debug(`Fetching ${states} pull requests on branch ${targetBranch} with cursor ${cursor}`);
         const response = await this.graphqlRequest({
             query: `query mergedPullRequests($owner: String!, $repo: String!, $num: Int!, $maxFilesChanged: Int, $targetBranch: String!, $states: [PullRequestState!], $cursor: String) {
-          repository(owner: $owner, name: $repo) {
-            pullRequests(first: $num, after: $cursor, baseRefName: $targetBranch, states: $states, orderBy: {field: CREATED_AT, direction: DESC}) {
-              nodes {
-                number
-                title
-                baseRefName
-                headRefName
-                labels(first: 10) {
-                  nodes {
-                    name
-                  }
-                }
-                body
-                mergeCommit {
-                  oid
-                }
-                files(first: $maxFilesChanged) {
-                  nodes {
-                    path
-                  }
-                  pageInfo {
-                    endCursor
-                    hasNextPage
-                  }
+        repository(owner: $owner, name: $repo) {
+          pullRequests(first: $num, after: $cursor, baseRefName: $targetBranch, states: $states, orderBy: {field: CREATED_AT, direction: DESC}) {
+            nodes {
+              number
+              title
+              baseRefName
+              headRefName
+              labels(first: 10) {
+                nodes {
+                  name
                 }
               }
-              pageInfo {
-                endCursor
-                hasNextPage
+              body
+              mergeCommit {
+                oid
+              }
+              files(first: $maxFilesChanged) {
+                nodes {
+                  path
+                }
+                pageInfo {
+                  endCursor
+                  hasNextPage
+                }
               }
             }
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
           }
-        }`,
+        }
+      }`,
             cursor,
             owner: this.repository.owner,
             repo: this.repository.repo,
@@ -68923,6 +68923,7 @@ class Manifest {
                 logger_1.logger.debug(`Found release for path ${path}, ${release.tagName}`);
                 releaseShasByPath[path] = release.sha;
                 releasesByPath[path] = {
+                    name: release.name,
                     tag: tagName,
                     sha: release.sha,
                     notes: release.notes || '',
@@ -69179,6 +69180,9 @@ class Manifest {
                         path,
                         pullRequest,
                         draft: (_a = config.draft) !== null && _a !== void 0 ? _a : this.draft,
+                        prerelease: config.prerelease &&
+                            (!!release.tag.version.preRelease ||
+                                release.tag.version.major === 0),
                     });
                 }
             }
@@ -69228,6 +69232,7 @@ class Manifest {
     async createRelease(release) {
         const githubRelease = await this.github.createRelease(release, {
             draft: release.draft,
+            prerelease: release.prerelease,
         });
         // comment on pull request
         const comment = `:robot: Release is at ${githubRelease.url} :sunflower:`;
@@ -69293,6 +69298,7 @@ function extractReleaserConfig(config) {
         releaseAs: config['release-as'],
         skipGithubRelease: config['skip-github-release'],
         draft: config.draft,
+        prerelease: config.prerelease,
         draftPullRequest: config['draft-pull-request'],
         component: config['component'],
         packageName: config['package-name'],
@@ -69436,7 +69442,7 @@ async function latestReleaseVersion(github, targetBranch, prefix, pullRequestTit
     return candidateTagVersion.sort((a, b) => b.compare(a))[0];
 }
 function mergeReleaserConfig(defaultConfig, pathConfig) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
     return {
         releaseType: (_b = (_a = pathConfig.releaseType) !== null && _a !== void 0 ? _a : defaultConfig.releaseType) !== null && _b !== void 0 ? _b : 'node',
         bumpMinorPreMajor: (_c = pathConfig.bumpMinorPreMajor) !== null && _c !== void 0 ? _c : defaultConfig.bumpMinorPreMajor,
@@ -69446,10 +69452,11 @@ function mergeReleaserConfig(defaultConfig, pathConfig) {
         releaseAs: (_g = pathConfig.releaseAs) !== null && _g !== void 0 ? _g : defaultConfig.releaseAs,
         skipGithubRelease: (_h = pathConfig.skipGithubRelease) !== null && _h !== void 0 ? _h : defaultConfig.skipGithubRelease,
         draft: (_j = pathConfig.draft) !== null && _j !== void 0 ? _j : defaultConfig.draft,
-        component: (_k = pathConfig.component) !== null && _k !== void 0 ? _k : defaultConfig.component,
-        packageName: (_l = pathConfig.packageName) !== null && _l !== void 0 ? _l : defaultConfig.packageName,
-        versionFile: (_m = pathConfig.versionFile) !== null && _m !== void 0 ? _m : defaultConfig.versionFile,
-        extraFiles: (_o = pathConfig.extraFiles) !== null && _o !== void 0 ? _o : defaultConfig.extraFiles,
+        prerelease: (_k = pathConfig.prerelease) !== null && _k !== void 0 ? _k : defaultConfig.prerelease,
+        component: (_l = pathConfig.component) !== null && _l !== void 0 ? _l : defaultConfig.component,
+        packageName: (_m = pathConfig.packageName) !== null && _m !== void 0 ? _m : defaultConfig.packageName,
+        versionFile: (_o = pathConfig.versionFile) !== null && _o !== void 0 ? _o : defaultConfig.versionFile,
+        extraFiles: (_p = pathConfig.extraFiles) !== null && _p !== void 0 ? _p : defaultConfig.extraFiles,
     };
 }
 /**
@@ -69550,6 +69557,7 @@ const pull_request_title_1 = __nccwpck_require__(1158);
 const pull_request_body_1 = __nccwpck_require__(70774);
 const branch_name_1 = __nccwpck_require__(16344);
 const versioning_strategy_1 = __nccwpck_require__(41941);
+const cargo_lock_1 = __nccwpck_require__(68875);
 /**
  * The plugin analyzed a cargo workspace and will bump dependencies
  * of managed packages if those dependencies are being updated.
@@ -69574,7 +69582,9 @@ class CargoWorkspace extends workspace_1.WorkspacePlugin {
         }
         const allCrates = [];
         const candidatesByPackage = {};
-        for (const path of cargoManifest.workspace.members) {
+        const members = cargoManifest.workspace.members;
+        members.push(manifest_1.ROOT_PROJECT_PATH);
+        for (const path of members) {
             const manifestPath = addPath(path, 'Cargo.toml');
             logger_1.logger.info(`looking for candidate with path: ${path}`);
             const candidate = candidates.find(c => c.path === path);
@@ -69584,7 +69594,8 @@ class CargoWorkspace extends workspace_1.WorkspacePlugin {
             const manifest = common_1.parseCargoManifest(manifestContent.parsedContent);
             const packageName = (_c = manifest.package) === null || _c === void 0 ? void 0 : _c.name;
             if (!packageName) {
-                throw new Error(`package manifest at ${manifestPath} is missing [package.name]`);
+                logger_1.logger.warn(`package manifest at ${manifestPath} is missing [package.name]`);
+                continue;
             }
             if (candidate) {
                 candidatesByPackage[packageName] = candidate;
@@ -69629,8 +69640,14 @@ class CargoWorkspace extends workspace_1.WorkspacePlugin {
                 if (update.path === addPath(existingCandidate.path, 'Cargo.toml')) {
                     update.updater = new raw_content_1.RawContent(updatedContent);
                 }
-                else if (update.updater instanceof changelog_1.Changelog) {
+                else if (update.updater instanceof changelog_1.Changelog && dependencyNotes) {
                     update.updater.changelogEntry = appendDependenciesSectionToChangelog(update.updater.changelogEntry, dependencyNotes);
+                }
+                else if (update.path === addPath(existingCandidate.path, 'Cargo.lock')) {
+                    update.updater = new cargo_lock_1.CargoLock({
+                        version,
+                        versionsMap: updatedVersions,
+                    });
                 }
                 return update;
             });
@@ -69719,8 +69736,7 @@ class CargoWorkspace extends workspace_1.WorkspacePlugin {
         return graph;
     }
     inScope(candidate) {
-        return (candidate.config.releaseType === 'rust' &&
-            candidate.path !== manifest_1.ROOT_PROJECT_PATH);
+        return candidate.config.releaseType === 'rust';
     }
     packageNameFromPackage(pkg) {
         return pkg.name;
@@ -69863,36 +69879,18 @@ class Merge extends plugin_1.ManifestPlugin {
         if (candidates.length < 1) {
             return candidates;
         }
-        const updatesByPath = {};
         const releaseData = [];
         const labels = new Set();
+        let rawUpdates = [];
         for (const candidate of candidates) {
             const pullRequest = candidate.pullRequest;
-            for (const update of pullRequest.updates) {
-                if (updatesByPath[update.path]) {
-                    updatesByPath[update.path].push(update);
-                }
-                else {
-                    updatesByPath[update.path] = [update];
-                }
-            }
+            rawUpdates = rawUpdates.concat(...pullRequest.updates);
             for (const label of pullRequest.labels) {
                 labels.add(label);
             }
             releaseData.push(...pullRequest.body.releaseData);
         }
-        const updates = [];
-        for (const path in updatesByPath) {
-            const update = updatesByPath[path];
-            const updaters = update.map(u => u.updater);
-            updates.push({
-                path,
-                createIfMissing: update[0].createIfMissing,
-                updater: updaters.length === 1
-                    ? updaters[0]
-                    : new composite_1.CompositeUpdater(...updaters),
-            });
-        }
+        const updates = composite_1.mergeUpdates(rawUpdates);
         const pullRequest = {
             title: pull_request_title_1.PullRequestTitle.ofTargetBranch(this.targetBranch, manifest_1.MANIFEST_PULL_REQUEST_TITLE_PATTERN),
             body: new pull_request_body_1.PullRequestBody(releaseData),
@@ -70429,6 +70427,8 @@ const logger_1 = __nccwpck_require__(68809);
 const pull_request_title_1 = __nccwpck_require__(1158);
 const branch_name_1 = __nccwpck_require__(16344);
 const pull_request_body_1 = __nccwpck_require__(70774);
+const composite_1 = __nccwpck_require__(40911);
+const generic_1 = __nccwpck_require__(96323);
 const DEFAULT_CHANGELOG_PATH = 'CHANGELOG.md';
 /**
  * A strategy is responsible for determining which files are
@@ -70455,6 +70455,7 @@ class BaseStrategy {
             options.changelogNotes || new default_2.DefaultChangelogNotes(options);
         this.includeComponentInTag = (_a = options.includeComponentInTag) !== null && _a !== void 0 ? _a : true;
         this.pullRequestTitlePattern = options.pullRequestTitlePattern;
+        this.extraFiles = options.extraFiles || [];
     }
     /**
      * Return the component for this strategy. This may be a computed field.
@@ -70498,6 +70499,15 @@ class BaseStrategy {
             changelogSections: this.changelogSections,
         });
     }
+    async buildPullRequestBody(component, newVersion, releaseNotesBody, _conventionalCommits, _latestRelease) {
+        return new pull_request_body_1.PullRequestBody([
+            {
+                component,
+                version: newVersion,
+                notes: releaseNotesBody,
+            },
+        ]);
+    }
     /**
      * Builds a candidate release pull request
      * @param {Commit[]} commits Raw commits to consider for this release.
@@ -70532,22 +70542,27 @@ class BaseStrategy {
             versionsMap,
             latestVersion: latestRelease === null || latestRelease === void 0 ? void 0 : latestRelease.tag.version,
         });
-        const pullRequestBody = new pull_request_body_1.PullRequestBody([
-            {
-                component,
-                version: newVersion,
-                notes: releaseNotesBody,
-            },
-        ]);
+        const updatesWithExtras = composite_1.mergeUpdates(updates.concat(...this.extraFileUpdates(newVersion)));
+        const pullRequestBody = await this.buildPullRequestBody(component, newVersion, releaseNotesBody, conventionalCommits, latestRelease);
         return {
             title: pullRequestTitle,
             body: pullRequestBody,
-            updates,
+            updates: updatesWithExtras,
             labels,
             headRefName: branchName.toString(),
             version: newVersion,
             draft: draft !== null && draft !== void 0 ? draft : false,
         };
+    }
+    extraFileUpdates(version) {
+        const genericUpdater = new generic_1.Generic({ version });
+        return this.extraFiles.map(path => {
+            return {
+                path,
+                createIfMissing: false,
+                updater: genericUpdater,
+            };
+        });
     }
     changelogEmpty(changelogEntry) {
         return changelogEntry.split('\n').length <= 1;
@@ -70579,6 +70594,9 @@ class BaseStrategy {
     async buildVersionsMap(_conventionalCommits) {
         return new Map();
     }
+    async parsePullRequestBody(pullRequestBody) {
+        return pull_request_body_1.PullRequestBody.parse(pullRequestBody);
+    }
     /**
      * Given a merged pull request, build the candidate release.
      * @param {PullRequest} mergedPullRequest The merged release pull request.
@@ -70604,7 +70622,7 @@ class BaseStrategy {
             logger_1.logger.error(`Bad branch name: ${mergedPullRequest.headBranchName}`);
             return;
         }
-        const pullRequestBody = pull_request_body_1.PullRequestBody.parse(mergedPullRequest.body);
+        const pullRequestBody = await this.parsePullRequestBody(mergedPullRequest.body);
         if (!pullRequestBody) {
             logger_1.logger.error('Could not parse pull request body as a release PR');
             return;
@@ -70628,7 +70646,11 @@ class BaseStrategy {
             return;
         }
         const tag = new tag_name_1.TagName(version, this.includeComponentInTag ? component : undefined, this.tagSeparator);
+        const releaseName = component && this.includeComponentInTag
+            ? `${component}: v${version.toString()}`
+            : `v${version.toString()}`;
         return {
+            name: releaseName,
             tag,
             notes: notes || '',
             sha: mergedPullRequest.sha,
@@ -71070,7 +71092,6 @@ class JavaYoshi extends base_1.BaseStrategy {
         const parentVersioningStrategy = options.versioningStrategy || new default_1.DefaultVersioningStrategy();
         options.versioningStrategy = new java_snapshot_1.JavaSnapshot(parentVersioningStrategy);
         super(options);
-        this.extraFiles = options.extraFiles || [];
         this.snapshotVersioning = new java_add_snapshot_1.JavaAddSnapshot(parentVersioningStrategy);
     }
     async buildReleasePullRequest(commits, latestRelease, draft, labels = []) {
@@ -71100,26 +71121,24 @@ class JavaYoshi extends base_1.BaseStrategy {
         const branchName = component
             ? branch_name_1.BranchName.ofComponentTargetBranch(component, this.targetBranch)
             : branch_name_1.BranchName.ofTargetBranch(this.targetBranch);
+        const notes = '### Updating meta-information for bleeding-edge SNAPSHOT release.';
         const pullRequestBody = new pull_request_body_1.PullRequestBody([
             {
                 component,
                 version: newVersion,
-                notes: '### Updating meta-information for bleeding-edge SNAPSHOT release.',
+                notes,
             },
         ]);
+        const updates = await this.buildUpdates({
+            newVersion,
+            versionsMap,
+            changelogEntry: notes,
+            isSnapshot: true,
+        });
         return {
             title: pullRequestTitle,
             body: pullRequestBody,
-            updates: [
-                {
-                    path: this.addPath('versions.txt'),
-                    createIfMissing: false,
-                    updater: new versions_manifest_1.VersionsManifest({
-                        version: newVersion,
-                        versionsMap,
-                    }),
-                },
-            ],
+            updates,
             labels: [],
             headRefName: branchName.toString(),
             version: newVersion,
@@ -71171,6 +71190,7 @@ class JavaYoshi extends base_1.BaseStrategy {
                 updater: new java_update_1.JavaUpdate({
                     version,
                     versionsMap,
+                    isSnapshot: options.isSnapshot,
                 }),
             });
         });
@@ -71182,6 +71202,7 @@ class JavaYoshi extends base_1.BaseStrategy {
                 updater: new java_update_1.JavaUpdate({
                     version,
                     versionsMap,
+                    isSnapshot: options.isSnapshot,
                 }),
             });
         });
@@ -71193,6 +71214,7 @@ class JavaYoshi extends base_1.BaseStrategy {
                 updater: new java_update_1.JavaUpdate({
                     version,
                     versionsMap,
+                    isSnapshot: options.isSnapshot,
                 }),
             });
         });
@@ -71203,17 +71225,20 @@ class JavaYoshi extends base_1.BaseStrategy {
                 updater: new java_update_1.JavaUpdate({
                     version,
                     versionsMap,
+                    isSnapshot: options.isSnapshot,
                 }),
             });
         });
-        updates.push({
-            path: this.addPath(this.changelogPath),
-            createIfMissing: true,
-            updater: new changelog_1.Changelog({
-                version,
-                changelogEntry: options.changelogEntry,
-            }),
-        });
+        if (!options.isSnapshot) {
+            updates.push({
+                path: this.addPath(this.changelogPath),
+                createIfMissing: true,
+                updater: new changelog_1.Changelog({
+                    version,
+                    changelogEntry: options.changelogEntry,
+                }),
+            });
+        }
         return updates;
     }
     async updateVersionsMap(versionsMap, conventionalCommits) {
@@ -71675,6 +71700,23 @@ class PHPYoshi extends base_1.BaseStrategy {
             draft: draft !== null && draft !== void 0 ? draft : false,
         };
     }
+    async parsePullRequestBody(pullRequestBody) {
+        const body = pull_request_body_1.PullRequestBody.parse(pullRequestBody);
+        if (!body) {
+            return undefined;
+        }
+        const component = await this.getComponent();
+        const notes = body.releaseData
+            .map(release => {
+            var _a;
+            return `<details><summary>${release.component}: ${(_a = release.version) === null || _a === void 0 ? void 0 : _a.toString()}</summary>\n\n${release.notes}\n</details>`;
+        })
+            .join('\n\n');
+        return new pull_request_body_1.PullRequestBody([{ component, notes }], {
+            footer: body.footer,
+            header: body.header,
+        });
+    }
     async buildUpdates(options) {
         const updates = [];
         const version = options.newVersion;
@@ -71972,6 +72014,7 @@ const fs_1 = __nccwpck_require__(35747);
 const path_1 = __nccwpck_require__(85622);
 const manifest_1 = __nccwpck_require__(31999);
 const logger_1 = __nccwpck_require__(68809);
+const pull_request_body_1 = __nccwpck_require__(70774);
 const CHANGELOG_SECTIONS = [
     { type: 'feat', section: 'Features' },
     { type: 'fix', section: 'Bug Fixes' },
@@ -72027,10 +72070,9 @@ class RubyYoshi extends base_1.BaseStrategy {
         });
         return commits;
     }
-    async buildReleaseNotes(conventionalCommits, newVersion, newVersionTag, latestRelease) {
-        const releaseNotes = await super.buildReleaseNotes(conventionalCommits, newVersion, newVersionTag, latestRelease);
+    async buildPullRequestBody(component, newVersion, releaseNotesBody, conventionalCommits, latestRelease) {
         if (!latestRelease) {
-            return releaseNotes;
+            return await super.buildPullRequestBody(component, newVersion, releaseNotesBody, conventionalCommits, latestRelease);
         }
         // summarize the commits that landed:
         let summary = '### Commits since last release:\n\n';
@@ -72062,7 +72104,15 @@ class RubyYoshi extends base_1.BaseStrategy {
             summary += `${file}\n`;
         });
         summary += `</code></pre>\n[Compare Changes](https://github.com/${repoUrl}/compare/${latestRelease.sha}...HEAD)\n`;
-        return releaseNotes + `\n---\n${summary}`;
+        return new pull_request_body_1.PullRequestBody([
+            {
+                component,
+                version: newVersion,
+                notes: releaseNotesBody,
+            },
+        ], {
+            extra: summary,
+        });
     }
 }
 exports.RubyYoshi = RubyYoshi;
@@ -72169,6 +72219,7 @@ const base_1 = __nccwpck_require__(95081);
 const version_1 = __nccwpck_require__(17348);
 class Rust extends base_1.BaseStrategy {
     async buildUpdates(options) {
+        var _a, _b, _c;
         const updates = [];
         const version = options.newVersion;
         updates.push({
@@ -72179,30 +72230,62 @@ class Rust extends base_1.BaseStrategy {
                 changelogEntry: options.changelogEntry,
             }),
         });
-        const workspaceManifest = await this.getWorkspaceManifest();
-        const manifestPaths = [];
-        let lockPath;
-        if (workspaceManifest &&
-            workspaceManifest.workspace &&
-            workspaceManifest.workspace.members) {
+        const workspaceManifest = await this.getPackageManifest();
+        const versionsMap = new Map();
+        if ((_a = workspaceManifest === null || workspaceManifest === void 0 ? void 0 : workspaceManifest.workspace) === null || _a === void 0 ? void 0 : _a.members) {
             const members = workspaceManifest.workspace.members;
-            logger_1.logger.info(`found workspace with ${members.length} members, upgrading all`);
-            for (const member of members) {
-                manifestPaths.push(`${member}/Cargo.toml`);
+            if ((_b = workspaceManifest.package) === null || _b === void 0 ? void 0 : _b.name) {
+                versionsMap.set(workspaceManifest.package.name, version);
             }
-            lockPath = 'Cargo.lock';
+            else {
+                logger_1.logger.warn('No workspace manifest package name found');
+            }
+            logger_1.logger.info(`found workspace with ${members.length} members, upgrading all`);
+            // Collect submodule names to update
+            const manifestsByPath = new Map();
+            for (const member of members) {
+                const manifestPath = `${member}/Cargo.toml`;
+                const manifestContent = await this.getContent(manifestPath);
+                if (!manifestContent) {
+                    logger_1.logger.warn(`member ${member} declared but did not find Cargo.toml`);
+                    continue;
+                }
+                const manifest = common_1.parseCargoManifest(manifestContent.parsedContent);
+                manifestsByPath.set(manifestPath, manifestContent);
+                if (!((_c = manifest.package) === null || _c === void 0 ? void 0 : _c.name)) {
+                    logger_1.logger.warn(`member ${member} has no package name`);
+                    continue;
+                }
+                versionsMap.set(manifest.package.name, version);
+            }
+            logger_1.logger.info(`updating ${manifestsByPath.size} submodules`);
+            logger_1.logger.debug('versions map:', versionsMap);
+            for (const [manifestPath, manifestContent] of manifestsByPath) {
+                updates.push({
+                    path: this.addPath(manifestPath),
+                    createIfMissing: false,
+                    cachedFileContents: manifestContent,
+                    updater: new cargo_toml_1.CargoToml({
+                        version,
+                        versionsMap,
+                    }),
+                });
+            }
+            // Update root Cargo.toml
+            updates.push({
+                path: this.addPath('Cargo.toml'),
+                createIfMissing: false,
+                updater: new cargo_toml_1.CargoToml({
+                    version,
+                    versionsMap,
+                }),
+            });
         }
         else {
             const manifestPath = this.addPath('Cargo.toml');
             logger_1.logger.info(`single crate found, updating ${manifestPath}`);
-            manifestPaths.push(manifestPath);
-            lockPath = this.addPath('Cargo.lock');
-        }
-        const versionsMap = new Map();
-        versionsMap.set(this.component || '', version);
-        for (const path of manifestPaths) {
             updates.push({
-                path,
+                path: manifestPath,
                 createIfMissing: false,
                 updater: new cargo_toml_1.CargoToml({
                     version,
@@ -72211,7 +72294,7 @@ class Rust extends base_1.BaseStrategy {
             });
         }
         updates.push({
-            path: lockPath,
+            path: this.addPath('Cargo.lock'),
             createIfMissing: false,
             updater: new cargo_lock_1.CargoLock({
                 version,
@@ -72236,28 +72319,21 @@ class Rust extends base_1.BaseStrategy {
      */
     async getPackageManifest() {
         if (this.packageManifest === undefined) {
-            this.packageManifest = await this.getManifest(this.addPath('Cargo.toml'));
+            this.packageManifest = await this.getManifest('Cargo.toml');
         }
         return this.packageManifest;
     }
-    /**
-     * @returns the workspace's manifest, ie. `Cargo.toml` (top-level)
-     */
-    async getWorkspaceManifest() {
-        if (this.workspaceManifest === undefined) {
-            this.workspaceManifest = await this.getManifest('Cargo.toml');
-        }
-        return this.workspaceManifest;
-    }
-    async getManifest(path) {
-        let content;
+    async getContent(path) {
         try {
-            content = await this.github.getFileContentsOnBranch(path, this.targetBranch);
+            return await this.github.getFileContentsOnBranch(this.addPath(path), this.targetBranch);
         }
         catch (e) {
             return null;
         }
-        return common_1.parseCargoManifest(content.parsedContent);
+    }
+    async getManifest(path) {
+        const content = await this.getContent(path);
+        return content ? common_1.parseCargoManifest(content.parsedContent) : null;
     }
 }
 exports.Rust = Rust;
@@ -72291,6 +72367,11 @@ const changelog_1 = __nccwpck_require__(3325);
 const base_1 = __nccwpck_require__(95081);
 const default_1 = __nccwpck_require__(69995);
 class Simple extends base_1.BaseStrategy {
+    constructor(options) {
+        var _a;
+        super(options);
+        this.versionFile = (_a = options.versionFile) !== null && _a !== void 0 ? _a : 'version.txt';
+    }
     async buildUpdates(options) {
         const updates = [];
         const version = options.newVersion;
@@ -72303,7 +72384,7 @@ class Simple extends base_1.BaseStrategy {
             }),
         });
         updates.push({
-            path: this.addPath('version.txt'),
+            path: this.addPath(this.versionFile),
             createIfMissing: false,
             updater: new default_1.DefaultUpdater({
                 version,
@@ -72465,7 +72546,7 @@ exports.Changelog = Changelog;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.CompositeUpdater = void 0;
+exports.mergeUpdates = exports.CompositeUpdater = void 0;
 /**
  * The CompositeUpdater chains 0...n updaters and updates
  * the content in order.
@@ -72491,6 +72572,29 @@ class CompositeUpdater {
     }
 }
 exports.CompositeUpdater = CompositeUpdater;
+function mergeUpdates(updates) {
+    const updatesByPath = {};
+    for (const update of updates) {
+        if (updatesByPath[update.path]) {
+            updatesByPath[update.path].push(update);
+        }
+        else {
+            updatesByPath[update.path] = [update];
+        }
+    }
+    const newUpdates = [];
+    for (const path in updatesByPath) {
+        const update = updatesByPath[path];
+        const updaters = update.map(u => u.updater);
+        newUpdates.push({
+            path,
+            createIfMissing: update[0].createIfMissing,
+            updater: updaters.length === 1 ? updaters[0] : new CompositeUpdater(...updaters),
+        });
+    }
+    return newUpdates;
+}
+exports.mergeUpdates = mergeUpdates;
 //# sourceMappingURL=composite.js.map
 
 /***/ }),
@@ -72634,6 +72738,123 @@ exports.ElixirMixExs = ElixirMixExs;
 
 /***/ }),
 
+/***/ 96323:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Generic = void 0;
+const default_1 = __nccwpck_require__(69995);
+const logger_1 = __nccwpck_require__(68809);
+const VERSION_REGEX = /(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(-(?<preRelease>[\w.]+))?(\+(?<build>[-\w.]+))?/;
+const SINGLE_VERSION_REGEX = /\b\d+\b/;
+const INLINE_UPDATE_REGEX = /x-release-please-(?<scope>major|minor|patch|version)/;
+const BLOCK_START_REGEX = /x-release-please-start-(?<scope>major|minor|patch|version)/;
+const BLOCK_END_REGEX = /x-release-please-end/;
+/**
+ * The Generic updater looks for well known patterns and replaces
+ * content. The well known patterns are:
+ *
+ * 1. `x-release-please-version` if this string is found on the line,
+ *    then replace a semver-looking string on that line with the next
+ *    version
+ * 2. `x-release-please-major` if this string is found on the line,
+ *    then replace an integer looking value with the the next version's
+ *    major
+ * 3. `x-release-please-minor` if this string is found on the line,
+ *    then replace an integer looking value with the the next version's
+ *    minor
+ * 4. `x-release-please-patch` if this string is found on the line,
+ *    then replace an integer looking value with the the next version's
+ *    patch
+ *
+ * You can also use a block-based replacement. Content between the
+ * opening `x-release-please-start-version` and `x-release-please-end` will
+ * be considered for version replacement. You can also open these blocks
+ * with `x-release-please-start-<major|minor|patch>` to replace single
+ * numbers
+ */
+class Generic extends default_1.DefaultUpdater {
+    /**
+     * Given initial file contents, return updated contents.
+     * @param {string} content The initial content
+     * @returns {string} The updated content
+     */
+    updateContent(content) {
+        if (!content) {
+            return '';
+        }
+        const newLines = [];
+        let blockScope;
+        function replaceVersion(line, scope, version) {
+            switch (scope) {
+                case 'major':
+                    newLines.push(line.replace(SINGLE_VERSION_REGEX, `${version.major}`));
+                    return;
+                case 'minor':
+                    newLines.push(line.replace(SINGLE_VERSION_REGEX, `${version.minor}`));
+                    return;
+                case 'patch':
+                    newLines.push(line.replace(SINGLE_VERSION_REGEX, `${version.patch}`));
+                    return;
+                case 'version':
+                    newLines.push(line.replace(VERSION_REGEX, version.toString()));
+                    return;
+                default:
+                    logger_1.logger.warn(`unknown block scope: ${scope}`);
+                    newLines.push(line);
+            }
+        }
+        content.split(/\r?\n/).forEach(line => {
+            var _a, _b;
+            let match = line.match(INLINE_UPDATE_REGEX);
+            if (match) {
+                // replace inline versions
+                replaceVersion(line, (((_a = match.groups) === null || _a === void 0 ? void 0 : _a.scope) || 'version'), this.version);
+            }
+            else if (blockScope) {
+                // in a block, so try to replace versions
+                replaceVersion(line, blockScope, this.version);
+                if (line.match(BLOCK_END_REGEX)) {
+                    blockScope = undefined;
+                }
+            }
+            else {
+                // look for block start line
+                match = line.match(BLOCK_START_REGEX);
+                if (match) {
+                    if ((_b = match.groups) === null || _b === void 0 ? void 0 : _b.scope) {
+                        blockScope = match.groups.scope;
+                    }
+                    else {
+                        blockScope = 'version';
+                    }
+                }
+                newLines.push(line);
+            }
+        });
+        return newLines.join('\n');
+    }
+}
+exports.Generic = Generic;
+//# sourceMappingURL=generic.js.map
+
+/***/ }),
+
 /***/ 54988:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -72745,6 +72966,10 @@ const VERSION_REGEX = /\d+\.\d+\.\d+(-\w+(\.\d+)?)?(-SNAPSHOT)?/;
  * or with a `{x-version-update-start:<component-name>}` and `{x-version-update-end}`.
  */
 class JavaUpdate extends default_1.DefaultUpdater {
+    constructor(options) {
+        super(options);
+        this.isSnapshot = !!options.isSnapshot;
+    }
     /**
      * Given initial file contents, return updated contents.
      * @param {string} content The initial content
@@ -72759,7 +72984,7 @@ class JavaUpdate extends default_1.DefaultUpdater {
         let blockPackageName = null;
         content.split(/\r?\n/).forEach(line => {
             let match = line.match(INLINE_UPDATE_REGEX);
-            if (match) {
+            if (match && (!this.isSnapshot || match[2] === 'current')) {
                 const newVersion = this.versionsMap.get(match[1]);
                 if (newVersion) {
                     newLines.push(line.replace(VERSION_REGEX, newVersion.toString()));
@@ -72782,7 +73007,7 @@ class JavaUpdate extends default_1.DefaultUpdater {
             }
             else {
                 match = line.match(BLOCK_START_REGEX);
-                if (match) {
+                if (match && (!this.isSnapshot || match[2] === 'current')) {
                     blockPackageName = match[1];
                 }
                 newLines.push(line);
@@ -73760,7 +73985,6 @@ class CargoToml extends default_1.DefaultUpdater {
      * @returns {string} The updated content
      */
     updateContent(content) {
-        var _a;
         let payload = content;
         if (!this.versionsMap) {
             throw new Error('updateContent called with no versions');
@@ -73771,12 +73995,8 @@ class CargoToml extends default_1.DefaultUpdater {
             logger_1.logger.error(msg);
             throw new Error(msg);
         }
+        payload = toml_edit_1.replaceTomlValue(payload, ['package', 'version'], this.version.toString());
         for (const [pkgName, pkgVersion] of this.versionsMap) {
-            if (parsed.package.name === pkgName) {
-                logger_1.logger.info(`updating own version from ${(_a = parsed.package) === null || _a === void 0 ? void 0 : _a.version} to ${pkgVersion}`);
-                payload = toml_edit_1.replaceTomlValue(payload, ['package', 'version'], pkgVersion.toString());
-                continue; // to next [pkgName, pkgVersion] pair
-            }
             for (const depKind of common_1.DEP_KINDS) {
                 const deps = parsed[depKind];
                 if (!deps) {
@@ -74407,6 +74627,7 @@ class PullRequestBody {
     constructor(releaseData, options) {
         this.header = (options === null || options === void 0 ? void 0 : options.header) || DEFAULT_HEADER;
         this.footer = (options === null || options === void 0 ? void 0 : options.footer) || DEFAULT_FOOTER;
+        this.extra = options === null || options === void 0 ? void 0 : options.extra;
         this.releaseData = releaseData;
     }
     static parse(body) {
@@ -74446,7 +74667,7 @@ ${NOTES_DELIMITER}
 
 ${notes}
 
-${NOTES_DELIMITER}
+${NOTES_DELIMITER}${this.extra ? `\n\n${this.extra}\n` : ''}
 ${this.footer}`;
     }
 }
@@ -74470,7 +74691,7 @@ function splitBody(body) {
         content,
     };
 }
-const SUMMARY_PATTERN = /^(?<component>.*): (?<version>\d+\.\d+\.\d+.*)$/;
+const SUMMARY_PATTERN = /^(?<component>.*[^:]):? (?<version>\d+\.\d+\.\d+.*)$/;
 function extractMultipleReleases(notes) {
     const data = [];
     const root = node_html_parser_1.parse(notes);
@@ -89461,7 +89682,7 @@ module.exports = JSON.parse("{\"amp\":\"&\",\"apos\":\"'\",\"gt\":\">\",\"lt\":\
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"13.0.1"};
+module.exports = {"i8":"13.3.1"};
 
 /***/ }),
 
