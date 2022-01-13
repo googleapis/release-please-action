@@ -77,6 +77,7 @@ async function main () {
   const changelogTypes = core.getInput('changelog-types') || undefined
   const changelogSections = changelogTypes && JSON.parse(changelogTypes)
   const versionFile = core.getInput('version-file') || undefined
+  const extraFiles = core.getMultilineInput('extra-files') || undefined
   const github = await getGitHubInstance()
   const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
   const draft = core.getBooleanInput('draft')
@@ -92,6 +93,7 @@ async function main () {
       changelogPath,
       changelogSections,
       versionFile,
+      extraFiles,
       includeComponentInTag: monorepoTags,
       pullRequestTitlePattern,
       draftPullRequest
