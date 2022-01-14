@@ -289,7 +289,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: GoogleCloudPlatform/release-please-action@v3
-        id: release
         with:
           release-type: node
           extra-files: |
