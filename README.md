@@ -272,6 +272,31 @@ jobs:
           git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
 ```
 
+## Adding additional files
+
+You can update additional files with the `extra-files` input.
+
+See the [generic updater docs](https://github.com/googleapis/release-please/blob/main/docs/customizing.md#updating-arbitrary-files) for more info on how release-please will update those files.
+
+```yaml
+on:
+  push:
+    branches:
+      - main
+name: release-please
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: GoogleCloudPlatform/release-please-action@v3
+        id: release
+        with:
+          release-type: node
+          extra-files: |
+            README.md
+            docs/getting-started.md
+```
+
 ## License
 
 Apache Version 2.0
