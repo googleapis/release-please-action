@@ -44,6 +44,10 @@ inputs:
     description: 'provide a path to a version file to increment (used by ruby releaser)'
     required: false
     default: ''
+  extra-files:
+    description: 'extra files to bump using the generic updater'
+    required: false
+    default: ''
   default-branch:
     description: 'branch to open pull release PR against (detected by default)'
     required: false
