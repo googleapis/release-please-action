@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.1.0](https://github.com/google-github-actions/release-please-action/compare/v3.0.1...v3.1.0) (2022-01-22)
+
+
+### Features
+
+* add extra-files input ([#410](https://github.com/google-github-actions/release-please-action/issues/410)) ([a487a5b](https://github.com/google-github-actions/release-please-action/commit/a487a5bdc8d889d5923c6540465e05a27b4df764))
+
+
+### Bug Fixes
+
+* **release-please:** upgrade release-please dep ([#422](https://github.com/google-github-actions/release-please-action/issues/422)) ([ad9cdb7](https://github.com/google-github-actions/release-please-action/commit/ad9cdb78a61c428bb2252f1da678773893b829c5))
+
 ### [3.0.1](https://github.com/google-github-actions/release-please-action/compare/v3.0.0...v3.0.1) (2022-01-12)
 
 
