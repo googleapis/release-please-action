@@ -37,7 +37,7 @@ async function runManifest (command) {
   const { fork } = getGitHubInput()
   const manifestOpts = getManifestInput()
   const github = await getGitHubInstance()
-  const manifest = await Manifest.fromManifest(
+  let manifest = await Manifest.fromManifest(
     github,
     github.repository.defaultBranch,
     manifestOpts.configFile,
@@ -49,8 +49,19 @@ async function runManifest (command) {
   )
   // Create or update release PRs:
   outputPRs(await manifest.createPullRequests())
-  if (command === 'manifest-pr') return
-  outputReleases(await manifest.createReleases())
+  if (command !== 'manifest-pr') {
+    manifest = await Manifest.fromManifest(
+      github,
+      github.repository.defaultBranch,
+      manifestOpts.configFile,
+      manifestOpts.manifestFile,
+      {
+        signoff,
+        fork
+      }
+    )
+    outputReleases(await manifest.createReleases())
+  }
 }
 
 async function main () {
@@ -58,7 +69,42 @@ async function main () {
   if (MANIFEST_COMMANDS.includes(command)) {
     return await runManifest(command)
   }
+  const github = await getGitHubInstance()
 
+  // First we check for any merged release PRs (PRs merged with the label
+  // "autorelease: pending"):
+  if (!command || command === GITHUB_RELEASE_COMMAND) {
+    const manifest = await manifestInstance(github)
+    outputReleases(await manifest.createReleases())
+  }
+
+  // Next we check for PRs merged since the last release, and groom the
+  // release PR:
+  if (!command || command === GITHUB_RELEASE_PR_COMMAND) {
+    const manifest = await manifestInstance(github)
+    outputPRs(await manifest.createPullRequests())
+  }
+}
+
+const releasePlease = {
+  main
+}
+
+function getGitHubInstance () {
+  const { token, defaultBranch, apiUrl, graphqlUrl, repoUrl } = getGitHubInput()
+  const [owner, repo] = repoUrl.split('/')
+  const githubCreateOpts = {
+    owner,
+    repo,
+    apiUrl,
+    graphqlUrl,
+    token
+  }
+  if (defaultBranch) githubCreateOpts.defaultBranch = defaultBranch
+  return GitHub.create(githubCreateOpts)
+}
+
+async function manifestInstance (github) {
   const { fork } = getGitHubInput()
   const bumpMinorPreMajor = core.getBooleanInput('bump-minor-pre-major')
   const bumpPatchForMinorPreMajor = core.getBooleanInput('bump-patch-for-minor-pre-major')
@@ -71,11 +117,10 @@ async function main () {
   const changelogSections = changelogTypes && JSON.parse(changelogTypes)
   const versionFile = core.getInput('version-file') || undefined
   const extraFiles = core.getMultilineInput('extra-files') || undefined
-  const github = await getGitHubInstance()
   const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
   const draft = core.getBooleanInput('draft')
   const draftPullRequest = core.getBooleanInput('draft-pull-request')
-  const manifest = await Manifest.fromConfig(
+  return await Manifest.fromConfig(
     github,
     github.repository.defaultBranch,
     {
@@ -98,36 +143,6 @@ async function main () {
     },
     path
   )
-
-  // First we check for any merged release PRs (PRs merged with the label
-  // "autorelease: pending"):
-  if (!command || command === GITHUB_RELEASE_COMMAND) {
-    outputReleases(await manifest.createReleases())
-  }
-
-  // Next we check for PRs merged since the last release, and groom the
-  // release PR:
-  if (!command || command === GITHUB_RELEASE_PR_COMMAND) {
-    outputPRs(await manifest.createPullRequests())
-  }
-}
-
-const releasePlease = {
-  main
-}
-
-function getGitHubInstance () {
-  const { token, defaultBranch, apiUrl, graphqlUrl, repoUrl } = getGitHubInput()
-  const [owner, repo] = repoUrl.split('/')
-  const githubCreateOpts = {
-    owner,
-    repo,
-    apiUrl,
-    graphqlUrl,
-    token
-  }
-  if (defaultBranch) githubCreateOpts.defaultBranch = defaultBranch
-  return GitHub.create(githubCreateOpts)
 }
 
 function outputReleases (releases) {

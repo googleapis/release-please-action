@@ -139,9 +139,9 @@ describe('release-please-action', () => {
     })
     await action.main()
 
-    sinon.assert.calledOnce(createManifestCommand)
+    sinon.assert.calledTwice(createManifestCommand)
     sinon.assert.calledOnce(createPullRequestsFake)
-    sinon.assert.calledWith(createReleasesFake)
+    sinon.assert.calledOnce(createReleasesFake)
     assert.deepStrictEqual(output, {
       release_created: true,
       upload_url: 'http://example.com',
