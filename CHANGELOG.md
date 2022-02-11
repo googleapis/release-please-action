@@ -1,5 +1,12 @@
 # Changelog
 
+### [3.1.1](https://github.com/google-github-actions/release-please-action/compare/v3.1.0...v3.1.1) (2022-02-11)
+
+
+### Bug Fixes
+
+* **release-please:** include-component-in-tag ignored in manifest ([#430](https://github.com/google-github-actions/release-please-action/issues/430)) ([42a3581](https://github.com/google-github-actions/release-please-action/commit/42a3581394a03aae8f8eb785a2d4e0774f49bec2))
+
 ## [3.1.0](https://github.com/google-github-actions/release-please-action/compare/v3.0.1...v3.1.0) (2022-01-22)
 
 
