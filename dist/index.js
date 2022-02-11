@@ -71273,6 +71273,7 @@ async function buildStrategy(options) {
         changelogNotes,
         pullRequestTitlePattern: options.pullRequestTitlePattern,
         extraFiles: options.extraFiles,
+        tagSeparator: options.tagSeparator,
     };
     switch (options.releaseType) {
         case 'ruby': {
@@ -71409,13 +71410,25 @@ class GitHub {
          */
         this.getCommitFiles = wrapAsync(async (sha) => {
             logger_1.logger.debug(`Backfilling file list for commit: ${sha}`);
-            const resp = await this.octokit.repos.getCommit({
+            const files = [];
+            for await (const resp of this.octokit.paginate.iterator(this.octokit.repos.getCommit, {
                 owner: this.repository.owner,
                 repo: this.repository.repo,
                 ref: sha,
-            });
-            const files = resp.data.files || [];
-            return files.map(file => file.filename).filter(filename => !!filename);
+            })) {
+                for (const f of resp.data.files || []) {
+                    if (f.filename) {
+                        files.push(f.filename);
+                    }
+                }
+            }
+            if (files.length >= 3000) {
+                logger_1.logger.warn(`Found ${files.length} files. This may not include all the files.`);
+            }
+            else {
+                logger_1.logger.debug(`Found ${files.length} files`);
+            }
+            return files;
         });
         this.graphqlRequest = wrapAsync(async (opts, maxRetries = 1) => {
             while (maxRetries >= 0) {
@@ -71881,6 +71894,7 @@ class GitHub {
         }
     }
     async mergeCommitsGraphQL(targetBranch, cursor, options = {}) {
+        var _a;
         logger_1.logger.debug(`Fetching merge commits on branch ${targetBranch} with cursor: ${cursor}`);
         const response = await this.graphqlRequest({
             query: `query pullRequestsSince($owner: String!, $repo: String!, $num: Int!, $maxFilesChanged: Int, $targetBranch: String!, $cursor: String) {
@@ -71934,7 +71948,7 @@ class GitHub {
             repo: this.repository.repo,
             num: 25,
             targetBranch,
-            maxFilesChanged: 64,
+            maxFilesChanged: 100,
         });
         // if the branch does exist, return null
         if (!response.repository.ref) {
@@ -71964,9 +71978,15 @@ class GitHub {
                     labels: pullRequest.labels.nodes.map(node => node.name),
                     files,
                 };
-                // We cannot directly fetch files on commits via graphql, only provide file
-                // information for commits with associated pull requests
-                commit.files = files;
+                if (((_a = pullRequest.files.pageInfo) === null || _a === void 0 ? void 0 : _a.hasNextPage) && options.backfillFiles) {
+                    logger_1.logger.info(`PR #${pullRequest.number} has many files, backfilling`);
+                    commit.files = await this.getCommitFiles(graphCommit.sha);
+                }
+                else {
+                    // We cannot directly fetch files on commits via graphql, only provide file
+                    // information for commits with associated pull requests
+                    commit.files = files;
+                }
             }
             else if (options.backfillFiles) {
                 // In this case, there is no squashed merge commit. This could be a simple
@@ -72577,7 +72597,6 @@ class Manifest {
         for await (const release of this.github.releaseIterator({
             maxResults: 400,
         })) {
-            // logger.debug(release);
             const tagName = tag_name_1.TagName.parse(release.tagName);
             if (!tagName) {
                 logger_1.logger.warn(`Unable to parse release name: ${release.name}`);
@@ -72610,6 +72629,18 @@ class Manifest {
             }
         }
         const needsBootstrap = releasesFound < expectedReleases;
+        if (releasesFound < expectedReleases) {
+            logger_1.logger.warn(`Expected ${expectedReleases} releases, only found ${releasesFound}`);
+            // Fall back to looking for missing releases using expected tags
+            const missingPaths = Object.keys(strategiesByPath).filter(path => !releasesByPath[path]);
+            logger_1.logger.warn(`Missing ${missingPaths.length} paths: ${missingPaths}`);
+            const missingReleases = await this.backfillReleasesFromTags(missingPaths, strategiesByPath);
+            for (const path in missingReleases) {
+                releaseShasByPath[path] = missingReleases[path].sha;
+                releasesByPath[path] = missingReleases[path];
+                releasesFound++;
+            }
+        }
         if (releasesFound < expectedReleases) {
             logger_1.logger.warn(`Expected ${expectedReleases} releases, only found ${releasesFound}`);
         }
@@ -72657,6 +72688,7 @@ class Manifest {
                 sha: commit.sha,
                 message: commit.message,
                 files: commit.files,
+                pullRequest: commit.pullRequest,
             });
         }
         if (releaseCommitsFound < expectedShas) {
@@ -72676,10 +72708,6 @@ class Manifest {
             logger_1.logger.debug(`type: ${config.releaseType}`);
             logger_1.logger.debug(`targetBranch: ${this.targetBranch}`);
             const pathCommits = commitsAfterSha(path === exports.ROOT_PROJECT_PATH ? commits : commitsPerPath[path], releaseShasByPath[path]);
-            if (!pathCommits || pathCommits.length === 0) {
-                logger_1.logger.info(`No commits for path: ${path}, skipping`);
-                continue;
-            }
             logger_1.logger.debug(`commits: ${pathCommits.length}`);
             const latestReleasePullRequest = releasePullRequestsBySha[releaseShasByPath[path]];
             if (!latestReleasePullRequest) {
@@ -72736,6 +72764,38 @@ class Manifest {
             newReleasePullRequests = await plugin.run(newReleasePullRequests);
         }
         return newReleasePullRequests.map(pullRequestWithConfig => pullRequestWithConfig.pullRequest);
+    }
+    async backfillReleasesFromTags(missingPaths, strategiesByPath) {
+        const releasesByPath = {};
+        const allTags = await this.getAllTags();
+        for (const path of missingPaths) {
+            const expectedVersion = this.releasedVersions[path];
+            if (!expectedVersion) {
+                logger_1.logger.warn(`No version for path ${path}`);
+                continue;
+            }
+            const component = await strategiesByPath[path].getComponent();
+            const expectedTag = new tag_name_1.TagName(expectedVersion, component, this.repositoryConfig[path].tagSeparator);
+            logger_1.logger.debug(`looking for tagName: ${expectedTag.toString()}`);
+            const foundTag = allTags[expectedTag.toString()];
+            if (foundTag) {
+                logger_1.logger.debug(`found: ${foundTag.name} ${foundTag.sha}`);
+                releasesByPath[path] = {
+                    name: foundTag.name,
+                    tag: expectedTag,
+                    sha: foundTag.sha,
+                    notes: '',
+                };
+            }
+        }
+        return releasesByPath;
+    }
+    async getAllTags() {
+        const allTags = {};
+        for await (const tag of this.github.tagIterator()) {
+            allTags[tag.name] = tag;
+        }
+        return allTags;
     }
     /**
      * Opens/updates all candidate release pull requests for this repository.
@@ -72982,6 +73042,7 @@ function extractReleaserConfig(config) {
         includeComponentInTag: config['include-component-in-tag'],
         changelogType: config['changelog-type'],
         pullRequestTitlePattern: config['pull-request-title-pattern'],
+        tagSeparator: config['tag-separator'],
     };
 }
 /**
@@ -73043,6 +73104,7 @@ async function latestReleaseVersion(github, targetBranch, prefix, pullRequestTit
     // collect set of recent commit SHAs seen to verify that the release
     // is in the current branch
     const commitShas = new Set();
+    const candidateReleaseVersions = [];
     // only look at the last 250 or so commits to find the latest tag - we
     // don't want to scan the entire repository history if this repo has never
     // been released
@@ -73071,12 +73133,15 @@ async function latestReleaseVersion(github, targetBranch, prefix, pullRequestTit
             // FIXME, don't hardcode this
             continue;
         }
-        return version;
+        if (version) {
+            logger_1.logger.debug(`Found latest release pull request: ${mergedPullRequest.number} version: ${version}`);
+            candidateReleaseVersions.push(version);
+            break;
+        }
     }
     // If not found from recent pull requests, look at releases. Iterate
     // through releases finding valid tags, then cross reference
     const releaseGenerator = github.releaseIterator();
-    const candidateReleaseVersions = [];
     for await (const release of releaseGenerator) {
         const tagName = tag_name_1.TagName.parse(release.tagName);
         if (!tagName) {
@@ -73118,7 +73183,7 @@ async function latestReleaseVersion(github, targetBranch, prefix, pullRequestTit
     return candidateTagVersion.sort((a, b) => b.compare(a))[0];
 }
 function mergeReleaserConfig(defaultConfig, pathConfig) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s;
     return {
         releaseType: (_b = (_a = pathConfig.releaseType) !== null && _a !== void 0 ? _a : defaultConfig.releaseType) !== null && _b !== void 0 ? _b : 'node',
         bumpMinorPreMajor: (_c = pathConfig.bumpMinorPreMajor) !== null && _c !== void 0 ? _c : defaultConfig.bumpMinorPreMajor,
@@ -73133,7 +73198,9 @@ function mergeReleaserConfig(defaultConfig, pathConfig) {
         packageName: (_m = pathConfig.packageName) !== null && _m !== void 0 ? _m : defaultConfig.packageName,
         versionFile: (_o = pathConfig.versionFile) !== null && _o !== void 0 ? _o : defaultConfig.versionFile,
         extraFiles: (_p = pathConfig.extraFiles) !== null && _p !== void 0 ? _p : defaultConfig.extraFiles,
-        pullRequestTitlePattern: (_q = pathConfig.pullRequestTitlePattern) !== null && _q !== void 0 ? _q : defaultConfig.pullRequestTitlePattern,
+        includeComponentInTag: (_q = pathConfig.includeComponentInTag) !== null && _q !== void 0 ? _q : defaultConfig.includeComponentInTag,
+        tagSeparator: (_r = pathConfig.tagSeparator) !== null && _r !== void 0 ? _r : defaultConfig.tagSeparator,
+        pullRequestTitlePattern: (_s = pathConfig.pullRequestTitlePattern) !== null && _s !== void 0 ? _s : defaultConfig.pullRequestTitlePattern,
     };
 }
 /**
@@ -73321,10 +73388,7 @@ class CargoWorkspace extends workspace_1.WorkspacePlugin {
                     update.updater.changelogEntry = appendDependenciesSectionToChangelog(update.updater.changelogEntry, dependencyNotes);
                 }
                 else if (update.path === addPath(existingCandidate.path, 'Cargo.lock')) {
-                    update.updater = new cargo_lock_1.CargoLock({
-                        version,
-                        versionsMap: updatedVersions,
-                    });
+                    update.updater = new cargo_lock_1.CargoLock(updatedVersions);
                 }
                 return update;
             });
@@ -73393,6 +73457,18 @@ class CargoWorkspace extends workspace_1.WorkspacePlugin {
                 releaseType: 'rust',
             },
         };
+    }
+    postProcessCandidates(candidates, updatedVersions) {
+        const rootCandidate = candidates.find(c => c.path === manifest_1.ROOT_PROJECT_PATH);
+        if (!rootCandidate) {
+            throw Error('Unable to find root candidate pull request');
+        }
+        rootCandidate.pullRequest.updates.push({
+            path: 'Cargo.lock',
+            createIfMissing: false,
+            updater: new cargo_lock_1.CargoLock(updatedVersions),
+        });
+        return candidates;
     }
     async buildGraph(allPackages) {
         var _a, _b, _c;
@@ -73545,6 +73621,7 @@ const pull_request_title_1 = __nccwpck_require__(1158);
 const pull_request_body_1 = __nccwpck_require__(70774);
 const branch_name_1 = __nccwpck_require__(16344);
 const composite_1 = __nccwpck_require__(40911);
+const logger_1 = __nccwpck_require__(68809);
 /**
  * This plugin merges multiple pull requests into a single
  * release pull request.
@@ -73561,6 +73638,7 @@ class Merge extends plugin_1.ManifestPlugin {
         if (candidates.length < 1) {
             return candidates;
         }
+        logger_1.logger.info(`Merging ${candidates.length} pull requests`);
         const releaseData = [];
         const labels = new Set();
         let rawUpdates = [];
@@ -73579,7 +73657,7 @@ class Merge extends plugin_1.ManifestPlugin {
         const updates = composite_1.mergeUpdates(rawUpdates);
         const pullRequest = {
             title: pull_request_title_1.PullRequestTitle.ofComponentTargetBranchVersion(rootRelease === null || rootRelease === void 0 ? void 0 : rootRelease.pullRequest.title.component, this.targetBranch, rootRelease === null || rootRelease === void 0 ? void 0 : rootRelease.pullRequest.title.version, this.pullRequestTitlePattern),
-            body: new pull_request_body_1.PullRequestBody(releaseData),
+            body: new pull_request_body_1.PullRequestBody(releaseData, { useComponents: true }),
             updates,
             labels: Array.from(labels),
             headRefName: branch_name_1.BranchName.ofTargetBranch(this.targetBranch).toString(),
@@ -73799,6 +73877,10 @@ class NodeWorkspace extends workspace_1.WorkspacePlugin {
             },
         };
     }
+    postProcessCandidates(candidates, _updatedVersions) {
+        // NOP for node workspaces
+        return candidates;
+    }
     async buildGraph(allPackages) {
         var _a, _b, _c, _d;
         const graph = new Map();
@@ -74010,6 +74092,8 @@ class WorkspacePlugin extends plugin_1.ManifestPlugin {
         logger_1.logger.info(`Merging ${newCandidates.length} in-scope candidates`);
         const mergePlugin = new merge_1.Merge(this.github, this.targetBranch, this.repositoryConfig);
         newCandidates = await mergePlugin.run(newCandidates);
+        logger_1.logger.info(`Post-processing ${newCandidates.length} in-scope candidates`);
+        newCandidates = this.postProcessCandidates(newCandidates, updatedVersions);
         return [...outOfScopeCandidates, ...newCandidates];
     }
     /**
@@ -74154,10 +74238,16 @@ class BaseStrategy {
         return this.component || (await this.getDefaultComponent());
     }
     async getDefaultComponent() {
-        return this.normalizeComponent(await this.getDefaultPackageName());
+        var _a;
+        return this.normalizeComponent((_a = this.packageName) !== null && _a !== void 0 ? _a : (await this.getDefaultPackageName()));
+    }
+    async getPackageName() {
+        var _a;
+        return (_a = this.packageName) !== null && _a !== void 0 ? _a : (await this.getDefaultPackageName());
     }
     async getDefaultPackageName() {
-        return '';
+        var _a;
+        return (_a = this.packageName) !== null && _a !== void 0 ? _a : '';
     }
     normalizeComponent(component) {
         if (!component) {
@@ -74208,6 +74298,10 @@ class BaseStrategy {
     async buildReleasePullRequest(commits, latestRelease, draft, labels = []) {
         const conventionalCommits = await this.postProcessCommits(commit_1.parseConventionalCommits(commits));
         logger_1.logger.info(`Considering: ${conventionalCommits.length} commits`);
+        if (conventionalCommits.length === 0) {
+            logger_1.logger.info(`No commits for path: ${this.path}, skipping`);
+            return undefined;
+        }
         const newVersion = await this.buildNewVersion(conventionalCommits, latestRelease);
         const versionsMap = await this.updateVersionsMap(await this.buildVersionsMap(conventionalCommits), conventionalCommits);
         const component = await this.getComponent();
@@ -74243,13 +74337,11 @@ class BaseStrategy {
     }
     extraFileUpdates(version) {
         const genericUpdater = new generic_1.Generic({ version });
-        return this.extraFiles.map(path => {
-            return {
-                path,
-                createIfMissing: false,
-                updater: genericUpdater,
-            };
-        });
+        return this.extraFiles.map(path => ({
+            path: this.addPath(path),
+            createIfMissing: false,
+            updater: genericUpdater,
+        }));
     }
     changelogEmpty(changelogEntry) {
         return changelogEntry.split('\n').length <= 1;
@@ -74354,18 +74446,28 @@ class BaseStrategy {
     initialReleaseVersion() {
         return version_1.Version.parse('1.0.0');
     }
+    /**
+     * Adds a given file path to the strategy path.
+     * @param {string} file Desired file path.
+     * @returns {string} The file relative to the strategy.
+     * @throws {Error} If the file path contains relative pathing characters, i.e. ../, ~/
+     */
     addPath(file) {
-        if (this.path === manifest_1.ROOT_PROJECT_PATH) {
-            return file;
+        // There is no strategy path to join, the strategy is at the root, or the
+        // file is at the root (denoted by a leading slash or tilde)
+        if (!this.path || this.path === manifest_1.ROOT_PROJECT_PATH || file.startsWith('/')) {
+            file = file.replace(/^\/+/, '');
         }
-        file = file.replace(/^[/\\]/, '');
-        if (this.path === undefined) {
-            return file;
-        }
+        // Otherwise, the file is relative to the strategy path
         else {
-            const path = this.path.replace(/[/\\]$/, '');
-            return `${path}/${file}`;
+            file = `${this.path.replace(/\/+$/, '')}/${file}`;
         }
+        // Ensure the file path does not escape the workspace
+        if (/((^|\/)\.{1,2}|^~|^\/*)+\//.test(file)) {
+            throw new Error(`illegal pathing characters in path: ${file}`);
+        }
+        // Strip any trailing slashes and return
+        return file.replace(/\/+$/, '');
     }
 }
 exports.BaseStrategy = BaseStrategy;
@@ -74567,10 +74669,6 @@ class GoYoshi extends base_1.BaseStrategy {
         logger_1.logger.debug('Filtering commits');
         return commits.filter(commit => {
             var _a, _b;
-            // ignore commits whose scope is in the list of ignored modules
-            if (IGNORED_SUB_MODULES.has(commit.scope || '')) {
-                return false;
-            }
             // Only have a single entry of the nightly regen listed in the changelog.
             // If there are more than one of these commits, append associated PR.
             if (this.repository.owner === 'googleapis' &&
@@ -74874,6 +74972,29 @@ class JavaYoshi extends base_1.BaseStrategy {
             draft: false,
         };
     }
+    /**
+     * Override this method to post process commits
+     * @param {ConventionalCommit[]} commits parsed commits
+     * @returns {ConventionalCommit[]} modified commits
+     */
+    async postProcessCommits(commits) {
+        if (commits.length === 0) {
+            // For Java commits, push a fake commit so we force a
+            // SNAPSHOT release
+            commits.push({
+                type: 'fake',
+                bareMessage: 'fake commit',
+                message: 'fake commit',
+                breaking: false,
+                scope: null,
+                notes: [],
+                files: [],
+                references: [],
+                sha: 'fake',
+            });
+        }
+        return commits;
+    }
     async needsSnapshot() {
         return versions_manifest_1.VersionsManifest.needsSnapshot((await this.getVersionsContent()).parsedContent);
     }
@@ -75133,9 +75254,10 @@ const changelog_1 = __nccwpck_require__(3325);
 const package_json_1 = __nccwpck_require__(26588);
 class Node extends base_1.BaseStrategy {
     async buildUpdates(options) {
+        var _a;
         const updates = [];
         const version = options.newVersion;
-        const packageName = this.component || '';
+        const packageName = (_a = (await this.getPackageName())) !== null && _a !== void 0 ? _a : '';
         const lockFiles = ['package-lock.json', 'npm-shrinkwrap.json'];
         lockFiles.forEach(lockFile => {
             updates.push({
@@ -75334,6 +75456,10 @@ class PHPYoshi extends base_1.BaseStrategy {
     async buildReleasePullRequest(commits, latestRelease, draft, labels = []) {
         var _a, _b, _c;
         const conventionalCommits = await this.postProcessCommits(commit_1.parseConventionalCommits(commits));
+        if (conventionalCommits.length === 0) {
+            logger_1.logger.info(`No commits for path: ${this.path}, skipping`);
+            return undefined;
+        }
         const newVersion = latestRelease
             ? await this.versioningStrategy.bump(latestRelease.tag.version, conventionalCommits)
             : this.initialReleaseVersion();
@@ -75363,6 +75489,7 @@ class PHPYoshi extends base_1.BaseStrategy {
                     previousTag: (_a = latestRelease === null || latestRelease === void 0 ? void 0 : latestRelease.tag) === null || _a === void 0 ? void 0 : _a.toString(),
                     currentTag: newVersionTag.toString(),
                     targetBranch: this.targetBranch,
+                    changelogSections: this.changelogSections,
                 });
                 releaseNotesBody = updatePHPChangelogEntry(`${composer.name} ${newVersion.toString()}`, releaseNotesBody, partialReleaseNotes);
             }
@@ -76044,10 +76171,7 @@ class Rust extends base_1.BaseStrategy {
         updates.push({
             path: this.addPath('Cargo.lock'),
             createIfMissing: false,
-            updater: new cargo_lock_1.CargoLock({
-                version,
-                versionsMap,
-            }),
+            updater: new cargo_lock_1.CargoLock(versionsMap),
         });
         return updates;
     }
@@ -76885,7 +77009,7 @@ class KRMBlueprintVersion extends default_1.DefaultUpdater {
         let matchRegex = '(cnrm/.*/)(v[0-9]+.[0-9]+.[0-9]+)+(-w+)?';
         // if explicit previous version, match only that version
         if ((_a = this.versionsMap) === null || _a === void 0 ? void 0 : _a.has('previousVersion')) {
-            matchRegex = `(cnrm/.*/)(${this.versionsMap.get('previousVersion')})+(-w+)?`;
+            matchRegex = `(cnrm/.*/)(v${this.versionsMap.get('previousVersion')})+(-w+)?`;
         }
         const oldVersion = content.match(new RegExp(matchRegex));
         if (oldVersion) {
@@ -77650,11 +77774,13 @@ exports.CargoLock = void 0;
 const toml_edit_1 = __nccwpck_require__(30567);
 const common_1 = __nccwpck_require__(11659);
 const logger_1 = __nccwpck_require__(68809);
-const default_1 = __nccwpck_require__(69995);
 /**
  * Updates `Cargo.lock` lockfiles, preserving formatting and comments.
  */
-class CargoLock extends default_1.DefaultUpdater {
+class CargoLock {
+    constructor(versionsMap) {
+        this.versionsMap = versionsMap;
+    }
     /**
      * Given initial file contents, return updated contents.
      * @param {string} content The initial content
@@ -77662,9 +77788,6 @@ class CargoLock extends default_1.DefaultUpdater {
      */
     updateContent(content) {
         let payload = content;
-        if (!this.versionsMap) {
-            throw new Error('updateContent called with no versions');
-        }
         const parsed = common_1.parseCargoLockfile(payload);
         if (!parsed.package) {
             logger_1.logger.error('is not a Cargo lockfile');
@@ -78380,10 +78503,12 @@ const DEFAULT_FOOTER = 'This PR was generated with [Release Please](https://gith
 const NOTES_DELIMITER = '---';
 class PullRequestBody {
     constructor(releaseData, options) {
+        var _a;
         this.header = (options === null || options === void 0 ? void 0 : options.header) || DEFAULT_HEADER;
         this.footer = (options === null || options === void 0 ? void 0 : options.footer) || DEFAULT_FOOTER;
         this.extra = options === null || options === void 0 ? void 0 : options.extra;
         this.releaseData = releaseData;
+        this.useComponents = (_a = options === null || options === void 0 ? void 0 : options.useComponents) !== null && _a !== void 0 ? _a : this.releaseData.length > 1;
     }
     static parse(body) {
         const parts = splitBody(body);
@@ -78404,7 +78529,7 @@ class PullRequestBody {
         });
     }
     notes() {
-        if (this.releaseData.length > 1) {
+        if (this.useComponents) {
             return this.releaseData
                 .map(release => {
                 var _a;
@@ -78468,7 +78593,7 @@ function extractMultipleReleases(notes) {
     }
     return data;
 }
-const COMPARE_REGEX = /^#{2,} \[(?<version>\d+\.\d+\.\d+.*)\]/;
+const COMPARE_REGEX = /^#{2,} \[?(?<version>\d+\.\d+\.\d+.*)\]?/;
 function extractSingleRelease(body) {
     var _a;
     body = body.trim();
@@ -96676,7 +96801,7 @@ module.exports = JSON.parse("{\"amp\":\"&\",\"apos\":\"'\",\"gt\":\">\",\"lt\":\
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"13.4.2"};
+module.exports = {"i8":"13.4.8"};
 
 /***/ }),
 
