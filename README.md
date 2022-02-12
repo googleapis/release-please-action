@@ -66,26 +66,10 @@ Automate releases with Conventional Commit Messages.
 | `repo-url` | configure github repository URL. Default `process.env.GITHUB_REPOSITORY` |
 | `github-graphql-url` | configure github GraphQL URL. Default `https://api.github.com` |
 
-#### Configeration definitions
-##### `Command` definition
-> Some additional info regardng the `command` property.
-- `github-release` command creates github release notes (as mentioned [here](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)), that incluids the tag versons and the commits for those tags as release notes. 
+### The `command` property
+> Some additional info regarding the `command` property.
+- `github-release` command creates github release notes (as mentioned [here](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)), that includes the tag versions and the commits for those tags as release notes. 
 - `release-pr` uses conventional commits to create a git tag, and opens a [pull request](#how-release-please-works). Once the pull request is merged, this property will push the tags to the repo.
-
-#### Output properties
-> Properties that are available after the action executed.
-
-| output | description |
-|:---:|---|
-| `release_created` | `true` if the release was created, `false` otherwise |
-| `upload_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
-| `html_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
-| `tag_name` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
-| `major` | Number representing major semver value |
-| `minor` | Number representing minor semver value |
-| `patch` | Number representing patch semver value |
-| `sha` | sha that a GitHub release was tagged at |
-| `pr` | The PR number of an opened release (undefined if no release created) |
 
 ### Release types supported
 
@@ -104,6 +88,22 @@ Release Please automates releases for the following flavors of repositories:
 | `simple` | [A repository with a version.txt and a CHANGELOG.md](https://github.com/googleapis/gapic-generator) |
 | helm | A helm chart repository with a Chart.yaml and a CHANGELOG.md |
 | elixir | An elixir repository with a mix.exs and a CHANGELOG.md |
+
+## Outputs
+> Properties that are available after the action executed.
+
+| output | description |
+|:---:|---|
+| `release_created` | `true` if the release was created, `false` otherwise |
+| `upload_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
+| `html_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
+| `tag_name` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
+| `major` | Number representing major semver value |
+| `minor` | Number representing minor semver value |
+| `patch` | Number representing patch semver value |
+| `sha` | sha that a GitHub release was tagged at |
+| `pr` | The PR number of an opened release (undefined if no release created) |
+
 
 ## How release please works
 
