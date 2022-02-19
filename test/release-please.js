@@ -249,30 +249,40 @@ describe('release-please-action', () => {
   })
 
   it('sets appropriate outputs when GitHub release created', async () => {
-    const expected = {
-      release_created: true,
-      releases_created: true,
-      upload_url: 'http://example.com',
-      html_url: 'http://example2.com',
-      tag_name: 'v1.2.3',
+    const release = {
+      name: 'v1.2.3',
+      tagName: 'v1.2.3',
+      sha: 'abc123',
+      notes: 'Some release notes',
+      url: 'http://example2.com',
+      draft: false,
+      uploadUrl: 'http://example.com',
+      path: '.',
+      version: '1.2.3',
       major: 1,
       minor: 2,
-      patch: 3,
-      version: 'v1.2.3',
-      sha: 'abc123',
-      pr: 33,
-      paths_released: '["."]'
+      patch: 3
     }
     input = {
       'release-type': 'node',
       command: 'github-release'
     }
-    const createReleasesFake = sandbox.fake.returns([expected])
+    const createReleasesFake = sandbox.fake.returns([release])
     sandbox.stub(Manifest, 'fromConfig').returns({
       createReleases: createReleasesFake
     })
     await action.main()
-    assert.deepStrictEqual(output, expected)
+    assert.strictEqual(output.release_created, true)
+    assert.strictEqual(output.releases_created, true)
+    assert.strictEqual(output.upload_url, 'http://example.com')
+    assert.strictEqual(output.html_url, 'http://example2.com')
+    assert.strictEqual(output.tag_name, 'v1.2.3')
+    assert.strictEqual(output.major, 1)
+    assert.strictEqual(output.minor, 2)
+    assert.strictEqual(output.patch, 3)
+    assert.strictEqual(output.version, '1.2.3')
+    assert.strictEqual(output.sha, 'abc123')
+    assert.strictEqual(output.paths_released, '["."]')
   })
 
   it('sets appropriate outputs when release PR opened', async () => {
