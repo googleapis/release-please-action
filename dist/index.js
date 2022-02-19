@@ -173,6 +173,9 @@ function outputReleases (releases) {
         // Historically tagName was output as tag_name, keep this
         // consistent to avoid breaking change:
         if (key === 'tagName') key = 'tag_name'
+        if (key === 'uploadUrl') key = 'upload_url'
+        if (key === 'notes') key = 'body'
+        if (key === 'url') key = 'html_url'
         if (path === '.') {
           core.setOutput(key, val)
         } else {
@@ -14431,7 +14434,7 @@ var isPlainObject = __nccwpck_require__(63287);
 var nodeFetch = _interopDefault(__nccwpck_require__(80467));
 var requestError = __nccwpck_require__(10537);
 
-const VERSION = "5.6.2";
+const VERSION = "5.6.3";
 
 function getBufferResponse(response) {
   return response.arrayBuffer();
@@ -71697,9 +71700,13 @@ class GitHub {
                 name: resp.data.name || undefined,
                 tagName: resp.data.tag_name,
                 sha: resp.data.target_commitish,
-                notes: resp.data.body_text,
+                notes: resp.data.body_text ||
+                    resp.data.body ||
+                    resp.data.body_html ||
+                    undefined,
                 url: resp.data.html_url,
                 draft: resp.data.draft,
+                uploadUrl: resp.data.upload_url,
             };
         }, e => {
             if (e instanceof request_error_1.RequestError) {
@@ -74412,14 +74419,24 @@ class BaseStrategy {
             return;
         }
         const component = await this.getComponent();
-        logger_1.logger.info('component:', component);
-        const releaseData = pullRequestBody.releaseData.length === 1 &&
-            !pullRequestBody.releaseData[0].component
-            ? pullRequestBody.releaseData[0]
-            : pullRequestBody.releaseData.find(releaseData => {
+        let releaseData;
+        if (pullRequestBody.releaseData.length === 1 &&
+            !pullRequestBody.releaseData[0].component) {
+            // standalone release PR, ensure the components match
+            if (this.normalizeComponent(branchName.component) !==
+                this.normalizeComponent(component)) {
+                logger_1.logger.warn(`PR component: ${branchName.component} does not match configured component: ${component}`);
+                return;
+            }
+            releaseData = pullRequestBody.releaseData[0];
+        }
+        else {
+            // manifest release with multiple components
+            releaseData = pullRequestBody.releaseData.find(releaseData => {
                 return (this.normalizeComponent(releaseData.component) ===
                     this.normalizeComponent(component));
             });
+        }
         const notes = releaseData === null || releaseData === void 0 ? void 0 : releaseData.notes;
         if (notes === undefined) {
             logger_1.logger.warn('Failed to find release notes');
@@ -74622,19 +74639,7 @@ const changelog_1 = __nccwpck_require__(3325);
 const version_1 = __nccwpck_require__(17348);
 const version_go_1 = __nccwpck_require__(54988);
 const logger_1 = __nccwpck_require__(68809);
-// Commits containing a scope prefixed with an item in this array will be
-// ignored when generating a release PR for the parent module.
-const IGNORED_SUB_MODULES = new Set([
-    'bigtable',
-    'bigquery',
-    'datastore',
-    'firestore',
-    'logging',
-    'pubsub',
-    'pubsublite',
-    'spanner',
-    'storage',
-]);
+const path_1 = __nccwpck_require__(85622);
 const REGEN_PR_REGEX = /.*auto-regenerate.*/;
 const REGEN_ISSUE_REGEX = /(?<prefix>.*)\(#(?<pr>.*)\)(\n|$)/;
 class GoYoshi extends base_1.BaseStrategy {
@@ -74667,6 +74672,7 @@ class GoYoshi extends base_1.BaseStrategy {
         let regenCommit;
         const component = await this.getComponent();
         logger_1.logger.debug('Filtering commits');
+        const ignoredSubmodules = await this.getIgnoredSubModules();
         return commits.filter(commit => {
             var _a, _b;
             // Only have a single entry of the nightly regen listed in the changelog.
@@ -74722,7 +74728,7 @@ class GoYoshi extends base_1.BaseStrategy {
                 else {
                     // This is the main module release, so ignore sub modules that
                     // are released independently
-                    for (const submodule of IGNORED_SUB_MODULES) {
+                    for (const submodule of ignoredSubmodules) {
                         if (commitMatchesScope(commit.scope, submodule)) {
                             logger_1.logger.debug(`Skipping ignored commit scope: ${commit.scope}`);
                             return false;
@@ -74732,6 +74738,22 @@ class GoYoshi extends base_1.BaseStrategy {
             }
             return true;
         });
+    }
+    async getIgnoredSubModules() {
+        // ignored submodules only applies to the root component of
+        // googleapis/google-cloud-go
+        if (this.repository.owner !== 'googleapis' ||
+            this.repository.repo !== 'google-cloud-go' ||
+            this.includeComponentInTag) {
+            return new Set();
+        }
+        logger_1.logger.info('Looking for go.mod files');
+        const paths = (await this.github.findFilesByFilenameAndRef('go.mod', this.targetBranch))
+            .filter(path => !path.includes('internal') && path !== 'go.mod')
+            .map(path => path_1.dirname(path));
+        logger_1.logger.info(`Found ${paths.length} submodules`);
+        logger_1.logger.debug(JSON.stringify(paths));
+        return new Set(paths);
     }
     // "closes" is a little presumptuous, let's just indicate that the
     // PR references these other commits:
@@ -78533,7 +78555,7 @@ class PullRequestBody {
             return this.releaseData
                 .map(release => {
                 var _a;
-                return `<details><summary>${release.component}: ${(_a = release.version) === null || _a === void 0 ? void 0 : _a.toString()}</summary>\n\n${release.notes}\n</details>`;
+                return `<details><summary>${release.component ? `${release.component}: ` : ''}${(_a = release.version) === null || _a === void 0 ? void 0 : _a.toString()}</summary>\n\n${release.notes}\n</details>`;
             })
                 .join('\n\n');
         }
@@ -78572,6 +78594,7 @@ function splitBody(body) {
     };
 }
 const SUMMARY_PATTERN = /^(?<component>.*[^:]):? (?<version>\d+\.\d+\.\d+.*)$/;
+const COMPONENTLESS_SUMMARY_PATTERN = /^(?<version>\d+\.\d+\.\d+.*)$/;
 function extractMultipleReleases(notes) {
     const data = [];
     const root = node_html_parser_1.parse(notes);
@@ -78579,17 +78602,28 @@ function extractMultipleReleases(notes) {
         const summaryNode = detail.getElementsByTagName('summary')[0];
         const summary = summaryNode === null || summaryNode === void 0 ? void 0 : summaryNode.textContent;
         const match = summary.match(SUMMARY_PATTERN);
-        if (!(match === null || match === void 0 ? void 0 : match.groups)) {
-            logger_1.logger.warn(`Summary: ${summary} did not match the expected pattern`);
-            continue;
+        if (match === null || match === void 0 ? void 0 : match.groups) {
+            detail.removeChild(summaryNode);
+            const notes = detail.textContent.trim();
+            data.push({
+                component: match.groups.component,
+                version: version_1.Version.parse(match.groups.version),
+                notes,
+            });
         }
-        detail.removeChild(summaryNode);
-        const notes = detail.textContent.trim();
-        data.push({
-            component: match.groups.component,
-            version: version_1.Version.parse(match.groups.version),
-            notes,
-        });
+        else {
+            const componentlessMatch = summary.match(COMPONENTLESS_SUMMARY_PATTERN);
+            if (!(componentlessMatch === null || componentlessMatch === void 0 ? void 0 : componentlessMatch.groups)) {
+                logger_1.logger.warn(`Summary: ${summary} did not match the expected pattern`);
+                continue;
+            }
+            detail.removeChild(summaryNode);
+            const notes = detail.textContent.trim();
+            data.push({
+                version: version_1.Version.parse(componentlessMatch.groups.version),
+                notes,
+            });
+        }
     }
     return data;
 }
@@ -96801,7 +96835,7 @@ module.exports = JSON.parse("{\"amp\":\"&\",\"apos\":\"'\",\"gt\":\">\",\"lt\":\
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"13.4.8"};
+module.exports = {"i8":"13.4.10"};
 
 /***/ }),
 
