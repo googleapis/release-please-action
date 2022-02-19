@@ -1,5 +1,12 @@
 # Changelog
 
+### [3.1.2](https://github.com/google-github-actions/release-please-action/compare/v3.1.1...v3.1.2) (2022-02-19)
+
+
+### Bug Fixes
+
+* coerce v13 release object to expected action output keys ([#437](https://github.com/google-github-actions/release-please-action/issues/437)) ([2e2f852](https://github.com/google-github-actions/release-please-action/commit/2e2f852b70c1bc5550dc4f38857a14845f04a0b5))
+
 ### [3.1.1](https://github.com/google-github-actions/release-please-action/compare/v3.1.0...v3.1.1) (2022-02-11)
 
 
