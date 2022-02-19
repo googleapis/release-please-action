@@ -166,6 +166,9 @@ function outputReleases (releases) {
         // Historically tagName was output as tag_name, keep this
         // consistent to avoid breaking change:
         if (key === 'tagName') key = 'tag_name'
+        if (key === 'uploadUrl') key = 'upload_url'
+        if (key === 'notes') key = 'body'
+        if (key === 'url') key = 'html_url'
         if (path === '.') {
           core.setOutput(key, val)
         } else {
