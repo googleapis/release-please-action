@@ -104,7 +104,6 @@ Release Please automates releases for the following flavors of repositories:
 | `sha` | sha that a GitHub release was tagged at |
 | `pr` | The PR number of an opened release (undefined if no release created) |
 
-
 ## How release please works
 
 Release Please automates CHANGELOG generation, the creation of GitHub releases,
