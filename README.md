@@ -280,6 +280,33 @@ jobs:
           git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
 ```
 
+## Manifest release output
+
+When using a `manifest` command the outputs are modified to have a general
+`releases-created` value to test if any releases were created. Package
+specific outputs can be accessed by using the package path prefixed output.
+
+```yaml
+on:
+  push:
+    branches:
+      - main
+name: Run Release Please
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/release-please-action@v2
+        id: release
+        with:
+          command: manifest
+      - run: echo "A release was created."
+        if: ${{ steps.release.outputs.releases_created }}
+      # For root level packages: ${{ steps.release.outputs.package-a--tag_name }}
+      - run: echo "Release ${{ steps.release.outputs['packages/package-a--tag_name'] }} created for package-a."
+        if: ${{ steps.release.outputs['packages/package-a--release_created'] }}
+```
+
 ## Adding additional files
 
 You can update additional files with the `extra-files` input.
