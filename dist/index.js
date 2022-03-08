@@ -71091,7 +71091,7 @@ function preprocessCommitMessage(commit) {
 // See the License for the specific language governing permissions and
 // limitations under the License.
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DuplicateReleaseError = exports.AuthError = exports.GitHubAPIError = exports.MissingRequiredFileError = exports.ConfigurationError = void 0;
+exports.FileNotFoundError = exports.DuplicateReleaseError = exports.AuthError = exports.GitHubAPIError = exports.MissingRequiredFileError = exports.ConfigurationError = void 0;
 class ConfigurationError extends Error {
     constructor(message, releaserName, repository) {
         super(`${releaserName} (${repository}): ${message}`);
@@ -71116,6 +71116,7 @@ class GitHubAPIError extends Error {
         this.body = GitHubAPIError.parseErrorBody(requestError);
         this.name = GitHubAPIError.name;
         this.cause = requestError;
+        this.stack = requestError.stack;
     }
     static parseErrorBody(requestError) {
         const body = requestError.response;
@@ -71143,6 +71144,14 @@ class DuplicateReleaseError extends GitHubAPIError {
     }
 }
 exports.DuplicateReleaseError = DuplicateReleaseError;
+class FileNotFoundError extends Error {
+    constructor(path) {
+        super(`Failed to find file: ${path}`);
+        this.path = path;
+        this.name = FileNotFoundError.name;
+    }
+}
+exports.FileNotFoundError = FileNotFoundError;
 //# sourceMappingURL=index.js.map
 
 /***/ }),
@@ -71402,6 +71411,7 @@ exports.GH_GRAPHQL_URL = 'https://api.github.com';
 const logger_1 = __nccwpck_require__(68809);
 const manifest_1 = __nccwpck_require__(31999);
 const signoff_commit_message_1 = __nccwpck_require__(2686);
+const file_cache_1 = __nccwpck_require__(9405);
 class GitHub {
     constructor(options) {
         /**
@@ -71445,58 +71455,6 @@ class GitHub {
                 }
                 maxRetries -= 1;
             }
-        });
-        /**
-         * Fetch the contents of a file with the Contents API
-         *
-         * @param {string} path The path to the file in the repository
-         * @param {string} branch The branch to fetch from
-         * @returns {GitHubFileContents}
-         * @throws {GitHubAPIError} on other API errors
-         */
-        this.getFileContentsWithSimpleAPI = wrapAsync(async (path, ref, isBranch = true) => {
-            ref = isBranch ? fullyQualifyBranchRef(ref) : ref;
-            const options = {
-                owner: this.repository.owner,
-                repo: this.repository.repo,
-                path,
-                ref,
-            };
-            const resp = await this.request('GET /repos/:owner/:repo/contents/:path', options);
-            return {
-                parsedContent: Buffer.from(resp.data.content, 'base64').toString('utf8'),
-                content: resp.data.content,
-                sha: resp.data.sha,
-            };
-        });
-        /**
-         * Fetch the contents of a file using the Git data API
-         *
-         * @param {string} path The path to the file in the repository
-         * @param {string} branch The branch to fetch from
-         * @returns {GitHubFileContents}
-         * @throws {GitHubAPIError} on other API errors
-         */
-        this.getFileContentsWithDataAPI = wrapAsync(async (path, branch) => {
-            const repoTree = await this.octokit.git.getTree({
-                owner: this.repository.owner,
-                repo: this.repository.repo,
-                tree_sha: branch,
-            });
-            const blobDescriptor = repoTree.data.tree.find(tree => tree.path === path);
-            if (!blobDescriptor) {
-                throw new Error(`Could not find requested path: ${path}`);
-            }
-            const resp = await this.octokit.git.getBlob({
-                owner: this.repository.owner,
-                repo: this.repository.repo,
-                file_sha: blobDescriptor.sha,
-            });
-            return {
-                parsedContent: Buffer.from(resp.data.content, 'base64').toString('utf8'),
-                content: resp.data.content,
-                sha: resp.data.sha,
-            };
         });
         /**
          * Returns a list of paths to all files with a given name.
@@ -71775,6 +71733,7 @@ class GitHub {
         this.octokit = options.octokitAPIs.octokit;
         this.request = options.octokitAPIs.request;
         this.graphql = options.octokitAPIs.graphql;
+        this.fileCache = new file_cache_1.RepositoryFileCache(this.octokit, this.repository);
     }
     /**
      * Build a new GitHub client with auto-detected default branch.
@@ -72247,15 +72206,7 @@ class GitHub {
      */
     async getFileContentsOnBranch(path, branch) {
         logger_1.logger.debug(`Fetching ${path} from branch ${branch}`);
-        try {
-            return await this.getFileContentsWithSimpleAPI(path, branch);
-        }
-        catch (err) {
-            if (err.status === 403) {
-                return await this.getFileContentsWithDataAPI(path, branch);
-            }
-            throw err;
-        }
+        return await this.fileCache.getFileContents(path, branch);
     }
     async getFileJson(path, branch) {
         const content = await this.getFileContentsOnBranch(path, branch);
@@ -72314,18 +72265,10 @@ class GitHub {
         for (const update of updates) {
             let content;
             try {
-                if (update.cachedFileContents) {
-                    // we already loaded the file contents earlier, let's not
-                    // hit GitHub again.
-                    content = { data: update.cachedFileContents };
-                }
-                else {
-                    const fileContent = await this.getFileContentsOnBranch(update.path, defaultBranch);
-                    content = { data: fileContent };
-                }
+                content = await this.getFileContentsOnBranch(update.path, defaultBranch);
             }
             catch (err) {
-                if (err.status !== 404)
+                if (!(err instanceof errors_1.FileNotFoundError))
                     throw err;
                 // if the file is missing and create = false, just continue
                 // to the next update, otherwise create the file.
@@ -72335,13 +72278,13 @@ class GitHub {
                 }
             }
             const contentText = content
-                ? Buffer.from(content.data.content, 'base64').toString('utf8')
+                ? Buffer.from(content.content, 'base64').toString('utf8')
                 : undefined;
             const updatedContent = update.updater.updateContent(contentText);
             if (updatedContent) {
                 changes.set(update.path, {
                     content: updatedContent,
-                    mode: '100644',
+                    mode: (content === null || content === void 0 ? void 0 : content.mode) || file_cache_1.DEFAULT_FILE_MODE,
                 });
             }
         }
@@ -72381,17 +72324,6 @@ class GitHub {
     }
 }
 exports.GitHub = GitHub;
-// Takes a potentially unqualified branch name, and turns it
-// into a fully qualified ref.
-//
-// e.g. main -> refs/heads/main
-function fullyQualifyBranchRef(refName) {
-    let final = refName;
-    if (final.indexOf('/') < 0) {
-        final = `refs/heads/${final}`;
-    }
-    return final;
-}
 /**
  * Normalize a provided prefix by removing leading and trailing
  * slashes.
@@ -72462,6 +72394,7 @@ const factory_1 = __nccwpck_require__(75695);
 const pull_request_body_1 = __nccwpck_require__(70774);
 const merge_1 = __nccwpck_require__(90514);
 const release_please_manifest_1 = __nccwpck_require__(9817);
+const errors_1 = __nccwpck_require__(93637);
 exports.DEFAULT_RELEASE_PLEASE_CONFIG = 'release-please-config.json';
 exports.DEFAULT_RELEASE_PLEASE_MANIFEST = '.release-please-manifest.json';
 exports.ROOT_PROJECT_PATH = '.';
@@ -72963,7 +72896,25 @@ class Manifest {
         for (const release of releases) {
             promises.push(this.createRelease(release));
         }
-        const githubReleases = await Promise.all(promises);
+        const duplicateReleases = [];
+        const githubReleases = [];
+        for (const promise of promises) {
+            try {
+                githubReleases.push(await promise);
+            }
+            catch (err) {
+                if (err instanceof errors_1.DuplicateReleaseError) {
+                    logger_1.logger.warn(`Duplicate release tag: ${err.tag}`);
+                    duplicateReleases.push(err);
+                }
+                else {
+                    throw err;
+                }
+            }
+        }
+        if (duplicateReleases.length > 0 && githubReleases.length === 0) {
+            throw duplicateReleases[0];
+        }
         // adjust tags on pullRequest
         await Promise.all([
             this.github.removeIssueLabels(this.labels, pullRequest.number),
@@ -73067,6 +73018,8 @@ async function parseConfig(github, configFile, branch) {
     for (const path in config.packages) {
         repositoryConfig[path] = mergeReleaserConfig(defaultConfig, extractReleaserConfig(config.packages[path]));
     }
+    const configLabel = config['label'];
+    const configReleaseLabel = config['release-label'];
     const manifestOptions = {
         bootstrapSha: config['bootstrap-sha'],
         lastReleaseSha: config['last-release-sha'],
@@ -73074,6 +73027,8 @@ async function parseConfig(github, configFile, branch) {
         separatePullRequests: config['separate-pull-requests'],
         groupPullRequestTitlePattern: config['group-pull-request-title-pattern'],
         plugins: config['plugins'],
+        labels: configLabel === undefined ? undefined : [configLabel],
+        releaseLabels: configReleaseLabel === undefined ? undefined : [configReleaseLabel],
     };
     return { config: repositoryConfig, options: manifestOptions };
 }
@@ -73796,6 +73751,13 @@ class NodeWorkspace extends workspace_1.WorkspacePlugin {
             throw new Error(`Could not find graph package for ${pkg.name}`);
         }
         const updatedPackage = pkg.clone();
+        // Update version of the package
+        const newVersion = updatedVersions.get(updatedPackage.name);
+        if (newVersion) {
+            logger_1.logger.info(`Updating ${updatedPackage.name} to ${newVersion}`);
+            updatedPackage.version = newVersion.toString();
+        }
+        // Update dependency versions
         for (const [depName, resolved] of graphPackage.localDependencies) {
             const depVersion = updatedVersions.get(depName);
             if (depVersion && resolved.type !== 'directory') {
@@ -73810,7 +73772,10 @@ class NodeWorkspace extends workspace_1.WorkspacePlugin {
                     update.updater = new raw_content_1.RawContent(json_stringify_1.jsonStringify(updatedPackage.toJSON(), updatedPackage.rawContent));
                 }
                 else if (update.updater instanceof changelog_1.Changelog) {
-                    update.updater.changelogEntry = appendDependenciesSectionToChangelog(update.updater.changelogEntry, dependencyNotes);
+                    if (dependencyNotes) {
+                        update.updater.changelogEntry =
+                            appendDependenciesSectionToChangelog(update.updater.changelogEntry, dependencyNotes);
+                    }
                 }
                 return update;
             });
@@ -73837,6 +73802,12 @@ class NodeWorkspace extends workspace_1.WorkspacePlugin {
             throw new Error(`Could not find graph package for ${pkg.name}`);
         }
         const updatedPackage = pkg.clone();
+        // Update version of the package
+        const newVersion = updatedVersions.get(updatedPackage.name);
+        if (newVersion) {
+            logger_1.logger.info(`Updating ${updatedPackage.name} to ${newVersion}`);
+            updatedPackage.version = newVersion.toString();
+        }
         for (const [depName, resolved] of graphPackage.localDependencies) {
             const depVersion = updatedVersions.get(depName);
             if (depVersion && resolved.type !== 'directory') {
@@ -73867,7 +73838,7 @@ class NodeWorkspace extends workspace_1.WorkspacePlugin {
                     createIfMissing: false,
                     updater: new changelog_1.Changelog({
                         version,
-                        changelogEntry: dependencyNotes,
+                        changelogEntry: appendDependenciesSectionToChangelog('', dependencyNotes),
                     }),
                 },
             ],
@@ -78153,8 +78124,12 @@ exports.BranchName = BranchName;
  * @see https://github.com/googleapis/releasetool
  */
 const AUTORELEASE_PATTERN = /^release-?(?<component>[\w-.]*)?-v(?<version>[0-9].*)$/;
+const RELEASE_PLEASE_BRANCH_PREFIX = 'release-please--branches';
 class AutoreleaseBranchName extends BranchName {
     static matches(branchName) {
+        if (branchName.startsWith(RELEASE_PLEASE_BRANCH_PREFIX)) {
+            return false;
+        }
         return !!branchName.match(AUTORELEASE_PATTERN);
     }
     constructor(branchName) {
@@ -78358,6 +78333,219 @@ class CommitSplit {
 }
 exports.CommitSplit = CommitSplit;
 //# sourceMappingURL=commit-split.js.map
+
+/***/ }),
+
+/***/ 9405:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.BranchFileCache = exports.RepositoryFileCache = exports.DEFAULT_FILE_MODE = void 0;
+const logger_1 = __nccwpck_require__(68809);
+const errors_1 = __nccwpck_require__(93637);
+exports.DEFAULT_FILE_MODE = '100644';
+/**
+ * This class is a read-through cache aimed at minimizing the
+ * number of API requests needed to fetch file data/contents.
+ * It lazy-caches data as it reads and will return cached data
+ * for resources already fetched.
+ */
+class RepositoryFileCache {
+    /**
+     * Instantiate a new loading cache instance
+     *
+     * @param {Octokit} octokit An authenticated octokit instance
+     * @param {Repository} repository The repository we are fetching data for
+     */
+    constructor(octokit, repository) {
+        this.octokit = octokit;
+        this.repository = repository;
+        this.cache = new Map();
+    }
+    /**
+     * Fetch file contents for given path on a given branch. If the
+     * data has already been fetched, return a cached copy.
+     *
+     * @param {string} path Path to the file
+     * @param {string} branch Branch to fetch the file from
+     * @returns {GitHubFileContents} The file contents
+     */
+    async getFileContents(path, branch) {
+        let fileCache = this.cache.get(branch);
+        if (!fileCache) {
+            fileCache = new BranchFileCache(this.octokit, this.repository, branch);
+            this.cache.set(branch, fileCache);
+        }
+        return await fileCache.getFileContents(path);
+    }
+}
+exports.RepositoryFileCache = RepositoryFileCache;
+/**
+ * This class is a read-through cache for a single branch aimed
+ * at minimizing the number of API requests needed to fetch file
+ * data/contents. It lazy-caches data as it reads and will return
+ * cached data for resources already fetched.
+ */
+class BranchFileCache {
+    /**
+     * Instantiate a new loading cache instance
+     *
+     * @param {Octokit} octokit An authenticated octokit instance
+     * @param {Repository} repository The repository we are fetching data for
+     * @param {string} branch The branch we are fetching data from
+     */
+    constructor(octokit, repository, branch) {
+        this.octokit = octokit;
+        this.repository = repository;
+        this.branch = branch;
+        this.cache = new Map();
+        this.treeCache = new Map();
+    }
+    /**
+     * Fetch file contents for given path. If the data has already been
+     * fetched, return the cached copy.
+     *
+     * @param {string} path Path to the file
+     * @param {string} branch Branch to fetch the file from
+     * @returns {GitHubFileContents} The file contents
+     */
+    async getFileContents(path) {
+        const cached = this.cache.get(path);
+        if (cached) {
+            return cached;
+        }
+        const fetched = await this.fetchFileContents(path);
+        this.cache.set(path, fetched);
+        return fetched;
+    }
+    /**
+     * Actually fetch the file contents. Uses the tree API to fetch file
+     * data.
+     *
+     * @param {string} path Path to the file
+     */
+    async fetchFileContents(path) {
+        // try to use the entire git tree if it's not too big
+        const treeEntries = await this.getFullTree();
+        if (treeEntries) {
+            logger_1.logger.debug(`Using full tree to find ${path}`);
+            const found = treeEntries.find(entry => entry.path === path);
+            if (found === null || found === void 0 ? void 0 : found.sha) {
+                return await this.fetchContents(found.sha, found);
+            }
+            throw new errors_1.FileNotFoundError(path);
+        }
+        // full tree is too big, use data API to fetch
+        const parts = path.split('/');
+        let treeSha = this.branch;
+        let found;
+        for (const part of parts) {
+            const tree = await this.getTree(treeSha);
+            found = tree.find(item => item.path === part);
+            if (!(found === null || found === void 0 ? void 0 : found.sha)) {
+                throw new errors_1.FileNotFoundError(path);
+            }
+            treeSha = found.sha;
+        }
+        if (found === null || found === void 0 ? void 0 : found.sha) {
+            return await this.fetchContents(found.sha, found);
+        }
+        throw new errors_1.FileNotFoundError(path);
+    }
+    /**
+     * Return the full recursive git tree. If already fetched, return
+     * the cached version. If the tree is too big, return null.
+     *
+     * @returns {TreeEntry[]} The tree entries
+     */
+    async getFullTree() {
+        if (this.treeEntries === undefined) {
+            // fetch all tree entries recursively
+            const { data: { tree, truncated }, } = await this.octokit.git.getTree({
+                owner: this.repository.owner,
+                repo: this.repository.repo,
+                tree_sha: this.branch,
+                recursive: 'true',
+            });
+            if (truncated) {
+                // the full tree is too big to use, mark it as unusable
+                this.treeEntries = null;
+            }
+            else {
+                this.treeEntries = tree;
+            }
+        }
+        return this.treeEntries;
+    }
+    /**
+     * Returns the git tree for a given SHA. If already fetched, return
+     * the cached version.
+     *
+     * @param {string} sha The tree SHA
+     * @returns {TreeEntry[]} The tree entries
+     */
+    async getTree(sha) {
+        const cached = this.treeCache.get(sha);
+        if (cached) {
+            return cached;
+        }
+        const fetched = await this.fetchTree(sha);
+        this.treeCache.set(sha, fetched);
+        return fetched;
+    }
+    /**
+     * Fetch the git tree via the GitHub API
+     *
+     * @param {string} sha The tree SHA
+     * @returns {TreeEntry[]} The tree entries
+     */
+    async fetchTree(sha) {
+        const { data: { tree }, } = await this.octokit.git.getTree({
+            owner: this.repository.owner,
+            repo: this.repository.repo,
+            tree_sha: sha,
+            recursive: 'false',
+        });
+        return tree;
+    }
+    /**
+     * Fetch the git blob from the GitHub API and convert into a
+     * GitHubFileContents object.
+     *
+     * @param {string} blobSha The git blob SHA
+     * @param {TreeEntry} treeEntry The associated tree object
+     */
+    async fetchContents(blobSha, treeEntry) {
+        const { data: { content }, } = await this.octokit.git.getBlob({
+            owner: this.repository.owner,
+            repo: this.repository.repo,
+            file_sha: blobSha,
+        });
+        return {
+            sha: blobSha,
+            mode: treeEntry.mode || exports.DEFAULT_FILE_MODE,
+            content,
+            parsedContent: Buffer.from(content, 'base64').toString('utf8'),
+        };
+    }
+}
+exports.BranchFileCache = BranchFileCache;
+//# sourceMappingURL=file-cache.js.map
 
 /***/ }),
 
@@ -96835,7 +97023,7 @@ module.exports = JSON.parse("{\"amp\":\"&\",\"apos\":\"'\",\"gt\":\">\",\"lt\":\
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"13.4.10"};
+module.exports = {"i8":"13.4.14"};
 
 /***/ }),
 
