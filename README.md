@@ -53,6 +53,7 @@ Automate releases with Conventional Commit Messages.
 | `bump-patch-for-minor-pre-major` | Should feat changes before 1.0.0 produce patch bumps instead of minor bumps?  Default `false` |
 | `path`          | create a release from a path other than the repository's root |
 | `monorepo-tags` | add prefix to tags and branches, allowing multiple libraries to be released from the same repository. |
+| `changelog-type` | [Type of changelog](https://github.com/googleapis/release-please/blob/main/docs/customizing.md#changelog-types) to build. |
 | `changelog-types` | A JSON formatted String containing to override the outputted changelog sections |
 | `version-file` | provide a path to a version file to increment (used by ruby releaser) |
 | `extra-files` | add extra-files to bump using the [generic updater](https://github.com/googleapis/release-please/blob/main/docs/customizing.md#updating-arbitrary-files) |
