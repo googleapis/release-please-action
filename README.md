@@ -70,6 +70,8 @@ Automate releases with Conventional Commit Messages.
 Some additional info regarding the `command` property.
 - `github-release`: creates GitHub releases (as mentioned [here](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)) based on the most recently merged release PR and the release strategy being used.
 - `release-pr`: uses Conventional Commits to propose a candidate release [pull request](#how-release-please-works). This pull request, once merged, is used by `github-release`/`manifest`
+- `manifest`: use [source controlled files](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md#manifest-driven-release-please) containing releaser specific configuration (the `release-please-config.json`) as well package version tracking (the `.release-please-manifest.json`).
+- `manifest-pr`: uses the manifest file `release-please-config.json` to propose a candidate release
 
 ### Release types supported
 
