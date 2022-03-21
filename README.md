@@ -66,10 +66,10 @@ Automate releases with Conventional Commit Messages.
 | `repo-url` | configure github repository URL. Default `process.env.GITHUB_REPOSITORY` |
 | `github-graphql-url` | configure github GraphQL URL. Default `https://api.github.com` |
 
-### The `command` property
-> Some additional info regarding the `command` property.
-- `github-release` command creates github release notes (as mentioned [here](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)), that includes the tag versions and the commits for those tags as release notes. 
-- `release-pr` uses conventional commits to create a git tag, and opens a [pull request](#how-release-please-works). Once the pull request is merged, this property will push the tags to the repo.
+### The `command` option
+Some additional info regarding the `command` property.
+- `github-release`: creates GitHub releases (as mentioned [here](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)) based on the most recently merged release PR and the release strategy being used.
+- `release-pr`: uses Conventional Commits to propose a candidate release [pull request](#how-release-please-works). This pull request, once merged, is used by `github-release`/`manifest`
 
 ### Release types supported
 
