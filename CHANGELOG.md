@@ -1,5 +1,19 @@
 # Changelog
 
+### [3.1.4](https://github.com/google-github-actions/release-please-action/compare/v3.1.3...v3.1.4) (2022-03-20)
+
+
+### Bug Fixes
+
+* **deps:** update release-please to 13.6.0 ([#452](https://github.com/google-github-actions/release-please-action/issues/452)) ([d17599a](https://github.com/google-github-actions/release-please-action/commit/d17599a3da0edc55964ea48d4d17267fc4cbc51d))
+
+### [3.1.3](https://github.com/google-github-actions/release-please-action/compare/v3.1.2...v3.1.3) (2022-03-01)
+
+
+### Bug Fixes
+
+* **deps:** update release-please to 13.4.14 ([#447](https://github.com/google-github-actions/release-please-action/issues/447)) ([d30f7b9](https://github.com/google-github-actions/release-please-action/commit/d30f7b96c9f77a450938b8acddfff41a035d5c32))
+
 ### [3.1.2](https://github.com/google-github-actions/release-please-action/compare/v3.1.1...v3.1.2) (2022-02-19)
 
 
