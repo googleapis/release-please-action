@@ -209,11 +209,11 @@ jobs:
           release-type: node
           package-name: test-release-please
       # The logic below handles the npm publication:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         # these if statements ensure that a publication only occurs when
         # a new release is created:
         if: ${{ steps.release.outputs.release_created }}
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v3
         with:
           node-version: 12
           registry-url: 'https://registry.npmjs.org'
@@ -257,7 +257,7 @@ jobs:
           release-type: node
           package-name: ${{env.ACTION_NAME}}
           command: github-release
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: tag major and minor versions
         if: ${{ steps.release.outputs.release_created }}
         run: |
@@ -290,7 +290,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v2
+      - uses: google-github-actions/release-please-action@v3
         id: release
         with:
           command: manifest
