@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.0](https://github.com/google-github-actions/release-please-action/compare/v3.1.4...v3.2.0) (2022-04-12)
+
+
+### Features
+
+* **deps:** update release-please to 13.10.0 ([#461](https://github.com/google-github-actions/release-please-action/issues/461)) ([1511242](https://github.com/google-github-actions/release-please-action/commit/1511242f612a909ba657f3f7c9c23047d78ff85e))
+
 ### [3.1.4](https://github.com/google-github-actions/release-please-action/compare/v3.1.3...v3.1.4) (2022-03-20)
 
 
