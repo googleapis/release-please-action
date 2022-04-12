@@ -87,6 +87,8 @@ Release Please automates releases for the following flavors of repositories:
 | `elixir` | An elixir repository with a mix.exs and a CHANGELOG.md |
 | `go` | Go repository, with a CHANGELOG.md |
 | `helm` | A helm chart repository with a Chart.yaml and a CHANGELOG.md |
+| `java` | [A strategy that generates SNAPSHOT version after each release](https://github.com/googleapis/release-please/blob/main/docs/java.md) |
+| `maven` | [Strategy for Maven projects, generates SNAPSHOT version after each release and updates `pom.xml` automatically](https://github.com/googleapis/release-please/blob/main/docs/java.md) |
 | `node` | [A Node.js repository, with a package.json and CHANGELOG.md](https://github.com/yargs/yargs) |
 | `ocaml` | [An OCaml repository, containing 1 or more opam or esy files and a CHANGELOG.md](https://github.com/grain-lang/binaryen.ml) |
 | `python` | [A Python repository, with a setup.py, setup.cfg, version.py and CHANGELOG.md](https://github.com/googleapis/python-storage) and optionally a pyproject.toml and a &lt;project&gt;/\_\_init\_\_.py |
