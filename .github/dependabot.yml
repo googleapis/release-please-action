@@ -8,7 +8,7 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     commit-message:
-      prefix: "fix(deps): "
+      prefix: "fix"
     rebase-strategy: "auto"
     schedule:
       interval: "daily"
