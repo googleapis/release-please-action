@@ -66,17 +66,12 @@ Automate releases with Conventional Commit Messages.
 | `repo-url` | configure github repository URL. Default `process.env.GITHUB_REPOSITORY` |
 | `github-graphql-url` | configure github GraphQL URL. Default `https://api.github.com` |
 
-| output | description |
-|:---:|---|
-| `release_created` | `true` if the release was created, `false` otherwise |
-| `upload_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
-| `html_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
-| `tag_name` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
-| `major` | Number representing major semver value |
-| `minor` | Number representing minor semver value |
-| `patch` | Number representing patch semver value |
-| `sha` | sha that a GitHub release was tagged at |
-| `pr` | The PR number of an opened release (undefined if no release created) |
+### The `command` option
+Some additional info regarding the `command` property.
+- `github-release`: creates GitHub releases (as mentioned [here](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)) based on the most recently merged release PR and the release strategy being used.
+- `release-pr`: uses Conventional Commits to propose a candidate release [pull request](#how-release-please-works). This pull request, once merged, is used by `github-release`/`manifest`
+- `manifest`: use [source controlled files](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md#manifest-driven-release-please) containing releaser specific configuration (the `release-please-config.json`) as well package version tracking (the `.release-please-manifest.json`).
+- `manifest-pr`: uses the manifest file `release-please-config.json` to propose a candidate release
 
 ### Release types supported
 
@@ -97,6 +92,21 @@ Release Please automates releases for the following flavors of repositories:
 | `rust` | A Rust repository, with a Cargo.toml (either as a crate or workspace) and a CHANGELOG.md |
 | `simple` | [A repository with a version.txt and a CHANGELOG.md](https://github.com/googleapis/gapic-generator) |
 | `terraform-module` | [A terraform module, with a version in the README.md, and a CHANGELOG.md](https://github.com/terraform-google-modules/terraform-google-project-factory) |
+
+## Outputs
+> Properties that are available after the action executed.
+
+| output | description |
+|:---:|---|
+| `release_created` | `true` if the release was created, `false` otherwise |
+| `upload_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
+| `html_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
+| `tag_name` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
+| `major` | Number representing major semver value |
+| `minor` | Number representing minor semver value |
+| `patch` | Number representing patch semver value |
+| `sha` | sha that a GitHub release was tagged at |
+| `pr` | The PR number of an opened release (undefined if no release created) |
 
 ## How release please works
 
