@@ -109,7 +109,7 @@ async function manifestInstance (github) {
   const bumpMinorPreMajor = core.getBooleanInput('bump-minor-pre-major')
   const bumpPatchForMinorPreMajor = core.getBooleanInput('bump-patch-for-minor-pre-major')
   const monorepoTags = core.getBooleanInput('monorepo-tags')
-  const packageName = core.getInput('package-name')
+  const packageName = core.getInput('package-name') || undefined
   const path = core.getInput('path') || undefined
   const releaseType = core.getInput('release-type', { required: true })
   const changelogPath = core.getInput('changelog-path') || undefined
