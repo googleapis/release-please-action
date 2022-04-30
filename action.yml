@@ -96,6 +96,78 @@ inputs:
     description: 'mark pull request as a draft'
     required: false
     default: false
+  changelog-notes-type:
+    description: "Strategy for building the changelog contents(see https://github.com/googleapis/release-please/blob/main/docs/customizing.md#changelog-types). Default `default`. Called `changelog-type` in release-please documentation."
+    required: false
+  changelog-host:
+    description: 'Host for commit hyperlinks in the changelog. Default `https://github.com`'
+  versioning-strategy:
+    description: 'Override method of determining SemVer version bumps based on commits (drr https://github.com/googleapis/release-please/blob/main/docs/customizing.md#versioning-strategies). Default `default`'
+    required: false
+  release-as:
+    description: 'manually set version to this value, ignoring conventional commits. Absence defaults to conventional commits derived next version. Once the release PR is merged you should either remove this or update it to a higher version. Otherwise subsequent `manifest-pr` runs will continue to use this version even though it was already set in the last release.'
+    required: false
+  skip-github-release:
+    description: 'Skip creating GitHub Releases. Default `false`'
+    required: false
+    default: false
+  prerelease:
+    description: 'If set, create releases that are pre-major or pre-release version marked as pre-release on Github. Defaults `false`'
+    required: false
+    default: false
+  component:
+    description: 'name of the component used for branch naming and release tagging, defaults to a normalized version based on the package name'
+    required: false
+  include-v-in-tag:
+    description: 'include "v" in tag versions. Default `true`'
+    required: false
+    default: true
+  tag-separator:
+    description: 'configures separator character used in release tag'
+    required: false
+  snapshot-labels:
+    description: 'sets java snapshot pull request labels other than `autorelease: snapshot`  '
+    required: false
+  bootstrap-sha:
+    description: 'if this is the first time running `manifest-pr` on a repo this key will limit how far back (exclusive) to pull commits for conventional commit parsing (see the manifest releaser docs https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md)'
+    required: false
+  last-release-sha:
+    description: 'overrides the commit sha release-please will use from which to gather commits for the current release (see the manifest releaser docs https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md)'
+    required: false
+  always-link-local:
+    description: 'when using the `node-workspace` plugin, setting to false will only bump your local dependencies within the SemVer range (see the manifest releaser docs)[https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md) . Default `true`.'
+    required: false
+    default: true
+  separate-pull-requests:
+    description: 'create separate pull requests for each package instead of a single manifest release pull request (see the manifest releaser docs https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md). Default `false`.'
+    required: false
+    default: false
+  plugins:
+    description: 'see https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md#plugins'
+    required: false
+  labels:
+    description: 'list of labels to apply to the release pull requests, defaults to `autorelease: pending`'
+    required: false
+  release-labels:
+    description: 'set a pull request label other than `autorelease: tagged`'
+    required: false
+  skip-labeling:
+    description: 'if set, labels will not be applied to pull requests. Default `false`.'
+    required: false
+    default: false
+  sequential-calls:
+    description: 'issue GitHub API requests sequentially rather than concurrently (see the manifest releaser docs https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md). Default `false`'
+    required: false
+    default: false
+  group-pull-request-title-pattern:
+    description: 'sets the manifest pull request title for when releasing multiple packages grouped together in the one pull request'
+    required: false
+  release-search-depth:
+    description: 'when searching for the latest release SHAs, only consider the last N releases'
+    required: false
+  commit-search-depth:
+    description: 'when fetching the list of commits to consider, only consider the last N commits'
+    required: false
 
 runs:
   using: 'node12'

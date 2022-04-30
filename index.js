@@ -120,6 +120,28 @@ async function manifestInstance (github) {
   const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
   const draft = core.getBooleanInput('draft')
   const draftPullRequest = core.getBooleanInput('draft-pull-request')
+  const changelogType = core.getInput('changelog-notes-type') || undefined
+  const changelogHost = core.getInput('changelog-host') || undefined
+  const versioning = core.getInput('versioning-strategy') || undefined
+  const releaseAs = core.getInput('release-as') || undefined
+  const skipGithubRelease = core.getBooleanInput('skip-github-release')
+  const prerelease = core.getBooleanInput('prerelease')
+  const component = core.getInput('component') || undefined
+  const includeVInTag = core.getBooleanInput('include-v-in-tag')
+  const tagSeparator = core.getInput('tag-separator') || undefined
+  const snapshotLabels = core.getMultilineInput('snapshot-labels') || undefined
+  const bootstrapSha = core.getInput('bootstrap-sha') || undefined
+  const lastReleaseSha = core.getInput('last-release-sha') || undefined
+  const alwaysLinkLocal = core.getBooleanInput('always-link-local')
+  const separatePullRequests = core.getBooleanInput('separate-pull-requests')
+  const plugins = core.getMultilineInput('plugins') || undefined
+  const labels = core.getMultilineInput('labels') || undefined
+  const releaseLabels = core.getMultilineInput('release-labels') || undefined
+  const skipLabeling = core.getBooleanInput('skip-labeling')
+  const sequentialCalls = core.getBooleanInput('sequential-calls')
+  const groupPullRequestTitlePattern = core.getInput('group-pull-request-title-pattern') || undefined
+  const releaseSearchDepth = core.getInput('release-search-depth') || undefined
+  const commitSearchDepth = core.getInput('commit-search-depth') || undefined
   return await Manifest.fromConfig(
     github,
     github.repository.defaultBranch,
@@ -134,12 +156,38 @@ async function manifestInstance (github) {
       extraFiles,
       includeComponentInTag: monorepoTags,
       pullRequestTitlePattern,
-      draftPullRequest
+      draftPullRequest,
+      versioning,
+      releaseAs,
+      skipGithubRelease,
+      draft,
+      prerelease,
+      component,
+      includeVInTag,
+      tagSeparator,
+      changelogHost,
+      changelogType,
+      snapshotLabels
     },
     {
       draft,
       signoff,
-      fork
+      fork,
+      draftPullRequest,
+      bootstrapSha,
+      lastReleaseSha,
+      alwaysLinkLocal,
+      separatePullRequests,
+      plugins,
+      labels,
+      releaseLabels,
+      snapshotLabels,
+      skipLabeling,
+      sequentialCalls,
+      prerelease,
+      groupPullRequestTitlePattern,
+      releaseSearchDepth,
+      commitSearchDepth
     },
     path
   )
