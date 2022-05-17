@@ -96,6 +96,9 @@ inputs:
     description: 'mark pull request as a draft'
     required: false
     default: false
+  changelog-host:
+    description: 'GitHub host for hyperlinks in changelog'
+    required: false
 
 runs:
   using: 'node12'

@@ -114,6 +114,7 @@ async function manifestInstance (github) {
   const releaseType = core.getInput('release-type', { required: true })
   const changelogPath = core.getInput('changelog-path') || undefined
   const changelogTypes = core.getInput('changelog-types') || undefined
+  const changelogHost = core.getInput('changelog-host') || undefined
   const changelogSections = changelogTypes && JSON.parse(changelogTypes)
   const versionFile = core.getInput('version-file') || undefined
   const extraFiles = core.getMultilineInput('extra-files') || undefined
@@ -130,6 +131,7 @@ async function manifestInstance (github) {
       releaseType,
       changelogPath,
       changelogSections,
+      changelogHost,
       versionFile,
       extraFiles,
       includeComponentInTag: monorepoTags,
