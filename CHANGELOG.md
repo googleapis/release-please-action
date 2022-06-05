@@ -1,5 +1,49 @@
 # Changelog
 
+## [3.2.6](https://github.com/google-github-actions/release-please-action/compare/v3.2.5...v3.2.6) (2022-06-01)
+
+
+### Bug Fixes
+
+* bump release-please from 13.16.5 to 13.18.0 ([#501](https://github.com/google-github-actions/release-please-action/issues/501)) ([04c9c57](https://github.com/google-github-actions/release-please-action/commit/04c9c57609a1a45fb73780deea1068bddf7eaecf))
+
+### [3.2.5](https://github.com/google-github-actions/release-please-action/compare/v3.2.4...v3.2.5) (2022-05-18)
+
+
+### Bug Fixes
+
+* **deps:** update release-please to 13.16.5 ([#492](https://github.com/google-github-actions/release-please-action/issues/492)) ([c4ff696](https://github.com/google-github-actions/release-please-action/commit/c4ff696679c01be8459e707ff0beb12eceb0a02d))
+
+### [3.2.4](https://github.com/google-github-actions/release-please-action/compare/v3.2.3...v3.2.4) (2022-05-18)
+
+
+### Bug Fixes
+
+* bump release-please from 13.16.3 to 13.16.4 ([#488](https://github.com/google-github-actions/release-please-action/issues/488)) ([fe3f4f7](https://github.com/google-github-actions/release-please-action/commit/fe3f4f7d68ec124fdda48e66e68e624c9bb66751))
+
+### [3.2.3](https://github.com/google-github-actions/release-please-action/compare/v3.2.2...v3.2.3) (2022-05-13)
+
+
+### Bug Fixes
+
+* bump release-please from 13.15.0 to 13.16.3 ([#483](https://github.com/google-github-actions/release-please-action/issues/483)) ([fdea77e](https://github.com/google-github-actions/release-please-action/commit/fdea77eccfe947098a15393ed57ff401c6647d4c))
+
+### [3.2.2](https://github.com/google-github-actions/release-please-action/compare/v3.2.1...v3.2.2) (2022-05-02)
+
+
+### Bug Fixes
+
+* bump release-please from 13.13.0 to 13.14.0 ([#469](https://github.com/google-github-actions/release-please-action/issues/469)) ([0a3fbe4](https://github.com/google-github-actions/release-please-action/commit/0a3fbe45634518432aeca606288a6471d2904ba1))
+* bump release-please from 13.14.0 to 13.15.0 ([#472](https://github.com/google-github-actions/release-please-action/issues/472)) ([2d1c441](https://github.com/google-github-actions/release-please-action/commit/2d1c441f603d4e1fc0f4600e4dc26b9d2f1e1605))
+
+### [3.2.1](https://github.com/google-github-actions/release-please-action/compare/v3.2.0...v3.2.1) (2022-04-20)
+
+
+### Bug Fixes
+
+* bump release-please from 13.10.0 to 13.13.0 ([#466](https://github.com/google-github-actions/release-please-action/issues/466)) ([43ed86b](https://github.com/google-github-actions/release-please-action/commit/43ed86bdb8a62b67f41584f98d7d2bf30c081025))
+* default `package-name` to `undefined` ([#459](https://github.com/google-github-actions/release-please-action/issues/459)) ([4f37698](https://github.com/google-github-actions/release-please-action/commit/4f376985d033f17ab113534089b4d009cead0734)), closes [#457](https://github.com/google-github-actions/release-please-action/issues/457)
+
 ## [3.2.0](https://github.com/google-github-actions/release-please-action/compare/v3.1.4...v3.2.0) (2022-04-12)
 
 
