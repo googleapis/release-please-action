@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.8](https://github.com/google-github-actions/release-please-action/compare/v3.2.7...v3.2.8) (2022-07-05)
+
+
+### Bug Fixes
+
+* bump release-please from 13.18.6 to 13.18.7 ([#516](https://github.com/google-github-actions/release-please-action/issues/516)) ([d6d4800](https://github.com/google-github-actions/release-please-action/commit/d6d48007a1fba5f800b3d14061313e9c2feb9fdd))
+
 ## [3.2.7](https://github.com/google-github-actions/release-please-action/compare/v3.2.6...v3.2.7) (2022-06-30)
 
 
