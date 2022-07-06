@@ -185,8 +185,8 @@ function outputReleases (releases) {
 function outputPRs (prs) {
   prs = prs.filter(pr => pr !== undefined)
   if (prs.length) {
-    core.setOutput('pr', prs[0])
-    core.setOutput('prs', JSON.stringify(prs))
+    core.setOutput('pr', prs[0].number)
+    core.setOutput('prs', JSON.stringify(prs.map((pr) => pr.number)))
   }
 }
 
