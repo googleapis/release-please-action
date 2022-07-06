@@ -76,7 +76,7 @@ describe('release-please-action', () => {
         '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
     }
 
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([{ number: 22 }])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
       createPullRequests: createPullRequestsFake
     })
@@ -104,7 +104,7 @@ describe('release-please-action', () => {
       'pull-request-title-pattern': 'beep boop'
     }
 
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([{ number: 22 }])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
       createPullRequests: createPullRequestsFake
     })
@@ -132,7 +132,7 @@ describe('release-please-action', () => {
         tagName: 'v1.0.0'
       }
     ])
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([{ number: 22 }])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
       createPullRequests: createPullRequestsFake,
       createReleases: createReleasesFake
@@ -164,7 +164,7 @@ describe('release-please-action', () => {
         tag_name: 'v1.0.0'
       }
     ])
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([{ number: 22 }])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
       createPullRequests: createPullRequestsFake,
       createReleases: createReleasesFake
@@ -202,7 +202,7 @@ describe('release-please-action', () => {
         tag_name: 'v1.0.0'
       }
     ])
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([{ number: 22 }])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
       createPullRequests: createPullRequestsFake,
       createReleases: createReleasesFake
@@ -229,7 +229,7 @@ describe('release-please-action', () => {
         tag_name: 'v1.0.0'
       }
     ])
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([{ number: 22 }])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
       createPullRequests: createPullRequestsFake,
       createReleases: createReleasesFake
@@ -290,7 +290,7 @@ describe('release-please-action', () => {
       'release-type': 'node',
       command: 'release-pr'
     }
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([{ number: 22 }])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
       createPullRequests: createPullRequestsFake
     })
@@ -340,7 +340,7 @@ describe('release-please-action', () => {
         tag_name: 'v1.0.0'
       }
     ])
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([{ number: 22 }])
     const createManifestCommand = sandbox.stub(Manifest, 'fromManifest').returns({
       createPullRequests: createPullRequestsFake,
       createReleases: createReleasesFake
@@ -369,7 +369,7 @@ describe('release-please-action', () => {
 
   it('opens PR only for manifest-pr', async () => {
     input = { command: 'manifest-pr' }
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([{ number: 22 }])
     const createManifestCommand = sandbox.stub(Manifest, 'fromManifest').returns({
       createPullRequests: createPullRequestsFake
     })
@@ -403,7 +403,7 @@ describe('release-please-action', () => {
         path: 'b'
       }
     ])
-    const createPullRequestsFake = sandbox.fake.returns([22, 33])
+    const createPullRequestsFake = sandbox.fake.returns([{ number: 22 }, { number: 33 }])
     const createManifestCommand = sandbox.stub(Manifest, 'fromManifest').returns({
       createPullRequests: createPullRequestsFake,
       createReleases: createReleasesFake
