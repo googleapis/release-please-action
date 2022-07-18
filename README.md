@@ -106,7 +106,8 @@ Release Please automates releases for the following flavors of repositories:
 | `minor` | Number representing minor semver value |
 | `patch` | Number representing patch semver value |
 | `sha` | sha that a GitHub release was tagged at |
-| `pr` | The PR number of an opened release (undefined if no release created) |
+| `pr` | The JSON string of the [PullRequest object](https://github.com/googleapis/release-please/blob/main/src/pull-request.ts#L15) (undefined if no release created) |
+| `prs` | The JSON string of the array of [PullRequest objects](https://github.com/googleapis/release-please/blob/main/src/pull-request.ts#L15) (undefined if no release created) |
 
 ## How release please works
 
