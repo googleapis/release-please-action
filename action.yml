@@ -39,7 +39,7 @@ inputs:
   changelog-host:
     description: 'The proto://host where commits live.'
     required: false
-    default: 'https://git.com'
+    default: 'https://github.com'
   command:
     description: 'release-please command to run, either "github-release", or "release-pr" (defaults to running both)'
     required: false
