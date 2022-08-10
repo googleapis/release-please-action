@@ -122,7 +122,6 @@ async function manifestInstance (github) {
   const draft = core.getBooleanInput('draft')
   const draftPullRequest = core.getBooleanInput('draft-pull-request')
   const changelogType = core.getInput('changelog-notes-type') || undefined
-  const changelogHost = core.getInput('changelog-host') || undefined
   const versioning = core.getInput('versioning-strategy') || undefined
   const releaseAs = core.getInput('release-as') || undefined
   const skipGithubRelease = core.getBooleanInput('skip-github-release')
