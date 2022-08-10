@@ -166,7 +166,6 @@ async function manifestInstance (github) {
       component,
       includeVInTag,
       tagSeparator,
-      changelogHost,
       changelogType,
       snapshotLabels
     },
