@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.0](https://github.com/google-github-actions/release-please-action/compare/v3.3.0...v3.4.0) (2022-08-10)
+
+
+### Features
+
+* provide inputs for releaser and manifest options in release-please 13.15 ([#474](https://github.com/google-github-actions/release-please-action/issues/474)) ([4482754](https://github.com/google-github-actions/release-please-action/commit/44827541d2a562fef8aedc1379c814c04f0ad482))
+
 ## [3.3.0](https://github.com/google-github-actions/release-please-action/compare/v3.2.10...v3.3.0) (2022-08-10)
 
 
