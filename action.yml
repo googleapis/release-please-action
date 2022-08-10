@@ -75,11 +75,11 @@ inputs:
   github-api-url:
     description: 'configure github API URL. Default `https://api.github.com`'
     required: false
-    default: ''
+    default: ${{ github.api_url }}
   github-graphql-url:
     description: 'configure github GraphQL URL. Default `https://api.github.com`'
     required: false
-    default: ''
+    default: ${{ github.graphql_url }}
   repo-url:
     description: 'configure github repository URL. Default `process.env.GITHUB_REPOSITORY`'
     required: false
