@@ -94,7 +94,14 @@ describe('release-please-action', () => {
       command: 'release-pr',
       'release-type': 'node',
       'changelog-types':
-        '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]'
+        '[{"type":"feat","section":"Features","hidden":false},{"type":"fix","section":"Bug Fixes","hidden":false},{"type":"chore","section":"Miscellaneous","hidden":false}]',
+      'skip-github-release': 'false',
+      prerelease: 'false',
+      'include-v-in-tag': 'true',
+      'always-link-local': 'true',
+      'separate-pull-requests': 'false',
+      'skip-labeling': 'false',
+      'sequential-calls': 'false'
     }
 
     const createPullRequestsFake = sandbox.fake.returns([fixturePrs[0]])
@@ -122,7 +129,14 @@ describe('release-please-action', () => {
     input = {
       command: 'release-pr',
       'release-type': 'node',
-      'pull-request-title-pattern': 'beep boop'
+      'pull-request-title-pattern': 'beep boop',
+      'skip-github-release': 'false',
+      prerelease: 'false',
+      'include-v-in-tag': 'true',
+      'always-link-local': 'true',
+      'separate-pull-requests': 'false',
+      'skip-labeling': 'false',
+      'sequential-calls': 'false'
     }
 
     const createPullRequestsFake = sandbox.fake.returns([fixturePrs[0]])
@@ -145,7 +159,15 @@ describe('release-please-action', () => {
   })
 
   it('both opens PR to the default branch and tags GitHub releases by default', async () => {
-    input = {}
+    input = {
+      'skip-github-release': 'false',
+      prerelease: 'false',
+      'include-v-in-tag': 'true',
+      'always-link-local': 'true',
+      'separate-pull-requests': 'false',
+      'skip-labeling': 'false',
+      'sequential-calls': 'false'
+    }
 
     const createReleasesFake = sandbox.fake.returns([
       {
@@ -177,7 +199,14 @@ describe('release-please-action', () => {
 
   it('both opens PR to a different default branch and tags GitHub releases by default', async () => {
     input = {
-      'default-branch': 'dev'
+      'default-branch': 'dev',
+      'skip-github-release': 'false',
+      prerelease: 'false',
+      'include-v-in-tag': 'true',
+      'always-link-local': 'true',
+      'separate-pull-requests': 'false',
+      'skip-labeling': 'false',
+      'sequential-calls': 'false'
     }
 
     const createReleasesFake = sandbox.fake.returns([
@@ -216,7 +245,14 @@ describe('release-please-action', () => {
 
   it('only opens PR, if command set to release-pr', async () => {
     input = {
-      command: 'release-pr'
+      command: 'release-pr',
+      'skip-github-release': 'false',
+      prerelease: 'false',
+      'include-v-in-tag': 'true',
+      'always-link-local': 'true',
+      'separate-pull-requests': 'false',
+      'skip-labeling': 'false',
+      'sequential-calls': 'false'
     }
 
     const createReleasesFake = sandbox.fake.returns([
@@ -244,7 +280,14 @@ describe('release-please-action', () => {
 
   it('only creates GitHub release, if command set to github-release', async () => {
     input = {
-      command: 'github-release'
+      command: 'github-release',
+      'skip-github-release': 'false',
+      prerelease: 'false',
+      'include-v-in-tag': 'true',
+      'always-link-local': 'true',
+      'separate-pull-requests': 'false',
+      'skip-labeling': 'false',
+      'sequential-calls': 'false'
     }
 
     const createReleasesFake = sandbox.fake.returns([
@@ -289,7 +332,14 @@ describe('release-please-action', () => {
     }
     input = {
       'release-type': 'node',
-      command: 'github-release'
+      command: 'github-release',
+      'skip-github-release': 'false',
+      prerelease: 'false',
+      'include-v-in-tag': 'true',
+      'always-link-local': 'true',
+      'separate-pull-requests': 'false',
+      'skip-labeling': 'false',
+      'sequential-calls': 'false'
     }
     const createReleasesFake = sandbox.fake.returns([release])
     sandbox.stub(Manifest, 'fromConfig').returns({
@@ -312,7 +362,14 @@ describe('release-please-action', () => {
   it('sets appropriate outputs when release PR opened', async () => {
     input = {
       'release-type': 'node',
-      command: 'release-pr'
+      command: 'release-pr',
+      'skip-github-release': 'false',
+      prerelease: 'false',
+      'include-v-in-tag': 'true',
+      'always-link-local': 'true',
+      'separate-pull-requests': 'false',
+      'skip-labeling': 'false',
+      'sequential-calls': 'false'
     }
     const createPullRequestsFake = sandbox.fake.returns([fixturePrs[0]])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
@@ -332,7 +389,14 @@ describe('release-please-action', () => {
   it('does not set PR output, when no release PR is returned', async () => {
     input = {
       'release-type': 'node',
-      command: 'release-pr'
+      command: 'release-pr',
+      'skip-github-release': 'false',
+      prerelease: 'false',
+      'include-v-in-tag': 'true',
+      'always-link-local': 'true',
+      'separate-pull-requests': 'false',
+      'skip-labeling': 'false',
+      'sequential-calls': 'false'
     }
     const createPullRequestsFake = sandbox.fake.returns([undefined])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
@@ -347,7 +411,14 @@ describe('release-please-action', () => {
   it('does not set release output, when no release is returned', async () => {
     input = {
       'release-type': 'node',
-      command: 'github-release'
+      command: 'github-release',
+      'skip-github-release': 'false',
+      prerelease: 'false',
+      'include-v-in-tag': 'true',
+      'always-link-local': 'true',
+      'separate-pull-requests': 'false',
+      'skip-labeling': 'false',
+      'sequential-calls': 'false'
     }
     const createReleasesFake = sandbox.fake.returns([undefined])
     sandbox.stub(Manifest, 'fromConfig').returns({
