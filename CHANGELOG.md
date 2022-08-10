@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.3.0](https://github.com/google-github-actions/release-please-action/compare/v3.2.10...v3.3.0) (2022-08-10)
+
+
+### Features
+
+* add a `changelog-host` parameter to `action.yml` ([#550](https://github.com/google-github-actions/release-please-action/issues/550)) ([1a4217f](https://github.com/google-github-actions/release-please-action/commit/1a4217fc5af4d6a1a679709447b32633be19bceb))
+
+
+### Bug Fixes
+
+* bump release-please from 13.19.6 to 13.20.0 ([#549](https://github.com/google-github-actions/release-please-action/issues/549)) ([48ef955](https://github.com/google-github-actions/release-please-action/commit/48ef955346995bbb1cb090882e3e59278a20eaaf))
+
 ## [3.2.10](https://github.com/google-github-actions/release-please-action/compare/v3.2.9...v3.2.10) (2022-07-27)
 
 
