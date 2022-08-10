@@ -103,8 +103,6 @@ inputs:
   changelog-notes-type:
     description: "Strategy for building the changelog contents(see https://github.com/googleapis/release-please/blob/main/docs/customizing.md#changelog-types). Default `default`. Called `changelog-type` in release-please documentation."
     required: false
-  changelog-host:
-    description: 'Host for commit hyperlinks in the changelog. Default `https://github.com`'
   versioning-strategy:
     description: 'Override method of determining SemVer version bumps based on commits (drr https://github.com/googleapis/release-please/blob/main/docs/customizing.md#versioning-strategies). Default `default`'
     required: false
