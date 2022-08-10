@@ -113,6 +113,7 @@ async function manifestInstance (github) {
   const path = core.getInput('path') || undefined
   const releaseType = core.getInput('release-type', { required: true })
   const changelogPath = core.getInput('changelog-path') || undefined
+  const changelogHost = core.getInput('changelog-host') || undefined
   const changelogTypes = core.getInput('changelog-types') || undefined
   const changelogSections = changelogTypes && JSON.parse(changelogTypes)
   const versionFile = core.getInput('version-file') || undefined
@@ -151,6 +152,7 @@ async function manifestInstance (github) {
       packageName,
       releaseType,
       changelogPath,
+      changelogHost,
       changelogSections,
       versionFile,
       extraFiles,

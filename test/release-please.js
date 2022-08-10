@@ -25,6 +25,27 @@ const defaultInput = {
   'draft-pull-request': 'false'
 }
 
+const fixturePrs = [
+  {
+    headBranchName: 'release-please--branches--main',
+    baseBranchName: 'main',
+    number: 22,
+    title: 'chore(master): release 1.0.0',
+    body: ':robot: I have created a release *beep* *boop*',
+    labels: ['autorelease: pending'],
+    files: []
+  },
+  {
+    headBranchName: 'release-please--branches--main',
+    baseBranchName: 'main',
+    number: 23,
+    title: 'chore(master): release 1.0.0',
+    body: ':robot: I have created a release *beep* *boop*',
+    labels: ['autorelease: pending'],
+    files: []
+  }
+]
+
 let input
 let output
 
@@ -55,7 +76,7 @@ describe('release-please-action', () => {
       if (trueValue.includes(val)) { return true }
       if (falseValue.includes(val)) { return false }
       throw new TypeError(`Input does not meet YAML 1.2 "Core Schema" specification: ${name}\n` +
-          'Support boolean input list: `true | True | TRUE | false | False | FALSE`')
+        'Support boolean input list: `true | True | TRUE | false | False | FALSE`')
     }
     // Default branch lookup:
     nock('https://api.github.com')
@@ -83,7 +104,7 @@ describe('release-please-action', () => {
       'sequential-calls': 'false'
     }
 
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([fixturePrs[0]])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
       createPullRequests: createPullRequestsFake
     })
@@ -118,7 +139,7 @@ describe('release-please-action', () => {
       'sequential-calls': 'false'
     }
 
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([fixturePrs[0]])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
       createPullRequests: createPullRequestsFake
     })
@@ -154,7 +175,7 @@ describe('release-please-action', () => {
         tagName: 'v1.0.0'
       }
     ])
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([fixturePrs[0]])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
       createPullRequests: createPullRequestsFake,
       createReleases: createReleasesFake
@@ -164,15 +185,16 @@ describe('release-please-action', () => {
     sinon.assert.calledTwice(createManifestCommand)
     sinon.assert.calledOnce(createPullRequestsFake)
     sinon.assert.calledOnce(createReleasesFake)
-    assert.deepStrictEqual(output, {
+    const { prs, ...outputWithoutPrs } = output
+    assert.deepStrictEqual(outputWithoutPrs, {
       release_created: true,
       upload_url: 'http://example.com',
       tag_name: 'v1.0.0',
-      pr: 22,
-      prs: '[22]',
+      pr: fixturePrs[0],
       releases_created: true,
       paths_released: '["."]'
     })
+    assert.deepStrictEqual(JSON.parse(prs), [fixturePrs[0]])
   })
 
   it('both opens PR to a different default branch and tags GitHub releases by default', async () => {
@@ -193,7 +215,7 @@ describe('release-please-action', () => {
         tag_name: 'v1.0.0'
       }
     ])
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([fixturePrs[0]])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
       createPullRequests: createPullRequestsFake,
       createReleases: createReleasesFake
@@ -209,15 +231,16 @@ describe('release-please-action', () => {
       sinon.match.any,
       sinon.match.any
     )
-    assert.deepStrictEqual(output, {
+    const { prs, ...outputWithoutPrs } = output
+    assert.deepStrictEqual(outputWithoutPrs, {
       release_created: true,
       upload_url: 'http://example.com',
       tag_name: 'v1.0.0',
-      pr: 22,
-      prs: '[22]',
+      pr: fixturePrs[0],
       releases_created: true,
       paths_released: '["."]'
     })
+    assert.deepStrictEqual(JSON.parse(prs), [fixturePrs[0]])
   })
 
   it('only opens PR, if command set to release-pr', async () => {
@@ -238,7 +261,7 @@ describe('release-please-action', () => {
         tag_name: 'v1.0.0'
       }
     ])
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([fixturePrs[0]])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
       createPullRequests: createPullRequestsFake,
       createReleases: createReleasesFake
@@ -248,10 +271,11 @@ describe('release-please-action', () => {
     sinon.assert.calledOnce(createManifestCommand)
     sinon.assert.calledOnce(createPullRequestsFake)
     sinon.assert.notCalled(createReleasesFake)
-    assert.deepStrictEqual(output, {
-      pr: 22,
-      prs: '[22]'
+    const { prs, ...outputWithoutPrs } = output
+    assert.deepStrictEqual(outputWithoutPrs, {
+      pr: fixturePrs[0]
     })
+    assert.deepStrictEqual(JSON.parse(prs), [fixturePrs[0]])
   })
 
   it('only creates GitHub release, if command set to github-release', async () => {
@@ -272,7 +296,7 @@ describe('release-please-action', () => {
         tag_name: 'v1.0.0'
       }
     ])
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([fixturePrs[0]])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
       createPullRequests: createPullRequestsFake,
       createReleases: createReleasesFake
@@ -347,7 +371,7 @@ describe('release-please-action', () => {
       'skip-labeling': 'false',
       'sequential-calls': 'false'
     }
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([fixturePrs[0]])
     const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
       createPullRequests: createPullRequestsFake
     })
@@ -355,10 +379,11 @@ describe('release-please-action', () => {
 
     sinon.assert.calledOnce(createManifestCommand)
     sinon.assert.calledOnce(createPullRequestsFake)
-    assert.deepStrictEqual(output, {
-      pr: 22,
-      prs: '[22]'
+    const { prs, ...outputWithoutPrs } = output
+    assert.deepStrictEqual(outputWithoutPrs, {
+      pr: fixturePrs[0]
     })
+    assert.deepStrictEqual(JSON.parse(prs), [fixturePrs[0]])
   })
 
   it('does not set PR output, when no release PR is returned', async () => {
@@ -411,7 +436,7 @@ describe('release-please-action', () => {
         tag_name: 'v1.0.0'
       }
     ])
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([fixturePrs[0]])
     const createManifestCommand = sandbox.stub(Manifest, 'fromManifest').returns({
       createPullRequests: createPullRequestsFake,
       createReleases: createReleasesFake
@@ -427,20 +452,21 @@ describe('release-please-action', () => {
       sinon.match.any,
       sinon.match.any
     )
-    assert.deepStrictEqual(output, {
+    const { prs, ...outputWithoutPrs } = output
+    assert.deepStrictEqual(outputWithoutPrs, {
       release_created: true,
       upload_url: 'http://example.com',
       tag_name: 'v1.0.0',
-      pr: 22,
-      prs: '[22]',
+      pr: fixturePrs[0],
       releases_created: true,
       paths_released: '["."]'
     })
+    assert.deepStrictEqual(JSON.parse(prs), [fixturePrs[0]])
   })
 
   it('opens PR only for manifest-pr', async () => {
     input = { command: 'manifest-pr' }
-    const createPullRequestsFake = sandbox.fake.returns([22])
+    const createPullRequestsFake = sandbox.fake.returns([fixturePrs[0]])
     const createManifestCommand = sandbox.stub(Manifest, 'fromManifest').returns({
       createPullRequests: createPullRequestsFake
     })
@@ -454,10 +480,11 @@ describe('release-please-action', () => {
       sinon.match.any,
       sinon.match.any
     )
-    assert.deepStrictEqual(output, {
-      pr: 22,
-      prs: '[22]'
+    const { prs, ...outputWithoutPrs } = output
+    assert.deepStrictEqual(outputWithoutPrs, {
+      pr: fixturePrs[0]
     })
+    assert.deepStrictEqual(JSON.parse(prs), [fixturePrs[0]])
   })
 
   it('sets appropriate output if multiple releases and prs created', async () => {
@@ -474,7 +501,7 @@ describe('release-please-action', () => {
         path: 'b'
       }
     ])
-    const createPullRequestsFake = sandbox.fake.returns([22, 33])
+    const createPullRequestsFake = sandbox.fake.returns(fixturePrs)
     const createManifestCommand = sandbox.stub(Manifest, 'fromManifest').returns({
       createPullRequests: createPullRequestsFake,
       createReleases: createReleasesFake
@@ -490,9 +517,9 @@ describe('release-please-action', () => {
       sinon.match.any,
       sinon.match.any
     )
-    assert.deepStrictEqual(output, {
-      pr: 22,
-      prs: '[22,33]',
+    const { prs, ...outputWithoutPrs } = output
+    assert.deepStrictEqual(outputWithoutPrs, {
+      pr: fixturePrs[0],
       releases_created: true,
       'a--release_created': true,
       'a--upload_url': 'http://example.com',
@@ -504,5 +531,6 @@ describe('release-please-action', () => {
       'b--path': 'b',
       paths_released: '["a","b"]'
     })
+    assert.deepStrictEqual(JSON.parse(prs), fixturePrs)
   })
 })

@@ -1,5 +1,38 @@
 # Changelog
 
+## [3.3.0](https://github.com/google-github-actions/release-please-action/compare/v3.2.10...v3.3.0) (2022-08-10)
+
+
+### Features
+
+* add a `changelog-host` parameter to `action.yml` ([#550](https://github.com/google-github-actions/release-please-action/issues/550)) ([1a4217f](https://github.com/google-github-actions/release-please-action/commit/1a4217fc5af4d6a1a679709447b32633be19bceb))
+
+
+### Bug Fixes
+
+* bump release-please from 13.19.6 to 13.20.0 ([#549](https://github.com/google-github-actions/release-please-action/issues/549)) ([48ef955](https://github.com/google-github-actions/release-please-action/commit/48ef955346995bbb1cb090882e3e59278a20eaaf))
+
+## [3.2.10](https://github.com/google-github-actions/release-please-action/compare/v3.2.9...v3.2.10) (2022-07-27)
+
+
+### Bug Fixes
+
+* bump release-please from 13.19.3 to 13.19.6 ([#537](https://github.com/google-github-actions/release-please-action/issues/537)) ([c32b6cc](https://github.com/google-github-actions/release-please-action/commit/c32b6ccd030fddb5c9d6011d2de73e564b80dc3c))
+
+## [3.2.9](https://github.com/google-github-actions/release-please-action/compare/v3.2.8...v3.2.9) (2022-07-18)
+
+
+### Bug Fixes
+
+* bump release-please from 13.18.7 to 13.19.3 ([#523](https://github.com/google-github-actions/release-please-action/issues/523)) ([c4bc4b3](https://github.com/google-github-actions/release-please-action/commit/c4bc4b336c3942f2c5298de494853588e86df6b2))
+
+## [3.2.8](https://github.com/google-github-actions/release-please-action/compare/v3.2.7...v3.2.8) (2022-07-05)
+
+
+### Bug Fixes
+
+* bump release-please from 13.18.6 to 13.18.7 ([#516](https://github.com/google-github-actions/release-please-action/issues/516)) ([d6d4800](https://github.com/google-github-actions/release-please-action/commit/d6d48007a1fba5f800b3d14061313e9c2feb9fdd))
+
 ## [3.2.7](https://github.com/google-github-actions/release-please-action/compare/v3.2.6...v3.2.7) (2022-06-30)
 
 
