@@ -1,7 +1,7 @@
 const core = require('@actions/core')
 const { GitHub } = require('release-please/build/src/github')
 const { Manifest } = require('release-please/build/src/manifest')
-const { setLogger } = require('release-please');
+const { setLogger } = require('release-please')
 
 const CONFIG_FILE = 'release-please-config.json'
 const MANIFEST_FILE = '.release-please-manifest.json'
@@ -66,7 +66,7 @@ async function runManifest (command) {
 }
 
 async function main () {
-  setLogger(console);
+  setLogger(console)
   const command = core.getInput('command') || undefined
   if (MANIFEST_COMMANDS.includes(command)) {
     return await runManifest(command)
@@ -131,14 +131,14 @@ async function manifestInstance (github) {
   const component = core.getInput('component') || undefined
   const includeVInTag = core.getBooleanInput('include-v-in-tag')
   const tagSeparator = core.getInput('tag-separator') || undefined
-  const snapshotLabels = core.getMultilineInput('snapshot-labels') || undefined
+  const snapshotLabels = core.getInput('snapshot-labels') ? core.getMultilineInput('snapshot-labels') : undefined
   const bootstrapSha = core.getInput('bootstrap-sha') || undefined
   const lastReleaseSha = core.getInput('last-release-sha') || undefined
   const alwaysLinkLocal = core.getBooleanInput('always-link-local')
   const separatePullRequests = core.getBooleanInput('separate-pull-requests')
   const plugins = core.getMultilineInput('plugins') || undefined
-  const labels = core.getMultilineInput('labels') || undefined
-  const releaseLabels = core.getMultilineInput('release-labels') || undefined
+  const labels = core.getInput('labels') ? core.getMultilineInput('labels') : undefined
+  const releaseLabels = core.getInput('release-labels') ? core.getMultilineInput('release-labels') : undefined
   const skipLabeling = core.getBooleanInput('skip-labeling')
   const sequentialCalls = core.getBooleanInput('sequential-calls')
   const groupPullRequestTitlePattern = core.getInput('group-pull-request-title-pattern') || undefined
@@ -167,8 +167,8 @@ async function manifestInstance (github) {
     tagSeparator,
     changelogType,
     snapshotLabels
-  };
-  console.log('config', config);
+  }
+  console.log('config', config)
   const manifestOptions = {
     draft,
     signoff,
@@ -188,9 +188,9 @@ async function manifestInstance (github) {
     groupPullRequestTitlePattern,
     releaseSearchDepth,
     commitSearchDepth
-  };
-  console.log('manifest options', manifestOptions);
-  console.log('path', path);
+  }
+  console.log('manifest options', manifestOptions)
+  console.log('path', path)
   return await Manifest.fromConfig(
     github,
     github.repository.defaultBranch,
