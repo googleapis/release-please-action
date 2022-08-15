@@ -129,14 +129,14 @@ async function manifestInstance (github) {
   const component = core.getInput('component') || undefined
   const includeVInTag = core.getBooleanInput('include-v-in-tag')
   const tagSeparator = core.getInput('tag-separator') || undefined
-  const snapshotLabels = core.getMultilineInput('snapshot-labels') || undefined
+  const snapshotLabels = core.getInput('snapshot-labels') ? core.getMultilineInput('snapshot-labels') : undefined
   const bootstrapSha = core.getInput('bootstrap-sha') || undefined
   const lastReleaseSha = core.getInput('last-release-sha') || undefined
   const alwaysLinkLocal = core.getBooleanInput('always-link-local')
   const separatePullRequests = core.getBooleanInput('separate-pull-requests')
   const plugins = core.getMultilineInput('plugins') || undefined
-  const labels = core.getMultilineInput('labels') || undefined
-  const releaseLabels = core.getMultilineInput('release-labels') || undefined
+  const labels = core.getInput('labels') ? core.getMultilineInput('labels') : undefined
+  const releaseLabels = core.getInput('release-labels') ? core.getMultilineInput('release-labels') : undefined
   const skipLabeling = core.getBooleanInput('skip-labeling')
   const sequentialCalls = core.getBooleanInput('sequential-calls')
   const groupPullRequestTitlePattern = core.getInput('group-pull-request-title-pattern') || undefined
