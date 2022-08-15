@@ -1,6 +1,7 @@
 const core = require('@actions/core')
 const { GitHub } = require('release-please/build/src/github')
 const { Manifest } = require('release-please/build/src/manifest')
+const { setLogger } = require('release-please');
 
 const CONFIG_FILE = 'release-please-config.json'
 const MANIFEST_FILE = '.release-please-manifest.json'
@@ -65,6 +66,7 @@ async function runManifest (command) {
 }
 
 async function main () {
+  setLogger(console);
   const command = core.getInput('command') || undefined
   if (MANIFEST_COMMANDS.includes(command)) {
     return await runManifest(command)
