@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.4.0](https://github.com/google-github-actions/release-please-action/compare/v3.3.0...v3.4.0) (2022-08-15)
+
+
+### Features
+
+* provide inputs for releaser and manifest options in release-please 13.15 ([#474](https://github.com/google-github-actions/release-please-action/issues/474)) ([4482754](https://github.com/google-github-actions/release-please-action/commit/44827541d2a562fef8aedc1379c814c04f0ad482))
+* read github api/graphql url from action context ([#532](https://github.com/google-github-actions/release-please-action/issues/532)) ([922ac8b](https://github.com/google-github-actions/release-please-action/commit/922ac8b6dbe224c50b1b79387e74a6def9cd63c7))
+
+
+### Bug Fixes
+
+* bump release-please from 13.20.0 to 13.21.0 ([#559](https://github.com/google-github-actions/release-please-action/issues/559)) ([bab175e](https://github.com/google-github-actions/release-please-action/commit/bab175efb54ba5015c7b864d92ade6415319d9ec))
+
 ## [3.3.0](https://github.com/google-github-actions/release-please-action/compare/v3.2.10...v3.3.0) (2022-08-10)
 
 
