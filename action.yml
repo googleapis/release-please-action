@@ -31,7 +31,7 @@ inputs:
   path:
     description: "create a release from a path other than the repository's root"
     required: false
-    default: ''
+    default: '.'
   changelog-path:
     description: 'specify a CHANGELOG path other than the root CHANGELOG.md'
     required: false
