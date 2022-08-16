@@ -1,15 +1,22 @@
-*{{#if scope}} **{{scope}}:**
-{{~/if}} {{#if subject}}
-  {{~subject}}
-{{~else}}
-  {{~header}}
-{{~/if}}
+* {{header}}
 
-{{~!-- commit link --}}{{~#if hash}} {{#if @root.linkReferences~}}
-  ([{{shortHash}}]({{commitUrlFormat}}))
+{{~!-- commit link --}} {{#if @root.linkReferences~}}
+  ([{{hash}}](
+  {{~#if @root.repository}}
+    {{~#if @root.host}}
+      {{~@root.host}}/
+    {{~/if}}
+    {{~#if @root.owner}}
+      {{~@root.owner}}/
+    {{~/if}}
+    {{~@root.repository}}
+  {{~else}}
+    {{~@root.repoUrl}}
+  {{~/if}}/
+  {{~@root.commit}}/{{hash}}))
 {{~else}}
-  {{~shortHash}}
-{{~/if}}{{~/if}}
+  {{~hash}}
+{{~/if}}
 
 {{~!-- commit references --}}
 {{~#if references~}}
@@ -19,12 +26,31 @@
     {{~#if this.owner}}
       {{~this.owner}}/
     {{~/if}}
-    {{~this.repository}}{{this.prefix}}{{this.issue}}]({{issueUrlFormat}})
+    {{~this.repository}}#{{this.issue}}](
+    {{~#if @root.repository}}
+      {{~#if @root.host}}
+        {{~@root.host}}/
+      {{~/if}}
+      {{~#if this.repository}}
+        {{~#if this.owner}}
+          {{~this.owner}}/
+        {{~/if}}
+        {{~this.repository}}
+      {{~else}}
+        {{~#if @root.owner}}
+          {{~@root.owner}}/
+        {{~/if}}
+          {{~@root.repository}}
+        {{~/if}}
+    {{~else}}
+      {{~@root.repoUrl}}
+    {{~/if}}/
+    {{~@root.issue}}/{{this.issue}})
   {{~else}}
     {{~#if this.owner}}
       {{~this.owner}}/
     {{~/if}}
-    {{~this.repository}}{{this.prefix}}{{this.issue}}
+    {{~this.repository}}#{{this.issue}}
   {{~/if}}{{/each}}
 {{~/if}}
 
