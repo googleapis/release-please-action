@@ -14,13 +14,27 @@ const signoff = core.getInput('signoff') || undefined
 
 function getGitHubInput () {
   return {
-    fork: core.getBooleanInput('fork'),
+    fork: getOptionalBooleanInput('fork'),
     defaultBranch: core.getInput('default-branch') || undefined,
     repoUrl: core.getInput('repo-url') || process.env.GITHUB_REPOSITORY,
     apiUrl: core.getInput('github-api-url') || GITHUB_API_URL,
     graphqlUrl: (core.getInput('github-graphql-url') || '').replace(/\/graphql$/, '') || GITHUB_GRAPHQL_URL,
     token: core.getInput('token', { required: true })
   }
+}
+
+function getOptionalBooleanInput (name) {
+  if (core.getInput(name) === '') {
+    return undefined
+  }
+  return core.getBooleanInput(name)
+}
+
+function getOptionalMultilineInput (name) {
+  if (core.getInput(name) === '') {
+    return undefined
+  }
+  return core.getMultilineInput(name)
 }
 
 function getManifestInput () {
@@ -106,9 +120,9 @@ function getGitHubInstance () {
 
 async function manifestInstance (github) {
   const { fork } = getGitHubInput()
-  const bumpMinorPreMajor = core.getBooleanInput('bump-minor-pre-major')
-  const bumpPatchForMinorPreMajor = core.getBooleanInput('bump-patch-for-minor-pre-major')
-  const monorepoTags = core.getBooleanInput('monorepo-tags')
+  const bumpMinorPreMajor = getOptionalBooleanInput('bump-minor-pre-major')
+  const bumpPatchForMinorPreMajor = getOptionalBooleanInput('bump-patch-for-minor-pre-major')
+  const monorepoTags = getOptionalBooleanInput('monorepo-tags')
   const packageName = core.getInput('package-name') || undefined
   const path = core.getInput('path') || undefined
   const releaseType = core.getInput('release-type', { required: true })
@@ -119,26 +133,26 @@ async function manifestInstance (github) {
   const versionFile = core.getInput('version-file') || undefined
   const extraFiles = core.getMultilineInput('extra-files') || undefined
   const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
-  const draft = core.getBooleanInput('draft')
-  const draftPullRequest = core.getBooleanInput('draft-pull-request')
+  const draft = getOptionalBooleanInput('draft')
+  const draftPullRequest = getOptionalBooleanInput('draft-pull-request')
   const changelogType = core.getInput('changelog-notes-type') || undefined
   const versioning = core.getInput('versioning-strategy') || undefined
   const releaseAs = core.getInput('release-as') || undefined
-  const skipGithubRelease = core.getBooleanInput('skip-github-release')
-  const prerelease = core.getBooleanInput('prerelease')
+  const skipGithubRelease = getOptionalBooleanInput('skip-github-release')
+  const prerelease = getOptionalBooleanInput('prerelease')
   const component = core.getInput('component') || undefined
-  const includeVInTag = core.getBooleanInput('include-v-in-tag')
+  const includeVInTag = getOptionalBooleanInput('include-v-in-tag')
   const tagSeparator = core.getInput('tag-separator') || undefined
-  const snapshotLabels = core.getInput('snapshot-labels') ? core.getMultilineInput('snapshot-labels') : undefined
+  const snapshotLabels = getOptionalMultilineInput('snapshot-labels')
   const bootstrapSha = core.getInput('bootstrap-sha') || undefined
   const lastReleaseSha = core.getInput('last-release-sha') || undefined
-  const alwaysLinkLocal = core.getBooleanInput('always-link-local')
-  const separatePullRequests = core.getBooleanInput('separate-pull-requests')
+  const alwaysLinkLocal = getOptionalBooleanInput('always-link-local')
+  const separatePullRequests = getOptionalBooleanInput('separate-pull-requests')
   const plugins = core.getMultilineInput('plugins') || undefined
   const labels = core.getInput('labels') ? core.getMultilineInput('labels') : undefined
-  const releaseLabels = core.getInput('release-labels') ? core.getMultilineInput('release-labels') : undefined
-  const skipLabeling = core.getBooleanInput('skip-labeling')
-  const sequentialCalls = core.getBooleanInput('sequential-calls')
+  const releaseLabels = getOptionalMultilineInput('release-labels')
+  const skipLabeling = getOptionalBooleanInput('skip-labeling')
+  const sequentialCalls = getOptionalBooleanInput('sequential-calls')
   const groupPullRequestTitlePattern = core.getInput('group-pull-request-title-pattern') || undefined
   const releaseSearchDepth = core.getInput('release-search-depth') || undefined
   const commitSearchDepth = core.getInput('commit-search-depth') || undefined
