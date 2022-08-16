@@ -24,6 +24,7 @@ function getGitHubInput () {
 }
 
 function getOptionalBooleanInput (name) {
+  console.log('fetching input for ' + name + ': "' + core.getInput(name) + '"')
   if (core.getInput(name) === '') {
     return undefined
   }
