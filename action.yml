@@ -87,15 +87,19 @@ inputs:
   monorepo-tags:
     description: 'add prefix to tags and branches, allowing multiple libraries to be released from the same repository'
     required: false
+    default: false
   pull-request-title-pattern:
     description: 'add title pattern to make release PR, defaults to using "chore${scope}: release${component} ${version}"'
     required: false
+    default: ''
   draft:
     description: 'mark release as a draft'
     required: false
+    default: false
   draft-pull-request:
     description: 'mark pull request as a draft'
     required: false
+    default: false
   changelog-notes-type:
     description: "Strategy for building the changelog contents(see https://github.com/googleapis/release-please/blob/main/docs/customizing.md#changelog-types). Default `default`. Called `changelog-type` in release-please documentation."
     required: false
