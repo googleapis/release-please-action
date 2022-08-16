@@ -88,6 +88,20 @@ Automate releases with Conventional Commit Messages.
  |       `release-search-depth`       | when searching for the latest release SHAs, only consider the last N releases                                                                                                                                                                                                                                                                                 |
  |       `commit-search-depth`        | when fetching the list of commits to consider, only consider the last N commits                                                                                                                                                                                                                                                                               |
 
+## GitHub credentials
+
+`release-please` requires a GitHub token to access the GitHub API. You configure this token via the
+`token` configuration option. You can use the built-in `GITHUB_TOKEN` secret, however, note that any resources
+created by `release-please` (release tag or release pull request) will not trigger future GitHub actions
+workflows.
+
+From the [docs](https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow):
+> When you use the repository's `GITHUB_TOKEN` to perform tasks, events triggered by the `GITHUB_TOKEN` will not create a new workflow run. This prevents you from accidentally creating recursive workflow runs.
+
+This means that GitHub actions CI checks will not run on the release pull request and workflows normally triggered by
+`release.created` events will also not run. You will want to configure a GitHub actions secret with a
+[personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
+if you want other workflows to run.
 
 ### The `command` option
 Some additional info regarding the `command` property.
