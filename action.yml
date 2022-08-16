@@ -87,19 +87,15 @@ inputs:
   monorepo-tags:
     description: 'add prefix to tags and branches, allowing multiple libraries to be released from the same repository'
     required: false
-    default: false
   pull-request-title-pattern:
     description: 'add title pattern to make release PR, defaults to using "chore${scope}: release${component} ${version}"'
     required: false
-    default: ''
   draft:
     description: 'mark release as a draft'
     required: false
-    default: false
   draft-pull-request:
     description: 'mark pull request as a draft'
     required: false
-    default: false
   changelog-notes-type:
     description: "Strategy for building the changelog contents(see https://github.com/googleapis/release-please/blob/main/docs/customizing.md#changelog-types). Default `default`. Called `changelog-type` in release-please documentation."
     required: false
@@ -112,18 +108,15 @@ inputs:
   skip-github-release:
     description: 'Skip creating GitHub Releases. Default `false`'
     required: false
-    default: false
   prerelease:
     description: 'If set, create releases that are pre-major or pre-release version marked as pre-release on Github. Defaults `false`'
     required: false
-    default: false
   component:
     description: 'name of the component used for branch naming and release tagging, defaults to a normalized version based on the package name'
     required: false
   include-v-in-tag:
     description: 'include "v" in tag versions. Default `true`'
     required: false
-    default: true
   tag-separator:
     description: 'configures separator character used in release tag'
     required: false
@@ -139,11 +132,9 @@ inputs:
   always-link-local:
     description: 'when using the `node-workspace` plugin, setting to false will only bump your local dependencies within the SemVer range (see the manifest releaser docs)[https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md) . Default `true`.'
     required: false
-    default: true
   separate-pull-requests:
     description: 'create separate pull requests for each package instead of a single manifest release pull request (see the manifest releaser docs https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md). Default `false`.'
     required: false
-    default: false
   plugins:
     description: 'see https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md#plugins'
     required: false
@@ -156,11 +147,9 @@ inputs:
   skip-labeling:
     description: 'if set, labels will not be applied to pull requests. Default `false`.'
     required: false
-    default: false
   sequential-calls:
     description: 'issue GitHub API requests sequentially rather than concurrently (see the manifest releaser docs https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md). Default `false`'
     required: false
-    default: false
   group-pull-request-title-pattern:
     description: 'sets the manifest pull request title for when releasing multiple packages grouped together in the one pull request'
     required: false
