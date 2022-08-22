@@ -156,53 +156,57 @@ async function manifestInstance (github) {
   const groupPullRequestTitlePattern = core.getInput('group-pull-request-title-pattern') || undefined
   const releaseSearchDepth = core.getInput('release-search-depth') || undefined
   const commitSearchDepth = core.getInput('commit-search-depth') || undefined
+  const config = {
+    bumpMinorPreMajor,
+    bumpPatchForMinorPreMajor,
+    packageName,
+    releaseType,
+    changelogPath,
+    changelogHost,
+    changelogSections,
+    versionFile,
+    extraFiles,
+    includeComponentInTag: monorepoTags,
+    pullRequestTitlePattern,
+    draftPullRequest,
+    versioning,
+    releaseAs,
+    skipGithubRelease,
+    draft,
+    prerelease,
+    component,
+    includeVInTag,
+    tagSeparator,
+    changelogType,
+    snapshotLabels
+  }
+  console.log('config', config)
+  const manifestOptions = {
+    draft,
+    signoff,
+    fork,
+    draftPullRequest,
+    bootstrapSha,
+    lastReleaseSha,
+    alwaysLinkLocal,
+    separatePullRequests,
+    plugins,
+    labels,
+    releaseLabels,
+    snapshotLabels,
+    skipLabeling,
+    sequentialCalls,
+    prerelease,
+    groupPullRequestTitlePattern,
+    releaseSearchDepth,
+    commitSearchDepth
+  }
+  console.log('manifestOptions', manifestOptions)
   return await Manifest.fromConfig(
     github,
     github.repository.defaultBranch,
-    {
-      bumpMinorPreMajor,
-      bumpPatchForMinorPreMajor,
-      packageName,
-      releaseType,
-      changelogPath,
-      changelogHost,
-      changelogSections,
-      versionFile,
-      extraFiles,
-      includeComponentInTag: monorepoTags,
-      pullRequestTitlePattern,
-      draftPullRequest,
-      versioning,
-      releaseAs,
-      skipGithubRelease,
-      draft,
-      prerelease,
-      component,
-      includeVInTag,
-      tagSeparator,
-      changelogType,
-      snapshotLabels
-    },
-    {
-      draft,
-      signoff,
-      fork,
-      draftPullRequest,
-      bootstrapSha,
-      lastReleaseSha,
-      alwaysLinkLocal,
-      separatePullRequests,
-      plugins,
-      labels,
-      releaseLabels,
-      snapshotLabels,
-      skipLabeling,
-      sequentialCalls,
-      prerelease,
-      groupPullRequestTitlePattern,
-      releaseSearchDepth,
-      commitSearchDepth
-    },
+    config,
+    manifestOptions,
     path
   )
 }
