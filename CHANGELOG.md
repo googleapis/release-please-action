@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.1](https://github.com/google-github-actions/release-please-action/compare/v3.4.0...v3.4.1) (2022-08-24)
+
+
+### Bug Fixes
+
+* read changelog-host url from action context ([#587](https://github.com/google-github-actions/release-please-action/issues/587)) ([59912b3](https://github.com/google-github-actions/release-please-action/commit/59912b3686b25b181ed04ff831ff0a6ecaa92f54))
+
 ## [3.4.0](https://github.com/google-github-actions/release-please-action/compare/v3.3.0...v3.4.0) (2022-08-23)
 
 
