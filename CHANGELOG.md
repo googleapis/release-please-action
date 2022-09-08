@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.5.0](https://github.com/google-github-actions/release-please-action/compare/v3.4.1...v3.5.0) (2022-09-08)
+
+
+### Features
+
+* run action on node16 ([#608](https://github.com/google-github-actions/release-please-action/issues/608)) ([cb58510](https://github.com/google-github-actions/release-please-action/commit/cb585102ef240aa46197311ebce17732183116ea))
+
+
+### Bug Fixes
+
+* bump release-please from 13.21.0 to 14.5.0 ([#607](https://github.com/google-github-actions/release-please-action/issues/607)) ([bd65041](https://github.com/google-github-actions/release-please-action/commit/bd65041d06ac5a9c7c7a1dbe9f43705f0a871713))
+
 ## [3.4.1](https://github.com/google-github-actions/release-please-action/compare/v3.4.0...v3.4.1) (2022-08-24)
 
 
