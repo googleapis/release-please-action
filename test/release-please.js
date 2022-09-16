@@ -158,6 +158,39 @@ describe('release-please-action', () => {
     )
   })
 
+  it('opens PR with custom header', async () => {
+    input = {
+      command: 'release-pr',
+      'release-type': 'node',
+      'pull-request-header': 'another header',
+      'skip-github-release': 'false',
+      prerelease: 'false',
+      'include-v-in-tag': 'true',
+      'always-link-local': 'true',
+      'separate-pull-requests': 'false',
+      'skip-labeling': 'false',
+      'sequential-calls': 'false'
+    }
+
+    const createPullRequestsFake = sandbox.fake.returns([fixturePrs[0]])
+    const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
+      createPullRequests: createPullRequestsFake
+    })
+    await action.main()
+
+    sinon.assert.calledOnce(createPullRequestsFake)
+    sinon.assert.calledWith(
+      createManifestCommand,
+      sinon.match.any,
+      'main',
+      sinon.match.hasOwn(
+        'pullRequestHeader',
+        'another header'
+      ),
+      sinon.match.any
+    )
+  })
+
   it('both opens PR to the default branch and tags GitHub releases by default', async () => {
     input = {
       'skip-github-release': 'false',

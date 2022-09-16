@@ -91,6 +91,9 @@ inputs:
   pull-request-title-pattern:
     description: 'add title pattern to make release PR, defaults to using "chore${scope}: release${component} ${version}"'
     required: false
+  pull-request-header:
+    description: 'set release PR header, defaults to using ":robot: I have created a release *beep* *boop*"'
+    required: false
   draft:
     description: 'mark release as a draft'
     required: false
