@@ -42,6 +42,8 @@ Automate releases with Conventional Commit Messages.
               command: manifest
     ```
 
+Note: "Squash and merge" for your PRs, as "Rebase and Merge" might result in [redundant changelog entries](https://github.com/google-github-actions/release-please-action/issues/268#issuecomment-811547857).
+
 ## Configuration
 
 |               input                | description                                                                                                                                                                                                                                                                                                                                                   |
