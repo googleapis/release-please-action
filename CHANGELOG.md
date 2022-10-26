@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.5.1](https://github.com/google-github-actions/release-please-action/compare/v3.5.0...v3.5.1) (2022-10-26)
+
+
+### Bug Fixes
+
+* bump @actions/core to get newer set-output syntax ([#638](https://github.com/google-github-actions/release-please-action/issues/638)) ([ac14dab](https://github.com/google-github-actions/release-please-action/commit/ac14dab3a541f3ec5cfabb1af281b1fa22022c0e))
+* bump release-please from 14.5.0 to 14.14.0 ([#645](https://github.com/google-github-actions/release-please-action/issues/645)) ([619c472](https://github.com/google-github-actions/release-please-action/commit/619c4723eb5c7f0b0108728d45e72f99de594596))
+
 ## [3.5.0](https://github.com/google-github-actions/release-please-action/compare/v3.4.1...v3.5.0) (2022-09-08)
 
 
