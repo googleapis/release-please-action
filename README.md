@@ -87,6 +87,7 @@ Automate releases with Conventional Commit Messages.
  | `group-pull-request-title-pattern` | sets the manifest pull request title for when releasing multiple packages grouped together in the one pull request                                                                                                                                                                                                                                            |
  |       `release-search-depth`       | when searching for the latest release SHAs, only consider the last N releases                                                                                                                                                                                                                                                                                 |
  |       `commit-search-depth`        | when fetching the list of commits to consider, only consider the last N commits                                                                                                                                                                                                                                                                               |
+ |             `dry-run`              | To have a preview of PR and Releases but do not take action (see [outputs](#outputs)).  Default to `false`                                                                                                                                                                                                                                                    |
 
 ## GitHub credentials
 
@@ -145,6 +146,10 @@ Release Please automates releases for the following flavors of repositories:
 | `sha` | sha that a GitHub release was tagged at |
 | `pr` | The JSON string of the [PullRequest object](https://github.com/googleapis/release-please/blob/main/src/pull-request.ts#L15) (undefined if no release created) |
 | `prs` | The JSON string of the array of [PullRequest objects](https://github.com/googleapis/release-please/blob/main/src/pull-request.ts#L15) (undefined if no release created) |
+| `dry_pr` | The JSON string of the [ReleasePullRequest object](https://github.com/googleapis/release-please/blob/main/src/release-pull-request.ts#L20) but `Update` have 3 additionnal attributs `content`, `originalContent`, `patch` (undefined if `dry-run` input is false) |
+| `dry_prs` | The JSON string of the array of [ReleasePullRequest objects](https://github.com/googleapis/release-please/blob/main/src/release-pull-request.ts#L20) but `Update` have 3 additionnal attributs `content`, `originalContent`, `patch`  (undefined if `dry-run` input is false) |
+| `dry_release` | The JSON string of the [CandidateRelease object](https://github.com/googleapis/release-please/blob/main/src/manifest.ts#L129) (undefined if `dry-run` input is `false`) |
+| `dry_releases` | The JSON string of the array of [CandidateRelease objects](https://github.com/googleapis/release-please/blob/main/src/manifest.ts#L129) (undefined if `dry-run` input is `false`) |
 
 ## How release please works
 

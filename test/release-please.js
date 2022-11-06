@@ -10,6 +10,7 @@ const { Manifest } = require('release-please/build/src/manifest')
 const defaultInput = {
   fork: 'false',
   clean: 'true',
+  'dry-run': 'false',
   'bump-minor-pre-major': 'false',
   'bump-patch-for-minor-pre-major': 'false',
   path: '',

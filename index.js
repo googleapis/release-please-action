@@ -1,6 +1,7 @@
 const core = require('@actions/core')
 const { GitHub } = require('release-please/build/src/github')
 const { Manifest } = require('release-please/build/src/manifest')
+const { createPatch } = require('diff')
 
 const CONFIG_FILE = 'release-please-config.json'
 const MANIFEST_FILE = '.release-please-manifest.json'
@@ -16,6 +17,7 @@ function getGitHubInput () {
   return {
     fork: getOptionalBooleanInput('fork'),
     defaultBranch: core.getInput('default-branch') || undefined,
+    dryRun: getOptionalBooleanInput('dry-run'),
     repoUrl: core.getInput('repo-url') || process.env.GITHUB_REPOSITORY,
     apiUrl: core.getInput('github-api-url') || GITHUB_API_URL,
     graphqlUrl: (core.getInput('github-graphql-url') || '').replace(/\/graphql$/, '') || GITHUB_GRAPHQL_URL,
@@ -49,6 +51,7 @@ async function runManifest (command) {
   // Create the Manifest and GitHub instance from
   // argument provided to GitHub action:
   const { fork } = getGitHubInput()
+  const { dryRun } = getGitHubInput()
   const manifestOpts = getManifestInput()
   const github = await getGitHubInstance()
   let manifest = await Manifest.fromManifest(
@@ -61,8 +64,14 @@ async function runManifest (command) {
       fork
     }
   )
-  // Create or update release PRs:
-  outputPRs(await manifest.createPullRequests())
+
+  if (dryRun) {
+    await outputDryRunPRs(await manifest.buildPullRequests())
+  } else {
+    // Create or update release PRs:
+    outputPRs(await manifest.createPullRequests())
+  }
+
   if (command !== 'manifest-pr') {
     manifest = await Manifest.fromManifest(
       github,
@@ -74,12 +83,17 @@ async function runManifest (command) {
         fork
       }
     )
-    outputReleases(await manifest.createReleases())
+    if (dryRun) {
+      await outputDryRunReleases(await manifest.buildReleases())
+    } else {
+      outputReleases(await manifest.createReleases())
+    }
   }
 }
 
 async function main () {
   const command = core.getInput('command') || undefined
+  const { dryRun } = getGitHubInput()
   if (MANIFEST_COMMANDS.includes(command)) {
     return await runManifest(command)
   }
@@ -89,14 +103,22 @@ async function main () {
   // "autorelease: pending"):
   if (!command || command === GITHUB_RELEASE_COMMAND) {
     const manifest = await manifestInstance(github)
-    outputReleases(await manifest.createReleases())
+    if (dryRun) {
+      await outputDryRunReleases(await manifest.buildReleases())
+    } else {
+      outputReleases(await manifest.createReleases())
+    }
   }
 
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
   if (!command || command === GITHUB_RELEASE_PR_COMMAND) {
     const manifest = await manifestInstance(github)
-    outputPRs(await manifest.createPullRequests())
+    if (dryRun) {
+      await outputDryRunPRs(await manifest.buildPullRequests())
+    } else {
+      outputPRs(await manifest.createPullRequests())
+    }
   }
 }
 
@@ -249,6 +271,53 @@ function outputPRs (prs) {
   if (prs.length) {
     core.setOutput('pr', prs[0])
     core.setOutput('prs', JSON.stringify(prs))
+  }
+}
+
+async function outputDryRunReleases (releases) {
+  core.setOutput('dry_run', true)
+  releases = releases.filter(release => release !== undefined)
+  core.setOutput('releases_created', false)
+
+  releases = releases.filter(release => release !== undefined)
+  if (releases.length) {
+    core.setOutput('dry_release', JSON.stringify(releases[0]))
+    core.setOutput('dry_releases', JSON.stringify(releases))
+  }
+}
+
+async function outputDryRunPRs (prs) {
+  const github = await getGitHubInstance()
+  core.setOutput('dry_run', true)
+  prs = prs.filter(pr => pr !== undefined)
+
+  if (prs.length) {
+    for (const pr of prs) {
+      const changes = await github.buildChangeSet(
+        pr.updates,
+        github.repository.defaultBranch
+      )
+
+      for (const update of pr.updates) {
+        const change = changes.get(update.path)
+        if (change) {
+          const patch = createPatch(
+            update.path,
+            change.originalContent || '',
+            change.content || ''
+          )
+          update.content = change.content || ''
+          update.originalContent = change.originalContent || ''
+          update.patch = patch
+        } else {
+          update.content = ''
+          update.originalContent = ''
+          update.patch = ''
+        }
+      }
+    }
+    core.setOutput('dry_pr', JSON.stringify(prs[0]))
+    core.setOutput('dry_prs', JSON.stringify(prs))
   }
 }
 

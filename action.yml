@@ -160,6 +160,9 @@ inputs:
   commit-search-depth:
     description: 'when fetching the list of commits to consider, only consider the last N commits'
     required: false
+  dry-run:
+    description: 'Do not take action (see outputs)'
+    required: false
 
 runs:
   using: 'node16'
