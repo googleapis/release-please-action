@@ -317,6 +317,7 @@ describe('release-please-action', () => {
 
   it('sets appropriate outputs when GitHub release created', async () => {
     const release = {
+      id: 123456,
       name: 'v1.2.3',
       tagName: 'v1.2.3',
       sha: 'abc123',
@@ -346,6 +347,7 @@ describe('release-please-action', () => {
       createReleases: createReleasesFake
     })
     await action.main()
+    assert.strictEqual(output.id, 123456)
     assert.strictEqual(output.release_created, true)
     assert.strictEqual(output.releases_created, true)
     assert.strictEqual(output.upload_url, 'http://example.com')
