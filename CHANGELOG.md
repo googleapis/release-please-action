@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.6.1](https://github.com/google-github-actions/release-please-action/compare/v3.6.0...v3.6.1) (2022-11-23)
+
+
+### Bug Fixes
+
+* bump release-please from 14.16.0 to 14.17.2 ([#664](https://github.com/google-github-actions/release-please-action/issues/664)) ([c8f107f](https://github.com/google-github-actions/release-please-action/commit/c8f107f4cfb84600d0985a304bd17c16d7e4fac2))
+
 ## [3.6.0](https://github.com/google-github-actions/release-please-action/compare/v3.5.1...v3.6.0) (2022-11-09)
 
 
