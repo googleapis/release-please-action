@@ -1,5 +1,17 @@
 # Changelog
 
+## [3.7.0](https://github.com/google-github-actions/release-please-action/compare/v3.6.1...v3.7.0) (2022-12-08)
+
+
+### Features
+
+* add `pull-request-header` input ([#615](https://github.com/google-github-actions/release-please-action/issues/615)) ([9963ea2](https://github.com/google-github-actions/release-please-action/commit/9963ea2aa819d5b257e4e6d1d66b82b25b7bafea))
+
+
+### Bug Fixes
+
+* update `release-please` to `14.17.5` ([#671](https://github.com/google-github-actions/release-please-action/issues/671)) ([4da3bc1](https://github.com/google-github-actions/release-please-action/commit/4da3bc15340c3f885c6200feee80e1f458213e15))
+
 ## [3.6.1](https://github.com/google-github-actions/release-please-action/compare/v3.6.0...v3.6.1) (2022-11-23)
 
 
