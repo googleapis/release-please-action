@@ -136,7 +136,7 @@ Release Please automates releases for the following flavors of repositories:
 
 | output | description |
 |:---:|---|
-| `release_created` | `true` if the release was created, `false` otherwise |
+| `releases_created` | `true` if the release was created, `false` otherwise |
 | `upload_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `html_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `tag_name` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
