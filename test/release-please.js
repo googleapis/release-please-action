@@ -7,6 +7,7 @@ const nock = require('nock')
 const { Manifest } = require('release-please/build/src/manifest')
 // const { Node } = require('release-please/build/src/strategies/node')
 // As defined in action.yml
+
 const defaultInput = {
   fork: 'false',
   clean: 'true',
