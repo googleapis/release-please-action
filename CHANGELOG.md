@@ -1,5 +1,32 @@
 # Changelog
 
+## [3.6.1](https://github.com/google-github-actions/release-please-action/compare/v3.6.0...v3.6.1) (2022-11-23)
+
+
+### Bug Fixes
+
+* bump release-please from 14.16.0 to 14.17.2 ([#664](https://github.com/google-github-actions/release-please-action/issues/664)) ([c8f107f](https://github.com/google-github-actions/release-please-action/commit/c8f107f4cfb84600d0985a304bd17c16d7e4fac2))
+
+## [3.6.0](https://github.com/google-github-actions/release-please-action/compare/v3.5.1...v3.6.0) (2022-11-09)
+
+
+### Features
+
+* support proxy configuration ([#621](https://github.com/google-github-actions/release-please-action/issues/621)) ([714f07f](https://github.com/google-github-actions/release-please-action/commit/714f07f3ae692b5ce291aedf60f12280f4702eb2))
+
+
+### Bug Fixes
+
+* bump release-please from 14.14.0 to 14.16.0 ([#658](https://github.com/google-github-actions/release-please-action/issues/658)) ([a76b467](https://github.com/google-github-actions/release-please-action/commit/a76b4670614a5b05053bfd33aac25b3ffcb52287))
+
+## [3.5.1](https://github.com/google-github-actions/release-please-action/compare/v3.5.0...v3.5.1) (2022-10-26)
+
+
+### Bug Fixes
+
+* bump @actions/core to get newer set-output syntax ([#638](https://github.com/google-github-actions/release-please-action/issues/638)) ([ac14dab](https://github.com/google-github-actions/release-please-action/commit/ac14dab3a541f3ec5cfabb1af281b1fa22022c0e))
+* bump release-please from 14.5.0 to 14.14.0 ([#645](https://github.com/google-github-actions/release-please-action/issues/645)) ([619c472](https://github.com/google-github-actions/release-please-action/commit/619c4723eb5c7f0b0108728d45e72f99de594596))
+
 ## [3.5.0](https://github.com/google-github-actions/release-please-action/compare/v3.4.1...v3.5.0) (2022-09-08)
 
 

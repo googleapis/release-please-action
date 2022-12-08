@@ -88,6 +88,7 @@ Automate releases with Conventional Commit Messages.
  | `group-pull-request-title-pattern` | sets the manifest pull request title for when releasing multiple packages grouped together in the one pull request                                                                                                                                                                                                                                            |
  |       `release-search-depth`       | when searching for the latest release SHAs, only consider the last N releases                                                                                                                                                                                                                                                                                 |
  |       `commit-search-depth`        | when fetching the list of commits to consider, only consider the last N commits                                                                                                                                                                                                                                                                               |
+|           `proxy-server`           | set proxy sever when you run this action behind a proxy. format is host:port e.g. proxy-host.com:8080                                                                                                                                                                                                                                                         |
 
 ## GitHub credentials
 
@@ -136,7 +137,7 @@ Release Please automates releases for the following flavors of repositories:
 
 | output | description |
 |:---:|---|
-| `release_created` | `true` if the release was created, `false` otherwise |
+| `releases_created` | `true` if the release was created, `false` otherwise |
 | `upload_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `html_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `tag_name` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |

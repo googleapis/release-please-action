@@ -163,6 +163,9 @@ inputs:
   commit-search-depth:
     description: 'when fetching the list of commits to consider, only consider the last N commits'
     required: false
+  proxy-server:
+    description: 'set proxy sever when you run this action behind a proxy. format is host:port e.g. proxy-host.com:8080'
+    required: false
 
 runs:
   using: 'node16'
