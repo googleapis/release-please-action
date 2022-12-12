@@ -21,7 +21,8 @@ function getGitHubInput () {
     repoUrl: core.getInput('repo-url') || process.env.GITHUB_REPOSITORY,
     apiUrl: core.getInput('github-api-url') || GITHUB_API_URL,
     graphqlUrl: (core.getInput('github-graphql-url') || '').replace(/\/graphql$/, '') || GITHUB_GRAPHQL_URL,
-    token: core.getInput('token', { required: true })
+    token: core.getInput('token', { required: true }),
+    proxyServer: core.getInput('proxy-server') || undefined
   }
 }
 
@@ -127,9 +128,16 @@ const releasePlease = {
 }
 
 function getGitHubInstance () {
-  const { token, defaultBranch, apiUrl, graphqlUrl, repoUrl } = getGitHubInput()
+  const { token, defaultBranch, apiUrl, graphqlUrl, repoUrl, proxyServer } = getGitHubInput()
   const [owner, repo] = repoUrl.split('/')
+
+  let proxy
+  if (proxyServer) {
+    const [host, port] = proxyServer.split(':')
+    proxy = { host, port }
+  }
   const githubCreateOpts = {
+    proxy,
     owner,
     repo,
     apiUrl,
@@ -155,6 +163,7 @@ async function manifestInstance (github) {
   const versionFile = core.getInput('version-file') || undefined
   const extraFiles = core.getMultilineInput('extra-files') || undefined
   const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
+  const pullRequestHeader = core.getInput('pull-request-header') || undefined
   const draft = getOptionalBooleanInput('draft')
   const draftPullRequest = getOptionalBooleanInput('draft-pull-request')
   const changelogType = core.getInput('changelog-notes-type') || undefined
@@ -193,6 +202,7 @@ async function manifestInstance (github) {
       extraFiles,
       includeComponentInTag: monorepoTags,
       pullRequestTitlePattern,
+      pullRequestHeader,
       draftPullRequest,
       versioning,
       releaseAs,

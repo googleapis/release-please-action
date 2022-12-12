@@ -1,7 +1,7 @@
 {
   "name": "release-please-action",
   "private": true,
-  "version": "3.5.1",
+  "version": "3.7.0",
   "description": "automated releases based on conventional commits",
   "main": "index.js",
   "scripts": {
@@ -26,7 +26,7 @@
   "homepage": "https://github.com/bcoe/release-please-action#readme",
   "dependencies": {
     "@actions/core": "^1.10.0",
-    "release-please": "^14.14.0",
+    "release-please": "^14.17.5",
     "diff": "^5.0.0"
   },
   "devDependencies": {

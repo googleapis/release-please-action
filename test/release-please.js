@@ -7,6 +7,7 @@ const nock = require('nock')
 const { Manifest } = require('release-please/build/src/manifest')
 // const { Node } = require('release-please/build/src/strategies/node')
 // As defined in action.yml
+
 const defaultInput = {
   fork: 'false',
   clean: 'true',
@@ -154,6 +155,39 @@ describe('release-please-action', () => {
       sinon.match.hasOwn(
         'pullRequestTitlePattern',
         'beep boop'
+      ),
+      sinon.match.any
+    )
+  })
+
+  it('opens PR with custom header', async () => {
+    input = {
+      command: 'release-pr',
+      'release-type': 'node',
+      'pull-request-header': 'another header',
+      'skip-github-release': 'false',
+      prerelease: 'false',
+      'include-v-in-tag': 'true',
+      'always-link-local': 'true',
+      'separate-pull-requests': 'false',
+      'skip-labeling': 'false',
+      'sequential-calls': 'false'
+    }
+
+    const createPullRequestsFake = sandbox.fake.returns([fixturePrs[0]])
+    const createManifestCommand = sandbox.stub(Manifest, 'fromConfig').returns({
+      createPullRequests: createPullRequestsFake
+    })
+    await action.main()
+
+    sinon.assert.calledOnce(createPullRequestsFake)
+    sinon.assert.calledWith(
+      createManifestCommand,
+      sinon.match.any,
+      'main',
+      sinon.match.hasOwn(
+        'pullRequestHeader',
+        'another header'
       ),
       sinon.match.any
     )
@@ -318,6 +352,7 @@ describe('release-please-action', () => {
 
   it('sets appropriate outputs when GitHub release created', async () => {
     const release = {
+      id: 123456,
       name: 'v1.2.3',
       tagName: 'v1.2.3',
       sha: 'abc123',
@@ -347,6 +382,7 @@ describe('release-please-action', () => {
       createReleases: createReleasesFake
     })
     await action.main()
+    assert.strictEqual(output.id, 123456)
     assert.strictEqual(output.release_created, true)
     assert.strictEqual(output.releases_created, true)
     assert.strictEqual(output.upload_url, 'http://example.com')
