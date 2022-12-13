@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.1](https://github.com/google-github-actions/release-please-action/compare/v3.7.0...v3.7.1) (2022-12-13)
+
+
+### Bug Fixes
+
+* bump release-please from 14.17.5 to 15.0.0 ([#679](https://github.com/google-github-actions/release-please-action/issues/679)) ([2e8ea51](https://github.com/google-github-actions/release-please-action/commit/2e8ea512158bcca24c9026d74520de8445040bc8))
+
 ## [3.7.0](https://github.com/google-github-actions/release-please-action/compare/v3.6.1...v3.7.0) (2022-12-08)
 
 
