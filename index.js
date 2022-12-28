@@ -152,6 +152,7 @@ async function manifestInstance (github) {
   const component = core.getInput('component') || undefined
   const includeVInTag = getOptionalBooleanInput('include-v-in-tag')
   const tagSeparator = core.getInput('tag-separator') || undefined
+  const initialVersion = core.getInput('initial-version') || undefined
   const snapshotLabels = getOptionalMultilineInput('snapshot-labels')
   const bootstrapSha = core.getInput('bootstrap-sha') || undefined
   const lastReleaseSha = core.getInput('last-release-sha') || undefined
@@ -190,6 +191,7 @@ async function manifestInstance (github) {
       component,
       includeVInTag,
       tagSeparator,
+      initialVersion,
       changelogType,
       snapshotLabels
     },

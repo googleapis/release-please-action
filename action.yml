@@ -20,6 +20,9 @@ inputs:
   release-type:
     description: 'what type of release is this, one of (ruby, python, node, terraform-module)'
     required: true
+  initial-version:
+    description: 'If set then the initial release will be this specified version'
+    required: false
   bump-minor-pre-major:
     description: 'should breaking changes before 1.0.0 produce minor bumps'
     required: false
