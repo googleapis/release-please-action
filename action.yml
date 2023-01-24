@@ -58,5 +58,5 @@ inputs:
     default: 'chore${scope}: release${component} ${version}'
 
 runs:
-  using: 'node12'
+  using: 'node16'
   main: 'dist/index.js'
