@@ -24,6 +24,18 @@ function getGitHubInput () {
   }
 }
 
+function safeParse(value) {
+  if (!value) {
+    return value;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch (e) {
+    return value;
+  }
+}
+
 function getOptionalBooleanInput (name) {
   if (core.getInput(name) === '') {
     return undefined
@@ -139,7 +151,7 @@ async function manifestInstance (github) {
   const changelogTypes = core.getInput('changelog-types') || undefined
   const changelogSections = changelogTypes && JSON.parse(changelogTypes)
   const versionFile = core.getInput('version-file') || undefined
-  const extraFiles = core.getMultilineInput('extra-files') || undefined
+  const extraFiles = safeParse(getOptionalMultilineInput('extra-files'))
   const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
   const pullRequestHeader = core.getInput('pull-request-header') || undefined
   const draft = getOptionalBooleanInput('draft')
@@ -157,7 +169,7 @@ async function manifestInstance (github) {
   const lastReleaseSha = core.getInput('last-release-sha') || undefined
   const alwaysLinkLocal = getOptionalBooleanInput('always-link-local')
   const separatePullRequests = getOptionalBooleanInput('separate-pull-requests')
-  const plugins = core.getMultilineInput('plugins') || undefined
+  const plugins = safeParse(getOptionalMultilineInput('plugins'))
   const labels = core.getInput('labels') ? core.getMultilineInput('labels') : undefined
   const releaseLabels = getOptionalMultilineInput('release-labels')
   const skipLabeling = getOptionalBooleanInput('skip-labeling')
