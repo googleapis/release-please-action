@@ -24,15 +24,15 @@ function getGitHubInput () {
   }
 }
 
-function safeParse(value) {
+function safeParse (value) {
   if (!value) {
-    return value;
+    return value
   }
 
   try {
-    return JSON.parse(value);
+    return JSON.parse(value)
   } catch (e) {
-    return value;
+    return value
   }
 }
 
