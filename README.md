@@ -112,6 +112,21 @@ Some additional info regarding the `command` property.
 - `manifest`: use [source controlled files](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md#manifest-driven-release-please) containing releaser specific configuration (the `release-please-config.json`) as well package version tracking (the `.release-please-manifest.json`).
 - `manifest-pr`: uses the manifest file `release-please-config.json` to propose a candidate release
 
+### Workflow Permissions
+
+This workflow will need the following permissions in your workflow file: 
+
+```yml
+permissions:
+  contents: write
+  pull-requests: write
+```
+
+Additionally, you'll need to enable actions to create and approve PRs
+
+![image](https://user-images.githubusercontent.com/61225/221324352-d74875b2-2421-4e95-88f3-8d725dc5802e.png)
+
+
 ### Release types supported
 
 Release Please automates releases for the following flavors of repositories:
