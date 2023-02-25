@@ -122,7 +122,7 @@ permissions:
   pull-requests: write
 ```
 
-Additionally, you'll need to enable actions to create and approve PRs
+> 🔖 You'll need to enable the github actions bot to create and approve PRs in your `Repo > Settings > Actions > General` and configure `Workflow permissions` to `Allow GitHub Actions to create and approve pull requests`
 
 ![image](https://user-images.githubusercontent.com/61225/221324352-d74875b2-2421-4e95-88f3-8d725dc5802e.png)
 
