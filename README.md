@@ -15,7 +15,13 @@ Automate releases with Conventional Commit Messages.
       push:
         branches:
           - main
+
+    permissions:
+      contents: write
+      pull-requests: write
+
     name: release-please
+
     jobs:
       release-please:
         runs-on: ubuntu-latest
@@ -122,10 +128,13 @@ permissions:
   pull-requests: write
 ```
 
-> 🔖 You'll need to enable the github actions bot to create and approve PRs in your `Repo > Settings > Actions > General` and configure `Workflow permissions` to `Allow GitHub Actions to create and approve pull requests`
+For more information about permissions: 
 
-![image](https://user-images.githubusercontent.com/61225/221324352-d74875b2-2421-4e95-88f3-8d725dc5802e.png)
-
+- github apis [protected by `contents` permission](https://docs.github.com/en/rest/overview/permissions-required-for-github-apps?apiVersion=2022-11-28#contents)
+- github apis [protected by `pull_requests` permission](https://docs.github.com/en/rest/overview/permissions-required-for-github-apps?apiVersion=2022-11-28#pull-requests)
+- https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
+- https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#enabling-workflows-for-private-repository-forks
+- https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
 
 ### Release types supported
 
