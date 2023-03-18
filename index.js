@@ -29,11 +29,13 @@ function safeParse (value) {
     return value
   }
 
-  try {
-    return JSON.parse(value)
-  } catch (e) {
-    return value
-  }
+  return value.map(line => {
+    try {
+      return JSON.parse(line)
+    } catch (e) {
+      return line
+    }
+  })
 }
 
 function getOptionalBooleanInput (name) {
