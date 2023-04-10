@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.7](https://github.com/google-github-actions/release-please-action/compare/v3.7.6...v3.7.7) (2023-04-10)
+
+
+### Bug Fixes
+
+* bump release-please from 15.9.1 to 15.9.2 ([#746](https://github.com/google-github-actions/release-please-action/issues/746)) ([c3a278c](https://github.com/google-github-actions/release-please-action/commit/c3a278c732153e274ae8130e657762ba3d524a2d))
+
 ## [3.7.6](https://github.com/google-github-actions/release-please-action/compare/v3.7.5...v3.7.6) (2023-03-28)
 
 
