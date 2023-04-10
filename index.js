@@ -19,6 +19,7 @@ function getGitHubInput () {
     repoUrl: core.getInput('repo-url') || process.env.GITHUB_REPOSITORY,
     apiUrl: core.getInput('github-api-url') || GITHUB_API_URL,
     graphqlUrl: (core.getInput('github-graphql-url') || '').replace(/\/graphql$/, '') || GITHUB_GRAPHQL_URL,
+    useGraphql: getOptionalBooleanInput('use-graphql'),
     token: core.getInput('token', { required: true }),
     proxyServer: core.getInput('proxy-server') || undefined
   }
@@ -120,7 +121,8 @@ function getGitHubInstance () {
     repo,
     apiUrl,
     graphqlUrl,
-    token
+    token,
+    useGraphql,
   }
   if (defaultBranch) githubCreateOpts.defaultBranch = defaultBranch
   return GitHub.create(githubCreateOpts)
