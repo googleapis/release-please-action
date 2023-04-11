@@ -15,7 +15,13 @@ Automate releases with Conventional Commit Messages.
       push:
         branches:
           - main
+
+    permissions:
+      contents: write
+      pull-requests: write
+
     name: release-please
+
     jobs:
       release-please:
         runs-on: ubuntu-latest
@@ -112,6 +118,24 @@ Some additional info regarding the `command` property.
 - `release-pr`: uses Conventional Commits to propose a candidate release [pull request](#how-release-please-works). This pull request, once merged, is used by `github-release`/`manifest`
 - `manifest`: use [source controlled files](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md#manifest-driven-release-please) containing releaser specific configuration (the `release-please-config.json`) as well package version tracking (the `.release-please-manifest.json`).
 - `manifest-pr`: uses the manifest file `release-please-config.json` to propose a candidate release
+
+### Workflow Permissions
+
+This workflow will need the following permissions in your workflow file: 
+
+```yml
+permissions:
+  contents: write
+  pull-requests: write
+```
+
+For more information about permissions: 
+
+- github apis [protected by `contents` permission](https://docs.github.com/en/rest/overview/permissions-required-for-github-apps?apiVersion=2022-11-28#contents)
+- github apis [protected by `pull_requests` permission](https://docs.github.com/en/rest/overview/permissions-required-for-github-apps?apiVersion=2022-11-28#pull-requests)
+- https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
+- https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#enabling-workflows-for-private-repository-forks
+- https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
 
 ### Release types supported
 
