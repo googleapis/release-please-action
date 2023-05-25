@@ -364,7 +364,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v2
+      - uses: google-github-actions/release-please-action@v3
         id: release
         with:
           command: manifest
