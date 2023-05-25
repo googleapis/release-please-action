@@ -375,7 +375,7 @@ jobs:
         if: ${{ steps.release.outputs['packages/package-a--release_created'] }}
 ```
 
-## Adding additional files
+## Updating additional files
 
 You can update additional files with the `extra-files` input.
 
@@ -397,6 +397,34 @@ jobs:
           extra-files: |
             README.md
             docs/getting-started.md
+```
+
+## Attaching files to the GitHub release
+
+You can attach additional files, such as release artifacts, to the GitHub release that is created. The `gh` CLI tool, which is installed on all runners, can be used for this.
+
+This example uses the `gh` tool to attach the file `./artifact/some-build-artifact.zip`:
+
+```yaml
+on:
+  push:
+    branches:
+      - main
+name: release-please
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/release-please-action@v3
+        id: release
+        with:
+          release-type: node
+      - name: Upload Release Artifact
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run:
+          gh release upload ${{ steps.release.outputs.tag_name }} ./artifact/some-build-artifact.zip
 ```
 
 ## License
