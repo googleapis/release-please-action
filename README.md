@@ -159,9 +159,12 @@ Release Please automates releases for the following flavors of repositories:
 ## Outputs
 > Properties that are available after the action executed.
 
+> Some of these output names can change when the `manifest` command is used, see (Manifest release output)[#manifest-release-output]
+
 | output | description |
 |:---:|---|
 | `releases_created` | `true` if the release was created, `false` otherwise |
+| `paths_released` | The JSON string of the array of released paths, useful as a [matrix](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs) input |
 | `upload_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `html_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `tag_name` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
