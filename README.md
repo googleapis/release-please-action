@@ -29,7 +29,7 @@ Automate releases with Conventional Commit Messages.
           - uses: google-github-actions/release-please-action@v3
             with:
               release-type: node
-              package-name: release-please-action
+              package-name: <your-package-name>
     ```
 
 3. Merge the above action into your repository and make sure new commits follow
@@ -153,6 +153,7 @@ Release Please automates releases for the following flavors of repositories:
 | `php` | [A php composer package with composer.json and CHANGELOG.md](https://github.com/setnemo/asterisk-notation)
 | `ruby` | [A Ruby repository, with version.rb and CHANGELOG.md](https://github.com/google/google-id-token) |
 | `rust` | A Rust repository, with a Cargo.toml (either as a crate or workspace) and a CHANGELOG.md |
+| `sfdx` | A repository with a [sfdx-project.json](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_config.htm) and a CHANGELOG.md |
 | `simple` | [A repository with a version.txt and a CHANGELOG.md](https://github.com/googleapis/gapic-generator) |
 | `terraform-module` | [A terraform module, with a version in the README.md, and a CHANGELOG.md](https://github.com/terraform-google-modules/terraform-google-project-factory) |
 
@@ -364,7 +365,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v2
+      - uses: google-github-actions/release-please-action@v3
         id: release
         with:
           command: manifest
@@ -375,7 +376,7 @@ jobs:
         if: ${{ steps.release.outputs['packages/package-a--release_created'] }}
 ```
 
-## Adding additional files
+## Updating additional files
 
 You can update additional files with the `extra-files` input.
 
@@ -397,6 +398,34 @@ jobs:
           extra-files: |
             README.md
             docs/getting-started.md
+```
+
+## Attaching files to the GitHub release
+
+You can attach additional files, such as release artifacts, to the GitHub release that is created. The `gh` CLI tool, which is installed on all runners, can be used for this.
+
+This example uses the `gh` tool to attach the file `./artifact/some-build-artifact.zip`:
+
+```yaml
+on:
+  push:
+    branches:
+      - main
+name: release-please
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/release-please-action@v3
+        id: release
+        with:
+          release-type: node
+      - name: Upload Release Artifact
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run:
+          gh release upload ${{ steps.release.outputs.tag_name }} ./artifact/some-build-artifact.zip
 ```
 
 ## License

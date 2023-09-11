@@ -1,5 +1,41 @@
 # Changelog
 
+## [3.7.10](https://github.com/google-github-actions/release-please-action/compare/v3.7.9...v3.7.10) (2023-06-23)
+
+
+### Bug Fixes
+
+* bump release-please from 15.10.4 to 15.11.0 ([#778](https://github.com/google-github-actions/release-please-action/issues/778)) ([18e5fcf](https://github.com/google-github-actions/release-please-action/commit/18e5fcf19741ed0c95c18b1509f148b7977ceaaf))
+
+## [3.7.9](https://github.com/google-github-actions/release-please-action/compare/v3.7.8...v3.7.9) (2023-05-25)
+
+
+### Bug Fixes
+
+* bump release-please from 15.10.2 to 15.10.4 ([#762](https://github.com/google-github-actions/release-please-action/issues/762)) ([8475937](https://github.com/google-github-actions/release-please-action/commit/84759371f245a9245d04f684a8207ced70852d7e))
+
+## [3.7.8](https://github.com/google-github-actions/release-please-action/compare/v3.7.7...v3.7.8) (2023-04-11)
+
+
+### Bug Fixes
+
+* bump release-please from 15.9.2 to 15.10.2 ([#755](https://github.com/google-github-actions/release-please-action/issues/755)) ([6730d1a](https://github.com/google-github-actions/release-please-action/commit/6730d1afa8d596ff8922e76ff5946fab917b804c))
+* tag releases before opening new pull requests ([#753](https://github.com/google-github-actions/release-please-action/issues/753)) ([6a803df](https://github.com/google-github-actions/release-please-action/commit/6a803dfec495c1b9be1bf3c24140ad1072ef9a43)), closes [#747](https://github.com/google-github-actions/release-please-action/issues/747)
+
+## [3.7.7](https://github.com/google-github-actions/release-please-action/compare/v3.7.6...v3.7.7) (2023-04-10)
+
+
+### Bug Fixes
+
+* bump release-please from 15.9.1 to 15.9.2 ([#746](https://github.com/google-github-actions/release-please-action/issues/746)) ([c3a278c](https://github.com/google-github-actions/release-please-action/commit/c3a278c732153e274ae8130e657762ba3d524a2d))
+
+## [3.7.6](https://github.com/google-github-actions/release-please-action/compare/v3.7.5...v3.7.6) (2023-03-28)
+
+
+### Bug Fixes
+
+* bump release-please from 15.8.1 to 15.9.1 ([#738](https://github.com/google-github-actions/release-please-action/issues/738)) ([9997fc9](https://github.com/google-github-actions/release-please-action/commit/9997fc940dddf620986d5e88532ffb2cc6e22c1c))
+
 ## [3.7.5](https://github.com/google-github-actions/release-please-action/compare/v3.7.4...v3.7.5) (2023-03-07)
 
 
