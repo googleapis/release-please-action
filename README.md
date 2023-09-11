@@ -29,7 +29,7 @@ Automate releases with Conventional Commit Messages.
           - uses: google-github-actions/release-please-action@v3
             with:
               release-type: node
-              package-name: release-please-action
+              package-name: <your-package-name>
     ```
 
 3. Merge the above action into your repository and make sure new commits follow
