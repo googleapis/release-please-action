@@ -46,13 +46,23 @@ function getManifestInput () {
   }
 }
 
+async function getManifest(github, targetBranch, configFile, manifestFile, manifestOptionOverrides) {
+    return Manifest.fromManifest(
+      github,
+      targetBranch,
+      configFile,
+      manifestFile,
+      manifestOptionOverrides
+    );
+}
+
 async function runManifest (command) {
   // Create the Manifest and GitHub instance from
   // argument provided to GitHub action:
   const { fork } = getGitHubInput()
   const manifestOpts = getManifestInput()
   const github = await getGitHubInstance()
-  let manifest = await Manifest.fromManifest(
+  let manifest = await getManifest(
     github,
     github.repository.defaultBranch,
     manifestOpts.configFile,
@@ -64,7 +74,7 @@ async function runManifest (command) {
   )
   if (command !== 'manifest-pr') {
     outputReleases(await manifest.createReleases())
-    manifest = await Manifest.fromManifest(
+    manifest = await getManifest(
       github,
       github.repository.defaultBranch,
       manifestOpts.configFile,
@@ -81,6 +91,7 @@ async function runManifest (command) {
 
 async function main () {
   const command = core.getInput('command') || undefined
+  const releaseType = core.getInput('release-type') || undefined
   if (MANIFEST_COMMANDS.includes(command)) {
     return await runManifest(command)
   }
@@ -89,14 +100,14 @@ async function main () {
   // First we check for any merged release PRs (PRs merged with the label
   // "autorelease: pending"):
   if (!command || command === GITHUB_RELEASE_COMMAND) {
-    const manifest = await manifestInstance(github)
+    const manifest = await manifestInstance(github, releaseType)
     outputReleases(await manifest.createReleases())
   }
 
   // Next we check for PRs merged since the last release, and groom the
   // release PR:
   if (!command || command === GITHUB_RELEASE_PR_COMMAND) {
-    const manifest = await manifestInstance(github)
+    const manifest = await manifestInstance(github, releaseType)
     outputPRs(await manifest.createPullRequests())
   }
 }
@@ -126,14 +137,13 @@ function getGitHubInstance () {
   return GitHub.create(githubCreateOpts)
 }
 
-async function manifestInstance (github) {
+async function manifestInstance (github, releaseType) {
   const { fork } = getGitHubInput()
   const bumpMinorPreMajor = getOptionalBooleanInput('bump-minor-pre-major')
   const bumpPatchForMinorPreMajor = getOptionalBooleanInput('bump-patch-for-minor-pre-major')
   const monorepoTags = getOptionalBooleanInput('monorepo-tags')
   const packageName = core.getInput('package-name') || undefined
   const path = core.getInput('path') || undefined
-  const releaseType = core.getInput('release-type', { required: true })
   const changelogPath = core.getInput('changelog-path') || undefined
   const changelogHost = core.getInput('changelog-host') || undefined
   const changelogTypes = core.getInput('changelog-types') || undefined
@@ -165,6 +175,22 @@ async function manifestInstance (github) {
   const groupPullRequestTitlePattern = core.getInput('group-pull-request-title-pattern') || undefined
   const releaseSearchDepth = core.getInput('release-search-depth') || undefined
   const commitSearchDepth = core.getInput('commit-search-depth') || undefined
+
+  if(!releaseType) {
+    const manifestOpts = getManifestInput()
+
+    return await getManifest(
+      github,
+      github.repository.defaultBranch,
+      manifestOpts.configFile,
+      manifestOpts.manifestFile,
+      {
+        signoff,
+        fork
+      }
+    );
+  }
+
   return await Manifest.fromConfig(
     github,
     github.repository.defaultBranch,
