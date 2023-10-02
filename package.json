@@ -5,7 +5,7 @@
   "description": "automated releases based on conventional commits",
   "main": "index.js",
   "scripts": {
-    "test": "c8 mocha test/*.js",
+    "test": "c8 mocha --node-option no-experimental-fetch test/*.js",
     "posttest": "standard",
     "fix": "standard --fix",
     "build": "ncc build index.js"
