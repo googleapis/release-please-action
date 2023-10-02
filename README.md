@@ -128,6 +128,9 @@ permissions:
   pull-requests: write
 ```
 
+You may also need to set "Allow GitHub Actions to create and approve pull requests" under
+repository Settings > Actions > General.
+
 For more information about permissions: 
 
 - github apis [protected by `contents` permission](https://docs.github.com/en/rest/overview/permissions-required-for-github-apps?apiVersion=2022-11-28#contents)
