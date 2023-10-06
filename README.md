@@ -145,12 +145,15 @@ Release Please automates releases for the following flavors of repositories:
 
 | release type | description |
 |:---:|---|
+| `dart` | A repository with a pubspec.yaml and a CHANGELOG.md |
 | `elixir` | An elixir repository with a mix.exs and a CHANGELOG.md |
 | `go` | Go repository, with a CHANGELOG.md |
 | `helm` | A helm chart repository with a Chart.yaml and a CHANGELOG.md |
 | `java` | [A strategy that generates SNAPSHOT version after each release](https://github.com/googleapis/release-please/blob/main/docs/java.md) |
+| `krm-blueprint` | [A kpt package, with 1 or more KRM files and a CHANGELOG.md](https://github.com/GoogleCloudPlatform/blueprints/tree/main/catalog/project) |
 | `maven` | [Strategy for Maven projects, generates SNAPSHOT version after each release and updates `pom.xml` automatically](https://github.com/googleapis/release-please/blob/main/docs/java.md) |
 | `node` | [A Node.js repository, with a package.json and CHANGELOG.md](https://github.com/yargs/yargs) |
+| `expo` | An Expo based React Native repository, with a package.json, app.json and CHANGELOG.md |
 | `ocaml` | [An OCaml repository, containing 1 or more opam or esy files and a CHANGELOG.md](https://github.com/grain-lang/binaryen.ml) |
 | `python` | [A Python repository, with a setup.py, setup.cfg, version.py and CHANGELOG.md](https://github.com/googleapis/python-storage) and optionally a pyproject.toml and a &lt;project&gt;/\_\_init\_\_.py |
 | `php` | [A php composer package with composer.json and CHANGELOG.md](https://github.com/setnemo/asterisk-notation)
@@ -159,6 +162,8 @@ Release Please automates releases for the following flavors of repositories:
 | `sfdx` | A repository with a [sfdx-project.json](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_config.htm) and a CHANGELOG.md |
 | `simple` | [A repository with a version.txt and a CHANGELOG.md](https://github.com/googleapis/gapic-generator) |
 | `terraform-module` | [A terraform module, with a version in the README.md, and a CHANGELOG.md](https://github.com/terraform-google-modules/terraform-google-project-factory) |
+
+> You can also find them in the [release-please repository](https://github.com/googleapis/release-please/tree/main#strategy-language-types-supported).
 
 ## Outputs
 > Properties that are available after the action executed.
