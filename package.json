@@ -26,7 +26,8 @@
   "homepage": "https://github.com/bcoe/release-please-action#readme",
   "dependencies": {
     "@actions/core": "^1.10.0",
-    "release-please": "^15.13.0"
+    "release-please": "^15.13.0",
+    "@lerna-lite/core": "1.17.0"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.38.0",

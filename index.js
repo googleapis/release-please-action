@@ -1,7 +1,7 @@
 const core = require('@actions/core')
 const { GitHub } = require('release-please/build/src/github')
 const { Manifest } = require('release-please/build/src/manifest')
-
+const { PackageGraph } = require('@lerna-lite/core')
 const CONFIG_FILE = 'release-please-config.json'
 const MANIFEST_FILE = '.release-please-manifest.json'
 const MANIFEST_COMMANDS = ['manifest', 'manifest-pr']
@@ -11,6 +11,8 @@ const GITHUB_API_URL = 'https://api.github.com'
 const GITHUB_GRAPHQL_URL = 'https://api.github.com'
 
 const signoff = core.getInput('signoff') || undefined
+// dummy reference
+console.log(PackageGraph.name)
 
 function getGitHubInput () {
   return {
