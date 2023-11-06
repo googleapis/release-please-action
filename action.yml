@@ -94,6 +94,9 @@ inputs:
   pull-request-header:
     description: 'set release PR header, defaults to using ":robot: I have created a release *beep* *boop*"'
     required: false
+  pull-request-footer:
+    description: 'set release PR footer, defaults to using "This PR was generated with Release Please. See documentation.'
+    required: false
   draft:
     description: 'mark release as a draft'
     required: false

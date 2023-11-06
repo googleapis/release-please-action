@@ -142,6 +142,7 @@ async function manifestInstance (github) {
   const extraFiles = core.getMultilineInput('extra-files') || undefined
   const pullRequestTitlePattern = core.getInput('pull-request-title-pattern') || undefined
   const pullRequestHeader = core.getInput('pull-request-header') || undefined
+  const pullRequestFooter = core.getInput('pull-request-footer') || undefined
   const draft = getOptionalBooleanInput('draft')
   const draftPullRequest = getOptionalBooleanInput('draft-pull-request')
   const changelogType = core.getInput('changelog-notes-type') || undefined
@@ -181,6 +182,7 @@ async function manifestInstance (github) {
       includeComponentInTag: monorepoTags,
       pullRequestTitlePattern,
       pullRequestHeader,
+      pullRequestFooter,
       draftPullRequest,
       versioning,
       releaseAs,
