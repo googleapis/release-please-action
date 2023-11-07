@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.13](https://github.com/google-github-actions/release-please-action/compare/v3.7.12...v3.7.13) (2023-11-06)
+
+
+### Bug Fixes
+
+* **deps:** bump dependency versions ([#849](https://github.com/google-github-actions/release-please-action/issues/849)) ([9108012](https://github.com/google-github-actions/release-please-action/commit/910801217bf1ec07dd4367e66345f83918f7ae57))
+
 ## [3.7.12](https://github.com/google-github-actions/release-please-action/compare/v3.7.11...v3.7.12) (2023-09-28)
 
 
