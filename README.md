@@ -298,18 +298,18 @@ jobs:
       - uses: actions/checkout@v2
         # these if statements ensure that a publication only occurs when
         # a new release is created:
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release.outputs.releases_created }}
       - uses: actions/setup-node@v1
         with:
           node-version: 12
           registry-url: 'https://registry.npmjs.org'
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release.outputs.releases_created }}
       - run: npm ci
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release.outputs.releases_created }}
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release.outputs.releases_created }}
 ```
 
 > So that you can keep 2FA enabled for npm publications, we recommend setting
@@ -324,7 +324,7 @@ users to pin to `v2`, and get updates to your library without updating their
 workflows.
 
 The `release-please-action` has the outputs `major`, `minor`, and
-`release_created` to facilitate this. These outputs can be used conditionally,
+`releases_created` to facilitate this. These outputs can be used conditionally,
 like so:
 
 ```yaml
@@ -345,7 +345,7 @@ jobs:
           command: github-release
       - uses: actions/checkout@v2
       - name: tag major and minor versions
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release.outputs.releases_created }}
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
@@ -384,7 +384,7 @@ jobs:
         if: ${{ steps.release.outputs.releases_created }}
       # For root level packages: ${{ steps.release.outputs.package-a--tag_name }}
       - run: echo "Release ${{ steps.release.outputs['packages/package-a--tag_name'] }} created for package-a."
-        if: ${{ steps.release.outputs['packages/package-a--release_created'] }}
+        if: ${{ steps.release.outputs['packages/package-a--releases_created'] }}
 ```
 
 ## Updating additional files
@@ -432,7 +432,7 @@ jobs:
         with:
           release-type: node
       - name: Upload Release Artifact
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ steps.release.outputs.releases_created }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run:
