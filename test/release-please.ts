@@ -63,7 +63,7 @@ function mockInputs(inputs: Record<string, string>): RestoreFn {
 nock.disableNetConnect();
 
 describe('release-please-action', () => {
-  let output: Record<string, any> = {};
+  let output: Record<string, string | boolean> = {};
   // Save original env varas and restore after each test
   let restoreEnv: RestoreFn | null;
   afterEach(() => {
@@ -75,9 +75,13 @@ describe('release-please-action', () => {
   });
   beforeEach(() => {
     output = {};
-    sandbox.replace(core, 'setOutput', (key: string, value: any) => {
-      output[key] = value;
-    });
+    sandbox.replace(
+      core,
+      'setOutput',
+      (key: string, value: string | boolean) => {
+        output[key] = value;
+      }
+    );
     // Default branch lookup:
     nock('https://api.github.com').get('/repos/fakeOwner/fakeRepo').reply(200, {
       default_branch: 'main',
@@ -264,7 +268,8 @@ describe('release-please-action', () => {
       sinon.assert.calledOnce(fakeManifest.createReleases);
       sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
-      const {pr, prs} = output;
+      const {pr, prs, prs_created} = output;
+      assert.strictEqual(prs_created, true);
       assert.deepStrictEqual(pr, fixturePrs[0]);
       assert.deepStrictEqual(prs, JSON.stringify([fixturePrs[0]]));
     });
@@ -360,7 +365,9 @@ describe('release-please-action', () => {
       sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
       assert.strictEqual(Object.hasOwnProperty.call(output, 'pr'), false);
-      assert.deepStrictEqual(output, {paths_released: '[]'});
+      assert.deepStrictEqual(output.paths_released, '[]');
+      assert.deepStrictEqual(output.prs_created, false);
+      assert.deepStrictEqual(output.releases_created, false);
     });
   });
 });

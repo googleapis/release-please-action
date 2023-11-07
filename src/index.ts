@@ -184,7 +184,8 @@ function outputReleases(releases: (CreatedRelease | undefined)[]) {
         // and this is explicitly a manifest release, set the release_created boolean.
         setPathOutput(path, 'release_created', true);
       }
-      for (let [key, value] of Object.entries(release)) {
+      for (const [rawKey, value] of Object.entries(release)) {
+        let key = rawKey;
         // Historically tagName was output as tag_name, keep this
         // consistent to avoid breaking change:
         if (key === 'tagName') key = 'tag_name';
@@ -202,6 +203,7 @@ function outputReleases(releases: (CreatedRelease | undefined)[]) {
 
 function outputPRs(prs: (PullRequest | undefined)[]) {
   prs = prs.filter(pr => pr !== undefined);
+  core.setOutput('prs_created', prs.length > 0);
   if (prs.length) {
     core.setOutput('pr', prs[0]);
     core.setOutput('prs', JSON.stringify(prs));
