@@ -59,7 +59,7 @@ Automate releases with Conventional Commit Messages.
 |  `bump-patch-for-minor-pre-major`  | Should feat changes before 1.0.0 produce patch bumps instead of minor bumps?  Default `false`                                                                                                                                                                                                                                                                 |
 |               `path`               | create a release from a path other than the repository's root                                                                                                                                                                                                                                                                                                 |
 |          `monorepo-tags`           | add prefix to tags and branches, allowing multiple libraries to be released from the same repository.                                                                                                                                                                                                                                                         |
-|         `changelog-types`          | A JSON formatted String containing to override the outputted changelog sections                                                                                                                                                                                                                                                                               |
+|         `changelog-types`          | A JSON formatted String containing to override the outputted changelog sections. Defined types may trigger version bumps.                                                                                                                                                                                                                                                                                |
 |           `version-file`           | provide a path to a version file to increment (used by ruby releaser)                                                                                                                                                                                                                                                                                         |
 |           `extra-files`            | add extra-files to bump using the [generic updater](https://github.com/googleapis/release-please/blob/main/docs/customizing.md#updating-arbitrary-files)                                                                                                                                                                                                      |
 |               `fork`               | Should the PR be created from a fork. Default `false`                                                                                                                                                                                                                                                                                                         |
@@ -98,20 +98,28 @@ Automate releases with Conventional Commit Messages.
 
 ## GitHub credentials
 
-`release-please` requires a GitHub token to access the GitHub API. You configure this token via the
-`token` configuration option. You can use the built-in `GITHUB_TOKEN` secret, however, note that any resources
-created by `release-please` (release tag or release pull request) will not trigger future GitHub actions
-workflows.
+`release-please` requires a GitHub token to access the GitHub API. You configure this token via
+the `token` configuration option.
 
-From the [docs](https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow):
-> When you use the repository's `GITHUB_TOKEN` to perform tasks, events triggered by the `GITHUB_TOKEN` will not create a new workflow run. This prevents you from accidentally creating recursive workflow runs.
+> [!WARNING]  
+> If using GitHub Actions, you will need to specify a `token` for your workflows to run on
+> Release Please's releases and PRs.
 
-This means that GitHub actions CI checks will not run on the release pull request and workflows normally triggered by
-`release.created` events will also not run. You will want to configure a GitHub actions secret with a
-[personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
-if you want other workflows to run.
+By default, Release Please uses the built-in `GITHUB_TOKEN` secret. However, all resources created
+by `release-please` (release tag or release pull request) will not trigger future GitHub actions workflows,
+and workflows normally triggered by `release.created` events will also not run.
+From GitHub's
+[docs](https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow):
+
+> When you use the repository's `GITHUB_TOKEN` to perform tasks, events triggered by the `GITHUB_TOKEN`
+> will not create a new workflow run. This prevents you from accidentally creating recursive workflow runs.
+
+. You will want to configure a GitHub Actions secret with a
+[Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
+if you want GitHub Actions CI checks to run on Release Please PRs.
 
 ### The `command` option
+
 Some additional info regarding the `command` property.
 - `github-release`: creates GitHub releases (as mentioned [here](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)) based on the most recently merged release PR and the release strategy being used.
 - `release-pr`: uses Conventional Commits to propose a candidate release [pull request](#how-release-please-works). This pull request, once merged, is used by `github-release`/`manifest`
@@ -127,6 +135,9 @@ permissions:
   contents: write
   pull-requests: write
 ```
+
+You may also need to set "Allow GitHub Actions to create and approve pull requests" under
+repository Settings > Actions > General.
 
 For more information about permissions: 
 
