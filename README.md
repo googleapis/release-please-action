@@ -384,7 +384,7 @@ jobs:
         if: ${{ steps.release.outputs.releases_created }}
       # For root level packages: ${{ steps.release.outputs.package-a--tag_name }}
       - run: echo "Release ${{ steps.release.outputs['packages/package-a--tag_name'] }} created for package-a."
-        if: ${{ steps.release.outputs['packages/package-a--releases_created'] }}
+        if: ${{ steps.release.outputs['packages/package-a--release_created'] }}
 ```
 
 ## Updating additional files
