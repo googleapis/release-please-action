@@ -38,6 +38,7 @@ interface ActionInputs {
   targetBranch?: string;
   skipGitHubRelease?: boolean;
   skipGitHubPullRequest?: boolean;
+  fork?: boolean;
 }
 
 // TODO: replace this interface is exported from release-please
@@ -83,6 +84,7 @@ function parseInputs(): ActionInputs {
     proxyServer: getOptionalInput('proxy-server'),
     skipGitHubRelease: getOptionalBooleanInput('skip-github-release'),
     skipGitHubPullRequest: getOptionalBooleanInput('skip-github-pull-request'),
+    fork: getOptionalBooleanInput('fork'),
   };
   return inputs;
 }
@@ -110,15 +112,23 @@ function loadOrBuildManifest(
       {
         releaseType: inputs.releaseType,
       },
-      undefined,
+      {
+        fork: inputs.fork,
+      },
       inputs.path
     );
   }
+  const manifestOverrides = inputs.fork
+    ? {
+        fork: inputs.fork,
+      }
+    : {};
   return Manifest.fromManifest(
     github,
     github.repository.defaultBranch,
     inputs.configFile,
-    inputs.manifestFile
+    inputs.manifestFile,
+    manifestOverrides
   );
 }
 

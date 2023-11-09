@@ -67,20 +67,21 @@ steps:
 
 ## Action Inputs
 
-| input                      | description                                                                                                                         |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `token`                    | A GitHub secret token, the action defaults to using the special `secrets.GITHUB_TOKEN`                                              |
-| `release-type`             | If specified, defines the release strategy to use for the repository. Reference [Release types supported](#release-types-supported) |
-| `path`                     | create a release from a path other than the repository's root                                                                       |
-| `default-branch`           | branch to open pull release PR against (detected by default)                                                                        |
-| `config-file`              | Path to the release-please config in the repository. Defaults to `release-please-config.json`                                       |
-| `manifest-file`            | Path to the release-please versions manifest. Defaults to `.release-please-manifest.json`                                           |
-| `repo-url`                 | GitHub repository name in the form of `<owner>/<repo>`. Defaults to the repository the action is running in.                        |
-| `github-api-url`           | Override the GitHub API URL.                                                                                                        |
-| `github-graphql-url`       | Override the GitHub GraphQL URL                                                                                                     |
-| `proxy-server`             | Configure a proxy servier in the form of `<host>:<port>` e.g. `proxy-host.com:8080`                                                 |
-| `skip-github-release`      | If `true`, do not attempt to create releases. This is useful if splitting release tagging from PR creation.                         |
-| `skip-github-pull-request` | If `true`, do not attempt to create release pull requests. This is useful if splitting release tagging from PR creation.            |
+| input                      | description                                                                                                                            |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `token`                    | A GitHub secret token, the action defaults to using the special `secrets.GITHUB_TOKEN`                                                 |
+| `release-type`             | If specified, defines the release strategy to use for the repository. Reference [Release types supported](#release-types-supported)    |
+| `path`                     | create a release from a path other than the repository's root                                                                          |
+| `default-branch`           | branch to open pull release PR against (detected by default)                                                                           |
+| `config-file`              | Path to the release-please config in the repository. Defaults to `release-please-config.json`                                          |
+| `manifest-file`            | Path to the release-please versions manifest. Defaults to `.release-please-manifest.json`                                              |
+| `repo-url`                 | GitHub repository name in the form of `<owner>/<repo>`. Defaults to the repository the action is running in.                           |
+| `github-api-url`           | Override the GitHub API URL.                                                                                                           |
+| `github-graphql-url`       | Override the GitHub GraphQL URL                                                                                                        |
+| `fork`                     | If `true`, send the PR from a fork. This requires the `token` to be a user that can create forks (e.g. not the default `GITHUB_TOKEN`) |
+| `proxy-server`             | Configure a proxy servier in the form of `<host>:<port>` e.g. `proxy-host.com:8080`                                                    |
+| `skip-github-release`      | If `true`, do not attempt to create releases. This is useful if splitting release tagging from PR creation.                            |
+| `skip-github-pull-request` | If `true`, do not attempt to create release pull requests. This is useful if splitting release tagging from PR creation.               |
 
 ## GitHub Credentials
 
@@ -173,7 +174,7 @@ If you have a root component (path is `.` or unset), then the action will also o
 | `release_major`      | Number representing major semver value                                                                     |
 | `release_minor`      | Number representing minor semver value                                                                     |
 | `release_patch`      | Number representing patch semver value                                                                     |
-| `release_sha`        | SHA that a GitHub release was tagged at                                                                    |         |
+| `release_sha`        | SHA that a GitHub release was tagged at                                                                    |
 
 ### Path outputs
 

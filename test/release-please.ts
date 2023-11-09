@@ -91,75 +91,158 @@ describe('release-please-action', () => {
     sandbox.restore();
   });
   describe('configuration', () => {
-    it('loads a manifest from the repository', async () => {
-      restoreEnv = mockInputs({});
-      const fakeManifest = sandbox.createStubInstance(Manifest);
-      fakeManifest.createReleases.resolves([]);
-      fakeManifest.createPullRequests.resolves([]);
-      sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
-      await action.main();
-      sinon.assert.calledOnce(fakeManifest.createReleases);
-      sinon.assert.calledOnce(fakeManifest.createPullRequests);
+    let fakeManifest: sinon.SinonStubbedInstance<Manifest>;
+    describe('with release-type', () => {
+      let fromConfigStub: sinon.SinonStub;
+      beforeEach(() => {
+        fakeManifest = sandbox.createStubInstance(Manifest);
+        fromConfigStub = sandbox
+          .stub(Manifest, 'fromConfig')
+          .resolves(fakeManifest);
+      });
+      it('builds a manifest from config', async () => {
+        restoreEnv = mockInputs({
+          'release-type': 'simple',
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main();
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+      });
+      it('skips creating releases if skip-github-release specified', async () => {
+        restoreEnv = mockInputs({
+          'skip-github-release': 'true',
+          'release-type': 'simple',
+        });
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main();
+        sinon.assert.notCalled(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+      });
+      it('skips creating pull requests if skip-github-pull-request specified', async () => {
+        restoreEnv = mockInputs({
+          'skip-github-pull-request': 'true',
+          'release-type': 'simple',
+        });
+        fakeManifest.createReleases.resolves([]);
+        await action.main();
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.notCalled(fakeManifest.createPullRequests);
+      });
+      it('allows specifying custom target branch', async () => {
+        restoreEnv = mockInputs({
+          'target-branch': 'dev',
+          'release-type': 'simple',
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main();
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+        sinon.assert.calledWith(
+          fromConfigStub,
+          sinon.match.any,
+          'dev',
+          sinon.match.object,
+          sinon.match.object,
+          sinon.match.any,
+        );
+      });
+      it('allows specifying fork', async () => {
+        restoreEnv = mockInputs({
+          'fork': 'true',
+          'release-type': 'simple',
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main();
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+        sinon.assert.calledWith(
+          fromConfigStub,
+          sinon.match.any,
+          sinon.match.string,
+          sinon.match.object,
+          sinon.match({fork: true}),
+          sinon.match.any,
+        );
+      });
     });
 
-    it('builds a manifest from config', async () => {
-      restoreEnv = mockInputs({
-        'release-type': 'simple',
+    describe('with manifest', () => {
+      let fromManifestStub: sinon.SinonStub;
+      beforeEach(() => {
+        fakeManifest = sandbox.createStubInstance(Manifest);
+        fromManifestStub = sandbox
+          .stub(Manifest, 'fromManifest')
+          .resolves(fakeManifest);
       });
-      const fakeManifest = sandbox.createStubInstance(Manifest);
-      fakeManifest.createReleases.resolves([]);
-      fakeManifest.createPullRequests.resolves([]);
-      sandbox.stub(Manifest, 'fromConfig').resolves(fakeManifest);
-      await action.main();
-      sinon.assert.calledOnce(fakeManifest.createReleases);
-      sinon.assert.calledOnce(fakeManifest.createPullRequests);
-    });
-
-    it('skips creating releases if skip-github-release specified', async () => {
-      restoreEnv = mockInputs({
-        'skip-github-release': 'true',
+      it('loads a manifest from the repository', async () => {
+        restoreEnv = mockInputs({});
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main();
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
       });
-      const fakeManifest = sandbox.createStubInstance(Manifest);
-      fakeManifest.createPullRequests.resolves([]);
-      sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
-      await action.main();
-      sinon.assert.notCalled(fakeManifest.createReleases);
-      sinon.assert.calledOnce(fakeManifest.createPullRequests);
-    });
-
-    it('skips creating pull requests if skip-github-pull-request specified', async () => {
-      restoreEnv = mockInputs({
-        'skip-github-pull-request': 'true',
+      it('skips creating releases if skip-github-release specified', async () => {
+        restoreEnv = mockInputs({
+          'skip-github-release': 'true',
+        });
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main();
+        sinon.assert.notCalled(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
       });
-      const fakeManifest = sandbox.createStubInstance(Manifest);
-      fakeManifest.createReleases.resolves([]);
-      sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
-      await action.main();
-      sinon.assert.calledOnce(fakeManifest.createReleases);
-      sinon.assert.notCalled(fakeManifest.createPullRequests);
-    });
-
-    it('allows specifying custom target branch', async () => {
-      restoreEnv = mockInputs({
-        'target-branch': 'dev',
+      it('skips creating pull requests if skip-github-pull-request specified', async () => {
+        restoreEnv = mockInputs({
+          'skip-github-pull-request': 'true',
+        });
+        fakeManifest.createReleases.resolves([]);
+        await action.main();
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.notCalled(fakeManifest.createPullRequests);
       });
-      const fakeManifest = sandbox.createStubInstance(Manifest);
-      fakeManifest.createReleases.resolves([]);
-      fakeManifest.createPullRequests.resolves([]);
-      const fromManifestStub = sandbox
-        .stub(Manifest, 'fromManifest')
-        .resolves(fakeManifest);
-      await action.main();
-      sinon.assert.calledOnce(fakeManifest.createReleases);
-      sinon.assert.calledOnce(fakeManifest.createPullRequests);
+      it('allows specifying custom target branch', async () => {
+        restoreEnv = mockInputs({
+          'target-branch': 'dev',
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main();
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
-      sinon.assert.calledWith(
-        fromManifestStub,
-        sinon.match.any,
-        'dev',
-        sinon.match.string,
-        sinon.match.string
-      );
+        sinon.assert.calledWith(
+          fromManifestStub,
+          sinon.match.any,
+          'dev',
+          sinon.match.string,
+          sinon.match.string
+        );
+      });
+      it('allows specifying fork', async () => {
+        restoreEnv = mockInputs({
+          'fork': 'true',
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main();
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+        sinon.assert.calledWith(
+          fromManifestStub,
+          sinon.match.any,
+          sinon.match.string,
+          sinon.match.string,
+          sinon.match.string,
+          sinon.match({fork: true}),
+        );
+      });
     });
 
     it('allows specifying manifest config paths', async () => {
