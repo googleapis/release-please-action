@@ -6,58 +6,12 @@ inputs:
     description: 'GitHub token for creating and grooming release PRs, defaults to using secrets.GITHUB_TOKEN'
     required: false
     default: ${{ github.token }}
-  fork:
-    description: 'should the PR be proposed from a fork, Default to false'
-    required: false
-    default: false
-  clean:
-    description: 'Should stale release PRs be closed post release? Defaults to true'
-    required: false
-    default: true
-  package-name:
-    description: 'name of the distributions releases are being created for, e.g., "name" in package.json, or "setup.py"'
-    required: false
   release-type:
     description: 'what type of release is this, one of (ruby, python, node, terraform-module)'
-    required: true
-  bump-minor-pre-major:
-    description: 'should breaking changes before 1.0.0 produce minor bumps'
     required: false
-    default: false
-  bump-patch-for-minor-pre-major:
-    description: 'should feat changes before 1.0.0 produce patch bumps instead of minor bumps'
-    required: false
-    default: false
+    default: ''
   path:
     description: "create a release from a path other than the repository's root"
-    required: false
-    default: ''
-  changelog-path:
-    description: 'specify a CHANGELOG path other than the root CHANGELOG.md'
-    required: false
-    default: ''
-  changelog-host:
-    description: 'The proto://host where commits live.'
-    required: false
-    default: ${{ github.server_url }}
-  command:
-    description: 'release-please command to run, either "github-release", or "release-pr" (defaults to running both)'
-    required: false
-    default: ''
-  version-file:
-    description: 'provide a path to a version file to increment (used by ruby releaser)'
-    required: false
-    default: ''
-  extra-files:
-    description: 'extra files to bump using the generic updater'
-    required: false
-    default: ''
-  default-branch:
-    description: 'branch to open pull release PR against (detected by default)'
-    required: false
-    default: ''
-  changelog-types:
-    description: 'changlelog commit types'
     required: false
     default: ''
   config-file:
@@ -66,10 +20,6 @@ inputs:
     default: ''
   manifest-file:
     description: 'where can the manifest file be found in the project?'
-    required: false
-    default: ''
-  signoff:
-    description: 'Add [`Signed-off-by`](https://git-scm.com/docs/git-commit#Documentation/git-commit.txt---signoff) line at the end of the commit log message using the user and email provided. (format "Name \<email@example.com\>")'
     required: false
     default: ''
   github-api-url:
@@ -83,90 +33,19 @@ inputs:
   repo-url:
     description: 'configure github repository URL. Default `process.env.GITHUB_REPOSITORY`'
     required: false
-    default: ''
-  monorepo-tags:
-    description: 'add prefix to tags and branches, allowing multiple libraries to be released from the same repository'
-    required: false
-    default: false
-  pull-request-title-pattern:
-    description: 'add title pattern to make release PR, defaults to using "chore${scope}: release${component} ${version}"'
-    required: false
-  pull-request-header:
-    description: 'set release PR header, defaults to using ":robot: I have created a release *beep* *boop*"'
-    required: false
-  draft:
-    description: 'mark release as a draft'
-    required: false
-  draft-pull-request:
-    description: 'mark pull request as a draft'
-    required: false
-  changelog-notes-type:
-    description: "Strategy for building the changelog contents(see https://github.com/googleapis/release-please/blob/main/docs/customizing.md#changelog-types). Default `default`. Called `changelog-type` in release-please documentation."
-    required: false
-  versioning-strategy:
-    description: 'Override method of determining SemVer version bumps based on commits (drr https://github.com/googleapis/release-please/blob/main/docs/customizing.md#versioning-strategies). Default `default`'
-    required: false
-  release-as:
-    description: 'manually set version to this value, ignoring conventional commits. Absence defaults to conventional commits derived next version. Once the release PR is merged you should either remove this or update it to a higher version. Otherwise subsequent `manifest-pr` runs will continue to use this version even though it was already set in the last release.'
-    required: false
-  skip-github-release:
-    description: 'Skip creating GitHub Releases. Default `false`'
-    required: false
-  prerelease:
-    description: 'If set, create releases that are pre-major or pre-release version marked as pre-release on Github. Defaults `false`'
-    required: false
-  component:
-    description: 'name of the component used for branch naming and release tagging, defaults to a normalized version based on the package name'
-    required: false
-  include-v-in-tag:
-    description: 'include "v" in tag versions. Default `true`'
-    required: false
-  tag-separator:
-    description: 'configures separator character used in release tag'
-    required: false
-  snapshot-labels:
-    description: 'sets java snapshot pull request labels other than `autorelease: snapshot`  '
-    required: false
-  bootstrap-sha:
-    description: 'if this is the first time running `manifest-pr` on a repo this key will limit how far back (exclusive) to pull commits for conventional commit parsing (see the manifest releaser docs https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md)'
-    required: false
-  last-release-sha:
-    description: 'overrides the commit sha release-please will use from which to gather commits for the current release (see the manifest releaser docs https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md)'
-    required: false
-  always-link-local:
-    description: 'when using the `node-workspace` plugin, setting to false will only bump your local dependencies within the SemVer range (see the manifest releaser docs)[https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md) . Default `true`.'
-    required: false
-  separate-pull-requests:
-    description: 'create separate pull requests for each package instead of a single manifest release pull request (see the manifest releaser docs https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md). Default `false`.'
-    required: false
-  plugins:
-    description: 'see https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md#plugins'
-    required: false
-  labels:
-    description: 'list of labels to apply to the release pull requests, defaults to `autorelease: pending`'
-    required: false
-  release-labels:
-    description: 'set a pull request label other than `autorelease: tagged`'
-    required: false
-  skip-labeling:
-    description: 'if set, labels will not be applied to pull requests. Default `false`.'
-    required: false
-  sequential-calls:
-    description: 'issue GitHub API requests sequentially rather than concurrently (see the manifest releaser docs https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md). Default `false`'
-    required: false
-  group-pull-request-title-pattern:
-    description: 'sets the manifest pull request title for when releasing multiple packages grouped together in the one pull request'
-    required: false
-  release-search-depth:
-    description: 'when searching for the latest release SHAs, only consider the last N releases'
-    required: false
-  commit-search-depth:
-    description: 'when fetching the list of commits to consider, only consider the last N commits'
-    required: false
+    default: ${{ github.repository }}
   proxy-server:
     description: 'set proxy sever when you run this action behind a proxy. format is host:port e.g. proxy-host.com:8080'
     required: false
-
+    default: ''
+  skip-github-release:
+    description: 'if set to true, then do not try to tag releases'
+    required: false
+    default: false
+  skip-github-pull-request:
+    description: 'if set to true, then do not try to open pull requests'
+    required: false
+    default: false
 runs:
   using: 'node16'
   main: 'dist/index.js'
