@@ -72,7 +72,7 @@ steps:
 | `token`                    | A GitHub secret token, the action defaults to using the special `secrets.GITHUB_TOKEN`                                                 |
 | `release-type`             | If specified, defines the release strategy to use for the repository. Reference [Release types supported](#release-types-supported)    |
 | `path`                     | create a release from a path other than the repository's root                                                                          |
-| `default-branch`           | branch to open pull release PR against (detected by default)                                                                           |
+| `target-branch`            | branch to open pull release PR against (detected by default)                                                                           |
 | `config-file`              | Path to the release-please config in the repository. Defaults to `release-please-config.json`                                          |
 | `manifest-file`            | Path to the release-please versions manifest. Defaults to `.release-please-manifest.json`                                              |
 | `repo-url`                 | GitHub repository name in the form of `<owner>/<repo>`. Defaults to the repository the action is running in.                           |
@@ -316,7 +316,6 @@ jobs:
         with:
           release-type: node
           package-name: ${{env.ACTION_NAME}}
-          command: github-release
       - uses: actions/checkout@v2
       - name: tag major and minor versions
         if: ${{ steps.release.outputs.release_created }}
@@ -362,6 +361,19 @@ jobs:
 ```
 
 ## Upgrading from v3 to v4
+
+### Command
+
+If you were setting the `command` option, you will likely need to modify your configuration.
+
+| Command          | New Configuration                                                | Description                                                                                                                                  |
+| ---------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `github-release` | `skip-github-pull-request: true`                                 | This command was used for only tagging releases. Now we tell relese-please to skip opening release PRs.                                      |
+| `release-pr`     | `skip-github-release: true`                                      | This command was used for only opening release PRs. Now we tell release-please to skip tagging releases.                                     |
+| `manifest`       | do not set `release-type` option                                 | This command told release-please to use a manifest config file. This is now the default behavior unless you explicitly set a `release-type`. |
+| `manifest-pr`    | `skip-github-release: true` and do not set `release-type` option | This command told release-please to use a manifest config file and only open the pull reuqest.                                               |
+
+### Package options
 
 If you were previously configuring advanced options via GitHub action inputs, you
 will need to configure via the release-please manifest configuration instead. Below,
