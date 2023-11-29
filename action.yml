@@ -14,6 +14,10 @@ inputs:
     description: "create a release from a path other than the repository's root"
     required: false
     default: ''
+  target-branch:
+    description: branch to open pull release PR against (detected by default)
+    required: false
+    default: ''
   config-file:
     description: 'where can the config file be found in the project?'
     required: false
@@ -22,6 +26,10 @@ inputs:
     description: 'where can the manifest file be found in the project?'
     required: false
     default: ''
+  repo-url:
+    description: 'configure github repository URL. Default `process.env.GITHUB_REPOSITORY`'
+    required: false
+    default: ${{ github.repository }}
   github-api-url:
     description: 'configure github API URL. Default `https://api.github.com`'
     required: false
@@ -30,10 +38,10 @@ inputs:
     description: 'configure github GraphQL URL. Default `https://api.github.com`'
     required: false
     default: ${{ github.graphql_url }}
-  repo-url:
-    description: 'configure github repository URL. Default `process.env.GITHUB_REPOSITORY`'
+  fork:
+    description: 'If true, send the PR from a fork. This requires the token to be a user that can create forks (e.g. not the default GITHUB_TOKEN)'
     required: false
-    default: ${{ github.repository }}
+    default: false
   proxy-server:
     description: 'set proxy sever when you run this action behind a proxy. format is host:port e.g. proxy-host.com:8080'
     required: false
