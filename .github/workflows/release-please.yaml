@@ -67,8 +67,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
-          package-name: ${{env.ACTION_NAME}}
-          command: github-release
+          skip-github-pull-request: true
       - uses: actions/checkout@v2
       - name: tag major and patch versions
         run: |
@@ -96,8 +95,7 @@ jobs:
           token: ${{ secrets.ACTIONS_BOT_TOKEN }}
           release-type: node
           fork: true
-          package-name: ${{env.ACTION_NAME}}
-          command: release-pr
+          skip-github-release: true
       - id: label
         if: ${{ steps.release-pr.outputs.pr }}
         uses: actions/github-script@v3
