@@ -73,6 +73,7 @@ function parseInputs(): ActionInputs {
   const inputs: ActionInputs = {
     token: core.getInput('token', {required: true}),
     releaseType: getOptionalInput('release-type'),
+    path: getOptionalInput('path'),
     repoUrl: core.getInput('repo-url') || process.env.GITHUB_REPOSITORY || '',
     targetBranch: getOptionalInput('target-branch'),
     configFile: core.getInput('config-file') || DEFAULT_CONFIG_FILE,
