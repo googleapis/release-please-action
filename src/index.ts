@@ -224,3 +224,9 @@ function outputPRs(prs: (PullRequest | undefined)[]) {
     core.setOutput('prs', JSON.stringify(prs));
   }
 }
+
+if (require.main === module) {
+  main().catch(err => {
+    core.setFailed(`release-please failed: ${err.message}`)
+  })
+}
