@@ -107,6 +107,7 @@ function loadOrBuildManifest(
   inputs: ActionInputs
 ): Promise<Manifest> {
   if (inputs.releaseType) {
+    core.debug('Building manifest from config');
     return Manifest.fromConfig(
       github,
       github.repository.defaultBranch,
@@ -124,6 +125,7 @@ function loadOrBuildManifest(
         fork: inputs.fork,
       }
     : {};
+  core.debug('Loading manifest from config file');
   return Manifest.fromManifest(
     github,
     github.repository.defaultBranch,
@@ -139,11 +141,13 @@ export async function main() {
 
   if (!inputs.skipGitHubRelease) {
     const manifest = await loadOrBuildManifest(github, inputs);
+    core.debug('Creating pull requests');
     outputReleases(await manifest.createReleases());
   }
 
   if (!inputs.skipGitHubPullRequest) {
     const manifest = await loadOrBuildManifest(github, inputs);
+    core.debug('Creating pull requests');
     outputPRs(await manifest.createPullRequests());
   }
 }
