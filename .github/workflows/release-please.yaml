@@ -10,8 +10,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v3
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
         node-version: 20
     - name: install
@@ -46,7 +46,7 @@ jobs:
         echo "${DIFF}" >> $GITHUB_ENV
         echo 'EOF' >> $GITHUB_ENV
     - name: Create PR with dist
-      uses: peter-evans/create-pull-request@v3
+      uses: peter-evans/create-pull-request@v5
       with:
         token: ${{ secrets.ACTIONS_BOT_TOKEN }}
         commit-message: Build dist
@@ -69,7 +69,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
           skip-github-pull-request: true
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: tag major and patch versions
         run: |
           git config user.name github-actions[bot]
