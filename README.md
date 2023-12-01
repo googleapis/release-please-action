@@ -133,10 +133,13 @@ Release Please automates releases for the following flavors of repositories:
 
 | release type       | description                                                                                                                                                                                        |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dart` | A repository with a pubspec.yaml and a CHANGELOG.md |
 | `elixir`           | An elixir repository with a mix.exs and a CHANGELOG.md                                                                                                                                             |
+| `expo` | An Expo based React Native repository, with a package.json, app.json and CHANGELOG.md |
 | `go`               | Go repository, with a CHANGELOG.md                                                                                                                                                                 |
 | `helm`             | A helm chart repository with a Chart.yaml and a CHANGELOG.md                                                                                                                                       |
 | `java`             | [A strategy that generates SNAPSHOT version after each release](https://github.com/googleapis/release-please/blob/main/docs/java.md)                                                               |
+| `krm-blueprint` | [A kpt package, with 1 or more KRM files and a CHANGELOG.md](https://github.com/GoogleCloudPlatform/blueprints/tree/main/catalog/project) |
 | `maven`            | [Strategy for Maven projects, generates SNAPSHOT version after each release and updates `pom.xml` automatically](https://github.com/googleapis/release-please/blob/main/docs/java.md)              |
 | `node`             | [A Node.js repository, with a package.json and CHANGELOG.md](https://github.com/yargs/yargs)                                                                                                       |
 | `ocaml`            | [An OCaml repository, containing 1 or more opam or esy files and a CHANGELOG.md](https://github.com/grain-lang/binaryen.ml)                                                                        |
@@ -149,6 +152,8 @@ Release Please automates releases for the following flavors of repositories:
 | `terraform-module` | [A terraform module, with a version in the README.md, and a CHANGELOG.md](https://github.com/terraform-google-modules/terraform-google-project-factory)                                            |
 
 New types of releases can be [added here](https://github.com/googleapis/release-please/tree/main/src/strategies).
+
+> You can also find them in the [release-please repository](https://github.com/googleapis/release-please/tree/main#strategy-language-types-supported).
 
 ## Outputs
 
