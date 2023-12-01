@@ -2,6 +2,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 name: release-please
 env:
   ACTION_NAME: release-please-action
@@ -96,17 +97,3 @@ jobs:
           release-type: node
           fork: true
           skip-github-release: true
-      - id: label
-        if: ${{ steps.release-pr.outputs.pr }}
-        uses: actions/github-script@v3
-        with:
-            github-token: ${{secrets.GITHUB_TOKEN}}
-            script: |
-              const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
-              await github.issues.addLabels({
-                owner,
-                repo,
-                issue_number: ${{steps.release-pr.outputs.pr}},
-                labels: ['autorelease: pending']
-              });
-              console.log(`Tagged ${{steps.release-pr.outputs.pr}}`)

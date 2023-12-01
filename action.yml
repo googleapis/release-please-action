@@ -42,6 +42,10 @@ inputs:
     description: 'If true, send the PR from a fork. This requires the token to be a user that can create forks (e.g. not the default GITHUB_TOKEN)'
     required: false
     default: false
+  include-component-in-tag:
+    description: 'If true, add prefix to tags and branches, allowing multiple libraries to be released from the same repository'
+    required: false
+    default: false
   proxy-server:
     description: 'set proxy sever when you run this action behind a proxy. format is host:port e.g. proxy-host.com:8080'
     required: false

@@ -39,6 +39,7 @@ interface ActionInputs {
   skipGitHubRelease?: boolean;
   skipGitHubPullRequest?: boolean;
   fork?: boolean;
+  includeComponentInTag?: boolean;
 }
 
 // TODO: replace this interface is exported from release-please
@@ -86,6 +87,7 @@ function parseInputs(): ActionInputs {
     skipGitHubRelease: getOptionalBooleanInput('skip-github-release'),
     skipGitHubPullRequest: getOptionalBooleanInput('skip-github-pull-request'),
     fork: getOptionalBooleanInput('fork'),
+    includeComponentInTag: getOptionalBooleanInput('include-component-in-tag'),
   };
   return inputs;
 }
@@ -113,6 +115,7 @@ function loadOrBuildManifest(
       github.repository.defaultBranch,
       {
         releaseType: inputs.releaseType,
+        includeComponentInTag: inputs.includeComponentInTag,
       },
       {
         fork: inputs.fork,
