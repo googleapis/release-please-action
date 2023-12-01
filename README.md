@@ -168,7 +168,7 @@ If you have a root component (path is `.` or unset), then the action will also o
 
 | output               | description                                                                                                |
 | -------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `release_created`    | `true` if the release was created, `false` otherwise                                                       |
+| `release_created`    | `true` if a root component release was created, `false` otherwise                                          |
 | `upload_url`         | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `html_url`           | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `tag_name`           | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
@@ -316,7 +316,6 @@ jobs:
         id: release
         with:
           release-type: node
-          package-name: ${{env.ACTION_NAME}}
       - uses: actions/checkout@v2
       - name: tag major and minor versions
         if: ${{ steps.release.outputs.release_created }}
