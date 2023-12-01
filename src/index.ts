@@ -113,6 +113,7 @@ function loadOrBuildManifest(
       github.repository.defaultBranch,
       {
         releaseType: inputs.releaseType,
+        includeComponentInTag: false,
       },
       {
         fork: inputs.fork,
