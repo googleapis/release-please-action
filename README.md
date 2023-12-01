@@ -169,13 +169,13 @@ If you have a root component (path is `.` or unset), then the action will also o
 | output               | description                                                                                                |
 | -------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `release_created`    | `true` if the release was created, `false` otherwise                                                       |
-| `release_upload_url` | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
-| `release_html_url`   | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
-| `release_tag_name`   | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
-| `release_major`      | Number representing major semver value                                                                     |
-| `release_minor`      | Number representing minor semver value                                                                     |
-| `release_patch`      | Number representing patch semver value                                                                     |
-| `release_sha`        | SHA that a GitHub release was tagged at                                                                    |
+| `upload_url`         | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
+| `html_url`           | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
+| `tag_name`           | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
+| `major`              | Number representing major semver value                                                                     |
+| `minor`              | Number representing minor semver value                                                                     |
+| `patch`              | Number representing patch semver value                                                                     |
+| `sha`                | SHA that a GitHub release was tagged at                                                                    |
 
 ### Path outputs
 
