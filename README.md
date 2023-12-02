@@ -53,7 +53,7 @@ and then configure this action as follows:
 ```yaml
 #...(same as above)
 steps:
-  - uses: google-github-actions/release-please-action@v3
+  - uses: google-github-actions/release-please-action@v4
     with:
       # this assumes that you have created a personal access token
       # (PAT) and configured it as a GitHub action secret named
