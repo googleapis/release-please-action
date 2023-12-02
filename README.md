@@ -102,7 +102,7 @@ From GitHub's
 > When you use the repository's `GITHUB_TOKEN` to perform tasks, events triggered by the `GITHUB_TOKEN`
 > will not create a new workflow run. This prevents you from accidentally creating recursive workflow runs.
 
-. You will want to configure a GitHub Actions secret with a
+You will want to configure a GitHub Actions secret with a
 [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
 if you want GitHub Actions CI checks to run on Release Please PRs.
 
