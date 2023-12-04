@@ -232,7 +232,7 @@ The most important prefixes you should have in mind are:
 ### Supporting multiple release branches
 
 `release-please` has the ability to target not default branches. You can even use separate release strategies (`release-type`).
-To configure, simply configure multiple workflows that specify a different `default-branch`:
+To configure, simply configure multiple workflows that specify a different `target-branch`:
 
 Configuration for `main` (default) branch (`.github/workflows/release-main.yaml`):
 
@@ -252,7 +252,7 @@ jobs:
           release-type: node
           # The short ref name of the branch or tag that triggered
           #  the workflow run. For example, `main` or `1.x`
-          default-branch: ${{ github.ref_name }}
+          target-branch: ${{ github.ref_name }}
 ```
 
 ## Automating publication to npm
