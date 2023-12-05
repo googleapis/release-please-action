@@ -53,7 +53,7 @@ and then configure this action as follows:
 ```yaml
 #...(same as above)
 steps:
-  - uses: google-github-actions/release-please-action@v3
+  - uses: google-github-actions/release-please-action@v4
     with:
       # this assumes that you have created a personal access token
       # (PAT) and configured it as a GitHub action secret named
@@ -102,7 +102,7 @@ From GitHub's
 > When you use the repository's `GITHUB_TOKEN` to perform tasks, events triggered by the `GITHUB_TOKEN`
 > will not create a new workflow run. This prevents you from accidentally creating recursive workflow runs.
 
-. You will want to configure a GitHub Actions secret with a
+You will want to configure a GitHub Actions secret with a
 [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
 if you want GitHub Actions CI checks to run on Release Please PRs.
 
@@ -123,9 +123,9 @@ For more information about permissions:
 
 - GitHub APIs [protected by `contents` permission](https://docs.github.com/en/rest/overview/permissions-required-for-github-apps?apiVersion=2022-11-28#contents)
 - GitHub APIs [protected by `pull_requests` permission](https://docs.github.com/en/rest/overview/permissions-required-for-github-apps?apiVersion=2022-11-28#pull-requests)
-- https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
-- https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#enabling-workflows-for-private-repository-forks
-- https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
+- Github Actions: [permissions for the `GITHUB_TOKEN`](https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token)
+- Github Repositories: [enabling workflows for forks of private repositories](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#enabling-workflows-for-private-repository-forks)
+- Github Actions: [assigning permissions to jobs](https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs)
 
 ### Release Types Supported
 
@@ -275,11 +275,11 @@ jobs:
         with:
           release-type: node
       # The logic below handles the npm publication:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         # these if statements ensure that a publication only occurs when
         # a new release is created:
         if: ${{ steps.release.outputs.release_created }}
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v4
         with:
           node-version: 12
           registry-url: 'https://registry.npmjs.org'
@@ -321,7 +321,7 @@ jobs:
         id: release
         with:
           release-type: node
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: tag major and minor versions
         if: ${{ steps.release.outputs.release_created }}
         run: |
