@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.1](https://github.com/google-github-actions/release-please-action/compare/v4.0.0...v4.0.1) (2023-12-07)
+
+
+### Bug Fixes
+
+* bump release-please from 16.3.1 to 16.4.0 ([#897](https://github.com/google-github-actions/release-please-action/issues/897)) ([2463dad](https://github.com/google-github-actions/release-please-action/commit/2463dad9b20163a40708db720b9fde34c2a2ab0e))
+
 ## [4.0.0](https://github.com/google-github-actions/release-please-action/compare/v3.7.13...v4.0.0) (2023-12-01)
 
 
