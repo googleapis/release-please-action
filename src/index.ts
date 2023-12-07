@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as core from '@actions/core';
-import {GitHub, Manifest} from 'release-please';
+import {GitHub, Manifest, CreatedRelease, PullRequest} from 'release-please';
 
 const DEFAULT_CONFIG_FILE = 'release-please-config.json';
 const DEFAULT_MANIFEST_FILE = '.release-please-manifest.json';
@@ -40,34 +40,6 @@ interface ActionInputs {
   skipGitHubPullRequest?: boolean;
   fork?: boolean;
   includeComponentInTag?: boolean;
-}
-
-// TODO: replace this interface is exported from release-please
-interface PullRequest {
-  readonly headBranchName: string;
-  readonly baseBranchName: string;
-  readonly number: number;
-  readonly title: string;
-  readonly body: string;
-  readonly labels: string[];
-  readonly files: string[];
-  readonly sha?: string;
-}
-// TODO: replace this interface is exported from release-please
-interface CreatedRelease {
-  id: number;
-  path: string;
-  version: string;
-  major: number;
-  minor: number;
-  patch: number;
-  name?: string;
-  tagName: string;
-  sha: string;
-  notes?: string;
-  url: string;
-  draft?: boolean;
-  uploadUrl?: string;
 }
 
 function parseInputs(): ActionInputs {
