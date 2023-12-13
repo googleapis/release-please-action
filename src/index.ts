@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as core from '@actions/core';
-import {GitHub, Manifest, CreatedRelease, PullRequest} from 'release-please';
+import {GitHub, Manifest, CreatedRelease, PullRequest, VERSION} from 'release-please';
 
 const DEFAULT_CONFIG_FILE = 'release-please-config.json';
 const DEFAULT_MANIFEST_FILE = '.release-please-manifest.json';
@@ -111,6 +111,7 @@ function loadOrBuildManifest(
 }
 
 export async function main() {
+  core.info(`Running release-please version: ${VERSION}`)
   const inputs = parseInputs();
   const github = await getGitHubInstance(inputs);
 
