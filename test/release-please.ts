@@ -450,7 +450,7 @@ describe('release-please-action', () => {
       assert.strictEqual(Object.hasOwnProperty.call(output, 'pr'), false);
       assert.deepStrictEqual(output.paths_released, '[]');
       assert.deepStrictEqual(output.prs_created, false);
-      assert.deepStrictEqual(output.releases_created, false);
+      assert.deepStrictEqual(output.releases_created, undefined);
     });
   });
 });
