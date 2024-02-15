@@ -9,7 +9,54 @@
 			// Set *default* container specific settings.json values on container create.
 			"settings": {},
 			"extensions": [],
-		}
+		}on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+name: release-please
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release please
+        uses: google-github-actions/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.RELEASE_TOKEN }}
+          release-type: python
+      - uses: actions/checkout@v4
+        if: ${{ steps.release.outputs.release_created }}
+      - name: Install and build
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          curl https://mise.jdx.dev/install.sh | sh
+          echo "$HOME/.local/share/mise/bin">> $GITHUB_PATH
+          echo "$HOME/.local/share/mise/shims">> $GITHUB_PATH
+          eval "$(mise activate bash)"
+          mise install
+          mise settings set python_venv_auto_create true
+          mise settings set experimental true
+          mise run build
+      - name: Publish package on TestPyPI
+        if: ${{ steps.release.outputs.release_created }}
+        uses: pypa/gh-action-pypi-publish@v1.8.11
+        with:
+          user: __token__
+          password: ${{ secrets.TEST_PYPI_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
+      - name: Publish package on PyPI
+        if: ${{ steps.release.outputs.release_created }}
+        uses: pypa/gh-action-pypi-publish@v1.8.11
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_TOKEN }}
+
 }
 
 }
