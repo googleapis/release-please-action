@@ -19,6 +19,7 @@ const DEFAULT_CONFIG_FILE = 'release-please-config.json';
 const DEFAULT_MANIFEST_FILE = '.release-please-manifest.json';
 const DEFAULT_GITHUB_API_URL = 'https://api.github.com';
 const DEFAULT_GITHUB_GRAPHQL_URL = 'https://api.github.com';
+const DEFAULT_GITHUB_SERVER_URL = 'https://github.com';
 
 interface Proxy {
   host: string;
@@ -40,6 +41,7 @@ interface ActionInputs {
   skipGitHubPullRequest?: boolean;
   fork?: boolean;
   includeComponentInTag?: boolean;
+  changelogHost: string;
 }
 
 function parseInputs(): ActionInputs {
@@ -60,6 +62,7 @@ function parseInputs(): ActionInputs {
     skipGitHubPullRequest: getOptionalBooleanInput('skip-github-pull-request'),
     fork: getOptionalBooleanInput('fork'),
     includeComponentInTag: getOptionalBooleanInput('include-component-in-tag'),
+    changelogHost: core.getInput('changelog-host') || DEFAULT_GITHUB_SERVER_URL,
   };
   return inputs;
 }
@@ -88,6 +91,7 @@ function loadOrBuildManifest(
       {
         releaseType: inputs.releaseType,
         includeComponentInTag: inputs.includeComponentInTag,
+        changelogHost: inputs.changelogHost,
       },
       {
         fork: inputs.fork,
