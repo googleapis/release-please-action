@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.0](https://github.com/google-github-actions/release-please-action/compare/v4.0.3...v4.1.0) (2024-03-11)
+
+
+### Features
+
+* add `changelog-host` input to `action.yml` ([#948](https://github.com/google-github-actions/release-please-action/issues/948)) ([863b06f](https://github.com/google-github-actions/release-please-action/commit/863b06fd1cd7f36c1d74d697ddebe3cf5be4c6b0))
+
 ## [4.0.3](https://github.com/google-github-actions/release-please-action/compare/v4.0.2...v4.0.3) (2024-03-11)
 
 
