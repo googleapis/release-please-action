@@ -390,7 +390,7 @@ you can see a mapping of the old option to the new option:
 | `changelog-path`                   | `$.packages[path].changelog-path`                                                     | Package-only option                                                                 |
 | `component`                        | `$.packages[path].component`                                                          | Package-only option                                                                 |
 | `package-name`                     | `$.packages[path].package-name`                                                       | Package-only option                                                                 |
-| `always-link-local`                | `$.always-link-loca`                                                                  | Root-only option                                                                    |
+| `always-link-local`                | `$.always-link-local`                                                                 | Root-only option                                                                    |
 | `bootstrap-sha`                    | `$.bootstrap-sha`                                                                     | Root-only option                                                                    |
 | `commit-search-depth`              | `$.commit-search-depth`                                                               | Root-only option                                                                    |
 | `group-pull-request-title-pattern` | `$.group-pull-request-title-pattern`                                                  | Root-only option                                                                    |
