@@ -21,6 +21,7 @@ jobs:
     - name: Create PR with dist
       uses: googleapis/code-suggester@v4
       with:
+        command: pr
         upstream_repo: release-please-action
         upstream_owner: googleapis
         description: Build dist
