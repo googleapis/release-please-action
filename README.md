@@ -200,6 +200,14 @@ This prefix allows you to distinguish values for different releases.
 | `<path>--patch`           | Number representing patch semver value                                                                     |
 | `<path>--sha`             | sha that a GitHub release was tagged at                                                                    |
 
+If the path contains `/` you can access the output in your workflow by using javascript like property access with `outputs[<path--...]` 
+e.g.:
+
+```yaml
+run: npm publish --workflow packages/my-module
+if: ${{ steps.release.outputs['packages/my-module--release_created'] }}
+```
+
 ## How release please works
 
 Release Please automates CHANGELOG generation, the creation of GitHub releases,
