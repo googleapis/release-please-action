@@ -200,7 +200,7 @@ This prefix allows you to distinguish values for different releases.
 | `<path>--patch`           | Number representing patch semver value                                                                     |
 | `<path>--sha`             | sha that a GitHub release was tagged at                                                                    |
 
-If the path contains `/` you can access the output in your workflow by using javascript like property access with `outputs[<path--...]` 
+If the path contains `/` you can access the outputs by using javascript like property access `steps.release.outputs[<path>--...]` 
 e.g.:
 
 ```yaml
