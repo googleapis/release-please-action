@@ -121,7 +121,7 @@ export async function main() {
 
   if (!inputs.skipGitHubRelease) {
     const manifest = await loadOrBuildManifest(github, inputs);
-    core.debug('Creating pull requests');
+    core.debug('Creating releases');
     outputReleases(await manifest.createReleases());
   }
 
