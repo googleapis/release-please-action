@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.3](https://github.com/googleapis/release-please-action/compare/v4.1.2...v4.1.3) (2024-06-10)
+
+
+### Bug Fixes
+
+* correct log output when creating releases ([#933](https://github.com/googleapis/release-please-action/issues/933)) ([2725132](https://github.com/googleapis/release-please-action/commit/2725132cd346852cc752c1619637c864deda8440))
+
 ## [4.1.2](https://github.com/googleapis/release-please-action/compare/v4.1.1...v4.1.2) (2024-06-10)
 
 
