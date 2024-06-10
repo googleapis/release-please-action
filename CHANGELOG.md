@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.2](https://github.com/googleapis/release-please-action/compare/v4.1.1...v4.1.2) (2024-06-10)
+
+
+### Bug Fixes
+
+* bump release-please from 16.10.2 to 16.12.0 ([#1005](https://github.com/googleapis/release-please-action/issues/1005)) ([cb03961](https://github.com/googleapis/release-please-action/commit/cb039616703c3396df96b9a92e81bab1c17cbaa7))
+
 ## [4.1.1](https://github.com/googleapis/release-please-action/compare/v4.1.0...v4.1.1) (2024-05-14)
 
 
