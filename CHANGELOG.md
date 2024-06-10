@@ -1,5 +1,34 @@
 # Changelog
 
+## [4.1.2](https://github.com/googleapis/release-please-action/compare/v4.1.1...v4.1.2) (2024-06-10)
+
+
+### Bug Fixes
+
+* bump release-please from 16.10.2 to 16.12.0 ([#1005](https://github.com/googleapis/release-please-action/issues/1005)) ([cb03961](https://github.com/googleapis/release-please-action/commit/cb039616703c3396df96b9a92e81bab1c17cbaa7))
+
+## [4.1.1](https://github.com/googleapis/release-please-action/compare/v4.1.0...v4.1.1) (2024-05-14)
+
+
+### Bug Fixes
+
+* bump release-please from 16.10.0 to 16.10.2 ([#969](https://github.com/googleapis/release-please-action/issues/969)) ([aa764e0](https://github.com/googleapis/release-please-action/commit/aa764e0b5db70af7b607fa690b4d1799ceb802d6))
+* bump the npm_and_yarn group with 1 update ([#967](https://github.com/googleapis/release-please-action/issues/967)) ([ce529d4](https://github.com/googleapis/release-please-action/commit/ce529d4a4014c4760ec75d3ba6482e3b80d58862))
+
+## [4.1.0](https://github.com/google-github-actions/release-please-action/compare/v4.0.3...v4.1.0) (2024-03-11)
+
+
+### Features
+
+* add `changelog-host` input to `action.yml` ([#948](https://github.com/google-github-actions/release-please-action/issues/948)) ([863b06f](https://github.com/google-github-actions/release-please-action/commit/863b06fd1cd7f36c1d74d697ddebe3cf5be4c6b0))
+
+## [4.0.3](https://github.com/google-github-actions/release-please-action/compare/v4.0.2...v4.0.3) (2024-03-11)
+
+
+### Bug Fixes
+
+* bump release-please from 16.5.0 to 16.10.0 ([#953](https://github.com/google-github-actions/release-please-action/issues/953)) ([d7e88e0](https://github.com/google-github-actions/release-please-action/commit/d7e88e0fd9e1a56d1075f610183d571f8347ff9b))
+
 ## [4.0.2](https://github.com/google-github-actions/release-please-action/compare/v4.0.1...v4.0.2) (2023-12-18)
 
 
