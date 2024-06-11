@@ -177,6 +177,7 @@ If you have a root component (path is `.` or unset), then the action will also o
 | `upload_url`         | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `html_url`           | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `tag_name`           | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
+| `version`            | Number representing full semver value                                                                      |
 | `major`              | Number representing major semver value                                                                     |
 | `minor`              | Number representing minor semver value                                                                     |
 | `patch`              | Number representing patch semver value                                                                     |
@@ -195,6 +196,7 @@ This prefix allows you to distinguish values for different releases.
 | `<path>--upload_url`      | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `<path>--html_url`        | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
 | `<path>--tag_name`        | Directly related to [**Create a release**](https://developer.github.com/v3/repos/releases/#response-4) API |
+| `<path>--version`         | Number representing full semver value                                                                      |
 | `<path>--major`           | Number representing major semver value                                                                     |
 | `<path>--minor`           | Number representing minor semver value                                                                     |
 | `<path>--patch`           | Number representing patch semver value                                                                     |
