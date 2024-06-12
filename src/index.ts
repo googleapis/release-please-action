@@ -187,6 +187,7 @@ function outputReleases(releases: (CreatedRelease | undefined)[]) {
         if (key === 'uploadUrl') key = 'upload_url';
         if (key === 'notes') key = 'body';
         if (key === 'url') key = 'html_url';
+        if (key === 'id') key = 'id';
         setPathOutput(path, key, value);
       }
     }
