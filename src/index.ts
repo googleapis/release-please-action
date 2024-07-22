@@ -110,7 +110,8 @@ function loadOrBuildManifest(
     github.repository.defaultBranch,
     inputs.configFile,
     inputs.manifestFile,
-    manifestOverrides
+    manifestOverrides,
+    inputs.path
   );
 }
 
