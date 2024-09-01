@@ -1,0 +1,18 @@
+branchProtectionRules:
+  - pattern: main
+    isAdminEnforced: true
+    requiredApprovingReviewCount: 1
+    requiresCodeOwnerReviews: true
+    requiresStrictStatusChecks: true
+    requiredStatusCheckContexts:
+      - build-dist (20)
+      - test (20)
+      - cla/google
+      - windows
+permissionRules:
+  - team: yoshi-admins
+    permission: admin
+  - team: jsteam-admins
+    permission: admin
+  - team: jsteam
+    permission: push
