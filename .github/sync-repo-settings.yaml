@@ -16,3 +16,5 @@ permissionRules:
     permission: admin
   - team: jsteam
     permission: push
+  - team: github-automation
+    permission: push
