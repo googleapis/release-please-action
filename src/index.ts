@@ -166,8 +166,8 @@ function setPathOutput(path: string, key: string, value: string | boolean) {
 function outputReleases(releases: (CreatedRelease | undefined)[]) {
   releases = releases.filter(release => release !== undefined);
   const pathsReleased = [];
-  core.setOutput('releases_created', releases.length > 0);
   if (releases.length) {
+    core.setOutput('releases_created', true);
     for (const release of releases) {
       if (!release) {
         continue;
