@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.1.4](https://github.com/googleapis/release-please-action/compare/v4.1.3...v4.1.4) (2024-10-02)
+
+
+### Bug Fixes
+
+* bump braces from 3.0.2 to 3.0.3 in the npm_and_yarn group ([#1015](https://github.com/googleapis/release-please-action/issues/1015)) ([5ec1cbd](https://github.com/googleapis/release-please-action/commit/5ec1cbd9cb73c9d06637313bec5e3d6788e6a5f1))
+* bump release-please from 16.12.0 to 16.13.0 ([#1030](https://github.com/googleapis/release-please-action/issues/1030)) ([caa0464](https://github.com/googleapis/release-please-action/commit/caa04646d19fbb163bb853d276be1877fd092e90))
+* bump release-please from 16.13.0 to 16.14.0 ([#1032](https://github.com/googleapis/release-please-action/issues/1032)) ([b2a986c](https://github.com/googleapis/release-please-action/commit/b2a986c7e2f041e21005c546b2e03e9722e45bad))
+* **deps:** update release-please to 16.14.1 ([#1036](https://github.com/googleapis/release-please-action/issues/1036)) ([2942e51](https://github.com/googleapis/release-please-action/commit/2942e515c92f10850cc891e4900fb50eb62eba74))
+
 ## [4.1.3](https://github.com/googleapis/release-please-action/compare/v4.1.2...v4.1.3) (2024-06-10)
 
 
