@@ -1,7 +1,7 @@
 {
   "name": "release-please-action",
   "private": true,
-  "version": "4.1.3",
+  "version": "4.1.4",
   "description": "automated releases based on conventional commits",
   "main": "index.js",
   "scripts": {
