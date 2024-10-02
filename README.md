@@ -89,9 +89,14 @@ steps:
 `release-please` requires a GitHub token to access the GitHub API. You configure this token via
 the `token` configuration option.
 
+For `release-please` to create pull requests, you will need to
+[permit github actions to create an approve PRs](https://stackoverflow.com/questions/72376229).
+
 > [!WARNING]  
 > If using GitHub Actions, you will need to specify a `token` for your workflows to run on
-> Release Please's releases and PRs.
+> Release Please's releases and PRs. See [the heading below](#other-actions-on-release-please-prs).
+
+### Other Actions on Release Please PRs
 
 By default, Release Please uses the built-in `GITHUB_TOKEN` secret. However, all resources created
 by `release-please` (release tag or release pull request) will not trigger future GitHub actions workflows,
