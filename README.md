@@ -81,8 +81,7 @@ steps:
 | `fork`                     | If `true`, send the PR from a fork. This requires the `token` to be a user that can create forks (e.g. not the default `GITHUB_TOKEN`) |
 | `include-component-in-tag` | If true, add prefix to tags and branches, allowing multiple libraries to be released from the same repository                          |
 | `proxy-server`             | Configure a proxy servier in the form of `<host>:<port>` e.g. `proxy-host.com:8080`                                                    |
-| `skip-github-release`      | If `true`, do not attempt to create releases. This is useful if splitting release tagging from PR creation.                            |
-| `skip-github-pull-request` | If `true`, do not attempt to create release pull requests. This is useful if splitting release tagging from PR creation.               |
+| `only`                     | If `create-github-releases`, only attempt to create releases. This is useful if splitting release tagging from PR creation. If `update-pull-requests` only attempt to create release pull requests. If `list-candidate-releases`, only output information about which packages would be released.               |
 
 ## GitHub Credentials
 
@@ -166,6 +165,13 @@ New types of releases can be [added here](https://github.com/googleapis/release-
 | `prs_created`      | `true` if any pull request was created or updated                                                                                                                 |
 | `pr`               | A JSON string of the [PullRequest object](https://github.com/googleapis/release-please/blob/main/src/pull-request.ts#L15) (unset if no release created)           |
 | `prs`              | A JSON string of the array of [PullRequest objects](https://github.com/googleapis/release-please/blob/main/src/pull-request.ts#L15) (unset if no release created) |
+
+> When used with `only: 'list-candidate-releases'`, the following properties are available.
+
+| output             | description                                                                                                                                                       |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `releases_pending` | `true` if any release is pending, `false` otherwise                                                                                                              |
+| `paths_to_release` | A JSON string of the array of paths that have releases pending (`[]` if )                                                                                          |
 
 ### Root component outputs
 
@@ -381,10 +387,10 @@ If you were setting the `command` option, you will likely need to modify your co
 
 | Command          | New Configuration                                                | Description                                                                                                                                  |
 | ---------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `github-release` | `skip-github-pull-request: true`                                 | This command was used for only tagging releases. Now we tell release-please to skip opening release PRs.                                      |
-| `release-pr`     | `skip-github-release: true`                                      | This command was used for only opening release PRs. Now we tell release-please to skip tagging releases.                                     |
-| `manifest`       | do not set `release-type` option                                 | This command told release-please to use a manifest config file. This is now the default behavior unless you explicitly set a `release-type`. |
-| `manifest-pr`    | `skip-github-release: true` and do not set `release-type` option | This command told release-please to use a manifest config file and only open the pull reuqest.                                               |
+| `github-release` | `only: 'create-github-releases'`                                    | This command was used for only tagging releases. Now we tell release-please to skip opening release PRs.                                      |
+| `release-pr`     | `only: 'update-pull-requests'`                                      | This command was used for only opening release PRs. Now we tell release-please to skip tagging releases.                                     |
+| `manifest`       | do not set `release-type` option                                    | This command told release-please to use a manifest config file. This is now the default behavior unless you explicitly set a `release-type`. |
+| `manifest-pr`    | `only: 'update-pull-requests'` and do not set `release-type` option | This command told release-please to use a manifest config file and only open the pull reuqest.                                               |
 
 ### Package options
 
