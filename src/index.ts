@@ -66,7 +66,6 @@ function parseInputs(): ActionInputs {
     includeComponentInTag: getOptionalBooleanInput('include-component-in-tag'),
     changelogHost: core.getInput('changelog-host') || DEFAULT_GITHUB_SERVER_URL,
   };
-  console.log("Running here", inputs.skipLabeling);
   return inputs;
 }
 
