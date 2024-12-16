@@ -103,7 +103,7 @@ function loadOrBuildManifest(
       inputs.path
     );
   }
-  const manifestOverrides = inputs.fork
+  const manifestOverrides = inputs.fork || inputs.skipLabeling
     ? {
         fork: inputs.fork,
         skipLabeling: inputs.skipLabeling,
