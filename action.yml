@@ -1,4 +1,4 @@
-name: 'huksley-release-please-action'
+name: 'release-please-action'
 description: 'automated releases based on conventional commits'
 author: Google LLC
 inputs:
