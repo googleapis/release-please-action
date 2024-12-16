@@ -1,4 +1,4 @@
-name: 'release-please-action'
+name: 'huksley-release-please-action'
 description: 'automated releases based on conventional commits'
 author: Google LLC
 inputs:
@@ -56,6 +56,10 @@ inputs:
     default: false
   skip-github-pull-request:
     description: 'if set to true, then do not try to open pull requests'
+    required: false
+    default: false
+  skip-labeling:
+    description: 'if set to true, then do not try to label the PR'
     required: false
     default: false
   changelog-host:
