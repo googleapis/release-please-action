@@ -31,6 +31,7 @@ interface ActionInputs {
   repoUrl: string;
   releaseType?: string;
   path?: string;
+  releaseAs?: string;
   githubApiUrl: string;
   githubGraphqlUrl: string;
   configFile?: string;
@@ -49,6 +50,7 @@ function parseInputs(): ActionInputs {
     token: core.getInput('token', {required: true}),
     releaseType: getOptionalInput('release-type'),
     path: getOptionalInput('path'),
+    releaseAs: getOptionalInput('release-as'),
     repoUrl: core.getInput('repo-url') || process.env.GITHUB_REPOSITORY || '',
     targetBranch: getOptionalInput('target-branch'),
     configFile: core.getInput('config-file') || DEFAULT_CONFIG_FILE,
@@ -110,7 +112,9 @@ function loadOrBuildManifest(
     github.repository.defaultBranch,
     inputs.configFile,
     inputs.manifestFile,
-    manifestOverrides
+    manifestOverrides,
+    inputs.path,
+    inputs.releaseAs
   );
 }
 
