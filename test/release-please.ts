@@ -243,6 +243,27 @@ describe('release-please-action', () => {
           sinon.match({fork: true}),
         );
       });
+      it('allows specifying path', async () => {
+        restoreEnv = mockInputs({
+          'path': 'custom-path',
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main();
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+        sinon.assert.calledWith(
+            fromManifestStub,
+            sinon.match.any,
+            sinon.match.string,
+            sinon.match.string,
+            sinon.match.string,
+            sinon.match.any,
+            'custom-path',
+            sinon.match.any,
+        );
+      });
       it('allows specifying release-as', async () => {
         restoreEnv = mockInputs({
           'release-as': '1.0.1',
