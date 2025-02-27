@@ -409,7 +409,7 @@ you can see a mapping of the old option to the new option:
 | `skip-labeling`                    | `$.skip-labeling`                                                                     | Root-only option                                                                    |
 | `signoff`                          | `$.signoff`                                                                           | Root-only option                                                                    |
 | `bump-minor-pre-major`             | `$.bump-minor-pre-major` or `$.packages[path].bump-minor-pre-major`                   | Root or per-package option                                                          |
-| `bump-patch-for-minor-pre-major`   | `$.bump-path-for-minor-pre-major` or `$.packages[path].bump-path-for-minor-pre-major` | Root or per-package option                                                          |
+| `bump-patch-for-minor-pre-major`   | `$.bump-patch-for-minor-pre-major` or `$.packages[path].bump-patch-for-minor-pre-major` | Root or per-package option                                                          |
 | `changelog-host`                   | `$.changelog-host` or `$.packages[path].changelog-host`                               | Root or per-package option                                                          |
 | `changelog-notes-type`             | `$.changelog-type` or `$.packages[path].changelog-type`                               | Root or per-package option                                                          |
 | `changelog-types`                  | `$.changelog-sections` or `$.packages[path].changelog-sections`                       | Root or per-package option                                                          |
