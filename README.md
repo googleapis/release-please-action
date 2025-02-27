@@ -162,7 +162,7 @@ New types of releases can be [added here](https://github.com/googleapis/release-
 | output             | description                                                                                                                                                       |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `releases_created` | `true` if any release was created, `false` otherwise                                                                                                              |
-| `paths_released`   | A JSON string of the array of paths that had releases created (`[]` if )                                                                                          |
+| `paths_released`   | A JSON string of the array of paths that had releases created (`[]` if nothing was released)                                                                                          |
 | `prs_created`      | `true` if any pull request was created or updated                                                                                                                 |
 | `pr`               | A JSON string of the [PullRequest object](https://github.com/googleapis/release-please/blob/main/src/pull-request.ts#L15) (unset if no release created)           |
 | `prs`              | A JSON string of the array of [PullRequest objects](https://github.com/googleapis/release-please/blob/main/src/pull-request.ts#L15) (unset if no release created) |
