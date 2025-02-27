@@ -14,6 +14,10 @@ inputs:
     description: "create a release from a path other than the repository's root"
     required: false
     default: ''
+  release-as:
+    description: 'manually set version to this value, ignoring conventional commits. Absence defaults to conventional commits derived next version. Once the release PR is merged you should either remove this or update it to a higher version. Otherwise subsequent `manifest-pr` runs will continue to use this version even though it was already set in the last release.'
+    required: false
+    default: ''
   target-branch:
     description: branch to open pull release PR against (detected by default)
     required: false
