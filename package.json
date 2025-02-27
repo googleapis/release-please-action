@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bcoe/release-please-action.git"
+    "url": "git+https://github.com/googleapis/release-please-action.git"
   },
   "keywords": [
     "release-please",
@@ -24,9 +24,9 @@
   "author": "Ben Coe <bencoe@gmail.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/bcoe/release-please-action/issues"
+    "url": "https://github.com/googleapis/release-please-action/issues"
   },
-  "homepage": "https://github.com/bcoe/release-please-action#readme",
+  "homepage": "https://github.com/googleapis/release-please-action#readme",
   "dependencies": {
     "@actions/core": "^1.10.0",
     "release-please": "^16.18.0"
