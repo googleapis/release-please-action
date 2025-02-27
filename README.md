@@ -83,6 +83,7 @@ steps:
 | `proxy-server`             | Configure a proxy servier in the form of `<host>:<port>` e.g. `proxy-host.com:8080`                                                    |
 | `skip-github-release`      | If `true`, do not attempt to create releases. This is useful if splitting release tagging from PR creation.                            |
 | `skip-github-pull-request` | If `true`, do not attempt to create release pull requests. This is useful if splitting release tagging from PR creation.               |
+| `skip-labeling`            | If `true`, do not attempt to label the PR.                                                                                          |
 
 ## GitHub Credentials
 
