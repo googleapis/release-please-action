@@ -39,36 +39,36 @@
 * bump release-please from 16.10.0 to 16.10.2 ([#969](https://github.com/googleapis/release-please-action/issues/969)) ([aa764e0](https://github.com/googleapis/release-please-action/commit/aa764e0b5db70af7b607fa690b4d1799ceb802d6))
 * bump the npm_and_yarn group with 1 update ([#967](https://github.com/googleapis/release-please-action/issues/967)) ([ce529d4](https://github.com/googleapis/release-please-action/commit/ce529d4a4014c4760ec75d3ba6482e3b80d58862))
 
-## [4.1.0](https://github.com/google-github-actions/release-please-action/compare/v4.0.3...v4.1.0) (2024-03-11)
+## [4.1.0](https://github.com/googleapis/release-please-action/compare/v4.0.3...v4.1.0) (2024-03-11)
 
 
 ### Features
 
-* add `changelog-host` input to `action.yml` ([#948](https://github.com/google-github-actions/release-please-action/issues/948)) ([863b06f](https://github.com/google-github-actions/release-please-action/commit/863b06fd1cd7f36c1d74d697ddebe3cf5be4c6b0))
+* add `changelog-host` input to `action.yml` ([#948](https://github.com/googleapis/release-please-action/issues/948)) ([863b06f](https://github.com/googleapis/release-please-action/commit/863b06fd1cd7f36c1d74d697ddebe3cf5be4c6b0))
 
-## [4.0.3](https://github.com/google-github-actions/release-please-action/compare/v4.0.2...v4.0.3) (2024-03-11)
-
-
-### Bug Fixes
-
-* bump release-please from 16.5.0 to 16.10.0 ([#953](https://github.com/google-github-actions/release-please-action/issues/953)) ([d7e88e0](https://github.com/google-github-actions/release-please-action/commit/d7e88e0fd9e1a56d1075f610183d571f8347ff9b))
-
-## [4.0.2](https://github.com/google-github-actions/release-please-action/compare/v4.0.1...v4.0.2) (2023-12-18)
+## [4.0.3](https://github.com/googleapis/release-please-action/compare/v4.0.2...v4.0.3) (2024-03-11)
 
 
 ### Bug Fixes
 
-* bump release-please from 16.4.0 to 16.5.0 ([#905](https://github.com/google-github-actions/release-please-action/issues/905)) ([df71963](https://github.com/google-github-actions/release-please-action/commit/df719633a752e335dfde3e62e037315a25ecf6fc))
-* log release-please version ([#910](https://github.com/google-github-actions/release-please-action/issues/910)) ([2a496d1](https://github.com/google-github-actions/release-please-action/commit/2a496d1db5f8860ae46f6066f5dcb73490a99d02)), closes [#325](https://github.com/google-github-actions/release-please-action/issues/325)
+* bump release-please from 16.5.0 to 16.10.0 ([#953](https://github.com/googleapis/release-please-action/issues/953)) ([d7e88e0](https://github.com/googleapis/release-please-action/commit/d7e88e0fd9e1a56d1075f610183d571f8347ff9b))
 
-## [4.0.1](https://github.com/google-github-actions/release-please-action/compare/v4.0.0...v4.0.1) (2023-12-07)
+## [4.0.2](https://github.com/googleapis/release-please-action/compare/v4.0.1...v4.0.2) (2023-12-18)
 
 
 ### Bug Fixes
 
-* bump release-please from 16.3.1 to 16.4.0 ([#897](https://github.com/google-github-actions/release-please-action/issues/897)) ([2463dad](https://github.com/google-github-actions/release-please-action/commit/2463dad9b20163a40708db720b9fde34c2a2ab0e))
+* bump release-please from 16.4.0 to 16.5.0 ([#905](https://github.com/googleapis/release-please-action/issues/905)) ([df71963](https://github.com/googleapis/release-please-action/commit/df719633a752e335dfde3e62e037315a25ecf6fc))
+* log release-please version ([#910](https://github.com/googleapis/release-please-action/issues/910)) ([2a496d1](https://github.com/googleapis/release-please-action/commit/2a496d1db5f8860ae46f6066f5dcb73490a99d02)), closes [#325](https://github.com/googleapis/release-please-action/issues/325)
 
-## [4.0.0](https://github.com/google-github-actions/release-please-action/compare/v3.7.13...v4.0.0) (2023-12-01)
+## [4.0.1](https://github.com/googleapis/release-please-action/compare/v4.0.0...v4.0.1) (2023-12-07)
+
+
+### Bug Fixes
+
+* bump release-please from 16.3.1 to 16.4.0 ([#897](https://github.com/googleapis/release-please-action/issues/897)) ([2463dad](https://github.com/googleapis/release-please-action/commit/2463dad9b20163a40708db720b9fde34c2a2ab0e))
+
+## [4.0.0](https://github.com/googleapis/release-please-action/compare/v3.7.13...v4.0.0) (2023-12-01)
 
 
 ### ⚠ BREAKING CHANGES
@@ -82,322 +82,322 @@
 
 ### Features
 
-* **deps:** upgrade release-please to v16 ([9cf05a0](https://github.com/google-github-actions/release-please-action/commit/9cf05a09b133475347f729dc7d17b023081cc8d3))
-* remove command option in favor of setting `release-type` and `skip-github-release`/`skip-github-pull-request` ([9cf05a0](https://github.com/google-github-actions/release-please-action/commit/9cf05a09b133475347f729dc7d17b023081cc8d3))
-* remove most configuration options in favor of manifest configuration to configure the release-please-action ([9cf05a0](https://github.com/google-github-actions/release-please-action/commit/9cf05a09b133475347f729dc7d17b023081cc8d3))
-* run on node20 ([9cf05a0](https://github.com/google-github-actions/release-please-action/commit/9cf05a09b133475347f729dc7d17b023081cc8d3))
-* v4 release ([9cf05a0](https://github.com/google-github-actions/release-please-action/commit/9cf05a09b133475347f729dc7d17b023081cc8d3))
+* **deps:** upgrade release-please to v16 ([9cf05a0](https://github.com/googleapis/release-please-action/commit/9cf05a09b133475347f729dc7d17b023081cc8d3))
+* remove command option in favor of setting `release-type` and `skip-github-release`/`skip-github-pull-request` ([9cf05a0](https://github.com/googleapis/release-please-action/commit/9cf05a09b133475347f729dc7d17b023081cc8d3))
+* remove most configuration options in favor of manifest configuration to configure the release-please-action ([9cf05a0](https://github.com/googleapis/release-please-action/commit/9cf05a09b133475347f729dc7d17b023081cc8d3))
+* run on node20 ([9cf05a0](https://github.com/googleapis/release-please-action/commit/9cf05a09b133475347f729dc7d17b023081cc8d3))
+* v4 release ([9cf05a0](https://github.com/googleapis/release-please-action/commit/9cf05a09b133475347f729dc7d17b023081cc8d3))
 
 
 ### Bug Fixes
 
-* bump release-please from 16.3.0 to 16.3.1 ([#876](https://github.com/google-github-actions/release-please-action/issues/876)) ([c9291a9](https://github.com/google-github-actions/release-please-action/commit/c9291a968c291c9576e9e82a69ac316f60b980eb))
-* restore include-component-in-tag default (false) ([#888](https://github.com/google-github-actions/release-please-action/issues/888)) ([19431a1](https://github.com/google-github-actions/release-please-action/commit/19431a1126b0d092093511e4d9074add51d1e9e1))
+* bump release-please from 16.3.0 to 16.3.1 ([#876](https://github.com/googleapis/release-please-action/issues/876)) ([c9291a9](https://github.com/googleapis/release-please-action/commit/c9291a968c291c9576e9e82a69ac316f60b980eb))
+* restore include-component-in-tag default (false) ([#888](https://github.com/googleapis/release-please-action/issues/888)) ([19431a1](https://github.com/googleapis/release-please-action/commit/19431a1126b0d092093511e4d9074add51d1e9e1))
 
 
 ### Code Refactoring
 
-* rewrite in typescript ([9cf05a0](https://github.com/google-github-actions/release-please-action/commit/9cf05a09b133475347f729dc7d17b023081cc8d3))
+* rewrite in typescript ([9cf05a0](https://github.com/googleapis/release-please-action/commit/9cf05a09b133475347f729dc7d17b023081cc8d3))
 
-## [3.7.13](https://github.com/google-github-actions/release-please-action/compare/v3.7.12...v3.7.13) (2023-11-06)
-
-
-### Bug Fixes
-
-* **deps:** bump dependency versions ([#849](https://github.com/google-github-actions/release-please-action/issues/849)) ([9108012](https://github.com/google-github-actions/release-please-action/commit/910801217bf1ec07dd4367e66345f83918f7ae57))
-
-## [3.7.12](https://github.com/google-github-actions/release-please-action/compare/v3.7.11...v3.7.12) (2023-09-28)
+## [3.7.13](https://github.com/googleapis/release-please-action/compare/v3.7.12...v3.7.13) (2023-11-06)
 
 
 ### Bug Fixes
 
-* bump release-please from 15.12.0 to 15.13.0 ([#813](https://github.com/google-github-actions/release-please-action/issues/813)) ([01b3219](https://github.com/google-github-actions/release-please-action/commit/01b3219546e6e7c4cfdaece8cd06efa464f49e2a))
+* **deps:** bump dependency versions ([#849](https://github.com/googleapis/release-please-action/issues/849)) ([9108012](https://github.com/googleapis/release-please-action/commit/910801217bf1ec07dd4367e66345f83918f7ae57))
 
-## [3.7.10](https://github.com/google-github-actions/release-please-action/compare/v3.7.9...v3.7.10) (2023-06-23)
-
-
-### Bug Fixes
-
-* bump release-please from 15.10.4 to 15.11.0 ([#778](https://github.com/google-github-actions/release-please-action/issues/778)) ([18e5fcf](https://github.com/google-github-actions/release-please-action/commit/18e5fcf19741ed0c95c18b1509f148b7977ceaaf))
-
-## [3.7.9](https://github.com/google-github-actions/release-please-action/compare/v3.7.8...v3.7.9) (2023-05-25)
+## [3.7.12](https://github.com/googleapis/release-please-action/compare/v3.7.11...v3.7.12) (2023-09-28)
 
 
 ### Bug Fixes
 
-* bump release-please from 15.10.2 to 15.10.4 ([#762](https://github.com/google-github-actions/release-please-action/issues/762)) ([8475937](https://github.com/google-github-actions/release-please-action/commit/84759371f245a9245d04f684a8207ced70852d7e))
+* bump release-please from 15.12.0 to 15.13.0 ([#813](https://github.com/googleapis/release-please-action/issues/813)) ([01b3219](https://github.com/googleapis/release-please-action/commit/01b3219546e6e7c4cfdaece8cd06efa464f49e2a))
 
-## [3.7.8](https://github.com/google-github-actions/release-please-action/compare/v3.7.7...v3.7.8) (2023-04-11)
-
-
-### Bug Fixes
-
-* bump release-please from 15.9.2 to 15.10.2 ([#755](https://github.com/google-github-actions/release-please-action/issues/755)) ([6730d1a](https://github.com/google-github-actions/release-please-action/commit/6730d1afa8d596ff8922e76ff5946fab917b804c))
-* tag releases before opening new pull requests ([#753](https://github.com/google-github-actions/release-please-action/issues/753)) ([6a803df](https://github.com/google-github-actions/release-please-action/commit/6a803dfec495c1b9be1bf3c24140ad1072ef9a43)), closes [#747](https://github.com/google-github-actions/release-please-action/issues/747)
-
-## [3.7.7](https://github.com/google-github-actions/release-please-action/compare/v3.7.6...v3.7.7) (2023-04-10)
+## [3.7.10](https://github.com/googleapis/release-please-action/compare/v3.7.9...v3.7.10) (2023-06-23)
 
 
 ### Bug Fixes
 
-* bump release-please from 15.9.1 to 15.9.2 ([#746](https://github.com/google-github-actions/release-please-action/issues/746)) ([c3a278c](https://github.com/google-github-actions/release-please-action/commit/c3a278c732153e274ae8130e657762ba3d524a2d))
+* bump release-please from 15.10.4 to 15.11.0 ([#778](https://github.com/googleapis/release-please-action/issues/778)) ([18e5fcf](https://github.com/googleapis/release-please-action/commit/18e5fcf19741ed0c95c18b1509f148b7977ceaaf))
 
-## [3.7.6](https://github.com/google-github-actions/release-please-action/compare/v3.7.5...v3.7.6) (2023-03-28)
-
-
-### Bug Fixes
-
-* bump release-please from 15.8.1 to 15.9.1 ([#738](https://github.com/google-github-actions/release-please-action/issues/738)) ([9997fc9](https://github.com/google-github-actions/release-please-action/commit/9997fc940dddf620986d5e88532ffb2cc6e22c1c))
-
-## [3.7.5](https://github.com/google-github-actions/release-please-action/compare/v3.7.4...v3.7.5) (2023-03-07)
+## [3.7.9](https://github.com/googleapis/release-please-action/compare/v3.7.8...v3.7.9) (2023-05-25)
 
 
 ### Bug Fixes
 
-* bump release-please from 15.7.0 to 15.8.0 ([#720](https://github.com/google-github-actions/release-please-action/issues/720)) ([57bb5dc](https://github.com/google-github-actions/release-please-action/commit/57bb5dcfd45d36ae2cf9a53c8471809f069b51fd))
-* bump release-please from 15.8.0 to 15.8.1 ([#728](https://github.com/google-github-actions/release-please-action/issues/728)) ([0e82314](https://github.com/google-github-actions/release-please-action/commit/0e8231443801f46a34e86e2cba13c69d75dd053e))
+* bump release-please from 15.10.2 to 15.10.4 ([#762](https://github.com/googleapis/release-please-action/issues/762)) ([8475937](https://github.com/googleapis/release-please-action/commit/84759371f245a9245d04f684a8207ced70852d7e))
 
-## [3.7.4](https://github.com/google-github-actions/release-please-action/compare/v3.7.3...v3.7.4) (2023-02-13)
-
-
-### Bug Fixes
-
-* bump release-please from 15.1.2 to 15.7.0 ([#714](https://github.com/google-github-actions/release-please-action/issues/714)) ([19b65cc](https://github.com/google-github-actions/release-please-action/commit/19b65cc4e5fefc461c917d1702571d23ef35ee50))
-
-## [3.7.3](https://github.com/google-github-actions/release-please-action/compare/v3.7.2...v3.7.3) (2023-01-18)
+## [3.7.8](https://github.com/googleapis/release-please-action/compare/v3.7.7...v3.7.8) (2023-04-11)
 
 
 ### Bug Fixes
 
-* bump release-please from 15.1.1 to 15.1.2 ([#695](https://github.com/google-github-actions/release-please-action/issues/695)) ([71b00c3](https://github.com/google-github-actions/release-please-action/commit/71b00c33df6b537b22878c47e057d3862973b29f))
+* bump release-please from 15.9.2 to 15.10.2 ([#755](https://github.com/googleapis/release-please-action/issues/755)) ([6730d1a](https://github.com/googleapis/release-please-action/commit/6730d1afa8d596ff8922e76ff5946fab917b804c))
+* tag releases before opening new pull requests ([#753](https://github.com/googleapis/release-please-action/issues/753)) ([6a803df](https://github.com/googleapis/release-please-action/commit/6a803dfec495c1b9be1bf3c24140ad1072ef9a43)), closes [#747](https://github.com/googleapis/release-please-action/issues/747)
 
-## [3.7.2](https://github.com/google-github-actions/release-please-action/compare/v3.7.1...v3.7.2) (2023-01-13)
-
-
-### Bug Fixes
-
-* bump release-please from 15.0.0 to 15.1.0 ([#690](https://github.com/google-github-actions/release-please-action/issues/690)) ([385de71](https://github.com/google-github-actions/release-please-action/commit/385de7152f5489c81e25999c38b496efa25007c7))
-* bump release-please from 15.1.0 to 15.1.1 ([#692](https://github.com/google-github-actions/release-please-action/issues/692)) ([12cb297](https://github.com/google-github-actions/release-please-action/commit/12cb29772d62c8bf62c09e6f888a4c474d2e796f))
-
-## [3.7.1](https://github.com/google-github-actions/release-please-action/compare/v3.7.0...v3.7.1) (2022-12-13)
+## [3.7.7](https://github.com/googleapis/release-please-action/compare/v3.7.6...v3.7.7) (2023-04-10)
 
 
 ### Bug Fixes
 
-* bump release-please from 14.17.5 to 15.0.0 ([#679](https://github.com/google-github-actions/release-please-action/issues/679)) ([2e8ea51](https://github.com/google-github-actions/release-please-action/commit/2e8ea512158bcca24c9026d74520de8445040bc8))
+* bump release-please from 15.9.1 to 15.9.2 ([#746](https://github.com/googleapis/release-please-action/issues/746)) ([c3a278c](https://github.com/googleapis/release-please-action/commit/c3a278c732153e274ae8130e657762ba3d524a2d))
 
-## [3.7.0](https://github.com/google-github-actions/release-please-action/compare/v3.6.1...v3.7.0) (2022-12-08)
+## [3.7.6](https://github.com/googleapis/release-please-action/compare/v3.7.5...v3.7.6) (2023-03-28)
+
+
+### Bug Fixes
+
+* bump release-please from 15.8.1 to 15.9.1 ([#738](https://github.com/googleapis/release-please-action/issues/738)) ([9997fc9](https://github.com/googleapis/release-please-action/commit/9997fc940dddf620986d5e88532ffb2cc6e22c1c))
+
+## [3.7.5](https://github.com/googleapis/release-please-action/compare/v3.7.4...v3.7.5) (2023-03-07)
+
+
+### Bug Fixes
+
+* bump release-please from 15.7.0 to 15.8.0 ([#720](https://github.com/googleapis/release-please-action/issues/720)) ([57bb5dc](https://github.com/googleapis/release-please-action/commit/57bb5dcfd45d36ae2cf9a53c8471809f069b51fd))
+* bump release-please from 15.8.0 to 15.8.1 ([#728](https://github.com/googleapis/release-please-action/issues/728)) ([0e82314](https://github.com/googleapis/release-please-action/commit/0e8231443801f46a34e86e2cba13c69d75dd053e))
+
+## [3.7.4](https://github.com/googleapis/release-please-action/compare/v3.7.3...v3.7.4) (2023-02-13)
+
+
+### Bug Fixes
+
+* bump release-please from 15.1.2 to 15.7.0 ([#714](https://github.com/googleapis/release-please-action/issues/714)) ([19b65cc](https://github.com/googleapis/release-please-action/commit/19b65cc4e5fefc461c917d1702571d23ef35ee50))
+
+## [3.7.3](https://github.com/googleapis/release-please-action/compare/v3.7.2...v3.7.3) (2023-01-18)
+
+
+### Bug Fixes
+
+* bump release-please from 15.1.1 to 15.1.2 ([#695](https://github.com/googleapis/release-please-action/issues/695)) ([71b00c3](https://github.com/googleapis/release-please-action/commit/71b00c33df6b537b22878c47e057d3862973b29f))
+
+## [3.7.2](https://github.com/googleapis/release-please-action/compare/v3.7.1...v3.7.2) (2023-01-13)
+
+
+### Bug Fixes
+
+* bump release-please from 15.0.0 to 15.1.0 ([#690](https://github.com/googleapis/release-please-action/issues/690)) ([385de71](https://github.com/googleapis/release-please-action/commit/385de7152f5489c81e25999c38b496efa25007c7))
+* bump release-please from 15.1.0 to 15.1.1 ([#692](https://github.com/googleapis/release-please-action/issues/692)) ([12cb297](https://github.com/googleapis/release-please-action/commit/12cb29772d62c8bf62c09e6f888a4c474d2e796f))
+
+## [3.7.1](https://github.com/googleapis/release-please-action/compare/v3.7.0...v3.7.1) (2022-12-13)
+
+
+### Bug Fixes
+
+* bump release-please from 14.17.5 to 15.0.0 ([#679](https://github.com/googleapis/release-please-action/issues/679)) ([2e8ea51](https://github.com/googleapis/release-please-action/commit/2e8ea512158bcca24c9026d74520de8445040bc8))
+
+## [3.7.0](https://github.com/googleapis/release-please-action/compare/v3.6.1...v3.7.0) (2022-12-08)
 
 
 ### Features
 
-* add `pull-request-header` input ([#615](https://github.com/google-github-actions/release-please-action/issues/615)) ([9963ea2](https://github.com/google-github-actions/release-please-action/commit/9963ea2aa819d5b257e4e6d1d66b82b25b7bafea))
+* add `pull-request-header` input ([#615](https://github.com/googleapis/release-please-action/issues/615)) ([9963ea2](https://github.com/googleapis/release-please-action/commit/9963ea2aa819d5b257e4e6d1d66b82b25b7bafea))
 
 
 ### Bug Fixes
 
-* update `release-please` to `14.17.5` ([#671](https://github.com/google-github-actions/release-please-action/issues/671)) ([4da3bc1](https://github.com/google-github-actions/release-please-action/commit/4da3bc15340c3f885c6200feee80e1f458213e15))
+* update `release-please` to `14.17.5` ([#671](https://github.com/googleapis/release-please-action/issues/671)) ([4da3bc1](https://github.com/googleapis/release-please-action/commit/4da3bc15340c3f885c6200feee80e1f458213e15))
 
-## [3.6.1](https://github.com/google-github-actions/release-please-action/compare/v3.6.0...v3.6.1) (2022-11-23)
+## [3.6.1](https://github.com/googleapis/release-please-action/compare/v3.6.0...v3.6.1) (2022-11-23)
 
 
 ### Bug Fixes
 
-* bump release-please from 14.16.0 to 14.17.2 ([#664](https://github.com/google-github-actions/release-please-action/issues/664)) ([c8f107f](https://github.com/google-github-actions/release-please-action/commit/c8f107f4cfb84600d0985a304bd17c16d7e4fac2))
+* bump release-please from 14.16.0 to 14.17.2 ([#664](https://github.com/googleapis/release-please-action/issues/664)) ([c8f107f](https://github.com/googleapis/release-please-action/commit/c8f107f4cfb84600d0985a304bd17c16d7e4fac2))
 
-## [3.6.0](https://github.com/google-github-actions/release-please-action/compare/v3.5.1...v3.6.0) (2022-11-09)
+## [3.6.0](https://github.com/googleapis/release-please-action/compare/v3.5.1...v3.6.0) (2022-11-09)
 
 
 ### Features
 
-* support proxy configuration ([#621](https://github.com/google-github-actions/release-please-action/issues/621)) ([714f07f](https://github.com/google-github-actions/release-please-action/commit/714f07f3ae692b5ce291aedf60f12280f4702eb2))
+* support proxy configuration ([#621](https://github.com/googleapis/release-please-action/issues/621)) ([714f07f](https://github.com/googleapis/release-please-action/commit/714f07f3ae692b5ce291aedf60f12280f4702eb2))
 
 
 ### Bug Fixes
 
-* bump release-please from 14.14.0 to 14.16.0 ([#658](https://github.com/google-github-actions/release-please-action/issues/658)) ([a76b467](https://github.com/google-github-actions/release-please-action/commit/a76b4670614a5b05053bfd33aac25b3ffcb52287))
+* bump release-please from 14.14.0 to 14.16.0 ([#658](https://github.com/googleapis/release-please-action/issues/658)) ([a76b467](https://github.com/googleapis/release-please-action/commit/a76b4670614a5b05053bfd33aac25b3ffcb52287))
 
-## [3.5.1](https://github.com/google-github-actions/release-please-action/compare/v3.5.0...v3.5.1) (2022-10-26)
+## [3.5.1](https://github.com/googleapis/release-please-action/compare/v3.5.0...v3.5.1) (2022-10-26)
 
 
 ### Bug Fixes
 
-* bump @actions/core to get newer set-output syntax ([#638](https://github.com/google-github-actions/release-please-action/issues/638)) ([ac14dab](https://github.com/google-github-actions/release-please-action/commit/ac14dab3a541f3ec5cfabb1af281b1fa22022c0e))
-* bump release-please from 14.5.0 to 14.14.0 ([#645](https://github.com/google-github-actions/release-please-action/issues/645)) ([619c472](https://github.com/google-github-actions/release-please-action/commit/619c4723eb5c7f0b0108728d45e72f99de594596))
+* bump @actions/core to get newer set-output syntax ([#638](https://github.com/googleapis/release-please-action/issues/638)) ([ac14dab](https://github.com/googleapis/release-please-action/commit/ac14dab3a541f3ec5cfabb1af281b1fa22022c0e))
+* bump release-please from 14.5.0 to 14.14.0 ([#645](https://github.com/googleapis/release-please-action/issues/645)) ([619c472](https://github.com/googleapis/release-please-action/commit/619c4723eb5c7f0b0108728d45e72f99de594596))
 
-## [3.5.0](https://github.com/google-github-actions/release-please-action/compare/v3.4.1...v3.5.0) (2022-09-08)
+## [3.5.0](https://github.com/googleapis/release-please-action/compare/v3.4.1...v3.5.0) (2022-09-08)
 
 
 ### Features
 
-* run action on node16 ([#608](https://github.com/google-github-actions/release-please-action/issues/608)) ([cb58510](https://github.com/google-github-actions/release-please-action/commit/cb585102ef240aa46197311ebce17732183116ea))
+* run action on node16 ([#608](https://github.com/googleapis/release-please-action/issues/608)) ([cb58510](https://github.com/googleapis/release-please-action/commit/cb585102ef240aa46197311ebce17732183116ea))
 
 
 ### Bug Fixes
 
-* bump release-please from 13.21.0 to 14.5.0 ([#607](https://github.com/google-github-actions/release-please-action/issues/607)) ([bd65041](https://github.com/google-github-actions/release-please-action/commit/bd65041d06ac5a9c7c7a1dbe9f43705f0a871713))
+* bump release-please from 13.21.0 to 14.5.0 ([#607](https://github.com/googleapis/release-please-action/issues/607)) ([bd65041](https://github.com/googleapis/release-please-action/commit/bd65041d06ac5a9c7c7a1dbe9f43705f0a871713))
 
-## [3.4.1](https://github.com/google-github-actions/release-please-action/compare/v3.4.0...v3.4.1) (2022-08-24)
+## [3.4.1](https://github.com/googleapis/release-please-action/compare/v3.4.0...v3.4.1) (2022-08-24)
 
 
 ### Bug Fixes
 
-* read changelog-host url from action context ([#587](https://github.com/google-github-actions/release-please-action/issues/587)) ([59912b3](https://github.com/google-github-actions/release-please-action/commit/59912b3686b25b181ed04ff831ff0a6ecaa92f54))
+* read changelog-host url from action context ([#587](https://github.com/googleapis/release-please-action/issues/587)) ([59912b3](https://github.com/googleapis/release-please-action/commit/59912b3686b25b181ed04ff831ff0a6ecaa92f54))
 
-## [3.4.0](https://github.com/google-github-actions/release-please-action/compare/v3.3.0...v3.4.0) (2022-08-23)
+## [3.4.0](https://github.com/googleapis/release-please-action/compare/v3.3.0...v3.4.0) (2022-08-23)
 
 
 ### Features
 
-* provide inputs for releaser and manifest options in release-please 13.15 ([#474](https://github.com/google-github-actions/release-please-action/issues/474)) ([4482754](https://github.com/google-github-actions/release-please-action/commit/44827541d2a562fef8aedc1379c814c04f0ad482))
-* read github api/graphql url from action context ([#532](https://github.com/google-github-actions/release-please-action/issues/532)) ([922ac8b](https://github.com/google-github-actions/release-please-action/commit/922ac8b6dbe224c50b1b79387e74a6def9cd63c7))
+* provide inputs for releaser and manifest options in release-please 13.15 ([#474](https://github.com/googleapis/release-please-action/issues/474)) ([4482754](https://github.com/googleapis/release-please-action/commit/44827541d2a562fef8aedc1379c814c04f0ad482))
+* read github api/graphql url from action context ([#532](https://github.com/googleapis/release-please-action/issues/532)) ([922ac8b](https://github.com/googleapis/release-please-action/commit/922ac8b6dbe224c50b1b79387e74a6def9cd63c7))
 
 
 ### Bug Fixes
 
-* bump release-please from 13.20.0 to 13.21.0 ([#559](https://github.com/google-github-actions/release-please-action/issues/559)) ([bab175e](https://github.com/google-github-actions/release-please-action/commit/bab175efb54ba5015c7b864d92ade6415319d9ec))
-* default labels should be undefined ([#566](https://github.com/google-github-actions/release-please-action/issues/566)) ([0647714](https://github.com/google-github-actions/release-please-action/commit/06477146cda1700a641367412e0993a768b76b65))
-* stop providing default values in action.yml ([#573](https://github.com/google-github-actions/release-please-action/issues/573)) ([608c16b](https://github.com/google-github-actions/release-please-action/commit/608c16ba34dc60db05c16d7f1e28cb1f4bfb55e0))
+* bump release-please from 13.20.0 to 13.21.0 ([#559](https://github.com/googleapis/release-please-action/issues/559)) ([bab175e](https://github.com/googleapis/release-please-action/commit/bab175efb54ba5015c7b864d92ade6415319d9ec))
+* default labels should be undefined ([#566](https://github.com/googleapis/release-please-action/issues/566)) ([0647714](https://github.com/googleapis/release-please-action/commit/06477146cda1700a641367412e0993a768b76b65))
+* stop providing default values in action.yml ([#573](https://github.com/googleapis/release-please-action/issues/573)) ([608c16b](https://github.com/googleapis/release-please-action/commit/608c16ba34dc60db05c16d7f1e28cb1f4bfb55e0))
 
-## [3.3.0](https://github.com/google-github-actions/release-please-action/compare/v3.2.10...v3.3.0) (2022-08-10)
+## [3.3.0](https://github.com/googleapis/release-please-action/compare/v3.2.10...v3.3.0) (2022-08-10)
 
 
 ### Features
 
-* add a `changelog-host` parameter to `action.yml` ([#550](https://github.com/google-github-actions/release-please-action/issues/550)) ([1a4217f](https://github.com/google-github-actions/release-please-action/commit/1a4217fc5af4d6a1a679709447b32633be19bceb))
+* add a `changelog-host` parameter to `action.yml` ([#550](https://github.com/googleapis/release-please-action/issues/550)) ([1a4217f](https://github.com/googleapis/release-please-action/commit/1a4217fc5af4d6a1a679709447b32633be19bceb))
 
 
 ### Bug Fixes
 
-* bump release-please from 13.19.6 to 13.20.0 ([#549](https://github.com/google-github-actions/release-please-action/issues/549)) ([48ef955](https://github.com/google-github-actions/release-please-action/commit/48ef955346995bbb1cb090882e3e59278a20eaaf))
+* bump release-please from 13.19.6 to 13.20.0 ([#549](https://github.com/googleapis/release-please-action/issues/549)) ([48ef955](https://github.com/googleapis/release-please-action/commit/48ef955346995bbb1cb090882e3e59278a20eaaf))
 
-## [3.2.10](https://github.com/google-github-actions/release-please-action/compare/v3.2.9...v3.2.10) (2022-07-27)
-
-
-### Bug Fixes
-
-* bump release-please from 13.19.3 to 13.19.6 ([#537](https://github.com/google-github-actions/release-please-action/issues/537)) ([c32b6cc](https://github.com/google-github-actions/release-please-action/commit/c32b6ccd030fddb5c9d6011d2de73e564b80dc3c))
-
-## [3.2.9](https://github.com/google-github-actions/release-please-action/compare/v3.2.8...v3.2.9) (2022-07-18)
+## [3.2.10](https://github.com/googleapis/release-please-action/compare/v3.2.9...v3.2.10) (2022-07-27)
 
 
 ### Bug Fixes
 
-* bump release-please from 13.18.7 to 13.19.3 ([#523](https://github.com/google-github-actions/release-please-action/issues/523)) ([c4bc4b3](https://github.com/google-github-actions/release-please-action/commit/c4bc4b336c3942f2c5298de494853588e86df6b2))
+* bump release-please from 13.19.3 to 13.19.6 ([#537](https://github.com/googleapis/release-please-action/issues/537)) ([c32b6cc](https://github.com/googleapis/release-please-action/commit/c32b6ccd030fddb5c9d6011d2de73e564b80dc3c))
 
-## [3.2.8](https://github.com/google-github-actions/release-please-action/compare/v3.2.7...v3.2.8) (2022-07-05)
-
-
-### Bug Fixes
-
-* bump release-please from 13.18.6 to 13.18.7 ([#516](https://github.com/google-github-actions/release-please-action/issues/516)) ([d6d4800](https://github.com/google-github-actions/release-please-action/commit/d6d48007a1fba5f800b3d14061313e9c2feb9fdd))
-
-## [3.2.7](https://github.com/google-github-actions/release-please-action/compare/v3.2.6...v3.2.7) (2022-06-30)
+## [3.2.9](https://github.com/googleapis/release-please-action/compare/v3.2.8...v3.2.9) (2022-07-18)
 
 
 ### Bug Fixes
 
-* bump release-please from 13.18.0 to 13.18.6 ([#511](https://github.com/google-github-actions/release-please-action/issues/511)) ([02dd36d](https://github.com/google-github-actions/release-please-action/commit/02dd36d963e27f0d992e2e3816dc0c88d77f98d5))
+* bump release-please from 13.18.7 to 13.19.3 ([#523](https://github.com/googleapis/release-please-action/issues/523)) ([c4bc4b3](https://github.com/googleapis/release-please-action/commit/c4bc4b336c3942f2c5298de494853588e86df6b2))
 
-## [3.2.6](https://github.com/google-github-actions/release-please-action/compare/v3.2.5...v3.2.6) (2022-06-01)
-
-
-### Bug Fixes
-
-* bump release-please from 13.16.5 to 13.18.0 ([#501](https://github.com/google-github-actions/release-please-action/issues/501)) ([04c9c57](https://github.com/google-github-actions/release-please-action/commit/04c9c57609a1a45fb73780deea1068bddf7eaecf))
-
-### [3.2.5](https://github.com/google-github-actions/release-please-action/compare/v3.2.4...v3.2.5) (2022-05-18)
+## [3.2.8](https://github.com/googleapis/release-please-action/compare/v3.2.7...v3.2.8) (2022-07-05)
 
 
 ### Bug Fixes
 
-* **deps:** update release-please to 13.16.5 ([#492](https://github.com/google-github-actions/release-please-action/issues/492)) ([c4ff696](https://github.com/google-github-actions/release-please-action/commit/c4ff696679c01be8459e707ff0beb12eceb0a02d))
+* bump release-please from 13.18.6 to 13.18.7 ([#516](https://github.com/googleapis/release-please-action/issues/516)) ([d6d4800](https://github.com/googleapis/release-please-action/commit/d6d48007a1fba5f800b3d14061313e9c2feb9fdd))
 
-### [3.2.4](https://github.com/google-github-actions/release-please-action/compare/v3.2.3...v3.2.4) (2022-05-18)
-
-
-### Bug Fixes
-
-* bump release-please from 13.16.3 to 13.16.4 ([#488](https://github.com/google-github-actions/release-please-action/issues/488)) ([fe3f4f7](https://github.com/google-github-actions/release-please-action/commit/fe3f4f7d68ec124fdda48e66e68e624c9bb66751))
-
-### [3.2.3](https://github.com/google-github-actions/release-please-action/compare/v3.2.2...v3.2.3) (2022-05-13)
+## [3.2.7](https://github.com/googleapis/release-please-action/compare/v3.2.6...v3.2.7) (2022-06-30)
 
 
 ### Bug Fixes
 
-* bump release-please from 13.15.0 to 13.16.3 ([#483](https://github.com/google-github-actions/release-please-action/issues/483)) ([fdea77e](https://github.com/google-github-actions/release-please-action/commit/fdea77eccfe947098a15393ed57ff401c6647d4c))
+* bump release-please from 13.18.0 to 13.18.6 ([#511](https://github.com/googleapis/release-please-action/issues/511)) ([02dd36d](https://github.com/googleapis/release-please-action/commit/02dd36d963e27f0d992e2e3816dc0c88d77f98d5))
 
-### [3.2.2](https://github.com/google-github-actions/release-please-action/compare/v3.2.1...v3.2.2) (2022-05-02)
-
-
-### Bug Fixes
-
-* bump release-please from 13.13.0 to 13.14.0 ([#469](https://github.com/google-github-actions/release-please-action/issues/469)) ([0a3fbe4](https://github.com/google-github-actions/release-please-action/commit/0a3fbe45634518432aeca606288a6471d2904ba1))
-* bump release-please from 13.14.0 to 13.15.0 ([#472](https://github.com/google-github-actions/release-please-action/issues/472)) ([2d1c441](https://github.com/google-github-actions/release-please-action/commit/2d1c441f603d4e1fc0f4600e4dc26b9d2f1e1605))
-
-### [3.2.1](https://github.com/google-github-actions/release-please-action/compare/v3.2.0...v3.2.1) (2022-04-20)
+## [3.2.6](https://github.com/googleapis/release-please-action/compare/v3.2.5...v3.2.6) (2022-06-01)
 
 
 ### Bug Fixes
 
-* bump release-please from 13.10.0 to 13.13.0 ([#466](https://github.com/google-github-actions/release-please-action/issues/466)) ([43ed86b](https://github.com/google-github-actions/release-please-action/commit/43ed86bdb8a62b67f41584f98d7d2bf30c081025))
-* default `package-name` to `undefined` ([#459](https://github.com/google-github-actions/release-please-action/issues/459)) ([4f37698](https://github.com/google-github-actions/release-please-action/commit/4f376985d033f17ab113534089b4d009cead0734)), closes [#457](https://github.com/google-github-actions/release-please-action/issues/457)
+* bump release-please from 13.16.5 to 13.18.0 ([#501](https://github.com/googleapis/release-please-action/issues/501)) ([04c9c57](https://github.com/googleapis/release-please-action/commit/04c9c57609a1a45fb73780deea1068bddf7eaecf))
 
-## [3.2.0](https://github.com/google-github-actions/release-please-action/compare/v3.1.4...v3.2.0) (2022-04-12)
+### [3.2.5](https://github.com/googleapis/release-please-action/compare/v3.2.4...v3.2.5) (2022-05-18)
+
+
+### Bug Fixes
+
+* **deps:** update release-please to 13.16.5 ([#492](https://github.com/googleapis/release-please-action/issues/492)) ([c4ff696](https://github.com/googleapis/release-please-action/commit/c4ff696679c01be8459e707ff0beb12eceb0a02d))
+
+### [3.2.4](https://github.com/googleapis/release-please-action/compare/v3.2.3...v3.2.4) (2022-05-18)
+
+
+### Bug Fixes
+
+* bump release-please from 13.16.3 to 13.16.4 ([#488](https://github.com/googleapis/release-please-action/issues/488)) ([fe3f4f7](https://github.com/googleapis/release-please-action/commit/fe3f4f7d68ec124fdda48e66e68e624c9bb66751))
+
+### [3.2.3](https://github.com/googleapis/release-please-action/compare/v3.2.2...v3.2.3) (2022-05-13)
+
+
+### Bug Fixes
+
+* bump release-please from 13.15.0 to 13.16.3 ([#483](https://github.com/googleapis/release-please-action/issues/483)) ([fdea77e](https://github.com/googleapis/release-please-action/commit/fdea77eccfe947098a15393ed57ff401c6647d4c))
+
+### [3.2.2](https://github.com/googleapis/release-please-action/compare/v3.2.1...v3.2.2) (2022-05-02)
+
+
+### Bug Fixes
+
+* bump release-please from 13.13.0 to 13.14.0 ([#469](https://github.com/googleapis/release-please-action/issues/469)) ([0a3fbe4](https://github.com/googleapis/release-please-action/commit/0a3fbe45634518432aeca606288a6471d2904ba1))
+* bump release-please from 13.14.0 to 13.15.0 ([#472](https://github.com/googleapis/release-please-action/issues/472)) ([2d1c441](https://github.com/googleapis/release-please-action/commit/2d1c441f603d4e1fc0f4600e4dc26b9d2f1e1605))
+
+### [3.2.1](https://github.com/googleapis/release-please-action/compare/v3.2.0...v3.2.1) (2022-04-20)
+
+
+### Bug Fixes
+
+* bump release-please from 13.10.0 to 13.13.0 ([#466](https://github.com/googleapis/release-please-action/issues/466)) ([43ed86b](https://github.com/googleapis/release-please-action/commit/43ed86bdb8a62b67f41584f98d7d2bf30c081025))
+* default `package-name` to `undefined` ([#459](https://github.com/googleapis/release-please-action/issues/459)) ([4f37698](https://github.com/googleapis/release-please-action/commit/4f376985d033f17ab113534089b4d009cead0734)), closes [#457](https://github.com/googleapis/release-please-action/issues/457)
+
+## [3.2.0](https://github.com/googleapis/release-please-action/compare/v3.1.4...v3.2.0) (2022-04-12)
 
 
 ### Features
 
-* **deps:** update release-please to 13.10.0 ([#461](https://github.com/google-github-actions/release-please-action/issues/461)) ([1511242](https://github.com/google-github-actions/release-please-action/commit/1511242f612a909ba657f3f7c9c23047d78ff85e))
+* **deps:** update release-please to 13.10.0 ([#461](https://github.com/googleapis/release-please-action/issues/461)) ([1511242](https://github.com/googleapis/release-please-action/commit/1511242f612a909ba657f3f7c9c23047d78ff85e))
 
-### [3.1.4](https://github.com/google-github-actions/release-please-action/compare/v3.1.3...v3.1.4) (2022-03-20)
-
-
-### Bug Fixes
-
-* **deps:** update release-please to 13.6.0 ([#452](https://github.com/google-github-actions/release-please-action/issues/452)) ([d17599a](https://github.com/google-github-actions/release-please-action/commit/d17599a3da0edc55964ea48d4d17267fc4cbc51d))
-
-### [3.1.3](https://github.com/google-github-actions/release-please-action/compare/v3.1.2...v3.1.3) (2022-03-01)
+### [3.1.4](https://github.com/googleapis/release-please-action/compare/v3.1.3...v3.1.4) (2022-03-20)
 
 
 ### Bug Fixes
 
-* **deps:** update release-please to 13.4.14 ([#447](https://github.com/google-github-actions/release-please-action/issues/447)) ([d30f7b9](https://github.com/google-github-actions/release-please-action/commit/d30f7b96c9f77a450938b8acddfff41a035d5c32))
+* **deps:** update release-please to 13.6.0 ([#452](https://github.com/googleapis/release-please-action/issues/452)) ([d17599a](https://github.com/googleapis/release-please-action/commit/d17599a3da0edc55964ea48d4d17267fc4cbc51d))
 
-### [3.1.2](https://github.com/google-github-actions/release-please-action/compare/v3.1.1...v3.1.2) (2022-02-19)
-
-
-### Bug Fixes
-
-* coerce v13 release object to expected action output keys ([#437](https://github.com/google-github-actions/release-please-action/issues/437)) ([2e2f852](https://github.com/google-github-actions/release-please-action/commit/2e2f852b70c1bc5550dc4f38857a14845f04a0b5))
-
-### [3.1.1](https://github.com/google-github-actions/release-please-action/compare/v3.1.0...v3.1.1) (2022-02-11)
+### [3.1.3](https://github.com/googleapis/release-please-action/compare/v3.1.2...v3.1.3) (2022-03-01)
 
 
 ### Bug Fixes
 
-* **release-please:** include-component-in-tag ignored in manifest ([#430](https://github.com/google-github-actions/release-please-action/issues/430)) ([42a3581](https://github.com/google-github-actions/release-please-action/commit/42a3581394a03aae8f8eb785a2d4e0774f49bec2))
+* **deps:** update release-please to 13.4.14 ([#447](https://github.com/googleapis/release-please-action/issues/447)) ([d30f7b9](https://github.com/googleapis/release-please-action/commit/d30f7b96c9f77a450938b8acddfff41a035d5c32))
 
-## [3.1.0](https://github.com/google-github-actions/release-please-action/compare/v3.0.1...v3.1.0) (2022-01-22)
+### [3.1.2](https://github.com/googleapis/release-please-action/compare/v3.1.1...v3.1.2) (2022-02-19)
+
+
+### Bug Fixes
+
+* coerce v13 release object to expected action output keys ([#437](https://github.com/googleapis/release-please-action/issues/437)) ([2e2f852](https://github.com/googleapis/release-please-action/commit/2e2f852b70c1bc5550dc4f38857a14845f04a0b5))
+
+### [3.1.1](https://github.com/googleapis/release-please-action/compare/v3.1.0...v3.1.1) (2022-02-11)
+
+
+### Bug Fixes
+
+* **release-please:** include-component-in-tag ignored in manifest ([#430](https://github.com/googleapis/release-please-action/issues/430)) ([42a3581](https://github.com/googleapis/release-please-action/commit/42a3581394a03aae8f8eb785a2d4e0774f49bec2))
+
+## [3.1.0](https://github.com/googleapis/release-please-action/compare/v3.0.1...v3.1.0) (2022-01-22)
 
 
 ### Features
 
-* add extra-files input ([#410](https://github.com/google-github-actions/release-please-action/issues/410)) ([a487a5b](https://github.com/google-github-actions/release-please-action/commit/a487a5bdc8d889d5923c6540465e05a27b4df764))
+* add extra-files input ([#410](https://github.com/googleapis/release-please-action/issues/410)) ([a487a5b](https://github.com/googleapis/release-please-action/commit/a487a5bdc8d889d5923c6540465e05a27b4df764))
 
 
 ### Bug Fixes
 
-* **release-please:** upgrade release-please dep ([#422](https://github.com/google-github-actions/release-please-action/issues/422)) ([ad9cdb7](https://github.com/google-github-actions/release-please-action/commit/ad9cdb78a61c428bb2252f1da678773893b829c5))
+* **release-please:** upgrade release-please dep ([#422](https://github.com/googleapis/release-please-action/issues/422)) ([ad9cdb7](https://github.com/googleapis/release-please-action/commit/ad9cdb78a61c428bb2252f1da678773893b829c5))
 
-### [3.0.1](https://github.com/google-github-actions/release-please-action/compare/v3.0.0...v3.0.1) (2022-01-12)
+### [3.0.1](https://github.com/googleapis/release-please-action/compare/v3.0.0...v3.0.1) (2022-01-12)
 
 
 ### Bug Fixes
 
-* **release-please:** pull in latest release-please ([#416](https://github.com/google-github-actions/release-please-action/issues/416)) ([aeaf772](https://github.com/google-github-actions/release-please-action/commit/aeaf772691d9cbd8d48cff6e6bcecc39153b5233))
+* **release-please:** pull in latest release-please ([#416](https://github.com/googleapis/release-please-action/issues/416)) ([aeaf772](https://github.com/googleapis/release-please-action/commit/aeaf772691d9cbd8d48cff6e6bcecc39153b5233))
 
-## [3.0.0](https://github.com/google-github-actions/release-please-action/compare/v2.35.0...v3.0.0) (2021-12-29)
+## [3.0.0](https://github.com/googleapis/release-please-action/compare/v2.35.0...v3.0.0) (2021-12-29)
 
 
 ### ⚠ BREAKING CHANGES
@@ -408,15 +408,15 @@
 
 ### Features
 
-* adds support for draft pull requests. ([52ffbbe](https://github.com/google-github-actions/release-please-action/commit/52ffbbe3921654bc238d6ea019dff629208dbc10))
-* adds support for draft releases. ([52ffbbe](https://github.com/google-github-actions/release-please-action/commit/52ffbbe3921654bc238d6ea019dff629208dbc10))
-* **release-please:** consolidate manifest and individual releasers ([#398](https://github.com/google-github-actions/release-please-action/issues/398)) ([52ffbbe](https://github.com/google-github-actions/release-please-action/commit/52ffbbe3921654bc238d6ea019dff629208dbc10))
+* adds support for draft pull requests. ([52ffbbe](https://github.com/googleapis/release-please-action/commit/52ffbbe3921654bc238d6ea019dff629208dbc10))
+* adds support for draft releases. ([52ffbbe](https://github.com/googleapis/release-please-action/commit/52ffbbe3921654bc238d6ea019dff629208dbc10))
+* **release-please:** consolidate manifest and individual releasers ([#398](https://github.com/googleapis/release-please-action/issues/398)) ([52ffbbe](https://github.com/googleapis/release-please-action/commit/52ffbbe3921654bc238d6ea019dff629208dbc10))
 
 
 ### Code Refactoring
 
-* if switching to manifest releaser, release_created will only be set if "." path is published. ([52ffbbe](https://github.com/google-github-actions/release-please-action/commit/52ffbbe3921654bc238d6ea019dff629208dbc10))
-* switch to using @actions/core getBooleanInput, accepted values for true = ["true", "True", "TRUE"], accepted values for false = ["false", "False", "FALSE"] ([52ffbbe](https://github.com/google-github-actions/release-please-action/commit/52ffbbe3921654bc238d6ea019dff629208dbc10))
+* if switching to manifest releaser, release_created will only be set if "." path is published. ([52ffbbe](https://github.com/googleapis/release-please-action/commit/52ffbbe3921654bc238d6ea019dff629208dbc10))
+* switch to using @actions/core getBooleanInput, accepted values for true = ["true", "True", "TRUE"], accepted values for false = ["false", "False", "FALSE"] ([52ffbbe](https://github.com/googleapis/release-please-action/commit/52ffbbe3921654bc238d6ea019dff629208dbc10))
 
 ## [2.35.0](https://www.github.com/google-github-actions/release-please-action/compare/v2.34.0...v2.35.0) (2021-10-16)
 
