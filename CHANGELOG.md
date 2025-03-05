@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.1.5](https://github.com/googleapis/release-please-action/compare/v4.1.4...v4.1.5) (2025-02-27)
+
+
+### Bug Fixes
+
+* **deps:** update release-please to 16.18.0 ([#1083](https://github.com/googleapis/release-please-action/issues/1083)) ([aeb7f8d](https://github.com/googleapis/release-please-action/commit/aeb7f8d38402d856532f7c879373d8116956b1c8))
+
 ## [4.1.4](https://github.com/googleapis/release-please-action/compare/v4.1.3...v4.1.4) (2024-10-02)
 
 

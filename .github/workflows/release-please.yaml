@@ -3,6 +3,9 @@ on:
     branches:
       - main
   workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
 name: release-please
 env:
   ACTION_NAME: release-please-action
