@@ -346,6 +346,58 @@ jobs:
           git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
 ```
 
+
+### Creating major/minor tags for components
+
+If you are using `include_component_in_tag` for versioning individual components in a monorepo and you want to update component level tags like `package1-v2` and `package2-v3.8`, this allows your
+users to pin to `v2`, and automatically get updates to your library.
+
+```
+steps:
+    - name: release please
+      uses: googleapis/release-please-action@v4
+      id: release
+    - uses: actions/checkout@v4
+    - name: tag component major and minor versions
+      if: ${{ steps.release.outputs.release_created }}
+      uses: actions/github-script@v7
+      env:
+        release_output: ${{ toJSON(steps.release.outputs) }}
+      with:
+        result-encoding: string
+        script: |
+          await exec.exec('git config user.name github-actions[bot]')
+          await exec.exec('git config user.email 41898282+github-actions[bot]@users.noreply.github.com')
+          
+          const outputs = JSON.parse(process.env.release_output);
+          // for some reason pathsReleased is a string and not an array within the JSON
+          const pathsReleased = JSON.parse(outputs.paths_released);
+          for (let i = 0; i < pathsReleased.length; i++) {
+            let releasePath = pathsReleased[i];
+            if (releasePath === ".") {
+                  // ignore root package
+                  continue;
+            }
+            const major = outputs[`${releasePath}--major`];
+            const minor = outputs[`${releasePath}--minor`];
+            const package_name = outputs[`${releasePath}--name`].split(":")[0];
+            
+            console.log(`Creating ${major}.${minor} releases for ${package_name}`);
+
+            const cmdOpts = {
+              ignoreReturnCode: true
+            };
+            await exec.exec('git', ["tag", "-d", `${package_name}-v${major}`], cmdOpts);
+            await exec.exec('git', ["tag", "-d", `${package_name}-v${major}.${minor}`], cmdOpts);
+            await exec.exec('git', ["push", "origin", `:${package_name}-v${major}`], cmdOpts)
+            await exec.exec('git', ["push", "origin", `:${package_name}-v${major}.${minor}`], cmdOpts)
+            await exec.exec('git', ["tag", "-a", `${package_name}-v${major}`, "-m", `Release v${major}`])
+            await exec.exec('git', ["tag", "-a", `${package_name}-v${major}.${minor}`, "-m", `Release v${major}.${minor}`])
+            await exec.exec('git', ["push", "origin", `${package_name}-v${major}`])
+            await exec.exec('git', ["push", "origin", `${package_name}-v${major}.${minor}`])
+          }
+```
+
 ## Attaching files to the GitHub release
 
 You can attach additional files, such as release artifacts, to the GitHub release that is created. The `gh` CLI tool, which is installed on all runners, can be used for this.
