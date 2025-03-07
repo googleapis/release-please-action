@@ -24,7 +24,7 @@ Automate releases with Conventional Commit Messages.
      release-please:
        runs-on: ubuntu-latest
        steps:
-         - uses: google-github-actions/release-please-action@v4
+         - uses: googleapis/release-please-action@v4
            with:
              # this assumes that you have created a personal access token
              # (PAT) and configured it as a GitHub action secret named
@@ -53,7 +53,7 @@ and then configure this action as follows:
 ```yaml
 #...(same as above)
 steps:
-  - uses: google-github-actions/release-please-action@v4
+  - uses: googleapis/release-please-action@v4
     with:
       # this assumes that you have created a personal access token
       # (PAT) and configured it as a GitHub action secret named
@@ -83,6 +83,7 @@ steps:
 | `proxy-server`             | Configure a proxy servier in the form of `<host>:<port>` e.g. `proxy-host.com:8080`                                                    |
 | `skip-github-release`      | If `true`, do not attempt to create releases. This is useful if splitting release tagging from PR creation.                            |
 | `skip-github-pull-request` | If `true`, do not attempt to create release pull requests. This is useful if splitting release tagging from PR creation.               |
+| `skip-labeling`            | If `true`, do not attempt to label the PR.                                                                                          |
 
 ## GitHub Credentials
 
@@ -167,7 +168,7 @@ New types of releases can be [added here](https://github.com/googleapis/release-
 | output             | description                                                                                                                                                       |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `releases_created` | `true` if any release was created, `false` otherwise                                                                                                              |
-| `paths_released`   | A JSON string of the array of paths that had releases created (`[]` if )                                                                                          |
+| `paths_released`   | A JSON string of the array of paths that had releases created (`[]` if nothing was released)                                                                                          |
 | `prs_created`      | `true` if any pull request was created or updated                                                                                                                 |
 | `pr`               | A JSON string of the [PullRequest object](https://github.com/googleapis/release-please/blob/main/src/pull-request.ts#L15) (unset if no release created)           |
 | `prs`              | A JSON string of the array of [PullRequest objects](https://github.com/googleapis/release-please/blob/main/src/pull-request.ts#L15) (unset if no release created) |
@@ -204,6 +205,14 @@ This prefix allows you to distinguish values for different releases.
 | `<path>--minor`           | Number representing minor semver value                                                                     |
 | `<path>--patch`           | Number representing patch semver value                                                                     |
 | `<path>--sha`             | sha that a GitHub release was tagged at                                                                    |
+
+If the path contains `/` you can access the outputs by using javascript like property access `steps.release.outputs[<path>--...]` 
+e.g.:
+
+```yaml
+run: npm publish --workflow packages/my-module
+if: ${{ steps.release.outputs['packages/my-module--release_created'] }}
+```
 
 ## How release please works
 
@@ -252,7 +261,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         with:
           release-type: node
           # The short ref name of the branch or tag that triggered
@@ -275,7 +284,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         id: release
         with:
           release-type: node
@@ -322,7 +331,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         id: release
         with:
           release-type: node
@@ -332,7 +341,7 @@ jobs:
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git remote add gh-token "https://${{ secrets.GITHUB_TOKEN }}@github.com/google-github-actions/release-please-action.git"
+          git remote add gh-token "https://${{ secrets.GITHUB_TOKEN }}@github.com/googleapis/release-please-action.git"
           git tag -d v${{ steps.release.outputs.major }} || true
           git tag -d v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
           git push origin :v${{ steps.release.outputs.major }} || true
@@ -359,7 +368,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         id: release
         with:
           release-type: node
@@ -395,7 +404,7 @@ you can see a mapping of the old option to the new option:
 | `changelog-path`                   | `$.packages[path].changelog-path`                                                     | Package-only option                                                                 |
 | `component`                        | `$.packages[path].component`                                                          | Package-only option                                                                 |
 | `package-name`                     | `$.packages[path].package-name`                                                       | Package-only option                                                                 |
-| `always-link-local`                | `$.always-link-loca`                                                                  | Root-only option                                                                    |
+| `always-link-local`                | `$.always-link-local`                                                                 | Root-only option                                                                    |
 | `bootstrap-sha`                    | `$.bootstrap-sha`                                                                     | Root-only option                                                                    |
 | `commit-search-depth`              | `$.commit-search-depth`                                                               | Root-only option                                                                    |
 | `group-pull-request-title-pattern` | `$.group-pull-request-title-pattern`                                                  | Root-only option                                                                    |

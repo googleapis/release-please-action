@@ -39,6 +39,7 @@ interface ActionInputs {
   targetBranch?: string;
   skipGitHubRelease?: boolean;
   skipGitHubPullRequest?: boolean;
+  skipLabeling?: boolean;
   fork?: boolean;
   includeComponentInTag?: boolean;
   changelogHost: string;
@@ -60,6 +61,7 @@ function parseInputs(): ActionInputs {
     proxyServer: getOptionalInput('proxy-server'),
     skipGitHubRelease: getOptionalBooleanInput('skip-github-release'),
     skipGitHubPullRequest: getOptionalBooleanInput('skip-github-pull-request'),
+    skipLabeling: getOptionalBooleanInput('skip-labeling'),
     fork: getOptionalBooleanInput('fork'),
     includeComponentInTag: getOptionalBooleanInput('include-component-in-tag'),
     changelogHost: core.getInput('changelog-host') || DEFAULT_GITHUB_SERVER_URL,
@@ -95,13 +97,15 @@ function loadOrBuildManifest(
       },
       {
         fork: inputs.fork,
+        skipLabeling: inputs.skipLabeling,
       },
       inputs.path
     );
   }
-  const manifestOverrides = inputs.fork
+  const manifestOverrides = inputs.fork || inputs.skipLabeling
     ? {
         fork: inputs.fork,
+        skipLabeling: inputs.skipLabeling,
       }
     : {};
   core.debug('Loading manifest from config file');
@@ -121,7 +125,7 @@ export async function main() {
 
   if (!inputs.skipGitHubRelease) {
     const manifest = await loadOrBuildManifest(github, inputs);
-    core.debug('Creating pull requests');
+    core.debug('Creating releases');
     outputReleases(await manifest.createReleases());
   }
 
