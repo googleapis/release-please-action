@@ -58,6 +58,10 @@ inputs:
     description: 'if set to true, then do not try to open pull requests'
     required: false
     default: false
+  changelog-host:
+    description: 'The proto://host where commits live. Default `https://github.com`'
+    required: false
+    default: ${{ github.server_url }}
 runs:
   using: 'node20'
   main: 'dist/index.js'

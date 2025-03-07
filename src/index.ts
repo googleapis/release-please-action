@@ -13,12 +13,13 @@
 // limitations under the License.
 
 import * as core from '@actions/core';
-import {GitHub, Manifest} from 'release-please';
+import {GitHub, Manifest, CreatedRelease, PullRequest, VERSION} from 'release-please';
 
 const DEFAULT_CONFIG_FILE = 'release-please-config.json';
 const DEFAULT_MANIFEST_FILE = '.release-please-manifest.json';
 const DEFAULT_GITHUB_API_URL = 'https://api.github.com';
 const DEFAULT_GITHUB_GRAPHQL_URL = 'https://api.github.com';
+const DEFAULT_GITHUB_SERVER_URL = 'https://github.com';
 
 interface Proxy {
   host: string;
@@ -40,34 +41,7 @@ interface ActionInputs {
   skipGitHubPullRequest?: boolean;
   fork?: boolean;
   includeComponentInTag?: boolean;
-}
-
-// TODO: replace this interface is exported from release-please
-interface PullRequest {
-  readonly headBranchName: string;
-  readonly baseBranchName: string;
-  readonly number: number;
-  readonly title: string;
-  readonly body: string;
-  readonly labels: string[];
-  readonly files: string[];
-  readonly sha?: string;
-}
-// TODO: replace this interface is exported from release-please
-interface CreatedRelease {
-  id: number;
-  path: string;
-  version: string;
-  major: number;
-  minor: number;
-  patch: number;
-  name?: string;
-  tagName: string;
-  sha: string;
-  notes?: string;
-  url: string;
-  draft?: boolean;
-  uploadUrl?: string;
+  changelogHost: string;
 }
 
 function parseInputs(): ActionInputs {
@@ -88,6 +62,7 @@ function parseInputs(): ActionInputs {
     skipGitHubPullRequest: getOptionalBooleanInput('skip-github-pull-request'),
     fork: getOptionalBooleanInput('fork'),
     includeComponentInTag: getOptionalBooleanInput('include-component-in-tag'),
+    changelogHost: core.getInput('changelog-host') || DEFAULT_GITHUB_SERVER_URL,
   };
   return inputs;
 }
@@ -116,6 +91,7 @@ function loadOrBuildManifest(
       {
         releaseType: inputs.releaseType,
         includeComponentInTag: inputs.includeComponentInTag,
+        changelogHost: inputs.changelogHost,
       },
       {
         fork: inputs.fork,
@@ -139,12 +115,13 @@ function loadOrBuildManifest(
 }
 
 export async function main() {
+  core.info(`Running release-please version: ${VERSION}`)
   const inputs = parseInputs();
   const github = await getGitHubInstance(inputs);
 
   if (!inputs.skipGitHubRelease) {
     const manifest = await loadOrBuildManifest(github, inputs);
-    core.debug('Creating pull requests');
+    core.debug('Creating releases');
     outputReleases(await manifest.createReleases());
   }
 

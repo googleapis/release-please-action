@@ -24,7 +24,7 @@ Automate releases with Conventional Commit Messages.
      release-please:
        runs-on: ubuntu-latest
        steps:
-         - uses: google-github-actions/release-please-action@v4
+         - uses: googleapis/release-please-action@v4
            with:
              # this assumes that you have created a personal access token
              # (PAT) and configured it as a GitHub action secret named
@@ -53,7 +53,7 @@ and then configure this action as follows:
 ```yaml
 #...(same as above)
 steps:
-  - uses: google-github-actions/release-please-action@v3
+  - uses: googleapis/release-please-action@v4
     with:
       # this assumes that you have created a personal access token
       # (PAT) and configured it as a GitHub action secret named
@@ -102,7 +102,7 @@ From GitHub's
 > When you use the repository's `GITHUB_TOKEN` to perform tasks, events triggered by the `GITHUB_TOKEN`
 > will not create a new workflow run. This prevents you from accidentally creating recursive workflow runs.
 
-. You will want to configure a GitHub Actions secret with a
+You will want to configure a GitHub Actions secret with a
 [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
 if you want GitHub Actions CI checks to run on Release Please PRs.
 
@@ -123,9 +123,9 @@ For more information about permissions:
 
 - GitHub APIs [protected by `contents` permission](https://docs.github.com/en/rest/overview/permissions-required-for-github-apps?apiVersion=2022-11-28#contents)
 - GitHub APIs [protected by `pull_requests` permission](https://docs.github.com/en/rest/overview/permissions-required-for-github-apps?apiVersion=2022-11-28#pull-requests)
-- https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
-- https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#enabling-workflows-for-private-repository-forks
-- https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
+- Github Actions: [permissions for the `GITHUB_TOKEN`](https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token)
+- Github Repositories: [enabling workflows for forks of private repositories](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#enabling-workflows-for-private-repository-forks)
+- Github Actions: [assigning permissions to jobs](https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs)
 
 ### Release Types Supported
 
@@ -200,6 +200,14 @@ This prefix allows you to distinguish values for different releases.
 | `<path>--patch`           | Number representing patch semver value                                                                     |
 | `<path>--sha`             | sha that a GitHub release was tagged at                                                                    |
 
+If the path contains `/` you can access the outputs by using javascript like property access `steps.release.outputs[<path>--...]` 
+e.g.:
+
+```yaml
+run: npm publish --workflow packages/my-module
+if: ${{ steps.release.outputs['packages/my-module--release_created'] }}
+```
+
 ## How release please works
 
 Release Please automates CHANGELOG generation, the creation of GitHub releases,
@@ -232,7 +240,7 @@ The most important prefixes you should have in mind are:
 ### Supporting multiple release branches
 
 `release-please` has the ability to target not default branches. You can even use separate release strategies (`release-type`).
-To configure, simply configure multiple workflows that specify a different `default-branch`:
+To configure, simply configure multiple workflows that specify a different `target-branch`:
 
 Configuration for `main` (default) branch (`.github/workflows/release-main.yaml`):
 
@@ -247,12 +255,12 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         with:
           release-type: node
           # The short ref name of the branch or tag that triggered
           #  the workflow run. For example, `main` or `1.x`
-          default-branch: ${{ github.ref_name }}
+          target-branch: ${{ github.ref_name }}
 ```
 
 ## Automating publication to npm
@@ -270,16 +278,16 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         id: release
         with:
           release-type: node
       # The logic below handles the npm publication:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         # these if statements ensure that a publication only occurs when
         # a new release is created:
         if: ${{ steps.release.outputs.release_created }}
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v4
         with:
           node-version: 12
           registry-url: 'https://registry.npmjs.org'
@@ -317,17 +325,17 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         id: release
         with:
           release-type: node
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: tag major and minor versions
         if: ${{ steps.release.outputs.release_created }}
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git remote add gh-token "https://${{ secrets.GITHUB_TOKEN }}@github.com/google-github-actions/release-please-action.git"
+          git remote add gh-token "https://${{ secrets.GITHUB_TOKEN }}@github.com/googleapis/release-please-action.git"
           git tag -d v${{ steps.release.outputs.major }} || true
           git tag -d v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
           git push origin :v${{ steps.release.outputs.major }} || true
@@ -354,7 +362,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         id: release
         with:
           release-type: node
@@ -373,7 +381,7 @@ If you were setting the `command` option, you will likely need to modify your co
 
 | Command          | New Configuration                                                | Description                                                                                                                                  |
 | ---------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `github-release` | `skip-github-pull-request: true`                                 | This command was used for only tagging releases. Now we tell relese-please to skip opening release PRs.                                      |
+| `github-release` | `skip-github-pull-request: true`                                 | This command was used for only tagging releases. Now we tell release-please to skip opening release PRs.                                      |
 | `release-pr`     | `skip-github-release: true`                                      | This command was used for only opening release PRs. Now we tell release-please to skip tagging releases.                                     |
 | `manifest`       | do not set `release-type` option                                 | This command told release-please to use a manifest config file. This is now the default behavior unless you explicitly set a `release-type`. |
 | `manifest-pr`    | `skip-github-release: true` and do not set `release-type` option | This command told release-please to use a manifest config file and only open the pull reuqest.                                               |
@@ -390,7 +398,7 @@ you can see a mapping of the old option to the new option:
 | `changelog-path`                   | `$.packages[path].changelog-path`                                                     | Package-only option                                                                 |
 | `component`                        | `$.packages[path].component`                                                          | Package-only option                                                                 |
 | `package-name`                     | `$.packages[path].package-name`                                                       | Package-only option                                                                 |
-| `always-link-local`                | `$.always-link-loca`                                                                  | Root-only option                                                                    |
+| `always-link-local`                | `$.always-link-local`                                                                 | Root-only option                                                                    |
 | `bootstrap-sha`                    | `$.bootstrap-sha`                                                                     | Root-only option                                                                    |
 | `commit-search-depth`              | `$.commit-search-depth`                                                               | Root-only option                                                                    |
 | `group-pull-request-title-pattern` | `$.group-pull-request-title-pattern`                                                  | Root-only option                                                                    |
