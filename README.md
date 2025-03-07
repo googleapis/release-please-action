@@ -90,7 +90,7 @@ steps:
 `release-please` requires a GitHub token to access the GitHub API. You configure this token via
 the `token` configuration option.
 
-For `release-please` to create pull requests, you will need to
+If your repository is in an organization, you may need to
 [permit github actions to create an approve PRs](https://stackoverflow.com/questions/72376229).
 
 > [!WARNING]  
