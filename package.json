@@ -1,7 +1,7 @@
 {
   "name": "release-please-action",
   "private": true,
-  "version": "4.1.3",
+  "version": "4.2.0",
   "description": "automated releases based on conventional commits",
   "main": "index.js",
   "scripts": {
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bcoe/release-please-action.git"
+    "url": "git+https://github.com/googleapis/release-please-action.git"
   },
   "keywords": [
     "release-please",
@@ -24,12 +24,12 @@
   "author": "Ben Coe <bencoe@gmail.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/bcoe/release-please-action/issues"
+    "url": "https://github.com/googleapis/release-please-action/issues"
   },
-  "homepage": "https://github.com/bcoe/release-please-action#readme",
+  "homepage": "https://github.com/googleapis/release-please-action#readme",
   "dependencies": {
     "@actions/core": "^1.10.0",
-    "release-please": "^16.12.0"
+    "release-please": "^16.18.0"
   },
   "devDependencies": {
     "@types/mocha": "^9.0.0",

@@ -3,6 +3,9 @@ on:
     branches:
       - main
   workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
 name: release-please
 env:
   ACTION_NAME: release-please-action
@@ -45,7 +48,7 @@ jobs:
           release-type: node
           skip-github-pull-request: true
       - uses: actions/checkout@v4
-      - name: tag major and patch versions
+      - name: tag major and minor versions
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
