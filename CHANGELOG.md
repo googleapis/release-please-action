@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.2.0](https://github.com/googleapis/release-please-action/compare/v4.1.5...v4.2.0) (2025-03-07)
+
+
+### Features
+
+* support for skip-labeling parameter for GitHub action ([#1066](https://github.com/googleapis/release-please-action/issues/1066)) ([fb7f385](https://github.com/googleapis/release-please-action/commit/fb7f385da2046f35c544011bc27c9f809122ad2c))
+
 ## [4.1.5](https://github.com/googleapis/release-please-action/compare/v4.1.4...v4.1.5) (2025-02-27)
 
 
