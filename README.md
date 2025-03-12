@@ -88,6 +88,7 @@ steps:
 | `changelog-host`           | The proto://host where commits live. Defaults to `${{ github.server_url }}` (usually `https://github.com`)                             |
 | `versioning-strategy`      | The versioning strategy to use. Defaults to `default`                                                                                  |
 | `release-as`               | The version to release as.                                                                                                             |
+| `dry-run`                  | If `true`, the action outputs pending releases and/or pending pull requests, but does not create them.                                 |
 
 ## GitHub Credentials
 
@@ -97,7 +98,7 @@ the `token` configuration option.
 If your repository is in an organization, you may need to
 [permit github actions to create an approve PRs](https://stackoverflow.com/questions/72376229).
 
-> [!WARNING]  
+> [!WARNING]
 > If using GitHub Actions, you will need to specify a `token` for your workflows to run on
 > Release Please's releases and PRs. See [the heading below](#other-actions-on-release-please-prs).
 
@@ -170,13 +171,16 @@ New types of releases can be [added here](https://github.com/googleapis/release-
 
 > Properties that are available after the action executed.
 
-| output             | description                                                                                                                                                       |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `releases_created` | `true` if any release was created, `false` otherwise                                                                                                              |
-| `paths_released`   | A JSON string of the array of paths that had releases created (`[]` if nothing was released)                                                                                          |
-| `prs_created`      | `true` if any pull request was created or updated                                                                                                                 |
-| `pr`               | A JSON string of the [PullRequest object](https://github.com/googleapis/release-please/blob/main/src/pull-request.ts#L15) (unset if no release created)           |
-| `prs`              | A JSON string of the array of [PullRequest objects](https://github.com/googleapis/release-please/blob/main/src/pull-request.ts#L15) (unset if no release created) |
+| output             | description                                                                                                                                                                                                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `releases_created` | `true` if any release was created, `false` otherwise.                                                                                                                                                                                                                                 |
+| `paths_released`   | A JSON string of the array of paths that had releases created (`[]` if nothing was released).                                                                                                                                                                                         |
+| `releases_pending` | `true` if any candidate release is pending (when running in dry-run mode).                                                                                                                                                                                                            |
+| `paths_to_release` | A JSON string of the array of paths that have pending candidate releases (when running in dry-run mode).                                                                                                                                                                              |
+| `prs_created`      | `true` if any pull request was created or updated.                                                                                                                                                                                                                                    |
+| `prs_pending`      | `true` if any candidate pull request is pending (when running in dry-run mode).                                                                                                                                                                                                       |
+| `pr`               | A JSON string of the [PullRequest object](https://github.com/googleapis/release-please/blob/main/src/pull-request.ts#L15) (in dry-run [ReleasePullRequest objects](https://github.com/googleapis/release-please/blob/main/src/release-pull-request.ts#L20), unset otherwise)           |
+| `prs`              | A JSON string of the array of [PullRequest objects](https://github.com/googleapis/release-please/blob/main/src/pull-request.ts#L15) (in dry-run [ReleasePullRequest objects](https://github.com/googleapis/release-please/blob/main/src/release-pull-request.ts#L20), unset otherwise) |
 
 ### Root component outputs
 
