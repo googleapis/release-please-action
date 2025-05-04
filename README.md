@@ -16,6 +16,7 @@ Automate releases with Conventional Commit Messages.
 
    permissions:
      contents: write
+     issues: write
      pull-requests: write
 
    name: release-please
@@ -119,6 +120,7 @@ This workflow will need the following permissions in your workflow file:
 ```yml
 permissions:
   contents: write
+  issues: write
   pull-requests: write
 ```
 
