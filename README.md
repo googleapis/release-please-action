@@ -392,7 +392,7 @@ If you were setting the `command` option, you will likely need to modify your co
 | `github-release` | `skip-github-pull-request: true`                                 | This command was used for only tagging releases. Now we tell release-please to skip opening release PRs.                                      |
 | `release-pr`     | `skip-github-release: true`                                      | This command was used for only opening release PRs. Now we tell release-please to skip tagging releases.                                     |
 | `manifest`       | do not set `release-type` option                                 | This command told release-please to use a manifest config file. This is now the default behavior unless you explicitly set a `release-type`. |
-| `manifest-pr`    | `skip-github-release: true` and do not set `release-type` option | This command told release-please to use a manifest config file and only open the pull reuqest.                                               |
+| `manifest-pr`    | `skip-github-release: true` and do not set `release-type` option | This command told release-please to use a manifest config file and only open the pull request.                                               |
 
 ### Package options
 
