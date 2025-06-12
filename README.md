@@ -17,6 +17,7 @@ Automate releases with Conventional Commit Messages.
    permissions:
      contents: write
      pull-requests: write
+     issues: write
 
    name: release-please
 
