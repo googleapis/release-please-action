@@ -171,6 +171,53 @@ describe('release-please-action', () => {
           sinon.match.any,
         );
       });
+      it('allows specifying versioning-strategy', async () => {
+        restoreEnv = mockInputs({
+          'release-type': 'simple',
+          'versioning-strategy': 'default',
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main();
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+        sinon.assert.calledWith(
+          fromConfigStub,
+          sinon.match.any,
+          sinon.match.string,
+          sinon.match({
+            releaseType: 'simple',
+            versioning: 'default',
+          }),
+          sinon.match.object,
+          sinon.match.any,
+        );
+      });
+
+      it('allows specifying release-as', async () => {
+        restoreEnv = mockInputs({
+          'release-type': 'simple',
+          'release-as': '2.0.0',
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main();
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+        sinon.assert.calledWith(
+          fromConfigStub,
+          sinon.match.any,
+          sinon.match.string,
+          sinon.match({
+            releaseType: 'simple',
+            releaseAs: '2.0.0',
+          }),
+          sinon.match.object,
+          sinon.match.any,
+        );
+      });
     });
 
     describe('with manifest', () => {

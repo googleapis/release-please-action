@@ -43,6 +43,8 @@ interface ActionInputs {
   fork?: boolean;
   includeComponentInTag?: boolean;
   changelogHost: string;
+  versioningStrategy?: string;
+  releaseAs?: string;
 }
 
 function parseInputs(): ActionInputs {
@@ -65,6 +67,8 @@ function parseInputs(): ActionInputs {
     fork: getOptionalBooleanInput('fork'),
     includeComponentInTag: getOptionalBooleanInput('include-component-in-tag'),
     changelogHost: core.getInput('changelog-host') || DEFAULT_GITHUB_SERVER_URL,
+    versioningStrategy: getOptionalInput('versioning-strategy'),
+    releaseAs: getOptionalInput('release-as'),
   };
   return inputs;
 }
@@ -94,6 +98,8 @@ function loadOrBuildManifest(
         releaseType: inputs.releaseType,
         includeComponentInTag: inputs.includeComponentInTag,
         changelogHost: inputs.changelogHost,
+        versioning: inputs.versioningStrategy,
+        releaseAs: inputs.releaseAs,
       },
       {
         fork: inputs.fork,

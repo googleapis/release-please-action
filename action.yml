@@ -66,6 +66,14 @@ inputs:
     description: 'The proto://host where commits live. Default `https://github.com`'
     required: false
     default: ${{ github.server_url }}
+  versioning-strategy:
+    description: 'The versioning strategy to use.'
+    required: false
+    default: 'default'
+  release-as:
+    description: 'The version to release as.'
+    required: false
+    default: ''
 runs:
   using: 'node20'
   main: 'dist/index.js'
