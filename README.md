@@ -80,7 +80,7 @@ steps:
 | `github-graphql-url`       | Override the GitHub GraphQL URL                                                                                                        |
 | `fork`                     | If `true`, send the PR from a fork. This requires the `token` to be a user that can create forks (e.g. not the default `GITHUB_TOKEN`) |
 | `include-component-in-tag` | If true, add prefix to tags and branches, allowing multiple libraries to be released from the same repository                          |
-| `proxy-server`             | Configure a proxy servier in the form of `<host>:<port>` e.g. `proxy-host.com:8080`                                                    |
+| `proxy-server`             | Configure a proxy server in the form of `<host>:<port>` e.g. `proxy-host.com:8080`                                                    |
 | `skip-github-release`      | If `true`, do not attempt to create releases. This is useful if splitting release tagging from PR creation.                            |
 | `skip-github-pull-request` | If `true`, do not attempt to create release pull requests. This is useful if splitting release tagging from PR creation.               |
 | `skip-labeling`            | If `true`, do not attempt to label the PR.                                                                                          |
