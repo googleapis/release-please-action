@@ -190,6 +190,7 @@ If you have a root component (path is `.` or unset), then the action will also o
 | `minor`              | Number representing minor semver value                                                                     |
 | `patch`              | Number representing patch semver value                                                                     |
 | `sha`                | SHA that a GitHub release was tagged at                                                                    |
+| `body`               | Release notes for the current version extracted from the CHANGELOG.md                                      |
 
 ### Path outputs
 
@@ -209,6 +210,7 @@ This prefix allows you to distinguish values for different releases.
 | `<path>--minor`           | Number representing minor semver value                                                                     |
 | `<path>--patch`           | Number representing patch semver value                                                                     |
 | `<path>--sha`             | sha that a GitHub release was tagged at                                                                    |
+| `<path>--body`            | Release notes for the current version extracted from the CHANGELOG.md                                      |
 
 If the path contains `/` you can access the outputs by using javascript like property access `steps.release.outputs[<path>--...]` 
 e.g.:
