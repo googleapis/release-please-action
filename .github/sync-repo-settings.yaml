@@ -5,16 +5,9 @@ branchProtectionRules:
     requiresCodeOwnerReviews: true
     requiresStrictStatusChecks: true
     requiredStatusCheckContexts:
-      - build-dist (20)
-      - test (20)
-      - cla/google
+      - build-dist (22)
+      - test (22)
       - windows
 permissionRules:
-  - team: yoshi-admins
+  - team: compwright
     permission: admin
-  - team: jsteam-admins
-    permission: admin
-  - team: jsteam
-    permission: push
-  - team: github-automation
-    permission: push

@@ -1,6 +1,6 @@
 name: 'release-please-action'
 description: 'automated releases based on conventional commits'
-author: Google LLC
+author: CompWright Enterprises, LLC
 inputs:
   token:
     description: 'GitHub token for creating and grooming release PRs, defaults to using secrets.GITHUB_TOKEN'
