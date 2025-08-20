@@ -20,6 +20,7 @@ import * as sinon from 'sinon';
 import * as nock from 'nock';
 import {RestoreFn} from 'mocked-env';
 import mockedEnv from 'mocked-env';
+const fetch = require('node-fetch');
 
 import {Manifest, GitHub} from 'release-please';
 // As defined in action.yml
@@ -106,7 +107,7 @@ describe('release-please-action', () => {
         });
         fakeManifest.createReleases.resolves([]);
         fakeManifest.createPullRequests.resolves([]);
-        await action.main();
+        await action.main(fetch);
         sinon.assert.calledOnce(fakeManifest.createReleases);
         sinon.assert.calledOnce(fakeManifest.createPullRequests);
       });
@@ -116,7 +117,7 @@ describe('release-please-action', () => {
           'release-type': 'simple',
         });
         fakeManifest.createPullRequests.resolves([]);
-        await action.main();
+        await action.main(fetch);
         sinon.assert.notCalled(fakeManifest.createReleases);
         sinon.assert.calledOnce(fakeManifest.createPullRequests);
       });
@@ -126,7 +127,7 @@ describe('release-please-action', () => {
           'release-type': 'simple',
         });
         fakeManifest.createReleases.resolves([]);
-        await action.main();
+        await action.main(fetch);
         sinon.assert.calledOnce(fakeManifest.createReleases);
         sinon.assert.notCalled(fakeManifest.createPullRequests);
       });
@@ -137,7 +138,7 @@ describe('release-please-action', () => {
         });
         fakeManifest.createReleases.resolves([]);
         fakeManifest.createPullRequests.resolves([]);
-        await action.main();
+        await action.main(fetch);
         sinon.assert.calledOnce(fakeManifest.createReleases);
         sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
@@ -157,7 +158,7 @@ describe('release-please-action', () => {
         });
         fakeManifest.createReleases.resolves([]);
         fakeManifest.createPullRequests.resolves([]);
-        await action.main();
+        await action.main(fetch);
         sinon.assert.calledOnce(fakeManifest.createReleases);
         sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
@@ -184,7 +185,7 @@ describe('release-please-action', () => {
         restoreEnv = mockInputs({});
         fakeManifest.createReleases.resolves([]);
         fakeManifest.createPullRequests.resolves([]);
-        await action.main();
+        await action.main(fetch);
         sinon.assert.calledOnce(fakeManifest.createReleases);
         sinon.assert.calledOnce(fakeManifest.createPullRequests);
       });
@@ -193,7 +194,7 @@ describe('release-please-action', () => {
           'skip-github-release': 'true',
         });
         fakeManifest.createPullRequests.resolves([]);
-        await action.main();
+        await action.main(fetch);
         sinon.assert.notCalled(fakeManifest.createReleases);
         sinon.assert.calledOnce(fakeManifest.createPullRequests);
       });
@@ -202,7 +203,7 @@ describe('release-please-action', () => {
           'skip-github-pull-request': 'true',
         });
         fakeManifest.createReleases.resolves([]);
-        await action.main();
+        await action.main(fetch);
         sinon.assert.calledOnce(fakeManifest.createReleases);
         sinon.assert.notCalled(fakeManifest.createPullRequests);
       });
@@ -212,7 +213,7 @@ describe('release-please-action', () => {
         });
         fakeManifest.createReleases.resolves([]);
         fakeManifest.createPullRequests.resolves([]);
-        await action.main();
+        await action.main(fetch);
         sinon.assert.calledOnce(fakeManifest.createReleases);
         sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
@@ -230,7 +231,7 @@ describe('release-please-action', () => {
         });
         fakeManifest.createReleases.resolves([]);
         fakeManifest.createPullRequests.resolves([]);
-        await action.main();
+        await action.main(fetch);
         sinon.assert.calledOnce(fakeManifest.createReleases);
         sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
@@ -256,7 +257,7 @@ describe('release-please-action', () => {
       const fromManifestStub = sandbox
         .stub(Manifest, 'fromManifest')
         .resolves(fakeManifest);
-      await action.main();
+      await action.main(fetch);
       sinon.assert.calledOnce(fakeManifest.createReleases);
       sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
@@ -281,7 +282,7 @@ describe('release-please-action', () => {
       fakeManifest.createReleases.resolves([]);
       fakeManifest.createPullRequests.resolves([]);
       sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
-      await action.main();
+      await action.main(fetch);
       sinon.assert.calledOnce(fakeManifest.createReleases);
       sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
@@ -324,7 +325,7 @@ describe('release-please-action', () => {
       ]);
       fakeManifest.createPullRequests.resolves([]);
       sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
-      await action.main();
+      await action.main(fetch);
       sinon.assert.calledOnce(fakeManifest.createReleases);
       sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
@@ -348,7 +349,7 @@ describe('release-please-action', () => {
       fakeManifest.createReleases.resolves([]);
       fakeManifest.createPullRequests.resolves([fixturePrs[0]]);
       sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
-      await action.main();
+      await action.main(fetch);
       sinon.assert.calledOnce(fakeManifest.createReleases);
       sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
@@ -396,7 +397,7 @@ describe('release-please-action', () => {
       ]);
       fakeManifest.createPullRequests.resolves([]);
       sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
-      await action.main();
+      await action.main(fetch);
       sinon.assert.calledOnce(fakeManifest.createReleases);
 
       assert.strictEqual(output['a--id'], 123456);
@@ -432,7 +433,7 @@ describe('release-please-action', () => {
       fakeManifest.createReleases.resolves([]);
       fakeManifest.createPullRequests.resolves(fixturePrs);
       sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
-      await action.main();
+      await action.main(fetch);
       sinon.assert.calledOnce(fakeManifest.createReleases);
       sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
@@ -446,7 +447,7 @@ describe('release-please-action', () => {
       fakeManifest.createReleases.resolves([]);
       fakeManifest.createPullRequests.resolves([]);
       sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
-      await action.main();
+      await action.main(fetch);
       sinon.assert.calledOnce(fakeManifest.createReleases);
       sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
