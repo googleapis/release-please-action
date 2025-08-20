@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.3.0](https://github.com/googleapis/release-please-action/compare/v4.2.0...v4.3.0) (2025-08-20)
+
+
+### Features
+
+* **deps:** update release-please to 17.1.2 ([f07192c](https://github.com/googleapis/release-please-action/commit/f07192c046b10acd083f4665a3d8b6350526f9df))
+
 ## [4.2.0](https://github.com/googleapis/release-please-action/compare/v4.1.5...v4.2.0) (2025-03-07)
 
 

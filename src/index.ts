@@ -118,10 +118,10 @@ function loadOrBuildManifest(
   );
 }
 
-export async function main() {
+export async function main(fetchOverride?: any) {
   core.info(`Running release-please version: ${VERSION}`)
   const inputs = parseInputs();
-  const github = await getGitHubInstance(inputs);
+  const github = await getGitHubInstance(inputs, fetchOverride);
 
   if (!inputs.skipGitHubRelease) {
     const manifest = await loadOrBuildManifest(github, inputs);
@@ -136,7 +136,7 @@ export async function main() {
   }
 }
 
-function getGitHubInstance(inputs: ActionInputs): Promise<GitHub> {
+function getGitHubInstance(inputs: ActionInputs, fetchOverride?: any): Promise<GitHub> {
   const [owner, repo] = inputs.repoUrl.split('/');
   let proxy: Proxy | undefined = undefined;
   if (inputs.proxyServer) {
@@ -155,6 +155,7 @@ function getGitHubInstance(inputs: ActionInputs): Promise<GitHub> {
     graphqlUrl: inputs.githubGraphqlUrl,
     token: inputs.token,
     defaultBranch: inputs.targetBranch,
+    fetch: fetchOverride,
   };
   return GitHub.create(githubCreateOpts);
 }
