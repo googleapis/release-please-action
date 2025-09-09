@@ -341,6 +341,7 @@ describe('release-please-action', () => {
       assert.strictEqual(output.version, '1.2.3');
       assert.strictEqual(output.sha, 'abc123');
       assert.strictEqual(output.paths_released, '["."]');
+      assert.strictEqual(output.body, 'Some release notes');
     });
 
     it('sets appropriate outputs when release PR opened', async () => {
@@ -411,6 +412,7 @@ describe('release-please-action', () => {
       assert.strictEqual(output['a--version'], '1.0.0');
       assert.strictEqual(output['a--sha'], 'abc123');
       assert.strictEqual(output['a--path'], 'a');
+      assert.strictEqual(output['a--body'], 'Some release notes');
 
       assert.strictEqual(output['b--id'], 123);
       assert.strictEqual(output['b--release_created'], true);
@@ -423,6 +425,7 @@ describe('release-please-action', () => {
       assert.strictEqual(output['b--version'], '1.2.0');
       assert.strictEqual(output['b--sha'], 'abc123');
       assert.strictEqual(output['b--path'], 'b');
+      assert.strictEqual(output['b--body'], 'Some release notes');
 
       assert.strictEqual(output.paths_released, '["a","b"]');
       assert.strictEqual(output.releases_created, true);
