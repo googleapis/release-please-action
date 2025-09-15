@@ -178,7 +178,7 @@ describe('release-please-action', () => {
         });
         fakeManifest.createReleases.resolves([]);
         fakeManifest.createPullRequests.resolves([]);
-        await action.main();
+        await action.main(fetch);
         sinon.assert.calledOnce(fakeManifest.createReleases);
         sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
@@ -202,7 +202,7 @@ describe('release-please-action', () => {
         });
         fakeManifest.createReleases.resolves([]);
         fakeManifest.createPullRequests.resolves([]);
-        await action.main();
+        await action.main(fetch);
         sinon.assert.calledOnce(fakeManifest.createReleases);
         sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
