@@ -105526,6 +105526,8 @@ function parseInputs() {
         fork: getOptionalBooleanInput('fork'),
         includeComponentInTag: getOptionalBooleanInput('include-component-in-tag'),
         changelogHost: core.getInput('changelog-host') || DEFAULT_GITHUB_SERVER_URL,
+        versioningStrategy: getOptionalInput('versioning-strategy'),
+        releaseAs: getOptionalInput('release-as'),
     };
     return inputs;
 }
@@ -105546,6 +105548,8 @@ function loadOrBuildManifest(github, inputs) {
             releaseType: inputs.releaseType,
             includeComponentInTag: inputs.includeComponentInTag,
             changelogHost: inputs.changelogHost,
+            versioning: inputs.versioningStrategy,
+            releaseAs: inputs.releaseAs,
         }, {
             fork: inputs.fork,
             skipLabeling: inputs.skipLabeling,
