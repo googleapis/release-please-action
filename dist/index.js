@@ -46881,6 +46881,7 @@ const signoff_commit_message_1 = __nccwpck_require__(2686);
 const git_file_utils_1 = __nccwpck_require__(32997);
 const https_proxy_agent_1 = __nccwpck_require__(77219);
 const http_proxy_agent_1 = __nccwpck_require__(23764);
+const composite_1 = __nccwpck_require__(40911);
 class GitHub {
     constructor(options) {
         var _a;
@@ -47898,8 +47899,12 @@ class GitHub {
      * @throws {GitHubAPIError} on an API error
      */
     async buildChangeSet(updates, defaultBranch) {
+        // Sometimes multiple updates are proposed for the same file,
+        // such as when the manifest file is additionally changed by the
+        // node-workspace plugin. We need to merge these updates.
+        const mergedUpdates = (0, composite_1.mergeUpdates)(updates);
         const changes = new Map();
-        for (const update of updates) {
+        for (const update of mergedUpdates) {
             let content;
             try {
                 content = await this.getFileContentsOnBranch(update.path, defaultBranch);
@@ -48159,7 +48164,7 @@ Object.defineProperty(exports, "GitHub", ({ enumerable: true, get: function () {
 exports.configSchema = __nccwpck_require__(38623);
 exports.manifestSchema = __nccwpck_require__(45314);
 // x-release-please-start-version
-exports.VERSION = '17.1.2';
+exports.VERSION = '17.1.3';
 // x-release-please-end
 //# sourceMappingURL=index.js.map
 
@@ -55516,6 +55521,7 @@ exports.Generic = exports.DEFAULT_DATE_FORMAT = void 0;
 const default_1 = __nccwpck_require__(69995);
 const logger_1 = __nccwpck_require__(68809);
 const VERSION_REGEX = /(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(-(?<preRelease>[\w.]+))?(\+(?<build>[-\w.]+))?/;
+const MAJOR_VERSION_REGEX = /\d+\b/;
 const SINGLE_VERSION_REGEX = /\b\d+\b/;
 const INLINE_UPDATE_REGEX = /x-release-please-(?<scope>major|minor|patch|version-date|version|date)/;
 const BLOCK_START_REGEX = /x-release-please-start-(?<scope>major|minor|patch|version-date|version|date)/;
@@ -55593,7 +55599,7 @@ class Generic extends default_1.DefaultUpdater {
                     newLines.push(line.replace(VERSION_REGEX, version.toString()));
                     return;
                 case 'major':
-                    newLines.push(line.replace(SINGLE_VERSION_REGEX, `${version.major}`));
+                    newLines.push(line.replace(MAJOR_VERSION_REGEX, `${version.major}`));
                     return;
                 case 'minor':
                     newLines.push(line.replace(SINGLE_VERSION_REGEX, `${version.minor}`));
@@ -105409,7 +105415,7 @@ exports.JSONPath = JSONPath;
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"17.1.2"};
+module.exports = {"i8":"17.1.3"};
 
 /***/ }),
 
