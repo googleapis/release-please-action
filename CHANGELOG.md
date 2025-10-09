@@ -1,5 +1,19 @@
 # Changelog
 
+## [4.4.0](https://github.com/googleapis/release-please-action/compare/v4.3.0...v4.4.0) (2025-10-09)
+
+
+### Features
+
+* add ability to select versioning-strategy and release-as ([#1121](https://github.com/googleapis/release-please-action/issues/1121)) ([ee0f5ba](https://github.com/googleapis/release-please-action/commit/ee0f5bae453367755be0c4340193531b3f538374))
+
+
+### Bug Fixes
+
+* `changelog-host` parameter ignored when using manifest configuration ([#1151](https://github.com/googleapis/release-please-action/issues/1151)) ([535c413](https://github.com/googleapis/release-please-action/commit/535c4130c1030110bdacd1b3076f98c046c3a227))
+* bump mocha from 11.7.1 to 11.7.2 in the npm_and_yarn group across 1 directory ([#1149](https://github.com/googleapis/release-please-action/issues/1149)) ([3612a99](https://github.com/googleapis/release-please-action/commit/3612a99d75bd7a010bb03d6e2ee3e2392b7392fb))
+* bump release-please from 17.1.2 to 17.1.3 ([#1158](https://github.com/googleapis/release-please-action/issues/1158)) ([66fbfe9](https://github.com/googleapis/release-please-action/commit/66fbfe9439cb7a3660ecdc00d42573ef0bd00764))
+
 ## [4.3.0](https://github.com/googleapis/release-please-action/compare/v4.2.0...v4.3.0) (2025-08-20)
 
 
