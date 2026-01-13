@@ -84,7 +84,10 @@ steps:
 | `proxy-server`             | Configure a proxy server in the form of `<host>:<port>` e.g. `proxy-host.com:8080`                                                    |
 | `skip-github-release`      | If `true`, do not attempt to create releases. This is useful if splitting release tagging from PR creation.                            |
 | `skip-github-pull-request` | If `true`, do not attempt to create release pull requests. This is useful if splitting release tagging from PR creation.               |
-| `skip-labeling`            | If `true`, do not attempt to label the PR.                                                                                          |
+| `skip-labeling`            | If `true`, do not attempt to label the PR.                                                                                             |
+| `changelog-host`           | The proto://host where commits live. Defaults to `${{ github.server_url }}` (usually `https://github.com`)                             |
+| `versioning-strategy`      | The versioning strategy to use. Defaults to `default`                                                                                  |
+| `release-as`               | The version to release as.                                                                                                             |
 
 ## GitHub Credentials
 
