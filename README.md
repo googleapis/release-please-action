@@ -414,6 +414,7 @@ you can see a mapping of the old option to the new option:
 | `component`                        | `$.packages[path].component`                                                          | Package-only option                                                                 |
 | `package-name`                     | `$.packages[path].package-name`                                                       | Package-only option                                                                 |
 | `always-link-local`                | `$.always-link-local`                                                                 | Root-only option                                                                    |
+| `always-update`                    | `$.always-update`                                                                     | Root-only option                                                                    |
 | `bootstrap-sha`                    | `$.bootstrap-sha`                                                                     | Root-only option                                                                    |
 | `commit-search-depth`              | `$.commit-search-depth`                                                               | Root-only option                                                                    |
 | `group-pull-request-title-pattern` | `$.group-pull-request-title-pattern`                                                  | Root-only option                                                                    |
@@ -428,22 +429,33 @@ you can see a mapping of the old option to the new option:
 | `changelog-host`                   | `$.changelog-host` or `$.packages[path].changelog-host`                               | Root or per-package option                                                          |
 | `changelog-notes-type`             | `$.changelog-type` or `$.packages[path].changelog-type`                               | Root or per-package option                                                          |
 | `changelog-types`                  | `$.changelog-sections` or `$.packages[path].changelog-sections`                       | Root or per-package option                                                          |
+| `component-no-space`               | `$.component-no-space` or `$.packages[path].component-no-space`                       | Root or per-package option                                                          |
+| `date-format`                      | `$.date-format` or `$.packages[path].date-format`                                     | Root or per-package option                                                          |
+| `draft`                            | `$.draft` or `$.packages[path].draft`                                                 | Root or per-package option                                                          |
+| `draft-pull-request`               | `$.draft-pull-request` or `$.packages[path].draft-pull-request`                       | Root or per-package option                                                          |
+| `exclude-paths`                    | `$.exclude-paths` or `$.packages[path].exclude-paths`                                 | Root or per-package option                                                          |
 | `extra-files`                      | `$.extra-files` or `$.packages[path].extra-files`                                     | Root or per-package option                                                          |
+| `extra-labels`                     | `$.extra-labels` or `$.packages[path].extra-labels`                                   | Root or per-package option                                                          |
 | `include-v-in-tag`                 | `$.include-v-in-tag` or `$.packages[path].include-v-in-tag`                           | Root or per-package option                                                          |
+| `initial-version`                  | `$.initial-version` or `$.packages[path].initial-version`                             | Root or per-package option                                                          |
 | `labels`                           | `$.label` or `$.packages[path].label`                                                 | Root or per-package option                                                          |
 | `monorepo-tags`                    | `$.include-component-in-tag` or `$.packages[path].include-component-in-tag`           | Root or per-package option                                                          |
 | `prerelease`                       | `$.prerelease` or `$.packages[path].prerelease`                                       | Root or per-package option                                                          |
+| `prerelease-type`                  | `$.prerelease-type` or `$.packages[path].prerelease-type`                             | Root or per-package option                                                          |
+| `pull-request-footer`              | `$.pull-request-footer` or `$.packages[path].pull-request-footer`                     | Root or per-package option                                                          |
 | `pull-request-header`              | `$.pull-request-header` or `$.packages[path].pull-request-header`                     | Root or per-package option                                                          |
 | `pull-request-title-pattern`       | `$.pull-request-title-pattern` or `$.packages[path].pull-request-title-pattern`       | Root or per-package option                                                          |
 | `release-as`                       | `$.release-as` or `$.packages[path].release-as`                                       | Root or per-package option                                                          |
 | `release-labels`                   | `$.release-label` or `$.packages[path].release-label`                                 | Root or per-package option                                                          |
 | `release-type`                     | `$.release-type` or `$.packages[path].release-type`                                   | Root or per-package option                                                          |
 | `separate-pull-requests`           | `$.separate-pull-requests` or `$.packages[path].separate-pull-requests`               | Root or per-package option                                                          |
+| `skip-changelog`                   | `$.skip-changelog` or `$.packages[path].skip-changelog`                               | Root or per-package option                                                          |
 | `skip-github-release`              | `$.skip-github-release` or `$.packages[path].skip-github-release`                     | Root or per-package option                                                          |
+| `skip-snapshot`                    | `$.skip-snapshot` or `$.packages[path].skip-snapshot`                                 | Root or per-package option                                                          |
 | `snapshot-labels`                  | `$.snapshot-label` or `$.packages[path].snapshot-label`                               | Root or per-package option                                                          |
 | `tag-separator`                    | `$.tag-separator` or `$.packages[path].tag-separator`                                 | Root or per-package option                                                          |
 | `version-file`                     | `$.version-file` or `$.packages[path].version-file`                                   | Root or per-package option                                                          |
-| `versioning-strategy`              | `$.versioning` or `$.packages[path].versioning`                                       | Root or per-package option                                                          |
+| `versioning-strategy`              | `$.versioning-strategy` or `$.packages[path].versioning-strategy`                     | Root or per-package option                                                          |
 
 ## License
 
