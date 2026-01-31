@@ -34,7 +34,11 @@ Automate releases with Conventional Commit Messages.
              # this is a built-in strategy in release-please, see "Action Inputs"
              # for more options
              release-type: simple
-   ```
+             # optional. create a prerelease.
+             # prerelease: true
+             # optional. prerelease type (e.g. beta).
+             # prerelease-type: beta
+    ```
 
    Specifying a `release-type` configuration is the most straight-forward
    configuration option, but allows for no further customization. For advanced
@@ -88,6 +92,8 @@ steps:
 | `changelog-host`           | The proto://host where commits live. Defaults to `${{ github.server_url }}` (usually `https://github.com`)                             |
 | `versioning-strategy`      | The versioning strategy to use. Defaults to `default`                                                                                  |
 | `release-as`               | The version to release as.                                                                                                             |
+| `prerelease`               | If `true`, create a prerelease. Defaults to `false`                                                                                    |
+| `prerelease-type`          | The prerelease type (e.g. `beta`). Defaults to `beta`                                                                                  |
 
 ## GitHub Credentials
 
@@ -273,6 +279,10 @@ jobs:
       - uses: googleapis/release-please-action@v4
         with:
           release-type: node
+          # optional. create a prerelease.
+          # prerelease: true
+          # optional. prerelease type (e.g. beta).
+          # prerelease-type: beta
           # The short ref name of the branch or tag that triggered
           #  the workflow run. For example, `main` or `1.x`
           target-branch: ${{ github.ref_name }}

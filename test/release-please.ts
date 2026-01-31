@@ -218,6 +218,54 @@ describe('release-please-action', () => {
           sinon.match.any,
         );
       });
+
+      it('allows specifying prerelease', async () => {
+        restoreEnv = mockInputs({
+          'release-type': 'simple',
+          'prerelease': 'true',
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main(fetch);
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+        sinon.assert.calledWith(
+          fromConfigStub,
+          sinon.match.any,
+          sinon.match.string,
+          sinon.match({
+            releaseType: 'simple',
+            prerelease: true,
+          }),
+          sinon.match.object,
+          sinon.match.any,
+        );
+      });
+
+      it('allows specifying prerelease-type', async () => {
+        restoreEnv = mockInputs({
+          'release-type': 'simple',
+          'prerelease-type': 'alpha',
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main(fetch);
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+        sinon.assert.calledWith(
+          fromConfigStub,
+          sinon.match.any,
+          sinon.match.string,
+          sinon.match({
+            releaseType: 'simple',
+            prereleaseType: 'alpha',
+          }),
+          sinon.match.object,
+          sinon.match.any,
+        );
+      });
     });
 
     describe('with manifest', () => {
@@ -363,6 +411,76 @@ describe('release-please-action', () => {
         // Verify that changelogHost was NOT added when using default value
         assert.strictEqual(fakeManifest.repositoryConfig['.'].changelogHost, undefined);
         assert.strictEqual(fakeManifest.repositoryConfig['packages/foo'].changelogHost, undefined);
+      });
+
+      it('allows specifying prerelease', async () => {
+        restoreEnv = mockInputs({
+          'prerelease': 'true',
+        });
+        // Create a mock repositoryConfig on the existing fakeManifest
+        const mockRepositoryConfig = {
+          '.': { releaseType: 'node' },
+          'packages/foo': { releaseType: 'node' }
+        };
+        // Use Object.defineProperty to set the readonly property
+        Object.defineProperty(fakeManifest, 'repositoryConfig', {
+          value: mockRepositoryConfig,
+          writable: true,
+          configurable: true
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main(fetch);
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+        // Verify that fromManifest is called WITHOUT prerelease in overrides
+        sinon.assert.calledWith(
+          fromManifestStub,
+          sinon.match.any,
+          sinon.match.string,
+          sinon.match.string,
+          sinon.match.string,
+          sinon.match(arg => !arg.hasOwnProperty('prerelease')),
+        );
+        // Verify that prerelease was added to all paths in repositoryConfig
+        assert.strictEqual(fakeManifest.repositoryConfig['.'].prerelease, true);
+        assert.strictEqual(fakeManifest.repositoryConfig['packages/foo'].prerelease, true);
+      });
+
+      it('allows specifying prerelease-type', async () => {
+        restoreEnv = mockInputs({
+          'prerelease-type': 'alpha',
+        });
+        // Create a mock repositoryConfig on the existing fakeManifest
+        const mockRepositoryConfig = {
+          '.': { releaseType: 'node' },
+          'packages/foo': { releaseType: 'node' }
+        };
+        // Use Object.defineProperty to set the readonly property
+        Object.defineProperty(fakeManifest, 'repositoryConfig', {
+          value: mockRepositoryConfig,
+          writable: true,
+          configurable: true
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main(fetch);
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+        // Verify that fromManifest is called WITHOUT prereleaseType in overrides
+        sinon.assert.calledWith(
+          fromManifestStub,
+          sinon.match.any,
+          sinon.match.string,
+          sinon.match.string,
+          sinon.match.string,
+          sinon.match(arg => !arg.hasOwnProperty('prereleaseType')),
+        );
+        // Verify that prereleaseType was added to all paths in repositoryConfig
+        assert.strictEqual(fakeManifest.repositoryConfig['.'].prereleaseType, 'alpha');
+        assert.strictEqual(fakeManifest.repositoryConfig['packages/foo'].prereleaseType, 'alpha');
       });
     });
 
