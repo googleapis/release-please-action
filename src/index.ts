@@ -20,6 +20,7 @@ const DEFAULT_MANIFEST_FILE = '.release-please-manifest.json';
 const DEFAULT_GITHUB_API_URL = 'https://api.github.com';
 const DEFAULT_GITHUB_GRAPHQL_URL = 'https://api.github.com';
 const DEFAULT_GITHUB_SERVER_URL = 'https://github.com';
+const DEFAULT_PRERELEASE = false;
 
 interface Proxy {
   host: string;
@@ -45,6 +46,8 @@ interface ActionInputs {
   changelogHost: string;
   versioningStrategy?: string;
   releaseAs?: string;
+  prerelease?: boolean;
+  prereleaseType?: string;
 }
 
 function parseInputs(): ActionInputs {
@@ -69,6 +72,8 @@ function parseInputs(): ActionInputs {
     changelogHost: core.getInput('changelog-host') || DEFAULT_GITHUB_SERVER_URL,
     versioningStrategy: getOptionalInput('versioning-strategy'),
     releaseAs: getOptionalInput('release-as'),
+    prerelease: getOptionalBooleanInput('prerelease'),
+    prereleaseType: getOptionalInput('prerelease-type'),
   };
   return inputs;
 }
@@ -100,6 +105,8 @@ function loadOrBuildManifest(
         changelogHost: inputs.changelogHost,
         versioning: inputs.versioningStrategy,
         releaseAs: inputs.releaseAs,
+        prerelease: inputs.prerelease,
+        prereleaseType: inputs.prereleaseType,
       },
       {
         fork: inputs.fork,
@@ -108,10 +115,12 @@ function loadOrBuildManifest(
       inputs.path
     );
   }
-  const manifestOverrides = inputs.fork || inputs.skipLabeling
+  const manifestOverrides: any = inputs.fork || inputs.skipLabeling || inputs.prerelease !== undefined || inputs.prereleaseType
     ? {
         fork: inputs.fork,
         skipLabeling: inputs.skipLabeling,
+        prerelease: inputs.prerelease,
+        prereleaseType: inputs.prereleaseType,
       }
     : {};
   core.debug('Loading manifest from config file');
@@ -122,11 +131,19 @@ function loadOrBuildManifest(
     inputs.manifestFile,
     manifestOverrides
   ).then(manifest => {
-    // Override changelogHost for all paths if provided as action input and different from default
-    if (inputs.changelogHost && inputs.changelogHost !== DEFAULT_GITHUB_SERVER_URL) {
-      core.debug(`Overriding changelogHost to: ${inputs.changelogHost}`);
-      for (const path in manifest.repositoryConfig) {
+    // Override changelogHost, prerelease and prereleaseType for all paths if provided as action input and maybe also different from default
+    for (const path in manifest.repositoryConfig) {
+      if (inputs.changelogHost && inputs.changelogHost !== DEFAULT_GITHUB_SERVER_URL) {
+        core.debug(`Overriding changelogHost to: ${inputs.changelogHost}`);
         manifest.repositoryConfig[path].changelogHost = inputs.changelogHost;
+      }
+      if (inputs.prerelease !== undefined) {
+        core.debug(`Overriding prerelease to: ${inputs.prerelease}`);
+        manifest.repositoryConfig[path].prerelease = inputs.prerelease;
+      }
+      if (inputs.prereleaseType) {
+        core.debug(`Overriding prereleaseType to: ${inputs.prereleaseType}`);
+        manifest.repositoryConfig[path].prereleaseType = inputs.prereleaseType;
       }
     }
     return manifest;

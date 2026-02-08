@@ -74,6 +74,14 @@ inputs:
     description: 'The version to release as.'
     required: false
     default: ''
+  prerelease:
+    description: 'If true, create a prerelease.'
+    required: false
+    default: false
+  prerelease-type:
+    description: 'The prerelease type (e.g. beta).'
+    required: false
+    default: 'beta'
 runs:
   using: 'node20'
   main: 'dist/index.js'
