@@ -47,7 +47,7 @@ inputs:
     required: false
     default: false
   proxy-server:
-    description: 'set proxy sever when you run this action behind a proxy. format is host:port e.g. proxy-host.com:8080'
+    description: 'set proxy server when you run this action behind a proxy. format is host:port e.g. proxy-host.com:8080'
     required: false
     default: ''
   skip-github-release:
