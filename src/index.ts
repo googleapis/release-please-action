@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as core from '@actions/core';
-import {GitHub, Manifest, CreatedRelease, PullRequest, VERSION} from 'release-please';
+import { GitHub, Manifest, CreatedRelease, PullRequest, VERSION } from 'release-please';
 
 const DEFAULT_CONFIG_FILE = 'release-please-config.json';
 const DEFAULT_MANIFEST_FILE = '.release-please-manifest.json';
@@ -49,7 +49,7 @@ interface ActionInputs {
 
 function parseInputs(): ActionInputs {
   const inputs: ActionInputs = {
-    token: core.getInput('token', {required: true}),
+    token: core.getInput('token', { required: true }),
     releaseType: getOptionalInput('release-type'),
     path: getOptionalInput('path'),
     repoUrl: core.getInput('repo-url') || process.env.GITHUB_REPOSITORY || '',
@@ -110,9 +110,9 @@ function loadOrBuildManifest(
   }
   const manifestOverrides = inputs.fork || inputs.skipLabeling
     ? {
-        fork: inputs.fork,
-        skipLabeling: inputs.skipLabeling,
-      }
+      fork: inputs.fork,
+      skipLabeling: inputs.skipLabeling,
+    }
     : {};
   core.debug('Loading manifest from config file');
   return Manifest.fromManifest(
@@ -138,14 +138,16 @@ export async function main(fetchOverride?: any) {
   const inputs = parseInputs();
   const github = await getGitHubInstance(inputs, fetchOverride);
 
+  // Build the manifest once and reuse for both operations to avoid
+  // redundant API calls to fetch config and release history.
+  const manifest = await loadOrBuildManifest(github, inputs);
+
   if (!inputs.skipGitHubRelease) {
-    const manifest = await loadOrBuildManifest(github, inputs);
     core.debug('Creating releases');
     outputReleases(await manifest.createReleases());
   }
 
   if (!inputs.skipGitHubPullRequest) {
-    const manifest = await loadOrBuildManifest(github, inputs);
     core.debug('Creating pull requests');
     outputPRs(await manifest.createPullRequests());
   }
