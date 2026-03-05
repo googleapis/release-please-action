@@ -137,15 +137,14 @@ export async function main(fetchOverride?: any) {
   core.info(`Running release-please version: ${VERSION}`)
   const inputs = parseInputs();
   const github = await getGitHubInstance(inputs, fetchOverride);
+  const manifest = await loadOrBuildManifest(github, inputs);
 
   if (!inputs.skipGitHubRelease) {
-    const manifest = await loadOrBuildManifest(github, inputs);
     core.debug('Creating releases');
     outputReleases(await manifest.createReleases());
   }
 
   if (!inputs.skipGitHubPullRequest) {
-    const manifest = await loadOrBuildManifest(github, inputs);
     core.debug('Creating pull requests');
     outputPRs(await manifest.createPullRequests());
   }
