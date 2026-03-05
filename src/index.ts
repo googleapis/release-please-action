@@ -108,12 +108,13 @@ function loadOrBuildManifest(
       inputs.path
     );
   }
-  const manifestOverrides = inputs.fork || inputs.skipLabeling
-    ? {
-      fork: inputs.fork,
-      skipLabeling: inputs.skipLabeling,
-    }
-    : {};
+  const manifestOverrides =
+    inputs.fork || inputs.skipLabeling
+      ? {
+          fork: inputs.fork,
+          skipLabeling: inputs.skipLabeling,
+        }
+      : {};
   core.debug('Loading manifest from config file');
   return Manifest.fromManifest(
     github,
@@ -134,19 +135,14 @@ function loadOrBuildManifest(
 }
 
 export async function main(fetchOverride?: any) {
-  core.info(`Running release-please version: ${VERSION}`)
+  core.info(`Running release-please version: ${VERSION}`);
   const inputs = parseInputs();
   const github = await getGitHubInstance(inputs, fetchOverride);
-
-  // Build the manifest once and reuse for both operations to avoid
-  // redundant API calls to fetch config and release history.
   const manifest = await loadOrBuildManifest(github, inputs);
-
   if (!inputs.skipGitHubRelease) {
     core.debug('Creating releases');
     outputReleases(await manifest.createReleases());
   }
-
   if (!inputs.skipGitHubPullRequest) {
     core.debug('Creating pull requests');
     outputPRs(await manifest.createPullRequests());
@@ -229,6 +225,6 @@ function outputPRs(prs: (PullRequest | undefined)[]) {
 
 if (require.main === module) {
   main().catch(err => {
-    core.setFailed(`release-please failed: ${err.message}`)
-  })
+    core.setFailed(`release-please failed: ${err.message}`);
+  });
 }
