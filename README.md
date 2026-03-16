@@ -92,24 +92,28 @@ steps:
 
 ## Action Inputs
 
-| input                      | description                                                                                                                            |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `token`                    | A GitHub secret token, the action defaults to using the special `secrets.GITHUB_TOKEN`                                                 |
-| `release-type`             | If specified, defines the release strategy to use for the repository. Reference [Release types supported](#release-types-supported)    |
-| `path`                     | create a release from a path other than the repository's root                                                                          |
-| `target-branch`            | branch to open pull release PR against (detected by default)                                                                           |
-| `config-file`              | Path to the release-please config in the repository. Defaults to `release-please-config.json`                                          |
-| `manifest-file`            | Path to the release-please versions manifest. Defaults to `.release-please-manifest.json`                                              |
-| `repo-url`                 | GitHub repository name in the form of `<owner>/<repo>`. Defaults to the repository the action is running in.                           |
-| `github-api-url`           | Override the GitHub API URL.                                                                                                           |
-| `github-graphql-url`       | Override the GitHub GraphQL URL                                                                                                        |
-| `fork`                     | If `true`, send the PR from a fork. This requires the `token` to be a user that can create forks (e.g. not the default `GITHUB_TOKEN`) |
-| `include-component-in-tag` | If true, add prefix to tags and branches, allowing multiple libraries to be released from the same repository                          |
-| `proxy-server`             | Configure a proxy server in the form of `<host>:<port>` e.g. `proxy-host.com:8080`                                                    |
-| `skip-github-release`      | If `true`, do not attempt to create releases. This is useful if splitting release tagging from PR creation.                            |
-| `skip-github-pull-request` | If `true`, do not attempt to create release pull requests. This is useful if splitting release tagging from PR creation.               |
-| `skip-labeling`            | If `true`, do not attempt to label the PR.                                                                                          |
+| input                      | description                                                                                                                                                |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `token`                    | A GitHub secret token, the action defaults to using the special `secrets.GITHUB_TOKEN`                                                                     |
+| `release-type`             | If specified, defines the release strategy to use for the repository. Reference [Release types supported](#release-types-supported)                        |
+| `path`                     | create a release from a path other than the repository's root                                                                                              |
+| `target-branch`            | branch to open pull release PR against (detected by default)                                                                                               |
+| `config-file`              | Path to the release-please config in the repository. Defaults to `release-please-config.json`                                                              |
+| `manifest-file`            | Path to the release-please versions manifest. Defaults to `.release-please-manifest.json`                                                                  |
+| `repo-url`                 | GitHub repository name in the form of `<owner>/<repo>`. Defaults to the repository the action is running in.                                               |
+| `github-api-url`           | Override the GitHub API URL.                                                                                                                               |
+| `github-graphql-url`       | Override the GitHub GraphQL URL                                                                                                                            |
+| `fork`                     | If `true`, send the PR from a fork. This requires the `token` to be a user that can create forks (e.g. not the default `GITHUB_TOKEN`)                     |
+| `include-component-in-tag` | If true, add prefix to tags and branches, allowing multiple libraries to be released from the same repository                                              |
+| `proxy-server`             | Configure a proxy server in the form of `<host>:<port>` e.g. `proxy-host.com:8080`                                                                         |
+| `skip-github-release`      | If `true`, do not attempt to create releases. This is useful if splitting release tagging from PR creation.                                                |
+| `skip-github-pull-request` | If `true`, do not attempt to create release pull requests. This is useful if splitting release tagging from PR creation.                                   |
+| `skip-labeling`            | If `true`, do not attempt to label the PR.                                                                                                                 |
+| `changelog-host`           | The proto://host where commits live. Defaults to `${{ github.server_url }}` (usually `https://github.com`)                                                 |
 | `changelog-sections`       | JSON array defining changelog sections. Example: `[{"type":"feat","section":"Features","hidden":false}]`. Overrides config file settings for all packages. |
+| `versioning-strategy`      | The versioning strategy to use. Defaults to `default`                                                                                                      |
+| `release-as`               | The version to release as.                                                                                                                                 |
+
 
 ## GitHub Credentials
 
@@ -436,6 +440,7 @@ you can see a mapping of the old option to the new option:
 | `component`                        | `$.packages[path].component`                                                          | Package-only option                                                                 |
 | `package-name`                     | `$.packages[path].package-name`                                                       | Package-only option                                                                 |
 | `always-link-local`                | `$.always-link-local`                                                                 | Root-only option                                                                    |
+| `always-update`                    | `$.always-update`                                                                     | Root-only option                                                                    |
 | `bootstrap-sha`                    | `$.bootstrap-sha`                                                                     | Root-only option                                                                    |
 | `commit-search-depth`              | `$.commit-search-depth`                                                               | Root-only option                                                                    |
 | `group-pull-request-title-pattern` | `$.group-pull-request-title-pattern`                                                  | Root-only option                                                                    |
@@ -450,22 +455,33 @@ you can see a mapping of the old option to the new option:
 | `changelog-host`                   | `$.changelog-host` or `$.packages[path].changelog-host`                               | Root or per-package option                                                          |
 | `changelog-notes-type`             | `$.changelog-type` or `$.packages[path].changelog-type`                               | Root or per-package option                                                          |
 | `changelog-types`                  | `$.changelog-sections` or `$.packages[path].changelog-sections`                       | Root or per-package option                                                          |
+| `component-no-space`               | `$.component-no-space` or `$.packages[path].component-no-space`                       | Root or per-package option                                                          |
+| `date-format`                      | `$.date-format` or `$.packages[path].date-format`                                     | Root or per-package option                                                          |
+| `draft`                            | `$.draft` or `$.packages[path].draft`                                                 | Root or per-package option                                                          |
+| `draft-pull-request`               | `$.draft-pull-request` or `$.packages[path].draft-pull-request`                       | Root or per-package option                                                          |
+| `exclude-paths`                    | `$.exclude-paths` or `$.packages[path].exclude-paths`                                 | Root or per-package option                                                          |
 | `extra-files`                      | `$.extra-files` or `$.packages[path].extra-files`                                     | Root or per-package option                                                          |
+| `extra-labels`                     | `$.extra-labels` or `$.packages[path].extra-labels`                                   | Root or per-package option                                                          |
 | `include-v-in-tag`                 | `$.include-v-in-tag` or `$.packages[path].include-v-in-tag`                           | Root or per-package option                                                          |
+| `initial-version`                  | `$.initial-version` or `$.packages[path].initial-version`                             | Root or per-package option                                                          |
 | `labels`                           | `$.label` or `$.packages[path].label`                                                 | Root or per-package option                                                          |
 | `monorepo-tags`                    | `$.include-component-in-tag` or `$.packages[path].include-component-in-tag`           | Root or per-package option                                                          |
 | `prerelease`                       | `$.prerelease` or `$.packages[path].prerelease`                                       | Root or per-package option                                                          |
+| `prerelease-type`                  | `$.prerelease-type` or `$.packages[path].prerelease-type`                             | Root or per-package option                                                          |
+| `pull-request-footer`              | `$.pull-request-footer` or `$.packages[path].pull-request-footer`                     | Root or per-package option                                                          |
 | `pull-request-header`              | `$.pull-request-header` or `$.packages[path].pull-request-header`                     | Root or per-package option                                                          |
 | `pull-request-title-pattern`       | `$.pull-request-title-pattern` or `$.packages[path].pull-request-title-pattern`       | Root or per-package option                                                          |
 | `release-as`                       | `$.release-as` or `$.packages[path].release-as`                                       | Root or per-package option                                                          |
 | `release-labels`                   | `$.release-label` or `$.packages[path].release-label`                                 | Root or per-package option                                                          |
 | `release-type`                     | `$.release-type` or `$.packages[path].release-type`                                   | Root or per-package option                                                          |
 | `separate-pull-requests`           | `$.separate-pull-requests` or `$.packages[path].separate-pull-requests`               | Root or per-package option                                                          |
+| `skip-changelog`                   | `$.skip-changelog` or `$.packages[path].skip-changelog`                               | Root or per-package option                                                          |
 | `skip-github-release`              | `$.skip-github-release` or `$.packages[path].skip-github-release`                     | Root or per-package option                                                          |
+| `skip-snapshot`                    | `$.skip-snapshot` or `$.packages[path].skip-snapshot`                                 | Root or per-package option                                                          |
 | `snapshot-labels`                  | `$.snapshot-label` or `$.packages[path].snapshot-label`                               | Root or per-package option                                                          |
 | `tag-separator`                    | `$.tag-separator` or `$.packages[path].tag-separator`                                 | Root or per-package option                                                          |
 | `version-file`                     | `$.version-file` or `$.packages[path].version-file`                                   | Root or per-package option                                                          |
-| `versioning-strategy`              | `$.versioning` or `$.packages[path].versioning`                                       | Root or per-package option                                                          |
+| `versioning-strategy`              | `$.versioning-strategy` or `$.packages[path].versioning-strategy`                     | Root or per-package option                                                          |
 
 ## License
 
