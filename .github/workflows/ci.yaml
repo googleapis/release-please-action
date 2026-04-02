@@ -26,7 +26,8 @@ jobs:
       - run: npm test
   windows:
     runs-on: windows-latest
-    matrix:
+    strategy:
+      matrix:
         node: [20, 24]
     steps:
       - uses: actions/checkout@v4
