@@ -13,10 +13,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
+    - uses: actions/checkout@v6
+    - uses: actions/setup-node@v6
       with:
-        node-version: 20
+        node-version: 24
     - name: install
       run: npm ci
     - name: build
@@ -47,7 +47,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
           skip-github-pull-request: true
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: tag major and minor versions
         run: |
           git config user.name github-actions[bot]
