@@ -1,11 +1,11 @@
 {
   "name": "release-please-action",
   "private": true,
-  "version": "4.4.1",
+  "version": "5.0.0",
   "description": "automated releases based on conventional commits",
   "main": "index.js",
   "scripts": {
-    "test": "c8 mocha --node-option no-experimental-fetch --recursive --timeout=5000 build/test",
+    "test": "c8 mocha --recursive --timeout=5000 build/test",
     "prepare": "npm run compile",
     "lint": "gts check",
     "compile": "tsc -p .",
@@ -29,7 +29,7 @@
   "homepage": "https://github.com/googleapis/release-please-action#readme",
   "dependencies": {
     "@actions/core": "^1.10.0",
-    "release-please": "^17.3.0"
+    "release-please": "^17.6.0"
   },
   "devDependencies": {
     "@types/mocha": "^9.0.0",
