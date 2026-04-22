@@ -5,7 +5,7 @@
   "description": "automated releases based on conventional commits",
   "main": "index.js",
   "scripts": {
-    "test": "c8 mocha --node-option no-experimental-fetch --recursive --timeout=5000 build/test",
+    "test": "c8 mocha --recursive --timeout=5000 build/test",
     "prepare": "npm run compile",
     "lint": "gts check",
     "compile": "tsc -p .",
