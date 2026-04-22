@@ -1,5 +1,21 @@
 # Changelog
 
+## [5.0.0](https://github.com/googleapis/release-please-action/compare/v4.4.1...v5.0.0) (2026-04-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* upgrade to node24 ([#1188](https://github.com/googleapis/release-please-action/issues/1188))
+
+### Features
+
+* upgrade to node24 ([#1188](https://github.com/googleapis/release-please-action/issues/1188)) ([46dfc01](https://github.com/googleapis/release-please-action/commit/46dfc01594fc6ec99626bc73e479c52bdf554f88))
+
+
+### Bug Fixes
+
+* bump release-please from 17.3.0 to 17.6.0 ([#1199](https://github.com/googleapis/release-please-action/issues/1199)) ([f533c26](https://github.com/googleapis/release-please-action/commit/f533c26b74c2778db7edc90c96b63a7d08035765))
+
 ## [4.4.1](https://github.com/googleapis/release-please-action/compare/v4.4.0...v4.4.1) (2026-02-20)
 
 
