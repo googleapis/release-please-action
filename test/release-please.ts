@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {describe, it, beforeEach, afterEach} from 'mocha';
+import { describe, it, beforeEach, afterEach } from 'mocha';
 import * as action from '../src/index';
 import * as assert from 'assert';
 import * as core from '@actions/core';
 import * as sinon from 'sinon';
 import * as nock from 'nock';
-import {RestoreFn} from 'mocked-env';
+import { RestoreFn } from 'mocked-env';
 import mockedEnv from 'mocked-env';
 const fetch = require('node-fetch');
 
-import {Manifest, GitHub} from 'release-please';
+import { Manifest, GitHub } from 'release-please';
 // As defined in action.yml
 
 const DEFAULT_INPUTS: Record<string, string> = {
@@ -55,7 +55,7 @@ process.env.GITHUB_REPOSITORY = 'fakeOwner/fakeRepo';
 
 function mockInputs(inputs: Record<string, string>): RestoreFn {
   const envVars: Record<string, string> = {};
-  for (const [name, val] of Object.entries({...DEFAULT_INPUTS, ...inputs})) {
+  for (const [name, val] of Object.entries({ ...DEFAULT_INPUTS, ...inputs })) {
     envVars[`INPUT_${name.replace(/ /g, '_').toUpperCase()}`] = val;
   }
   return mockedEnv(envVars);
@@ -81,7 +81,7 @@ describe('release-please-action', () => {
       'setOutput',
       (key: string, value: string | boolean) => {
         output[key] = value;
-      }
+      },
     );
     // Default branch lookup:
     nock('https://api.github.com').get('/repos/fakeOwner/fakeRepo').reply(200, {
@@ -153,7 +153,7 @@ describe('release-please-action', () => {
       });
       it('allows specifying fork', async () => {
         restoreEnv = mockInputs({
-          'fork': 'true',
+          fork: 'true',
           'release-type': 'simple',
         });
         fakeManifest.createReleases.resolves([]);
@@ -167,7 +167,7 @@ describe('release-please-action', () => {
           sinon.match.any,
           sinon.match.string,
           sinon.match.object,
-          sinon.match({fork: true}),
+          sinon.match({ fork: true }),
           sinon.match.any,
         );
       });
@@ -213,6 +213,34 @@ describe('release-please-action', () => {
           sinon.match({
             releaseType: 'simple',
             releaseAs: '2.0.0',
+          }),
+          sinon.match.object,
+          sinon.match.any,
+        );
+      });
+
+      it("allows specifying changelog-sections with release-type", async () => {
+        const changelogSections = [
+          { type: "feat", section: "Features", hidden: false },
+          { type: "fix", section: "Bug Fixes", hidden: false },
+        ];
+        restoreEnv = mockInputs({
+          "release-type": "simple",
+          "changelog-sections": JSON.stringify(changelogSections),
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main(fetch);
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+        sinon.assert.calledWith(
+          fromConfigStub,
+          sinon.match.any,
+          sinon.match.string,
+          sinon.match({
+            releaseType: "simple",
+            changelogSections: changelogSections,
           }),
           sinon.match.object,
           sinon.match.any,
@@ -269,12 +297,12 @@ describe('release-please-action', () => {
           sinon.match.any,
           'dev',
           sinon.match.string,
-          sinon.match.string
+          sinon.match.string,
         );
       });
       it('allows specifying fork', async () => {
         restoreEnv = mockInputs({
-          'fork': 'true',
+          fork: 'true',
         });
         fakeManifest.createReleases.resolves([]);
         fakeManifest.createPullRequests.resolves([]);
@@ -288,7 +316,7 @@ describe('release-please-action', () => {
           sinon.match.string,
           sinon.match.string,
           sinon.match.string,
-          sinon.match({fork: true}),
+          sinon.match({ fork: true }),
         );
       });
       it('allows specifying changelog-host', async () => {
@@ -311,7 +339,7 @@ describe('release-please-action', () => {
           sinon.match.string,
           sinon.match.string,
           sinon.match.string,
-          sinon.match(arg => !arg.hasOwnProperty('changelogHost')),
+          sinon.match((arg) => !arg.hasOwnProperty('changelogHost')),
         );
       });
       it('modifies repositoryConfig with custom changelog-host', async () => {
@@ -322,13 +350,13 @@ describe('release-please-action', () => {
         // Create a mock repositoryConfig on the existing fakeManifest
         const mockRepositoryConfig = {
           '.': { releaseType: 'node' },
-          'packages/foo': { releaseType: 'node' }
+          'packages/foo': { releaseType: 'node' },
         };
         // Use Object.defineProperty to set the readonly property
         Object.defineProperty(fakeManifest, 'repositoryConfig', {
           value: mockRepositoryConfig,
           writable: true,
-          configurable: true
+          configurable: true,
         });
         fakeManifest.createReleases.resolves([]);
         fakeManifest.createPullRequests.resolves([]);
@@ -336,8 +364,14 @@ describe('release-please-action', () => {
         await action.main(fetch);
 
         // Verify that changelogHost was added to all paths in repositoryConfig
-        assert.strictEqual(fakeManifest.repositoryConfig['.'].changelogHost, 'https://ghe.example.com');
-        assert.strictEqual(fakeManifest.repositoryConfig['packages/foo'].changelogHost, 'https://ghe.example.com');
+        assert.strictEqual(
+          fakeManifest.repositoryConfig['.'].changelogHost,
+          'https://ghe.example.com',
+        );
+        assert.strictEqual(
+          fakeManifest.repositoryConfig['packages/foo'].changelogHost,
+          'https://ghe.example.com',
+        );
       });
       it('does not modify repositoryConfig when changelog-host is default', async () => {
         restoreEnv = mockInputs({
@@ -347,13 +381,13 @@ describe('release-please-action', () => {
         // Create a mock repositoryConfig on the existing fakeManifest
         const mockRepositoryConfig = {
           '.': { releaseType: 'node' },
-          'packages/foo': { releaseType: 'node' }
+          'packages/foo': { releaseType: 'node' },
         };
         // Use Object.defineProperty to set the readonly property
         Object.defineProperty(fakeManifest, 'repositoryConfig', {
           value: mockRepositoryConfig,
           writable: true,
-          configurable: true
+          configurable: true,
         });
         fakeManifest.createReleases.resolves([]);
         fakeManifest.createPullRequests.resolves([]);
@@ -361,8 +395,49 @@ describe('release-please-action', () => {
         await action.main(fetch);
 
         // Verify that changelogHost was NOT added when using default value
-        assert.strictEqual(fakeManifest.repositoryConfig['.'].changelogHost, undefined);
-        assert.strictEqual(fakeManifest.repositoryConfig['packages/foo'].changelogHost, undefined);
+        assert.strictEqual(
+          fakeManifest.repositoryConfig['.'].changelogHost,
+          undefined,
+        );
+        assert.strictEqual(
+          fakeManifest.repositoryConfig['packages/foo'].changelogHost,
+          undefined,
+        );
+      });
+      it("allows specifying changelog-sections", async () => {
+        const changelogSections = [
+          { type: "feat", section: "Features", hidden: false },
+          { type: "fix", section: "Bug Fixes", hidden: false },
+        ];
+        restoreEnv = mockInputs({
+          "changelog-sections": JSON.stringify(changelogSections),
+        });
+
+        // Create a mock repositoryConfig on the existing fakeManifest
+        const mockRepositoryConfig = {
+          ".": { releaseType: "node" },
+          "packages/foo": { releaseType: "node" },
+        };
+        // Use Object.defineProperty to set the readonly property
+        Object.defineProperty(fakeManifest, "repositoryConfig", {
+          value: mockRepositoryConfig,
+          writable: true,
+          configurable: true,
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+
+        await action.main(fetch);
+
+        // Verify that changelogSections was added to all paths in repositoryConfig
+        assert.deepStrictEqual(
+          fakeManifest.repositoryConfig["."].changelogSections,
+          changelogSections,
+        );
+        assert.deepStrictEqual(
+          fakeManifest.repositoryConfig["packages/foo"].changelogSections,
+          changelogSections,
+        );
       });
     });
 
@@ -386,7 +461,7 @@ describe('release-please-action', () => {
         sinon.match.any,
         sinon.match.string,
         'path/to/config.json',
-        'path/to/manifest.json'
+        'path/to/manifest.json',
       );
     });
 
@@ -416,7 +491,7 @@ describe('release-please-action', () => {
             port: 9000,
           },
           defaultBranch: 'dev',
-        })
+        }),
       );
     });
   });
@@ -474,7 +549,7 @@ describe('release-please-action', () => {
       sinon.assert.calledOnce(fakeManifest.createReleases);
       sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
-      const {pr, prs, prs_created} = output;
+      const { pr, prs, prs_created } = output;
       assert.strictEqual(prs_created, true);
       assert.deepStrictEqual(pr, fixturePrs[0]);
       assert.deepStrictEqual(prs, JSON.stringify([fixturePrs[0]]));
@@ -560,7 +635,7 @@ describe('release-please-action', () => {
       sinon.assert.calledOnce(fakeManifest.createReleases);
       sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
-      const {pr, prs} = output;
+      const { pr, prs } = output;
       assert.deepStrictEqual(pr, fixturePrs[0]);
       assert.deepStrictEqual(prs, JSON.stringify(fixturePrs));
     });

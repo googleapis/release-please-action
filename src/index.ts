@@ -13,7 +13,14 @@
 // limitations under the License.
 
 import * as core from '@actions/core';
-import {GitHub, Manifest, CreatedRelease, PullRequest, VERSION} from 'release-please';
+import {
+  GitHub,
+  Manifest,
+  CreatedRelease,
+  PullRequest,
+  VERSION,
+  ChangelogSection,
+} from 'release-please';
 
 const DEFAULT_CONFIG_FILE = 'release-please-config.json';
 const DEFAULT_MANIFEST_FILE = '.release-please-manifest.json';
@@ -45,11 +52,12 @@ interface ActionInputs {
   changelogHost: string;
   versioningStrategy?: string;
   releaseAs?: string;
+  changelogSections?: ChangelogSection[];
 }
 
 function parseInputs(): ActionInputs {
   const inputs: ActionInputs = {
-    token: core.getInput('token', {required: true}),
+    token: core.getInput('token', { required: true }),
     releaseType: getOptionalInput('release-type'),
     path: getOptionalInput('path'),
     repoUrl: core.getInput('repo-url') || process.env.GITHUB_REPOSITORY || '',
@@ -69,6 +77,9 @@ function parseInputs(): ActionInputs {
     changelogHost: core.getInput('changelog-host') || DEFAULT_GITHUB_SERVER_URL,
     versioningStrategy: getOptionalInput('versioning-strategy'),
     releaseAs: getOptionalInput('release-as'),
+    changelogSections: parseChangelogSections(
+      getOptionalInput('changelog-sections'),
+    ),
   };
   return inputs;
 }
@@ -85,9 +96,28 @@ function getOptionalBooleanInput(name: string): boolean | undefined {
   return core.getBooleanInput(name);
 }
 
+function parseChangelogSections(
+  input?: string,
+): ChangelogSection[] | undefined {
+  if (!input) {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(input);
+    if (!Array.isArray(parsed)) {
+      core.warning('changelog-sections must be a JSON array');
+      return undefined;
+    }
+    return parsed;
+  } catch (error) {
+    core.warning(`Failed to parse changelog-sections: ${error}`);
+    return undefined;
+  }
+}
+
 function loadOrBuildManifest(
   github: GitHub,
-  inputs: ActionInputs
+  inputs: ActionInputs,
 ): Promise<Manifest> {
   if (inputs.releaseType) {
     core.debug('Building manifest from config');
@@ -100,33 +130,48 @@ function loadOrBuildManifest(
         changelogHost: inputs.changelogHost,
         versioning: inputs.versioningStrategy,
         releaseAs: inputs.releaseAs,
+        changelogSections: inputs.changelogSections,
       },
       {
         fork: inputs.fork,
         skipLabeling: inputs.skipLabeling,
       },
-      inputs.path
+      inputs.path,
     );
   }
-  const manifestOverrides = inputs.fork || inputs.skipLabeling
-    ? {
-        fork: inputs.fork,
-        skipLabeling: inputs.skipLabeling,
-      }
-    : {};
+  const manifestOverrides =
+    inputs.fork || inputs.skipLabeling
+      ? {
+          fork: inputs.fork,
+          skipLabeling: inputs.skipLabeling,
+        }
+      : {};
   core.debug('Loading manifest from config file');
   return Manifest.fromManifest(
     github,
     github.repository.defaultBranch,
     inputs.configFile,
     inputs.manifestFile,
-    manifestOverrides
-  ).then(manifest => {
+    manifestOverrides,
+  ).then((manifest) => {
     // Override changelogHost for all paths if provided as action input and different from default
-    if (inputs.changelogHost && inputs.changelogHost !== DEFAULT_GITHUB_SERVER_URL) {
+    if (
+      inputs.changelogHost &&
+      inputs.changelogHost !== DEFAULT_GITHUB_SERVER_URL
+    ) {
       core.debug(`Overriding changelogHost to: ${inputs.changelogHost}`);
       for (const path in manifest.repositoryConfig) {
         manifest.repositoryConfig[path].changelogHost = inputs.changelogHost;
+      }
+    }
+    // Override changelogSections for all paths if provided as action input
+    if (inputs.changelogSections) {
+      core.debug(
+        `Overriding changelogSections with ${inputs.changelogSections.length} sections`,
+      );
+      for (const path in manifest.repositoryConfig) {
+        manifest.repositoryConfig[path].changelogSections =
+          inputs.changelogSections;
       }
     }
     return manifest;
@@ -134,7 +179,7 @@ function loadOrBuildManifest(
 }
 
 export async function main(fetchOverride?: any) {
-  core.info(`Running release-please version: ${VERSION}`)
+  core.info(`Running release-please version: ${VERSION}`);
   const inputs = parseInputs();
   const github = await getGitHubInstance(inputs, fetchOverride);
 
@@ -151,7 +196,10 @@ export async function main(fetchOverride?: any) {
   }
 }
 
-function getGitHubInstance(inputs: ActionInputs, fetchOverride?: any): Promise<GitHub> {
+function getGitHubInstance(
+  inputs: ActionInputs,
+  fetchOverride?: any,
+): Promise<GitHub> {
   const [owner, repo] = inputs.repoUrl.split('/');
   let proxy: Proxy | undefined = undefined;
   if (inputs.proxyServer) {
@@ -184,7 +232,7 @@ function setPathOutput(path: string, key: string, value: string | boolean) {
 }
 
 function outputReleases(releases: (CreatedRelease | undefined)[]) {
-  releases = releases.filter(release => release !== undefined);
+  releases = releases.filter((release) => release !== undefined);
   const pathsReleased = [];
   core.setOutput('releases_created', releases.length > 0);
   if (releases.length) {
@@ -217,7 +265,7 @@ function outputReleases(releases: (CreatedRelease | undefined)[]) {
 }
 
 function outputPRs(prs: (PullRequest | undefined)[]) {
-  prs = prs.filter(pr => pr !== undefined);
+  prs = prs.filter((pr) => pr !== undefined);
   core.setOutput('prs_created', prs.length > 0);
   if (prs.length) {
     core.setOutput('pr', prs[0]);
@@ -226,7 +274,7 @@ function outputPRs(prs: (PullRequest | undefined)[]) {
 }
 
 if (require.main === module) {
-  main().catch(err => {
-    core.setFailed(`release-please failed: ${err.message}`)
-  })
+  main().catch((err) => {
+    core.setFailed(`release-please failed: ${err.message}`);
+  });
 }

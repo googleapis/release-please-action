@@ -66,28 +66,54 @@ steps:
       manifest-file: .release-please-manifest.json
 ```
 
+### Customizing Changelog Sections
+
+You can customize the changelog sections from the workflow level, which is useful for
+reusable workflows that need to enforce consistent changelog formatting across multiple
+repositories:
+
+```yaml
+steps:
+  - uses: googleapis/release-please-action@v4
+    with:
+      token: ${{ secrets.MY_RELEASE_PLEASE_TOKEN }}
+      config-file: release-please-config.json
+      manifest-file: .release-please-manifest.json
+      # optional. override changelog sections for all packages
+      changelog-sections: |
+        [
+          {"type":"feat","section":"🚀 Features","hidden":false},
+          {"type":"fix","section":"🐞 Bug Fixes","hidden":false},
+          {"type":"perf","section":"✨ Performance","hidden":false},
+          {"type":"docs","section":"📚 Documentation","hidden":false},
+          {"type":"chore","section":"🧰 Maintenance","hidden":true}
+        ]
+```
+
 ## Action Inputs
 
-| input                      | description                                                                                                                            |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `token`                    | A GitHub secret token, the action defaults to using the special `secrets.GITHUB_TOKEN`                                                 |
-| `release-type`             | If specified, defines the release strategy to use for the repository. Reference [Release types supported](#release-types-supported)    |
-| `path`                     | create a release from a path other than the repository's root                                                                          |
-| `target-branch`            | branch to open pull release PR against (detected by default)                                                                           |
-| `config-file`              | Path to the release-please config in the repository. Defaults to `release-please-config.json`                                          |
-| `manifest-file`            | Path to the release-please versions manifest. Defaults to `.release-please-manifest.json`                                              |
-| `repo-url`                 | GitHub repository name in the form of `<owner>/<repo>`. Defaults to the repository the action is running in.                           |
-| `github-api-url`           | Override the GitHub API URL.                                                                                                           |
-| `github-graphql-url`       | Override the GitHub GraphQL URL                                                                                                        |
-| `fork`                     | If `true`, send the PR from a fork. This requires the `token` to be a user that can create forks (e.g. not the default `GITHUB_TOKEN`) |
-| `include-component-in-tag` | If true, add prefix to tags and branches, allowing multiple libraries to be released from the same repository                          |
-| `proxy-server`             | Configure a proxy server in the form of `<host>:<port>` e.g. `proxy-host.com:8080`                                                    |
-| `skip-github-release`      | If `true`, do not attempt to create releases. This is useful if splitting release tagging from PR creation.                            |
-| `skip-github-pull-request` | If `true`, do not attempt to create release pull requests. This is useful if splitting release tagging from PR creation.               |
-| `skip-labeling`            | If `true`, do not attempt to label the PR.                                                                                             |
-| `changelog-host`           | The proto://host where commits live. Defaults to `${{ github.server_url }}` (usually `https://github.com`)                             |
-| `versioning-strategy`      | The versioning strategy to use. Defaults to `default`                                                                                  |
-| `release-as`               | The version to release as.                                                                                                             |
+| input                      | description                                                                                                                                                |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `token`                    | A GitHub secret token, the action defaults to using the special `secrets.GITHUB_TOKEN`                                                                     |
+| `release-type`             | If specified, defines the release strategy to use for the repository. Reference [Release types supported](#release-types-supported)                        |
+| `path`                     | create a release from a path other than the repository's root                                                                                              |
+| `target-branch`            | branch to open pull release PR against (detected by default)                                                                                               |
+| `config-file`              | Path to the release-please config in the repository. Defaults to `release-please-config.json`                                                              |
+| `manifest-file`            | Path to the release-please versions manifest. Defaults to `.release-please-manifest.json`                                                                  |
+| `repo-url`                 | GitHub repository name in the form of `<owner>/<repo>`. Defaults to the repository the action is running in.                                               |
+| `github-api-url`           | Override the GitHub API URL.                                                                                                                               |
+| `github-graphql-url`       | Override the GitHub GraphQL URL                                                                                                                            |
+| `fork`                     | If `true`, send the PR from a fork. This requires the `token` to be a user that can create forks (e.g. not the default `GITHUB_TOKEN`)                     |
+| `include-component-in-tag` | If true, add prefix to tags and branches, allowing multiple libraries to be released from the same repository                                              |
+| `proxy-server`             | Configure a proxy server in the form of `<host>:<port>` e.g. `proxy-host.com:8080`                                                                         |
+| `skip-github-release`      | If `true`, do not attempt to create releases. This is useful if splitting release tagging from PR creation.                                                |
+| `skip-github-pull-request` | If `true`, do not attempt to create release pull requests. This is useful if splitting release tagging from PR creation.                                   |
+| `skip-labeling`            | If `true`, do not attempt to label the PR.                                                                                                                 |
+| `changelog-host`           | The proto://host where commits live. Defaults to `${{ github.server_url }}` (usually `https://github.com`)                                                 |
+| `changelog-sections`       | JSON array defining changelog sections. Example: `[{"type":"feat","section":"Features","hidden":false}]`. Overrides config file settings for all packages. |
+| `versioning-strategy`      | The versioning strategy to use. Defaults to `default`                                                                                                      |
+| `release-as`               | The version to release as.                                                                                                                                 |
+
 
 ## GitHub Credentials
 

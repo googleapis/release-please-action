@@ -74,6 +74,10 @@ inputs:
     description: 'The version to release as.'
     required: false
     default: ''
+  changelog-sections:
+    description: 'JSON formatted changelog sections configuration. Example: [{"type":"feat","section":"Features","hidden":false}]'
+    required: false
+    default: ''
 runs:
   using: 'node24'
   main: 'dist/index.js'
