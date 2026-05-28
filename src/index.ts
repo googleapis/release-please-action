@@ -45,6 +45,7 @@ interface ActionInputs {
   changelogHost: string;
   versioningStrategy?: string;
   releaseAs?: string;
+  includeCommitAuthors?: boolean;
 }
 
 function parseInputs(): ActionInputs {
@@ -69,6 +70,7 @@ function parseInputs(): ActionInputs {
     changelogHost: core.getInput('changelog-host') || DEFAULT_GITHUB_SERVER_URL,
     versioningStrategy: getOptionalInput('versioning-strategy'),
     releaseAs: getOptionalInput('release-as'),
+    includeCommitAuthors: getOptionalBooleanInput('include-commit-authors'),
   };
   return inputs;
 }
@@ -100,7 +102,8 @@ function loadOrBuildManifest(
         changelogHost: inputs.changelogHost,
         versioning: inputs.versioningStrategy,
         releaseAs: inputs.releaseAs,
-      },
+        includeCommitAuthors: inputs.includeCommitAuthors,
+      } as any,
       {
         fork: inputs.fork,
         skipLabeling: inputs.skipLabeling,
@@ -127,6 +130,13 @@ function loadOrBuildManifest(
       core.debug(`Overriding changelogHost to: ${inputs.changelogHost}`);
       for (const path in manifest.repositoryConfig) {
         manifest.repositoryConfig[path].changelogHost = inputs.changelogHost;
+      }
+    }
+    // Override includeCommitAuthors for all paths if provided as action input
+    if (inputs.includeCommitAuthors !== undefined) {
+      core.debug(`Overriding includeCommitAuthors to: ${inputs.includeCommitAuthors}`);
+      for (const path in manifest.repositoryConfig) {
+        (manifest.repositoryConfig[path] as any).includeCommitAuthors = inputs.includeCommitAuthors;
       }
     }
     return manifest;

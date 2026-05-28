@@ -74,6 +74,10 @@ inputs:
     description: 'The version to release as.'
     required: false
     default: ''
+  include-commit-authors:
+    description: 'If true, include commit authors in changelog entries (e.g., @username or author name).'
+    required: false
+    default: false
 runs:
   using: 'node24'
   main: 'dist/index.js'

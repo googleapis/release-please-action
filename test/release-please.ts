@@ -218,6 +218,30 @@ describe('release-please-action', () => {
           sinon.match.any,
         );
       });
+
+      it('allows specifying include-commit-authors', async () => {
+        restoreEnv = mockInputs({
+          'release-type': 'simple',
+          'include-commit-authors': 'true',
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main(fetch);
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+        sinon.assert.calledWith(
+          fromConfigStub,
+          sinon.match.any,
+          sinon.match.string,
+          sinon.match({
+            releaseType: 'simple',
+            includeCommitAuthors: true,
+          }),
+          sinon.match.object,
+          sinon.match.any,
+        );
+      });
     });
 
     describe('with manifest', () => {
@@ -363,6 +387,56 @@ describe('release-please-action', () => {
         // Verify that changelogHost was NOT added when using default value
         assert.strictEqual(fakeManifest.repositoryConfig['.'].changelogHost, undefined);
         assert.strictEqual(fakeManifest.repositoryConfig['packages/foo'].changelogHost, undefined);
+      });
+      it('modifies repositoryConfig with include-commit-authors', async () => {
+        restoreEnv = mockInputs({
+          'include-commit-authors': 'true',
+        });
+
+        // Create a mock repositoryConfig on the existing fakeManifest
+        const mockRepositoryConfig = {
+          '.': { releaseType: 'node' },
+          'packages/foo': { releaseType: 'node' }
+        };
+        // Use Object.defineProperty to set the readonly property
+        Object.defineProperty(fakeManifest, 'repositoryConfig', {
+          value: mockRepositoryConfig,
+          writable: true,
+          configurable: true
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+
+        await action.main(fetch);
+
+        // Verify that includeCommitAuthors was added to all paths in repositoryConfig
+        assert.strictEqual((fakeManifest.repositoryConfig['.'] as any).includeCommitAuthors, true);
+        assert.strictEqual((fakeManifest.repositoryConfig['packages/foo'] as any).includeCommitAuthors, true);
+      });
+      it('modifies repositoryConfig with include-commit-authors set to false', async () => {
+        restoreEnv = mockInputs({
+          'include-commit-authors': 'false',
+        });
+
+        // Create a mock repositoryConfig on the existing fakeManifest
+        const mockRepositoryConfig = {
+          '.': { releaseType: 'node', includeCommitAuthors: true },
+          'packages/foo': { releaseType: 'node', includeCommitAuthors: true }
+        };
+        // Use Object.defineProperty to set the readonly property
+        Object.defineProperty(fakeManifest, 'repositoryConfig', {
+          value: mockRepositoryConfig,
+          writable: true,
+          configurable: true
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+
+        await action.main(fetch);
+
+        // Verify that includeCommitAuthors was set to false for all paths
+        assert.strictEqual((fakeManifest.repositoryConfig['.'] as any).includeCommitAuthors, false);
+        assert.strictEqual((fakeManifest.repositoryConfig['packages/foo'] as any).includeCommitAuthors, false);
       });
     });
 
