@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.0.1](https://github.com/googleapis/release-please-action/compare/v5.0.0...v5.0.1) (2026-05-28)
+
+
+### Bug Fixes
+
+* bump release-please from 17.6.0 to 17.6.1 ([#1207](https://github.com/googleapis/release-please-action/issues/1207)) ([1afbd76](https://github.com/googleapis/release-please-action/commit/1afbd760e855a7181e737350c3fe3fe085acd177))
+
 ## [5.0.0](https://github.com/googleapis/release-please-action/compare/v4.4.1...v5.0.0) (2026-04-22)
 
 
