@@ -46909,6 +46909,19 @@ class GitHubApi {
                         throw err;
                     }
                     this.logger.info(`received 502 error, ${maxRetries} attempts remaining`);
+                    if (typeof opts.num === 'number') {
+                        if (maxRetries === 1) {
+                            this.logger.info('last retry, forcing batch size to 1');
+                            opts.num = 1;
+                        }
+                        else {
+                            const nextNum = Math.floor(opts.num / 2);
+                            if (nextNum >= 1) {
+                                this.logger.info(`halving batch size from ${opts.num} to ${nextNum}`);
+                                opts.num = nextNum;
+                            }
+                        }
+                    }
                 }
                 maxRetries -= 1;
                 if (maxRetries >= 0) {
@@ -47647,6 +47660,19 @@ class GitHub {
                         throw err;
                     }
                     this.logger.info(`received 502 error, ${maxRetries} attempts remaining`);
+                    if (typeof opts.num === 'number') {
+                        if (maxRetries === 1) {
+                            this.logger.info('last retry, forcing batch size to 1');
+                            opts.num = 1;
+                        }
+                        else {
+                            const nextNum = Math.floor(opts.num / 2);
+                            if (nextNum >= 1) {
+                                this.logger.info(`halving batch size from ${opts.num} to ${nextNum}`);
+                                opts.num = nextNum;
+                            }
+                        }
+                    }
                 }
                 maxRetries -= 1;
                 if (maxRetries >= 0) {
@@ -48366,7 +48392,7 @@ Object.defineProperty(exports, "GitHub", ({ enumerable: true, get: function () {
 exports.configSchema = __nccwpck_require__(38623);
 exports.manifestSchema = __nccwpck_require__(45314);
 // x-release-please-start-version
-exports.VERSION = '17.6.0';
+exports.VERSION = '17.6.1';
 // x-release-please-end
 //# sourceMappingURL=index.js.map
 
@@ -105762,7 +105788,7 @@ exports.JSONPath = JSONPath;
 /***/ ((module) => {
 
 "use strict";
-module.exports = {"i8":"17.6.0"};
+module.exports = {"i8":"17.6.1"};
 
 /***/ }),
 
