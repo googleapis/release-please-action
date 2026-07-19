@@ -120,7 +120,9 @@ function loadOrBuildManifest(
     github.repository.defaultBranch,
     inputs.configFile,
     inputs.manifestFile,
-    manifestOverrides
+    manifestOverrides,
+    inputs.path,
+    inputs.releaseAs,
   ).then(manifest => {
     // Override changelogHost for all paths if provided as action input and different from default
     if (inputs.changelogHost && inputs.changelogHost !== DEFAULT_GITHUB_SERVER_URL) {

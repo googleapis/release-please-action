@@ -269,7 +269,31 @@ describe('release-please-action', () => {
           sinon.match.any,
           'dev',
           sinon.match.string,
-          sinon.match.string
+          sinon.match.string,
+          sinon.match.object,
+          sinon.match.any,
+          sinon.match.any,
+        );
+      });
+      it('allows specifying path', async () => {
+        restoreEnv = mockInputs({
+          path: 'packages/a',
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main(fetch);
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+        sinon.assert.calledWith(
+          fromManifestStub,
+          sinon.match.any,
+          sinon.match.string,
+          sinon.match.string,
+          sinon.match.string,
+          sinon.match.object,
+          'packages/a',
+          sinon.match.any,
         );
       });
       it('allows specifying fork', async () => {
@@ -289,6 +313,53 @@ describe('release-please-action', () => {
           sinon.match.string,
           sinon.match.string,
           sinon.match({fork: true}),
+          sinon.match.any,
+          sinon.match.any,
+        );
+      });
+      it('allows specifying release-as', async () => {
+        restoreEnv = mockInputs({
+          'release-as': '2.0.0',
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main(fetch);
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+        sinon.assert.calledWith(
+          fromManifestStub,
+          sinon.match.any,
+          sinon.match.string,
+          sinon.match.string,
+          sinon.match.string,
+          sinon.match.object,
+          sinon.match.any,
+          '2.0.0',
+        );
+      });
+      it('allows overriding release-as when both manifest config and input are provided', async () => {
+        restoreEnv = mockInputs({
+          'config-file': 'path/to/config.json',
+          'manifest-file': 'path/to/manifest.json',
+          'release-as': '2.0.0',
+          path: 'packages/a',
+        });
+        fakeManifest.createReleases.resolves([]);
+        fakeManifest.createPullRequests.resolves([]);
+        await action.main(fetch);
+        sinon.assert.calledOnce(fakeManifest.createReleases);
+        sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+        sinon.assert.calledWith(
+          fromManifestStub,
+          sinon.match.any,
+          sinon.match.string,
+          'path/to/config.json',
+          'path/to/manifest.json',
+          sinon.match.object,
+          'packages/a',
+          '2.0.0',
         );
       });
       it('allows specifying changelog-host', async () => {
@@ -386,7 +457,10 @@ describe('release-please-action', () => {
         sinon.match.any,
         sinon.match.string,
         'path/to/config.json',
-        'path/to/manifest.json'
+        'path/to/manifest.json',
+        sinon.match.any,
+        sinon.match.any,
+        sinon.match.any,
       );
     });
 
