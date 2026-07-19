@@ -443,11 +443,10 @@ describe('release-please-action', () => {
           prNumber: 234,
         },
       ]);
-      fakeManifest.createPullRequests.resolves([]);
       sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
       await action.main(fetch);
       sinon.assert.calledOnce(fakeManifest.createReleases);
-      sinon.assert.calledOnce(fakeManifest.createPullRequests);
+      sinon.assert.notCalled(fakeManifest.createPullRequests);
 
       assert.strictEqual(output.id, 123456);
       assert.strictEqual(output.release_created, true);
@@ -462,6 +461,7 @@ describe('release-please-action', () => {
       assert.strictEqual(output.sha, 'abc123');
       assert.strictEqual(output.paths_released, '["."]');
       assert.strictEqual(output.body, 'Some release notes');
+      assert.strictEqual(output.prs_created, false);
     });
 
     it('sets appropriate outputs when release PR opened', async () => {
@@ -516,10 +516,10 @@ describe('release-please-action', () => {
           prNumber: 235,
         },
       ]);
-      fakeManifest.createPullRequests.resolves([]);
       sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
       await action.main(fetch);
       sinon.assert.calledOnce(fakeManifest.createReleases);
+      sinon.assert.notCalled(fakeManifest.createPullRequests);
 
       assert.strictEqual(output['a--id'], 123456);
       assert.strictEqual(output['a--release_created'], true);
@@ -549,6 +549,7 @@ describe('release-please-action', () => {
 
       assert.strictEqual(output.paths_released, '["a","b"]');
       assert.strictEqual(output.releases_created, true);
+      assert.strictEqual(output.prs_created, false);
     });
     it('sets appropriate output if multiple release PR opened', async () => {
       restoreEnv = mockInputs({});
@@ -563,6 +564,174 @@ describe('release-please-action', () => {
       const {pr, prs} = output;
       assert.deepStrictEqual(pr, fixturePrs[0]);
       assert.deepStrictEqual(prs, JSON.stringify(fixturePrs));
+    });
+    it('skips creating pull requests when releases are created', async () => {
+      restoreEnv = mockInputs({});
+      const fakeManifest = sandbox.createStubInstance(Manifest);
+      fakeManifest.createReleases.resolves([
+        {
+          id: 123456,
+          name: 'v1.2.3',
+          tagName: 'v1.2.3',
+          sha: 'abc123',
+          notes: 'Some release notes',
+          url: 'http://example2.com',
+          draft: false,
+          uploadUrl: 'http://example.com',
+          path: '.',
+          version: '1.2.3',
+          major: 1,
+          minor: 2,
+          patch: 3,
+          prNumber: 234,
+        },
+      ]);
+      sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
+      await action.main(fetch);
+      sinon.assert.calledOnce(fakeManifest.createReleases);
+      sinon.assert.notCalled(fakeManifest.createPullRequests);
+
+      assert.strictEqual(output.release_created, true);
+      assert.strictEqual(output.releases_created, true);
+      assert.strictEqual(output.prs_created, false);
+    });
+    it('skips creating pull requests when draft releases are created', async () => {
+      restoreEnv = mockInputs({});
+      const fakeManifest = sandbox.createStubInstance(Manifest);
+      fakeManifest.createReleases.resolves([
+        {
+          id: 123456,
+          name: 'v1.2.3',
+          tagName: 'v1.2.3',
+          sha: 'abc123',
+          notes: 'Some release notes',
+          url: 'http://example2.com',
+          draft: true,
+          uploadUrl: 'http://example.com',
+          path: '.',
+          version: '1.2.3',
+          major: 1,
+          minor: 2,
+          patch: 3,
+          prNumber: 234,
+        },
+      ]);
+      sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
+      await action.main(fetch);
+      sinon.assert.calledOnce(fakeManifest.createReleases);
+      sinon.assert.notCalled(fakeManifest.createPullRequests);
+
+      assert.strictEqual(output.release_created, true);
+      assert.strictEqual(output.releases_created, true);
+      assert.strictEqual(output.prs_created, false);
+    });
+    it('creates pull requests when no releases are created', async () => {
+      restoreEnv = mockInputs({});
+      const fakeManifest = sandbox.createStubInstance(Manifest);
+      fakeManifest.createReleases.resolves([]);
+      fakeManifest.createPullRequests.resolves([fixturePrs[0]]);
+      sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
+      await action.main(fetch);
+      sinon.assert.calledOnce(fakeManifest.createReleases);
+      sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+      assert.strictEqual(output.prs_created, true);
+    });
+    it('skips PRs in monorepo when at least one component is released', async () => {
+      // Simulates separate-pull-requests monorepo: component A was released,
+      // component B had no pending release PR. PR creation should be skipped
+      // because the trigger was a release PR merge.
+      restoreEnv = mockInputs({});
+      const fakeManifest = sandbox.createStubInstance(Manifest);
+      fakeManifest.createReleases.resolves([
+        {
+          id: 123456,
+          name: 'v1.0.0',
+          tagName: 'v1.0.0',
+          sha: 'abc123',
+          notes: 'Some release notes',
+          url: 'http://example2.com',
+          draft: false,
+          uploadUrl: 'http://example.com',
+          path: 'a',
+          version: '1.0.0',
+          major: 1,
+          minor: 0,
+          patch: 0,
+          prNumber: 234,
+        },
+        undefined,
+      ]);
+      sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
+      await action.main(fetch);
+      sinon.assert.calledOnce(fakeManifest.createReleases);
+      sinon.assert.notCalled(fakeManifest.createPullRequests);
+
+      assert.strictEqual(output['a--release_created'], true);
+      assert.strictEqual(output.releases_created, true);
+      assert.strictEqual(output.prs_created, false);
+    });
+    it('creates PRs in monorepo when no components are released', async () => {
+      // Normal commit push in a monorepo — no release PRs were merged,
+      // so createReleases returns all undefined. PR creation should proceed.
+      restoreEnv = mockInputs({});
+      const fakeManifest = sandbox.createStubInstance(Manifest);
+      fakeManifest.createReleases.resolves([undefined, undefined]);
+      fakeManifest.createPullRequests.resolves([fixturePrs[0]]);
+      sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
+      await action.main(fetch);
+      sinon.assert.calledOnce(fakeManifest.createReleases);
+      sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+      assert.strictEqual(output.releases_created, false);
+      assert.strictEqual(output.prs_created, true);
+    });
+    it('still creates PRs when skip-github-release is set', async () => {
+      // When release creation is skipped entirely, the action has no way
+      // to know if releases were created, so PR creation must still run.
+      restoreEnv = mockInputs({
+        'skip-github-release': 'true',
+      });
+      const fakeManifest = sandbox.createStubInstance(Manifest);
+      fakeManifest.createPullRequests.resolves([fixturePrs[0]]);
+      sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
+      await action.main(fetch);
+      sinon.assert.notCalled(fakeManifest.createReleases);
+      sinon.assert.calledOnce(fakeManifest.createPullRequests);
+
+      assert.strictEqual(output.prs_created, true);
+    });
+    it('skips PRs when release created via release-type config', async () => {
+      // Verify the fromConfig path (release-type input) also skips PRs.
+      restoreEnv = mockInputs({
+        'release-type': 'node',
+      });
+      const fakeManifest = sandbox.createStubInstance(Manifest);
+      fakeManifest.createReleases.resolves([
+        {
+          id: 99,
+          name: 'v2.0.0',
+          tagName: 'v2.0.0',
+          sha: 'def456',
+          notes: 'Breaking change',
+          url: 'http://example.com',
+          draft: false,
+          uploadUrl: 'http://example.com/upload',
+          path: '.',
+          version: '2.0.0',
+          major: 2,
+          minor: 0,
+          patch: 0,
+          prNumber: 500,
+        },
+      ]);
+      sandbox.stub(Manifest, 'fromConfig').resolves(fakeManifest);
+      await action.main(fetch);
+      sinon.assert.calledOnce(fakeManifest.createReleases);
+      sinon.assert.notCalled(fakeManifest.createPullRequests);
+
+      assert.strictEqual(output.release_created, true);
+      assert.strictEqual(output.prs_created, false);
     });
     it('does not set outputs when no release created or PR returned', async () => {
       restoreEnv = mockInputs({});

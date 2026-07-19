@@ -138,16 +138,26 @@ export async function main(fetchOverride?: any) {
   const inputs = parseInputs();
   const github = await getGitHubInstance(inputs, fetchOverride);
 
+  let releasesCreated = false;
   if (!inputs.skipGitHubRelease) {
     const manifest = await loadOrBuildManifest(github, inputs);
     core.debug('Creating releases');
-    outputReleases(await manifest.createReleases());
+    const releases = await manifest.createReleases();
+    outputReleases(releases);
+    releasesCreated = releases.some(release => release !== undefined);
   }
 
-  if (!inputs.skipGitHubPullRequest) {
+  // When releases are created, the trigger was a release PR merge — there
+  // are no new unreleased commits, so PR creation is skipped. This also
+  // fixes duplicate PRs with draft releases where the tag doesn't exist yet.
+  // See: https://github.com/googleapis/release-please-action/issues/962
+  if (!inputs.skipGitHubPullRequest && !releasesCreated) {
     const manifest = await loadOrBuildManifest(github, inputs);
     core.debug('Creating pull requests');
     outputPRs(await manifest.createPullRequests());
+  } else if (!inputs.skipGitHubPullRequest) {
+    // Ensure prs_created output is set even when PR creation is skipped.
+    core.setOutput('prs_created', false);
   }
 }
 
