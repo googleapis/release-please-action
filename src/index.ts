@@ -227,6 +227,11 @@ function outputPRs(prs: (PullRequest | undefined)[]) {
 
 if (require.main === module) {
   main().catch(err => {
-    core.setFailed(`release-please failed: ${err.message}`)
+    if (err instanceof Error) {
+      core.setFailed(`release-please failed: ${err.message}`);
+      if (err.stack) core.debug(err.stack);
+    } else {
+      core.setFailed(`release-please failed: ${JSON.stringify(err)}`);
+    }
   })
 }
