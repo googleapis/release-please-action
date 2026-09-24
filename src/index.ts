@@ -48,8 +48,10 @@ interface ActionInputs {
 }
 
 function parseInputs(): ActionInputs {
+  const token = core.getInput('token', {required: true});
+  core.setSecret(token);
   const inputs: ActionInputs = {
-    token: core.getInput('token', {required: true}),
+    token,
     releaseType: getOptionalInput('release-type'),
     path: getOptionalInput('path'),
     repoUrl: core.getInput('repo-url') || process.env.GITHUB_REPOSITORY || '',
