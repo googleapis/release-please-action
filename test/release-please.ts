@@ -65,6 +65,7 @@ nock.disableNetConnect();
 
 describe('release-please-action', () => {
   let output: Record<string, string | boolean> = {};
+  let setSecretStub: sinon.SinonStub;
   // Save original env varas and restore after each test
   let restoreEnv: RestoreFn | null;
   afterEach(() => {
@@ -76,6 +77,7 @@ describe('release-please-action', () => {
   });
   beforeEach(() => {
     output = {};
+    setSecretStub = sandbox.stub(core, 'setSecret');
     sandbox.replace(
       core,
       'setOutput',
@@ -91,6 +93,20 @@ describe('release-please-action', () => {
   afterEach(() => {
     sandbox.restore();
   });
+
+  it('masks token input with core.setSecret', async () => {
+    restoreEnv = mockInputs({
+      token: 'custom-secret-token',
+    });
+    const fakeManifest = sandbox.createStubInstance(Manifest);
+    fakeManifest.createReleases.resolves([]);
+    fakeManifest.createPullRequests.resolves([]);
+    sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
+
+    await action.main(fetch);
+    sinon.assert.calledWith(setSecretStub, 'custom-secret-token');
+  });
+
   describe('configuration', () => {
     let fakeManifest: sinon.SinonStubbedInstance<Manifest>;
     describe('with release-type', () => {
