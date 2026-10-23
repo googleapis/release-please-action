@@ -5,15 +5,19 @@ on:
   pull_request:
   merge_group:
 name: ci
+permissions:
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [20, 24]
+        node: [20, 22, 24]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ matrix.node }}
       # The first installation step ensures that all of our production
@@ -28,10 +32,12 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        node: [20, 24]
+        node: [20, 22, 24]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ matrix.node }}
       - run: npm ci
@@ -40,10 +46,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [20, 24]
+        node: [20, 22, 24]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ matrix.node }}
       - run: npm ci
