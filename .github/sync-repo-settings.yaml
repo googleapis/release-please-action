@@ -5,8 +5,8 @@ branchProtectionRules:
     requiresCodeOwnerReviews: true
     requiresStrictStatusChecks: true
     requiredStatusCheckContexts:
-      - build-dist (20)
-      - test (20)
+      - build-dist (22)
+      - test (22)
       - cla/google
       - windows
 permissionRules:
