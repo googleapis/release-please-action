@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as core from '@actions/core';
-import {GitHub, Manifest, CreatedRelease, PullRequest, VERSION} from 'release-please';
+import {GitHub, Manifest, CreatedRelease, PullRequest, VERSION, CandidateRelease, ReleasePullRequest} from 'release-please';
 
 const DEFAULT_CONFIG_FILE = 'release-please-config.json';
 const DEFAULT_MANIFEST_FILE = '.release-please-manifest.json';
@@ -45,6 +45,7 @@ interface ActionInputs {
   changelogHost: string;
   versioningStrategy?: string;
   releaseAs?: string;
+  dryRun?: boolean;
 }
 
 function parseInputs(): ActionInputs {
@@ -69,6 +70,7 @@ function parseInputs(): ActionInputs {
     changelogHost: core.getInput('changelog-host') || DEFAULT_GITHUB_SERVER_URL,
     versioningStrategy: getOptionalInput('versioning-strategy'),
     releaseAs: getOptionalInput('release-as'),
+    dryRun: getOptionalBooleanInput('dry-run'),
   };
   return inputs;
 }
@@ -137,17 +139,26 @@ export async function main(fetchOverride?: any) {
   core.info(`Running release-please version: ${VERSION}`)
   const inputs = parseInputs();
   const github = await getGitHubInstance(inputs, fetchOverride);
+  const manifest = await loadOrBuildManifest(github, inputs);
 
   if (!inputs.skipGitHubRelease) {
-    const manifest = await loadOrBuildManifest(github, inputs);
-    core.debug('Creating releases');
-    outputReleases(await manifest.createReleases());
+    if (inputs.dryRun) {
+      core.debug('Listing pending releases');
+      outputCandidateReleases(await manifest.buildReleases());
+    } else {
+      core.debug('Creating releases');
+      outputReleases(await manifest.createReleases());
+    }
   }
 
   if (!inputs.skipGitHubPullRequest) {
-    const manifest = await loadOrBuildManifest(github, inputs);
-    core.debug('Creating pull requests');
-    outputPRs(await manifest.createPullRequests());
+    if (inputs.dryRun) {
+      core.debug('Listing pending pull requests');
+      outputCandidatePRs(await manifest.buildPullRequests());
+    } else {
+      core.debug('Creating pull requests');
+      outputPRs(await manifest.createPullRequests());
+    }
   }
 }
 
@@ -216,9 +227,47 @@ function outputReleases(releases: (CreatedRelease | undefined)[]) {
   core.setOutput('paths_released', JSON.stringify(pathsReleased));
 }
 
+function outputCandidateReleases(releases: CandidateRelease[]) {
+  releases = releases.filter(release => release !== undefined);
+  const pathsReleased = [];
+  core.setOutput('releases_pending', releases.length > 0);
+  if (releases.length) {
+    for (const release of releases) {
+      if (!release) {
+        continue;
+      }
+      const path = release.path || '.';
+      if (path) {
+        pathsReleased.push(path);
+        // If the special root release is set (representing project root)
+        // and this is explicitly a manifest release, set the release_created boolean.
+        setPathOutput(path, 'release_pending', true);
+      }
+      if (release.tag) {
+        // Historically tagName was output as tag_name, keep this
+        // consistent to avoid breaking change:
+        setPathOutput(path, 'tag_name', release.tag.toString());
+        setPathOutput(path, 'body', release.notes)
+      }
+    }
+  }
+  // Paths of all releases that were created, so that they can be passed
+  // to matrix in next step:
+  core.setOutput('paths_to_release', JSON.stringify(pathsReleased));
+}
+
 function outputPRs(prs: (PullRequest | undefined)[]) {
   prs = prs.filter(pr => pr !== undefined);
   core.setOutput('prs_created', prs.length > 0);
+  if (prs.length) {
+    core.setOutput('pr', prs[0]);
+    core.setOutput('prs', JSON.stringify(prs));
+  }
+}
+
+function outputCandidatePRs(prs: ReleasePullRequest[]) {
+  prs = prs.filter(pr => pr !== undefined);
+  core.setOutput('prs_pending', prs.length > 0);
   if (prs.length) {
     core.setOutput('pr', prs[0]);
     core.setOutput('prs', JSON.stringify(prs));
