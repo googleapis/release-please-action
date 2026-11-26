@@ -22,7 +22,7 @@ import {RestoreFn} from 'mocked-env';
 import mockedEnv from 'mocked-env';
 const fetch = require('node-fetch');
 
-import {Manifest, GitHub} from 'release-please';
+import {Manifest, Gitea} from 'release-please';
 // As defined in action.yml
 
 const DEFAULT_INPUTS: Record<string, string> = {
@@ -52,6 +52,7 @@ const fixturePrs = [
 
 const sandbox = sinon.createSandbox();
 process.env.GITHUB_REPOSITORY = 'fakeOwner/fakeRepo';
+process.env.GITHUB_SERVER_URL = 'https://gitea.test';
 
 function mockInputs(inputs: Record<string, string>): RestoreFn {
   const envVars: Record<string, string> = {};
@@ -67,6 +68,7 @@ describe('release-please-action', () => {
   let output: Record<string, string | boolean> = {};
   // Save original env varas and restore after each test
   let restoreEnv: RestoreFn | null;
+  let giteaCreateStub: sinon.SinonStub;
   afterEach(() => {
     sandbox.restore();
     if (restoreEnv) {
@@ -83,10 +85,18 @@ describe('release-please-action', () => {
         output[key] = value;
       }
     );
-    // Default branch lookup:
-    nock('https://api.github.com').get('/repos/fakeOwner/fakeRepo').reply(200, {
-      default_branch: 'main',
-    });
+    // Gitea.create clones the repository, so replace it with a fake that
+    // only carries the repository details the action reads.
+    giteaCreateStub = sandbox.stub(Gitea, 'create').callsFake(
+      async (opts: any) =>
+        ({
+          repository: {
+            owner: opts.owner,
+            repo: opts.repo,
+            defaultBranch: opts.defaultBranch ?? 'main',
+          },
+        }) as any
+    );
   });
   afterEach(() => {
     sandbox.restore();
@@ -339,15 +349,14 @@ describe('release-please-action', () => {
         assert.strictEqual(fakeManifest.repositoryConfig['.'].changelogHost, 'https://ghe.example.com');
         assert.strictEqual(fakeManifest.repositoryConfig['packages/foo'].changelogHost, 'https://ghe.example.com');
       });
-      it('does not modify repositoryConfig when changelog-host is default', async () => {
-        restoreEnv = mockInputs({
-          'changelog-host': 'https://github.com', // This is the default
-        });
+      it('defaults changelog-host to the Gitea server, keeping custom hosts', async () => {
+        restoreEnv = mockInputs({});
 
         // Create a mock repositoryConfig on the existing fakeManifest
-        const mockRepositoryConfig = {
+        const mockRepositoryConfig: Record<string, any> = {
           '.': { releaseType: 'node' },
-          'packages/foo': { releaseType: 'node' }
+          'packages/foo': { releaseType: 'node', changelogHost: 'https://custom.example.com' },
+          'packages/bar': { releaseType: 'node', changelogHost: 'https://github.com' },
         };
         // Use Object.defineProperty to set the readonly property
         Object.defineProperty(fakeManifest, 'repositoryConfig', {
@@ -360,9 +369,9 @@ describe('release-please-action', () => {
 
         await action.main(fetch);
 
-        // Verify that changelogHost was NOT added when using default value
-        assert.strictEqual(fakeManifest.repositoryConfig['.'].changelogHost, undefined);
-        assert.strictEqual(fakeManifest.repositoryConfig['packages/foo'].changelogHost, undefined);
+        assert.strictEqual(fakeManifest.repositoryConfig['.'].changelogHost, 'https://gitea.test');
+        assert.strictEqual(fakeManifest.repositoryConfig['packages/foo'].changelogHost, 'https://custom.example.com');
+        assert.strictEqual(fakeManifest.repositoryConfig['packages/bar'].changelogHost, 'https://gitea.test');
       });
     });
 
@@ -390,14 +399,14 @@ describe('release-please-action', () => {
       );
     });
 
-    it('allows specifying network options', async () => {
+    it('passes Gitea connection options', async () => {
       restoreEnv = mockInputs({
         'target-branch': 'dev',
-        'proxy-server': 'some-host:9000',
-        'github-api-url': 'https://my-enterprise-host.local/api',
-        'github-graphql-url': 'https://my-enterprise-host.local/graphql',
+        'gitea-url': 'https://git.example.com/',
+        'clone-depth': '50',
+        'git-author-name': 'Release Bot',
+        'git-author-email': 'bot@example.com',
       });
-      const createGithubSpy = sandbox.spy(GitHub, 'create');
       const fakeManifest = sandbox.createStubInstance(Manifest);
       fakeManifest.createReleases.resolves([]);
       fakeManifest.createPullRequests.resolves([]);
@@ -407,16 +416,31 @@ describe('release-please-action', () => {
       sinon.assert.calledOnce(fakeManifest.createPullRequests);
 
       sinon.assert.calledWith(
-        createGithubSpy,
+        giteaCreateStub,
         sinon.match({
-          apiUrl: 'https://my-enterprise-host.local/api',
-          graphqlUrl: 'https://my-enterprise-host.local',
-          proxy: {
-            host: 'some-host',
-            port: 9000,
-          },
+          owner: 'fakeOwner',
+          repo: 'fakeRepo',
+          token: 'fake-token',
+          apiUrl: 'https://git.example.com',
           defaultBranch: 'dev',
+          cloneDepth: 50,
+          gitAuthorName: 'Release Bot',
+          gitAuthorEmail: 'bot@example.com',
+          fetch,
         })
+      );
+    });
+
+    it('defaults gitea-url to the workflow server', async () => {
+      restoreEnv = mockInputs({});
+      const fakeManifest = sandbox.createStubInstance(Manifest);
+      fakeManifest.createReleases.resolves([]);
+      fakeManifest.createPullRequests.resolves([]);
+      sandbox.stub(Manifest, 'fromManifest').resolves(fakeManifest);
+      await action.main(fetch);
+      sinon.assert.calledWith(
+        giteaCreateStub,
+        sinon.match({apiUrl: 'https://gitea.test'})
       );
     });
   });

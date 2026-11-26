@@ -1,12 +1,17 @@
-# Release Please Action
+# Gitea Release Please Action
 
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
-Automate releases with Conventional Commit Messages.
+Automate releases with Conventional Commit Messages on **Gitea** and **Forgejo**.
+
+This is a fork of [googleapis/release-please-action](https://github.com/googleapis/release-please-action)
+built on [a release-please fork](https://github.com/MetalHunterR/gitea-release-please) that adds a
+Gitea backend. Repository contents and history are read from a git clone, release branches are
+pushed with git, and pull requests, releases, labels and comments use the Gitea REST API.
 
 ## Basic Configuration
 
-1. Create a `.github/workflows/release-please.yml` file with these contents:
+1. Create a `.gitea/workflows/release-please.yml` file with these contents:
 
    ```yaml
    on:
@@ -14,23 +19,18 @@ Automate releases with Conventional Commit Messages.
        branches:
          - main
 
-   permissions:
-     contents: write
-     issues: write
-     pull-requests: write
-
    name: release-please
 
    jobs:
      release-please:
        runs-on: ubuntu-latest
        steps:
-         - uses: googleapis/release-please-action@v4
+         - uses: https://github.com/MetalHunterR/gitea-release-please-action@main
            with:
-             # this assumes that you have created a personal access token
-             # (PAT) and configured it as a GitHub action secret named
-             # `MY_RELEASE_PLEASE_TOKEN` (this secret name is not important).
-             token: ${{ secrets.MY_RELEASE_PLEASE_TOKEN }}
+             # this assumes that you have created a Gitea access token and
+             # configured it as an Actions secret named `RELEASE_PLEASE_TOKEN`
+             # (the name is not important). See "Credentials" below.
+             token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
              # this is a built-in strategy in release-please, see "Action Inputs"
              # for more options
              release-type: simple
@@ -48,95 +48,70 @@ Automate releases with Conventional Commit Messages.
 ## Advanced Release Configuration
 
 For any advanced configuration, please set up a
-[manifest config](https://github.com/googleapis/release-please/blob/master/docs/manifest-releaser.md)
+[manifest config](https://github.com/googleapis/release-please/blob/main/docs/manifest-releaser.md)
 and then configure this action as follows:
 
 ```yaml
 #...(same as above)
 steps:
-  - uses: googleapis/release-please-action@v4
+  - uses: https://github.com/MetalHunterR/gitea-release-please-action@main
     with:
-      # this assumes that you have created a personal access token
-      # (PAT) and configured it as a GitHub action secret named
-      # `MY_RELEASE_PLEASE_TOKEN` (this secret name is not important).
-      token: ${{ secrets.MY_RELEASE_PLEASE_TOKEN }}
+      token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
       # optional. customize path to release-please-config.json
       config-file: release-please-config.json
       # optional. customize path to .release-please-manifest.json
       manifest-file: .release-please-manifest.json
 ```
 
+Do not use `"changelog-type": "github"`: Gitea has no API for generating release notes.
+
 ## Action Inputs
 
-| input                      | description                                                                                                                            |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `token`                    | A GitHub secret token, the action defaults to using the special `secrets.GITHUB_TOKEN`                                                 |
-| `release-type`             | If specified, defines the release strategy to use for the repository. Reference [Release types supported](#release-types-supported)    |
-| `path`                     | create a release from a path other than the repository's root                                                                          |
-| `target-branch`            | branch to open pull release PR against (detected by default)                                                                           |
-| `config-file`              | Path to the release-please config in the repository. Defaults to `release-please-config.json`                                          |
-| `manifest-file`            | Path to the release-please versions manifest. Defaults to `.release-please-manifest.json`                                              |
-| `repo-url`                 | GitHub repository name in the form of `<owner>/<repo>`. Defaults to the repository the action is running in.                           |
-| `github-api-url`           | Override the GitHub API URL.                                                                                                           |
-| `github-graphql-url`       | Override the GitHub GraphQL URL                                                                                                        |
-| `fork`                     | If `true`, send the PR from a fork. This requires the `token` to be a user that can create forks (e.g. not the default `GITHUB_TOKEN`) |
-| `include-component-in-tag` | If true, add prefix to tags and branches, allowing multiple libraries to be released from the same repository                          |
-| `proxy-server`             | Configure a proxy server in the form of `<host>:<port>` e.g. `proxy-host.com:8080`                                                    |
-| `skip-github-release`      | If `true`, do not attempt to create releases. This is useful if splitting release tagging from PR creation.                            |
-| `skip-github-pull-request` | If `true`, do not attempt to create release pull requests. This is useful if splitting release tagging from PR creation.               |
-| `skip-labeling`            | If `true`, do not attempt to label the PR.                                                                                             |
-| `changelog-host`           | The proto://host where commits live. Defaults to `${{ github.server_url }}` (usually `https://github.com`)                             |
-| `versioning-strategy`      | The versioning strategy to use. Defaults to `default`                                                                                  |
-| `release-as`               | The version to release as.                                                                                                             |
+| input                      | description                                                                                                                         |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `token`                    | A Gitea token that can push branches and manage pull requests, releases and labels. Defaults to the workflow token                 |
+| `release-type`             | If specified, defines the release strategy to use for the repository. Reference [Release types supported](#release-types-supported) |
+| `path`                     | create a release from a path other than the repository's root                                                                       |
+| `target-branch`            | branch to open pull release PR against (detected by default)                                                                        |
+| `config-file`              | Path to the release-please config in the repository. Defaults to `release-please-config.json`                                       |
+| `manifest-file`            | Path to the release-please versions manifest. Defaults to `.release-please-manifest.json`                                           |
+| `repo-url`                 | Repository name in the form of `<owner>/<repo>`. Defaults to the repository the action is running in.                               |
+| `gitea-url`                | URL of the Gitea/Forgejo server, e.g. `https://gitea.example.com`. Defaults to the server running the workflow                     |
+| `clone-depth`              | Limit the history fetched for the internal clone. Defaults to the full history                                                      |
+| `git-author-name`          | Author/committer name for release commits. Defaults to `release-please[bot]`                                                        |
+| `git-author-email`         | Author/committer email for release commits                                                                                          |
+| `include-component-in-tag` | If true, add prefix to tags and branches, allowing multiple libraries to be released from the same repository                       |
+| `skip-github-release`      | If `true`, do not attempt to create releases. This is useful if splitting release tagging from PR creation.                         |
+| `skip-github-pull-request` | If `true`, do not attempt to create release pull requests. This is useful if splitting release tagging from PR creation.            |
+| `skip-labeling`            | If `true`, do not attempt to label the PR.                                                                                          |
+| `changelog-host`           | The proto://host used for changelog links. Defaults to `gitea-url`                                                                  |
+| `versioning-strategy`      | The versioning strategy to use. Defaults to `default`                                                                               |
+| `release-as`               | The version to release as.                                                                                                          |
 
-## GitHub Credentials
+`fork` is accepted for compatibility but ignored: release branches are always pushed to the repository itself.
+The `github-api-url`, `github-graphql-url` and `proxy-server` inputs of the upstream action are not supported.
 
-`release-please` requires a GitHub token to access the GitHub API. You configure this token via
-the `token` configuration option.
+## Credentials
 
-If your repository is in an organization, you may need to
-[permit github actions to create an approve PRs](https://stackoverflow.com/questions/72376229).
+The token needs write access to the repository (to push the release branch), its pull
+requests/issues, and its releases. Labels that release-please uses (such as `autorelease: pending`)
+are created automatically if they do not exist.
 
-> [!WARNING]  
-> If using GitHub Actions, you will need to specify a `token` for your workflows to run on
-> Release Please's releases and PRs. See [the heading below](#other-actions-on-release-please-prs).
+The built-in workflow token can work, but, as on GitHub, pull requests and tags created with it do
+not trigger other workflows. To have CI run on release PRs, create an access token for a user
+or bot account with the `write:repository` and `write:issue` scopes and store it as an Actions secret.
 
-### Other Actions on Release Please PRs
+### How pull requests are linked to commits
 
-By default, Release Please uses the built-in `GITHUB_TOKEN` secret. However, all resources created
-by `release-please` (release tag or release pull request) will not trigger future GitHub actions workflows,
-and workflows normally triggered by `release.created` events will also not run.
-From GitHub's
-[docs](https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow):
+Gitea has no API that maps a commit to the pull request that merged it, so the pull request
+number is read from merge and squash commit messages, as Gitea writes them by default:
 
-> When you use the repository's `GITHUB_TOKEN` to perform tasks, events triggered by the `GITHUB_TOKEN`
-> will not create a new workflow run. This prevents you from accidentally creating recursive workflow runs.
+- merge: `Merge pull request 'title' (#12) from branch into main`
+- squash: `title (#12)`
 
-You will want to configure a GitHub Actions secret with a
-[Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
-if you want GitHub Actions CI checks to run on Release Please PRs.
-
-### Workflow Permissions
-
-This workflow will need the following permissions in your workflow file:
-
-```yml
-permissions:
-  contents: write
-  issues: write
-  pull-requests: write
-```
-
-You may also need to set "Allow GitHub Actions to create and approve pull requests" under
-repository Settings > Actions > General.
-
-For more information about permissions:
-
-- GitHub APIs [protected by `contents` permission](https://docs.github.com/en/rest/overview/permissions-required-for-github-apps?apiVersion=2022-11-28#contents)
-- GitHub APIs [protected by `pull_requests` permission](https://docs.github.com/en/rest/overview/permissions-required-for-github-apps?apiVersion=2022-11-28#pull-requests)
-- Github Actions: [permissions for the `GITHUB_TOKEN`](https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token)
-- Github Repositories: [enabling workflows for forks of private repositories](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#enabling-workflows-for-private-repository-forks)
-- Github Actions: [assigning permissions to jobs](https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs)
+Commits merged with "rebase" (no merge commit) carry no pull request number. release-please then
+falls back to tags and releases to find the previous release, which works as long as releases are
+tagged.
 
 ### Release Types Supported
 
@@ -270,7 +245,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: https://github.com/MetalHunterR/gitea-release-please-action@main
         with:
           release-type: node
           # The short ref name of the branch or tag that triggered
@@ -293,7 +268,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: https://github.com/MetalHunterR/gitea-release-please-action@main
         id: release
         with:
           release-type: node
@@ -340,7 +315,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: https://github.com/MetalHunterR/gitea-release-please-action@main
         id: release
         with:
           release-type: node
@@ -377,7 +352,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: https://github.com/MetalHunterR/gitea-release-please-action@main
         id: release
         with:
           release-type: node

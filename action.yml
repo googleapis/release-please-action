@@ -1,9 +1,9 @@
-name: 'release-please-action'
-description: 'automated releases based on conventional commits'
+name: 'gitea-release-please-action'
+description: 'automated releases based on conventional commits, for Gitea and Forgejo'
 author: Google LLC
 inputs:
   token:
-    description: 'GitHub token for creating and grooming release PRs, defaults to using secrets.GITHUB_TOKEN'
+    description: 'Gitea token for pushing release branches and grooming release PRs, defaults to the workflow token'
     required: false
     default: ${{ github.token }}
   release-type:
@@ -27,29 +27,33 @@ inputs:
     required: false
     default: ''
   repo-url:
-    description: 'configure github repository URL. Default `process.env.GITHUB_REPOSITORY`'
+    description: 'repository in the form `<owner>/<repo>`. Default `process.env.GITHUB_REPOSITORY`'
     required: false
     default: ${{ github.repository }}
-  github-api-url:
-    description: 'configure github API URL. Default `https://api.github.com`'
+  gitea-url:
+    description: 'URL of the Gitea/Forgejo server, e.g. `https://gitea.example.com`. Defaults to the server running the workflow'
     required: false
-    default: ${{ github.api_url }}
-  github-graphql-url:
-    description: 'configure github GraphQL URL. Default `https://api.github.com`'
+    default: ${{ github.server_url }}
+  clone-depth:
+    description: 'limit the history fetched for the internal clone. Defaults to the full history'
     required: false
-    default: ${{ github.graphql_url }}
+    default: ''
+  git-author-name:
+    description: 'author/committer name for release commits. Default `release-please[bot]`'
+    required: false
+    default: ''
+  git-author-email:
+    description: 'author/committer email for release commits'
+    required: false
+    default: ''
   fork:
-    description: 'If true, send the PR from a fork. This requires the token to be a user that can create forks (e.g. not the default GITHUB_TOKEN)'
+    description: 'not supported on Gitea; ignored'
     required: false
     default: false
   include-component-in-tag:
     description: 'If true, add prefix to tags and branches, allowing multiple libraries to be released from the same repository'
     required: false
     default: false
-  proxy-server:
-    description: 'set proxy sever when you run this action behind a proxy. format is host:port e.g. proxy-host.com:8080'
-    required: false
-    default: ''
   skip-github-release:
     description: 'if set to true, then do not try to tag releases'
     required: false
@@ -63,9 +67,9 @@ inputs:
     required: false
     default: false
   changelog-host:
-    description: 'The proto://host where commits live. Default `https://github.com`'
+    description: 'The proto://host used for changelog links. Defaults to `gitea-url`'
     required: false
-    default: ${{ github.server_url }}
+    default: ''
   versioning-strategy:
     description: 'The versioning strategy to use.'
     required: false

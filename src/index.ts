@@ -13,29 +13,23 @@
 // limitations under the License.
 
 import * as core from '@actions/core';
-import {GitHub, Manifest, CreatedRelease, PullRequest, VERSION} from 'release-please';
+import {Gitea, Manifest, CreatedRelease, PullRequest, VERSION} from 'release-please';
 
 const DEFAULT_CONFIG_FILE = 'release-please-config.json';
 const DEFAULT_MANIFEST_FILE = '.release-please-manifest.json';
-const DEFAULT_GITHUB_API_URL = 'https://api.github.com';
-const DEFAULT_GITHUB_GRAPHQL_URL = 'https://api.github.com';
-const DEFAULT_GITHUB_SERVER_URL = 'https://github.com';
-
-interface Proxy {
-  host: string;
-  port: number;
-}
+const GITHUB_SERVER_URL = 'https://github.com';
 
 interface ActionInputs {
   token: string;
   repoUrl: string;
   releaseType?: string;
   path?: string;
-  githubApiUrl: string;
-  githubGraphqlUrl: string;
+  giteaUrl: string;
   configFile?: string;
   manifestFile?: string;
-  proxyServer?: string;
+  cloneDepth?: number;
+  gitAuthorName?: string;
+  gitAuthorEmail?: string;
   targetBranch?: string;
   skipGitHubRelease?: boolean;
   skipGitHubPullRequest?: boolean;
@@ -48,6 +42,18 @@ interface ActionInputs {
 }
 
 function parseInputs(): ActionInputs {
+  const giteaUrl = (
+    core.getInput('gitea-url') ||
+    process.env.GITHUB_SERVER_URL ||
+    process.env.GITEA_SERVER_URL ||
+    ''
+  ).replace(/\/+$/, '');
+  if (!giteaUrl) {
+    throw new Error(
+      'Unable to determine the Gitea server URL: set the `gitea-url` input'
+    );
+  }
+  const cloneDepth = getOptionalInput('clone-depth');
   const inputs: ActionInputs = {
     token: core.getInput('token', {required: true}),
     releaseType: getOptionalInput('release-type'),
@@ -56,17 +62,16 @@ function parseInputs(): ActionInputs {
     targetBranch: getOptionalInput('target-branch'),
     configFile: core.getInput('config-file') || DEFAULT_CONFIG_FILE,
     manifestFile: core.getInput('manifest-file') || DEFAULT_MANIFEST_FILE,
-    githubApiUrl: core.getInput('github-api-url') || DEFAULT_GITHUB_API_URL,
-    githubGraphqlUrl:
-      (core.getInput('github-graphql-url') || '').replace(/\/graphql$/, '') ||
-      DEFAULT_GITHUB_GRAPHQL_URL,
-    proxyServer: getOptionalInput('proxy-server'),
+    giteaUrl,
+    cloneDepth: cloneDepth ? parseInt(cloneDepth, 10) : undefined,
+    gitAuthorName: getOptionalInput('git-author-name'),
+    gitAuthorEmail: getOptionalInput('git-author-email'),
     skipGitHubRelease: getOptionalBooleanInput('skip-github-release'),
     skipGitHubPullRequest: getOptionalBooleanInput('skip-github-pull-request'),
     skipLabeling: getOptionalBooleanInput('skip-labeling'),
     fork: getOptionalBooleanInput('fork'),
     includeComponentInTag: getOptionalBooleanInput('include-component-in-tag'),
-    changelogHost: core.getInput('changelog-host') || DEFAULT_GITHUB_SERVER_URL,
+    changelogHost: core.getInput('changelog-host') || giteaUrl,
     versioningStrategy: getOptionalInput('versioning-strategy'),
     releaseAs: getOptionalInput('release-as'),
   };
@@ -86,7 +91,7 @@ function getOptionalBooleanInput(name: string): boolean | undefined {
 }
 
 function loadOrBuildManifest(
-  github: GitHub,
+  github: Gitea,
   inputs: ActionInputs
 ): Promise<Manifest> {
   if (inputs.releaseType) {
@@ -122,11 +127,19 @@ function loadOrBuildManifest(
     inputs.manifestFile,
     manifestOverrides
   ).then(manifest => {
-    // Override changelogHost for all paths if provided as action input and different from default
-    if (inputs.changelogHost && inputs.changelogHost !== DEFAULT_GITHUB_SERVER_URL) {
-      core.debug(`Overriding changelogHost to: ${inputs.changelogHost}`);
-      for (const path in manifest.repositoryConfig) {
-        manifest.repositoryConfig[path].changelogHost = inputs.changelogHost;
+    // An explicit `changelog-host` input overrides every path. Otherwise
+    // point changelog links at the Gitea server unless a path configures
+    // its own (non-GitHub) changelog host.
+    const explicitHost = !!getOptionalInput('changelog-host');
+    for (const path in manifest.repositoryConfig) {
+      const config = manifest.repositoryConfig[path];
+      if (
+        explicitHost ||
+        !config.changelogHost ||
+        config.changelogHost === GITHUB_SERVER_URL
+      ) {
+        core.debug(`Setting changelogHost for ${path} to: ${inputs.changelogHost}`);
+        config.changelogHost = inputs.changelogHost;
       }
     }
     return manifest;
@@ -136,7 +149,7 @@ function loadOrBuildManifest(
 export async function main(fetchOverride?: any) {
   core.info(`Running release-please version: ${VERSION}`)
   const inputs = parseInputs();
-  const github = await getGitHubInstance(inputs, fetchOverride);
+  const github = await getGiteaInstance(inputs, fetchOverride);
 
   if (!inputs.skipGitHubRelease) {
     const manifest = await loadOrBuildManifest(github, inputs);
@@ -151,28 +164,22 @@ export async function main(fetchOverride?: any) {
   }
 }
 
-function getGitHubInstance(inputs: ActionInputs, fetchOverride?: any): Promise<GitHub> {
+function getGiteaInstance(inputs: ActionInputs, fetchOverride?: any): Promise<Gitea> {
   const [owner, repo] = inputs.repoUrl.split('/');
-  let proxy: Proxy | undefined = undefined;
-  if (inputs.proxyServer) {
-    const [host, port] = inputs.proxyServer.split(':');
-    proxy = {
-      host,
-      port: parseInt(port),
-    };
+  if (inputs.fork) {
+    core.warning('The `fork` input is not supported on Gitea and is ignored');
   }
-
-  const githubCreateOpts = {
-    proxy,
+  return Gitea.create({
     owner,
     repo,
-    apiUrl: inputs.githubApiUrl,
-    graphqlUrl: inputs.githubGraphqlUrl,
+    apiUrl: inputs.giteaUrl,
     token: inputs.token,
     defaultBranch: inputs.targetBranch,
+    cloneDepth: inputs.cloneDepth,
+    gitAuthorName: inputs.gitAuthorName,
+    gitAuthorEmail: inputs.gitAuthorEmail,
     fetch: fetchOverride,
-  };
-  return GitHub.create(githubCreateOpts);
+  });
 }
 
 function setPathOutput(path: string, key: string, value: string | boolean) {
